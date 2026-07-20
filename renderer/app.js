@@ -151,6 +151,107 @@ function authorUrl(name) {
   return state.catalog?.constants?.MOD_AUTHOR?.[name] || state.catalog?.constants?.MOD_SENDER?.[name] || null;
 }
 
+// media preview a mod can play in the built-in player: a "preview"-type link, or a video preview file
+function modPreviewMedia(categoryId, mod) {
+  const link = (mod.links || []).find((l) => l.type === 'preview' && isMedia(l.url));
+  if (link) return resolveUrl(link.url);
+  const p = mod.preview || mod.styles?.[0]?.preview;
+  if (isMedia(p)) return previewUrl(categoryId, p);
+  return null;
+}
+
+// ---------- built-in media player ----------
+
+function fmtTime(s) {
+  if (!isFinite(s)) return '0:00';
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function openPlayer(url, title) {
+  const audio = isAudio(url);
+  const overlay = document.createElement('div');
+  overlay.className = 'player-overlay';
+  overlay.innerHTML = `
+    <div class="player-box ${audio ? 'audio' : ''}">
+      ${audio
+        ? `<div class="player-audio-visual"><span class="ms">graphic_eq</span></div><audio src="${esc(url)}" autoplay></audio>`
+        : `<video src="${esc(url)}" autoplay playsinline></video>`}
+      <div class="player-title">${esc(title || '')}</div>
+      <button class="player-close" aria-label="Закрыть"><span class="ms">close</span></button>
+      <div class="player-controls">
+        <button class="pl-btn" data-act="play" aria-label="Пауза"><span class="ms">pause</span></button>
+        <div class="pl-progress"><div class="pl-fill"></div><div class="pl-knob"></div></div>
+        <span class="pl-time">0:00 / 0:00</span>
+        <button class="pl-btn" data-act="mute" aria-label="Звук"><span class="ms">volume_up</span></button>
+        ${audio ? '' : '<button class="pl-btn" data-act="fs" aria-label="На весь экран"><span class="ms">fullscreen</span></button>'}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const media = overlay.querySelector('video, audio');
+  const box = overlay.querySelector('.player-box');
+  const playBtn = overlay.querySelector('[data-act="play"] .ms');
+  const muteBtn = overlay.querySelector('[data-act="mute"] .ms');
+  const fill = overlay.querySelector('.pl-fill');
+  const knob = overlay.querySelector('.pl-knob');
+  const timeEl = overlay.querySelector('.pl-time');
+  const progress = overlay.querySelector('.pl-progress');
+
+  media.loop = true;
+
+  const close = () => {
+    media.pause();
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  };
+  document.addEventListener('keydown', onKey, true);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('.player-close').addEventListener('click', close);
+
+  const togglePlay = () => { media.paused ? media.play() : media.pause(); };
+  overlay.querySelector('[data-act="play"]').addEventListener('click', togglePlay);
+  media.addEventListener('play', () => { playBtn.textContent = 'pause'; });
+  media.addEventListener('pause', () => { playBtn.textContent = 'play_arrow'; });
+  if (!audio) media.addEventListener('click', togglePlay);
+
+  media.addEventListener('timeupdate', () => {
+    const pct = media.duration ? (media.currentTime / media.duration) * 100 : 0;
+    fill.style.width = `${pct}%`;
+    knob.style.left = `${pct}%`;
+    timeEl.textContent = `${fmtTime(media.currentTime)} / ${fmtTime(media.duration)}`;
+  });
+
+  const seek = (e) => {
+    const rect = progress.getBoundingClientRect();
+    const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    if (media.duration) media.currentTime = pct * media.duration;
+  };
+  progress.addEventListener('mousedown', (e) => {
+    seek(e);
+    const move = (ev) => seek(ev);
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+
+  overlay.querySelector('[data-act="mute"]').addEventListener('click', () => {
+    media.muted = !media.muted;
+    muteBtn.textContent = media.muted ? 'volume_off' : 'volume_up';
+  });
+  const fsBtn = overlay.querySelector('[data-act="fs"]');
+  if (fsBtn) {
+    fsBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else box.requestFullscreen();
+    });
+  }
+}
+
 function keyOf(categoryId, name, styleLabel) {
   return `${categoryId}|${name}|${styleLabel || ''}`;
 }
@@ -166,10 +267,31 @@ async function refreshInstalledIndex() {
 
 // ---------- catalog data helpers ----------
 
+// user-created packs live in localStorage
+function customPacks() {
+  try {
+    return JSON.parse(localStorage.getItem('customPacks') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomPacks(packs) {
+  localStorage.setItem('customPacks', JSON.stringify(packs));
+}
+
 function categoryMods(categoryId) {
   const data = state.catalog?.mods?.modsData?.[categoryId];
   if (!data) return [];
-  if (Array.isArray(data)) return data.map((m) => ({ ...m, _group: null }));
+  if (Array.isArray(data)) {
+    const mods = data.map((m) => ({ ...m, _group: null }));
+    if (categoryId === 'packs') {
+      for (const p of customPacks()) {
+        mods.push({ name: p.name, type: 'pack', mods: p.mods, _group: null, _custom: true });
+      }
+    }
+    return mods;
+  }
   if (data.groups) {
     const out = [];
     for (const g of data.groups) {
@@ -590,6 +712,7 @@ function cardHtml(m, i, withCat = false) {
   const external = !installTarget(m) && !m.styles && !isPack;
   const tags = Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => k).slice(0, 3);
   const author = m.author || m.sender;
+  const playable = modPreviewMedia(cat, m);
   return `
     <div class="card" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">
@@ -597,9 +720,14 @@ function cardHtml(m, i, withCat = false) {
         <div class="media-tags">
           ${installed ? '<span class="mtag ok">Установлен</span>' : ''}
           ${isPack ? `<span class="mtag">Пак · ${(m.mods || []).length}</span>` : ''}
+          ${m._custom ? '<span class="mtag custom">Свой</span>' : ''}
           ${external ? '<span class="mtag">Ссылка</span>' : ''}
           ${tags.map((t) => `<span class="mtag">${esc(tagLabel(cat, t))}</span>`).join('')}
         </div>
+        ${playable ? `
+          <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="Смотреть превью">
+            <span class="ms">play_arrow</span>Превью
+          </button>` : ''}
         ${m.styles ? `
           <div class="media-swatches">
             ${m.styles.slice(0, 5).map((s) => `<span class="swatch-dot" style="background:${esc(s.color || '#a78bfa')}"></span>`).join('')}
@@ -627,8 +755,7 @@ function bindCards(root, modsList) {
       }
       if (!target) {
         const [cat, name] = key.split('|');
-        const hit = state.modIndex.get(name.toLowerCase());
-        if (hit) target = { ...hit.mod, _cat: hit.categoryId };
+        target = findModByName(cat, name);
       }
       if (target) openModModal(target._cat, target);
     });
@@ -637,7 +764,23 @@ function bindCards(root, modsList) {
       card.addEventListener('mouseenter', () => { v.play().catch(() => {}); });
       card.addEventListener('mouseleave', () => { v.pause(); });
     }
+    const playBtn = card.querySelector('.mtag-play');
+    if (playBtn) {
+      playBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPlayer(playBtn.dataset.play, playBtn.dataset.title);
+      });
+    }
   });
+}
+
+function findModByName(cat, name) {
+  if (cat === 'packs') {
+    const custom = customPacks().find((p) => p.name === name);
+    if (custom) return { ...custom, _cat: 'packs' };
+  }
+  const hit = state.modIndex.get(name.toLowerCase());
+  return hit ? { ...hit.mod, _cat: hit.categoryId } : null;
 }
 
 // ---------- mod modal ----------
@@ -665,8 +808,15 @@ document.addEventListener('keydown', (e) => {
 
 const LINK_LABEL = { preview: 'Превью', source: 'Источник', author: 'Автор', bug: 'Баг', guide: 'Гайд' };
 
+function packMembers(mod) {
+  return (mod.mods || []).map((name) => {
+    const hit = state.modIndex.get(name.toLowerCase());
+    return { name, hit };
+  });
+}
+
 function drawModal() {
-  const { categoryId, mod, styleIdx, showPreview } = modalState;
+  const { categoryId, mod, styleIdx } = modalState;
   const styles = mod.styles || null;
   const cur = styles ? styles[styleIdx] : mod;
   const fileRef = styles ? cur.file : mod.file;
@@ -677,12 +827,9 @@ function drawModal() {
   const busy = state.installing.has(keyOf(categoryId, mod.name, styleLabel));
   const guide = mod.guideId && state.catalog?.guides?.[mod.guideId];
 
-  // media: static preview, or the video/audio preview link when toggled
   const links = mod.links || [];
-  const previewLink = links.find((l) => l.type === 'preview' && isMedia(l.url));
-  const mediaUrl = showPreview && previewLink
-    ? resolveUrl(previewLink.url)
-    : previewUrl(categoryId, cur.preview || mod.preview);
+  const playable = modPreviewMedia(categoryId, { ...mod, preview: cur.preview || mod.preview });
+  const mediaUrl = previewUrl(categoryId, cur.preview || mod.preview);
 
   // author: mod.author/sender field, or an "author"-type link whose url is a name or URL
   const authorLink = links.find((l) => l.type === 'author');
@@ -691,15 +838,20 @@ function drawModal() {
   const authorHref = (authorLink && /^https?:\/\//i.test(authorLink.url) ? authorLink.url : null) ||
     (authorName ? authorUrl(authorName) : null);
 
-  const otherLinks = links.filter((l) => l !== previewLink && l.type !== 'author');
+  const otherLinks = links.filter((l) => !(l.type === 'preview' && isMedia(l.url)) && l.type !== 'author');
+
+  // pack contents (with per-session exclusions)
+  if (isPack && !modalState.packExcluded) modalState.packExcluded = new Set();
+  const members = isPack ? packMembers(mod) : [];
+  const activeCount = isPack ? members.filter((x) => !modalState.packExcluded.has(x.name)).length : 0;
 
   $('#modalContent').innerHTML = `
-    <div class="modal-media ${showPreview && previewLink && isAudio(previewLink.url) ? 'audio-mode' : ''}">
-      ${mediaHtml(mediaUrl, showPreview ? { autoplay: true, controls: true } : { autoplay: true })}
+    <div class="modal-media">
+      ${mediaHtml(mediaUrl, { autoplay: true })}
       <button class="modal-close" id="modalCloseBtn" aria-label="Закрыть"><span class="ms">close</span></button>
-      ${previewLink ? `
-        <button class="preview-toggle" id="previewToggleBtn">
-          <span class="ms">${showPreview ? 'image' : 'play_circle'}</span>${showPreview ? 'Картинка' : 'Смотреть превью'}
+      ${playable ? `
+        <button class="preview-toggle" id="previewPlayBtn">
+          <span class="ms">play_circle</span>Смотреть превью
         </button>` : ''}
     </div>
     <div class="modal-body">
@@ -709,6 +861,7 @@ function drawModal() {
       <div class="modal-sub">
         <span>${esc(catName(categoryId))}</span>
         ${mod._group ? `<span>· ${esc(mod._group)}</span>` : ''}
+        ${mod._custom ? '<span>· свой пак</span>' : ''}
         ${mod.meta?.date ? `<span>· ${fmtDate(mod.meta.date)}</span>` : ''}
         ${authorName ? `
           <button class="author-chip ${authorHref ? 'clickable' : ''}" id="authorChip" ${authorHref ? '' : 'disabled'}>
@@ -722,8 +875,32 @@ function drawModal() {
               ${s.color ? `<span class="swatch" style="background:${esc(s.color)}"></span>` : ''}${esc(s.label)}
             </button>`).join('')}
         </div>` : ''}
+      ${isPack ? `
+        <div class="pack-list">
+          ${members.map((x) => {
+            const excluded = modalState.packExcluded.has(x.name);
+            const thumb = x.hit ? previewUrl(x.hit.categoryId, x.hit.mod.preview || x.hit.mod.styles?.[0]?.preview) : null;
+            const inst = x.hit && isInstalled(x.hit.categoryId, x.hit.mod);
+            return `
+            <div class="pack-row ${excluded ? 'excluded' : ''} ${x.hit ? '' : 'missing'}" data-member="${esc(x.name)}">
+              ${thumb && !isVideo(thumb) ? `<img class="pack-thumb" src="${esc(thumb)}" loading="lazy" alt="">` : '<div class="pack-thumb"></div>'}
+              <div class="pack-info">
+                <div class="pack-mod-name">${esc(x.name)}</div>
+                <div class="pack-mod-cat">${x.hit ? esc(catName(x.hit.categoryId)) : 'не найден в каталоге'}${inst ? ' · установлен' : ''}</div>
+              </div>
+              <button class="pack-x" data-toggle="${esc(x.name)}" aria-label="${excluded ? 'Вернуть' : 'Убрать'}">
+                <span class="ms">${excluded ? 'add' : 'close'}</span>
+              </button>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="pack-save-row">
+          <input class="input" id="packSaveName" placeholder="Название своего пака…" value="${mod._custom ? esc(mod.name) : ''}">
+          <button class="btn btn-sm" id="packSaveBtn"><span class="ms">bookmark_add</span>Сохранить пак</button>
+          ${mod._custom ? `<button class="btn btn-sm btn-danger" id="packDeleteBtn">Удалить пак</button>` : ''}
+        </div>` : ''}
       <div class="modal-actions">
-        ${isPack ? `<button class="btn btn-primary" id="installPackBtn"><span class="ms">download</span>Установить пак (${(mod.mods || []).length})</button>` : ''}
+        ${isPack ? `<button class="btn btn-primary" id="installPackBtn" ${activeCount ? '' : 'disabled'}><span class="ms">download</span>Установить пак (${activeCount})</button>` : ''}
         ${!isPack && target ? (installedRec
           ? `<button class="btn btn-danger" id="uninstallBtn"><span class="ms">delete</span>Удалить</button>`
           : `<button class="btn btn-primary" id="installBtn" ${busy ? 'disabled' : ''}><span class="ms">download</span>${busy ? 'Установка…' : 'Установить'}</button>`) : ''}
@@ -741,12 +918,9 @@ function drawModal() {
 
   $('#modalCloseBtn').addEventListener('click', closeModal);
 
-  const previewToggle = $('#previewToggleBtn');
-  if (previewToggle) {
-    previewToggle.addEventListener('click', () => {
-      modalState.showPreview = !modalState.showPreview;
-      drawModal();
-    });
+  const previewPlay = $('#previewPlayBtn');
+  if (previewPlay) {
+    previewPlay.addEventListener('click', () => openPlayer(playable, mod.name));
   }
 
   const authorChip = $('#authorChip');
@@ -754,10 +928,42 @@ function drawModal() {
     authorChip.addEventListener('click', () => window.api.misc.openExternal(authorHref));
   }
 
+  // pack interactions
+  document.querySelectorAll('.pack-x').forEach((b) => {
+    b.addEventListener('click', () => {
+      const n = b.dataset.toggle;
+      if (modalState.packExcluded.has(n)) modalState.packExcluded.delete(n);
+      else modalState.packExcluded.add(n);
+      drawModal();
+    });
+  });
+  const packSaveBtn = $('#packSaveBtn');
+  if (packSaveBtn) {
+    packSaveBtn.addEventListener('click', () => {
+      const name = $('#packSaveName').value.trim();
+      if (!name) { toast('Введи название пака', 'warn'); return; }
+      const modNames = members.filter((x) => !modalState.packExcluded.has(x.name)).map((x) => x.name);
+      if (!modNames.length) { toast('В паке не осталось модов', 'warn'); return; }
+      const packs = customPacks().filter((p) => p.name !== name && p.name !== (mod._custom ? mod.name : null));
+      packs.push({ name, mods: modNames });
+      saveCustomPacks(packs);
+      toast(`Пак «${name}» сохранён — он появился в категории Паки`);
+      if (state.view === 'catalog' && state.activeCategory === 'packs') { closeModal(); renderCatalog(); }
+    });
+  }
+  const packDeleteBtn = $('#packDeleteBtn');
+  if (packDeleteBtn) {
+    packDeleteBtn.addEventListener('click', async () => {
+      if (!await confirmDialog(`Удалить пак «${mod.name}»?`)) return;
+      saveCustomPacks(customPacks().filter((p) => p.name !== mod.name));
+      closeModal();
+      renderCatalog();
+    });
+  }
+
   document.querySelectorAll('.style-btn').forEach((b) => {
     b.addEventListener('click', () => {
       modalState.styleIdx = Number(b.dataset.style);
-      modalState.showPreview = false;
       drawModal();
     });
   });
@@ -820,7 +1026,8 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
 }
 
 async function installPack(pack) {
-  const names = pack.mods || [];
+  const excluded = modalState?.packExcluded || new Set();
+  const names = (pack.mods || []).filter((n) => !excluded.has(n));
   closeModal();
   let ok = 0, fail = 0, skip = 0;
   for (const name of names) {

@@ -62,7 +62,7 @@ function createWindow() {
                 ?.closest('.card')?.click()`);
             await new Promise((r) => setTimeout(r, 1500));
             if (process.env.MM_PREVIEW) {
-              await win.webContents.executeJavaScript(`document.getElementById('previewToggleBtn')?.click()`);
+              await win.webContents.executeJavaScript(`document.getElementById('previewPlayBtn')?.click()`);
               await new Promise((r) => setTimeout(r, 2500));
             }
           }
