@@ -346,6 +346,11 @@ function isInstalled(categoryId, m) {
     (m.styles || []).some((s) => state.installedIndex.has(keyOf(categoryId, m.name, s.label)));
 }
 
+// can this mod ever carry the "Установлен" badge? (guides/sites are link-only)
+function canBeInstalled(m) {
+  return !!installTarget(m) || (m.styles || []).some((s) => s.file && /\.(vpk|zip)$/i.test(s.file));
+}
+
 // ---------- filtering / sorting ----------
 
 function collectTags(mods) {
@@ -577,13 +582,14 @@ function renderSearchResults() {
       if (m.name && m.name.toLowerCase().includes(q)) mods.push({ ...m, _cat: c.id });
     }
   }
+  const installable = mods.some(canBeInstalled);
   mods = applyFilters(mods);
 
   viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">Поиск: <span class="accent">${esc(state.search.trim())}</span></h1>
     </div>
-    ${toolbarHtml(mods.length, { tags: [], groups: [] })}
+    ${toolbarHtml(mods.length, { tags: [], groups: [], installable })}
     <div class="grid" id="modGrid">
       ${mods.length ? mods.map((m, i) => cardHtml(m, i, true)).join('') : `<div class="empty-note">Ничего не найдено</div>`}
     </div>
@@ -602,6 +608,7 @@ function renderCategory(categoryId) {
     ? (state.catalog?.constants?.HEROES_LIST || []).filter((h) => all.some((m) => heroMatches(h, m.name)))
     : [];
   const mods = applyFilters(all, categoryId);
+  const installable = all.some(canBeInstalled);
 
   const grouped = isGrouped(categoryId) && !state.filters.group && state.filters.sort === 'default';
 
@@ -626,7 +633,7 @@ function renderCategory(categoryId) {
       <h1 class="view-title">${esc(catName(categoryId))}</h1>
       <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}</span>
     </div>
-    ${toolbarHtml(mods.length, { tags, groups, heroes, categoryId })}
+    ${toolbarHtml(mods.length, { tags, groups, heroes, categoryId, installable })}
     <div class="grid" id="modGrid">${gridHtml}</div>
   `;
   bindToolbar();
@@ -637,7 +644,7 @@ function renderCategory(categoryId) {
 
 const GROUP_LABEL = { 'hero-items': 'Все герои', 'item-effects': 'Все предметы', creeps: 'Все крипы', towers: 'Все башни', 'creep-deny': 'Все типы' };
 
-function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categoryId = null }) {
+function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categoryId = null, installable = true }) {
   const f = state.filters;
   return `
     <div class="toolbar">
@@ -663,10 +670,11 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
             ${groups.map((g) => `<option value="${esc(g)}" ${f.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
           </select>
         </div>` : ''}
+      ${installable ? `
       <div class="sep"></div>
       <button class="fchip ${f.installedOnly ? 'active' : ''}" id="installedChip">
         <span class="ms">check_circle</span>Установленные
-      </button>
+      </button>` : ''}
       ${tags.length ? '<div class="sep"></div>' : ''}
       ${tags.map(([tag, cnt]) => `
         <button class="fchip ${f.tags.has(tag) ? 'active' : ''}" data-tag="${esc(tag)}">
@@ -782,6 +790,22 @@ function findModByName(cat, name) {
   }
   const hit = state.modIndex.get(name.toLowerCase());
   return hit ? { ...hit.mod, _cat: hit.categoryId } : null;
+}
+
+// toggle "Установлен" badges on visible cards in place — keeps grid scroll position
+function refreshCardBadges() {
+  viewRoot.querySelectorAll('.card[data-key]').forEach((card) => {
+    const [cat, name] = card.dataset.key.split('|');
+    const mod = findModByName(cat, name);
+    if (!mod) return;
+    const installed = isInstalled(cat, mod);
+    const badge = card.querySelector('.mtag.ok');
+    if (installed && !badge) {
+      card.querySelector('.media-tags')?.insertAdjacentHTML('afterbegin', '<span class="mtag ok">Установлен</span>');
+    } else if (!installed && badge) {
+      badge.remove();
+    }
+  });
 }
 
 // ---------- mod modal ----------
@@ -981,6 +1005,7 @@ function drawModal() {
       if (r.error) toast(r.error, 'error');
       else toast(`${mod.name} удалён`);
       await refreshInstalledIndex();
+      refreshCardBadges();
       drawModal();
     });
   }
@@ -1022,6 +1047,7 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   if (r.error && !r.already) toast(`${mod.name}: ${r.error}`, 'error', 6000);
   else if (!r.error) toast(`${mod.name} установлен`);
   await refreshInstalledIndex();
+  refreshCardBadges();
   if (modalState) drawModal();
   return r;
 }
