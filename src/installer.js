@@ -4,7 +4,9 @@ const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
 
-// Categories whose VPKs must load with higher priority ("!pakNN", numbers 02-09)
+// Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
+// The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
+// Dota2PornFx cart zips is a merge-order hint for VPKMerge, not a valid install name.
 const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-attack', 'hero-items', 'optimization'];
 
 const FONTS_SUBDIR = ['dota', 'panorama', 'fonts'];
@@ -92,7 +94,7 @@ class Installer {
   allocatePak(used, priority) {
     if (priority) {
       for (let n = 2; n <= 9; n++) {
-        const name = `!pak0${n}_dir.vpk`;
+        const name = `pak0${n}_dir.vpk`;
         if (!used.has(name)) {
           used.add(name);
           return name;
@@ -304,6 +306,33 @@ class Installer {
         }
       }
     }
+  }
+
+  // Older app versions wrote priority mods as "!pakNN_dir.vpk" — a name the game
+  // never mounts, so those mods silently did nothing. Rename them to real low
+  // pak slots and fix the matching manifest records.
+  migrateLegacyPriorityPaks(library) {
+    const lang = this.langFolder();
+    if (!fs.existsSync(lang)) return;
+    const legacy = fs.readdirSync(lang).filter((f) => /^!pak\d+_dir\.vpk(\.off)?$/i.test(f));
+    if (!legacy.length) return;
+    const used = this.usedPakNames();
+    let changed = false;
+    for (const f of legacy) {
+      const disabled = /\.off$/i.test(f);
+      const oldBase = f.replace(/\.off$/i, '');
+      const newBase = this.allocatePak(used, true);
+      fs.renameSync(path.join(lang, f), path.join(lang, newBase + (disabled ? '.off' : '')));
+      for (const rec of library.list()) {
+        for (const fr of rec.files) {
+          if (fr.root === 'lang' && fr.relPath.toLowerCase() === oldBase.toLowerCase()) {
+            fr.relPath = newBase;
+            changed = true;
+          }
+        }
+      }
+    }
+    if (changed) library.save();
   }
 
   // files present in lang folder but not referenced by the manifest.

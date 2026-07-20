@@ -107,6 +107,13 @@ app.whenReady().then(async () => {
     if (found) settings.set('dotaGamePath', found);
   }
 
+  // repair "!pakNN" files left by versions before 1.0.4 (the game ignored them)
+  try {
+    installer.migrateLegacyPriorityPaks(library);
+  } catch (e) {
+    diag('legacy pak migration skipped: ' + e.message);
+  }
+
   registerIpc();
   createWindow();
   diag('createWindow done');

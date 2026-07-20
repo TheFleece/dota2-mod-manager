@@ -23,7 +23,7 @@
 | | | |
 |---|---|---|
 | <img src="docs/icons/catalog.svg" width="20"> | **Full catalog** | 1100+ mods in 40 categories: heroes, terrains, shaders, fonts, cursors, announcers, music. Synced with the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository |
-| <img src="docs/icons/install.svg" width="20"> | **One-click install** | The app downloads the mod, picks a free pak slot, gives priority mods `!pak` names and unpacks terrain `maps/` folders |
+| <img src="docs/icons/install.svg" width="20"> | **One-click install** | The app downloads the mod, picks a free pak slot, gives priority mods low pak numbers and unpacks terrain `maps/` folders |
 | <img src="docs/icons/player.svg" width="20"> | **Built-in previews** | Video and audio previews play in an in-app player |
 | <img src="docs/icons/library.svg" width="20"> | **Library** | Toggle installed mods on and off without deleting them, remove them cleanly, see files installed outside the manager |
 | <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Sort by date or name; filter by tag, hero or installed state; search across the whole catalog |
@@ -56,7 +56,7 @@ Mods load from a custom language folder (`game/dota_russian`, `dota_123`), so th
 The app follows the same installation mechanics as the Dota2PornFx guides:
 
 - VPK mods go into `steamapps/common/dota 2 beta/game/dota_<suffix>/` as `pakNN_dir.vpk`; the app assigns slots 10–99
-- Priority categories (trees, river, shaders, hero fx, ranged attack, hero items, optimization) get `!pakNN` names and load first
+- Priority categories (trees, river, shaders, hero fx, ranged attack, hero items, optimization) get low slots `pak02`–`pak09`, so they load before regular mods
 - Terrains ship a `maps/` folder, placed next to the paks
 - Fonts go to `game/dota/panorama/fonts`, cursors to `game/dota/resource/cursor`; the app backs up originals and restores them on removal
 - Disabling a mod renames its file to `.off`; the game skips it, the file stays
