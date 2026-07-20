@@ -3,7 +3,7 @@
 
   <h1>Dota 2 Mod Manager</h1>
 
-  <p><b>Desktop mod launcher for Dota 2</b> — browse, install, toggle and manage 1100+ cosmetic mods in a couple of clicks. No manual file copying, no pak renaming, no guesswork.</p>
+  <p><b>Desktop mod launcher for Dota 2.</b> Browse 1100+ cosmetic mods and install them in one click. The app copies files, allocates pak slots and cleans up after itself.</p>
 
   <p>
     <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">
@@ -20,18 +20,18 @@
 
 ## Features
 
-| | |
-|---|---|
-| 🗂️ **Full catalog** | 1100+ mods in 40 categories — heroes, terrains, shaders, fonts, cursors, announcers, music and more, always in sync with the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository |
-| ⚡ **One-click install** | Downloads the mod and places it into the game automatically: pak slots are allocated for you, priority mods get `!pak` names, terrain `maps/` folders are handled |
-| 🎬 **Built-in previews** | Watch video and listen to audio previews in a styled in-app player without leaving the catalog |
-| 📚 **Library** | Everything installed at a glance — toggle mods on/off without deleting, remove them cleanly, spot files installed outside the manager |
-| 🎯 **Filters & search** | Sort by date/name, filter by tags, by hero, by installed state; global search across all categories |
-| 📦 **Packs** | Themed mod packs with full contents view — exclude items you don't want, save your own custom packs |
-| ⭐ **Presets** | Save named sets of enabled mods and switch between them in one click |
-| 🔤 **Fonts & cursors** | Installed directly into game files with automatic backup of the originals — removal restores vanilla |
-| 🛠️ **Tools** | Download and launch community utilities (Background Changer, ItemsFix, Compiler…) from inside the app |
-| 🔄 **Auto-updates** | The app checks GitHub Releases and updates itself when a new version is out |
+| | | |
+|---|---|---|
+| <img src="docs/icons/catalog.svg" width="20"> | **Full catalog** | 1100+ mods in 40 categories: heroes, terrains, shaders, fonts, cursors, announcers, music. Synced with the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository |
+| <img src="docs/icons/install.svg" width="20"> | **One-click install** | The app downloads the mod, picks a free pak slot, gives priority mods `!pak` names and unpacks terrain `maps/` folders |
+| <img src="docs/icons/player.svg" width="20"> | **Built-in previews** | Video and audio previews play in an in-app player |
+| <img src="docs/icons/library.svg" width="20"> | **Library** | Toggle installed mods on and off without deleting them, remove them cleanly, see files installed outside the manager |
+| <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Sort by date or name; filter by tag, hero or installed state; search across the whole catalog |
+| <img src="docs/icons/pack.svg" width="20"> | **Packs** | Open a themed pack, drop the mods you don't want, save the result as your own pack |
+| <img src="docs/icons/preset.svg" width="20"> | **Presets** | Save named sets of enabled mods and switch between them in one click |
+| <img src="docs/icons/font.svg" width="20"> | **Fonts and cursors** | Installed into game files with a backup of the originals; removal restores vanilla |
+| <img src="docs/icons/tools.svg" width="20"> | **Tools** | Download and launch community utilities (Background Changer, ItemsFix, Compiler) from the app |
+| <img src="docs/icons/update.svg" width="20"> | **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
 
 <div align="center">
   <img src="docs/screenshots/catalog.png" alt="Catalog with filters" width="49%">
@@ -40,39 +40,37 @@
 
 ## Installation
 
-1. Download **`Dota 2 Mod Manager Setup`** from the [latest release](https://github.com/TheFleece/dota2-mod-manager/releases/latest)
-2. Run it — the app installs, creates a desktop shortcut and starts automatically
-3. The app finds your Dota 2 installation by itself (configurable in Settings)
-4. Add the launch option shown in **Settings** to Steam (`Steam → Dota 2 → Properties → Launch Options`), e.g.:
+1. Download **Dota 2 Mod Manager Setup** from the [latest release](https://github.com/TheFleece/dota2-mod-manager/releases/latest)
+2. Run it. The app installs, creates a desktop shortcut and starts
+3. It finds your Dota 2 installation on its own (you can change the path in Settings)
+4. Add the launch option shown in **Settings** to Steam (`Steam → Dota 2 → Properties → Launch Options`):
 
 ```
 -language russian
 ```
 
-> **Why a launch option?** Mods load from a custom language folder (`game/dota_russian`, `dota_123`, …).
-> If you play with the Russian game language, use `dota_russian` / `-language russian` — the game stays Russian and mods work.
-> Fonts and cursors work without any launch option.
+Mods load from a custom language folder (`game/dota_russian`, `dota_123`), so the game needs a matching `-language` launch option. If you play in Russian, use `dota_russian` / `-language russian`: the game stays Russian and mods work. Fonts and cursors need no launch option at all.
 
 ## How it works
 
-The app implements the same installation mechanics as the Dota2PornFx guides:
+The app follows the same installation mechanics as the Dota2PornFx guides:
 
-- VPK mods are placed into `steamapps/common/dota 2 beta/game/dota_<suffix>/` as `pakNN_dir.vpk` (slots 10–99, allocated automatically)
-- Priority categories (trees, river, shaders, hero fx, ranged attack, hero items, optimization) get `!pakNN` names so they load first
-- Terrains ship a `maps/` folder which is placed alongside the paks
-- Fonts go to `game/dota/panorama/fonts`, cursors to `game/dota/resource/cursor` — originals are backed up and restored on removal
-- Disabling a mod renames its file to `.off` — the game ignores it, nothing is lost
+- VPK mods go into `steamapps/common/dota 2 beta/game/dota_<suffix>/` as `pakNN_dir.vpk`; the app assigns slots 10–99
+- Priority categories (trees, river, shaders, hero fx, ranged attack, hero items, optimization) get `!pakNN` names and load first
+- Terrains ship a `maps/` folder, placed next to the paks
+- Fonts go to `game/dota/panorama/fonts`, cursors to `game/dota/resource/cursor`; the app backs up originals and restores them on removal
+- Disabling a mod renames its file to `.off`; the game skips it, the file stays
 
-Downloads are cached in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest lives in `manifest.json` next to it.
+Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in `manifest.json` next to it.
 
 <div align="center">
   <img src="docs/screenshots/pack.png" alt="Pack contents" width="70%">
 </div>
 
-## 🇷🇺 Установка
+## Установка (Russian)
 
-1. Скачай **`Dota 2 Mod Manager Setup`** из [последнего релиза](https://github.com/TheFleece/dota2-mod-manager/releases/latest)
-2. Запусти — приложение установится, создаст ярлык и откроется само
+1. Скачай **Dota 2 Mod Manager Setup** из [последнего релиза](https://github.com/TheFleece/dota2-mod-manager/releases/latest)
+2. Запусти. Приложение установится, создаст ярлык и откроется
 3. Путь к Dota 2 находится автоматически
 4. Добавь параметр запуска из **Настроек** в Steam (`Steam → Dota 2 → Свойства → Параметры запуска`):
 
@@ -80,7 +78,7 @@ Downloads are cached in `%APPDATA%/dota2-mod-manager/downloads`, the install man
 -language russian
 ```
 
-> Играешь на русском — используй `dota_russian` / `-language russian`: игра останется русской, моды будут работать. Шрифты и курсоры работают без параметра запуска.
+Играешь на русском — используй `dota_russian` / `-language russian`: игра останется русской, моды будут работать. Шрифты и курсоры работают без параметра запуска.
 
 ## Development
 
@@ -96,15 +94,15 @@ Stack: Electron, plain HTML/CSS/JS renderer, no build step for the UI.
 
 ## Credits
 
-- **All mods, previews, guides and the catalog** come from the amazing open-source
+- **All mods, previews, guides and catalog data** come from the open-source
   [**Dota2PornFxWeb**](https://github.com/h6rd/Dota2PornFxWeb) repository by [h6rd](https://github.com/h6rd)
-  and the Dota 2 modding community — this app is a desktop client for their catalog.
-  Mod authors are credited inside the app on each mod card.
-- Community tools (VPKMerge, Background Changer, Compiler, ItemsFix) belong to their respective authors.
+  and the Dota 2 modding community. This app is a desktop client for their catalog.
+  Each mod card in the app credits its author.
+- Community tools (VPKMerge, Background Changer, Compiler, ItemsFix) belong to their authors.
 
 ## License
 
-[GPL-3.0](LICENSE) — free and open source. Catalog content is distributed under the same license by the
+[GPL-3.0](LICENSE), free to use, modify and share. Catalog content carries the same license in the
 [upstream repository](https://github.com/h6rd/Dota2PornFxWeb).
 
-*This project is not affiliated with Valve Corporation or Dota 2. Modifying game files is done at your own risk.*
+*Not affiliated with Valve Corporation. You modify game files at your own risk.*
