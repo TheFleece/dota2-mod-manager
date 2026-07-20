@@ -1354,3 +1354,22 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* drag & drop import hint */
+body.dropping::after {
+  content: 'Отпусти, чтобы импортировать .vpk в библиотеку';
+  position: fixed;
+  inset: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--primary-soft);
+  border-radius: var(--radius);
+  background: rgba(8, 8, 13, 0.82);
+  backdrop-filter: blur(6px);
+  color: var(--primary-soft);
+  font-size: 17px;
+  font-weight: 600;
+  z-index: 400;
+  pointer-events: none;
+}

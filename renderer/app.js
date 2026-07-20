@@ -14,6 +14,7 @@ const CAT_RU = {
   herofx: 'Эффекты героев', pings: 'Пинги', packs: 'Паки', optimization: 'Оптимизация',
   tormentor: 'Тормент', 'high-five': 'High Five', ancient: 'Древние', roshan: 'Рошан',
   towers: 'Башни', fonts: 'Шрифты', sites: 'Сайты', guides: 'Гайды', news: 'Новости',
+  imported: 'Импортированный',
 };
 
 const CAT_ICON = {
@@ -1042,6 +1043,20 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   }
   state.installing.add(k);
   if (modalState) drawModal();
+  const chk = await window.api.mods.checkConflicts({ categoryId, name: mod.name, fileRef });
+  if (chk.conflicts?.length) {
+    const c = chk.conflicts[0];
+    const rest = chk.conflicts.length > 1 ? ` (и ещё ${chk.conflicts.length - 1})` : '';
+    const proceed = await confirmDialog(
+      `«${mod.name}» меняет ${c.count} ${plural(c.count, 'файл', 'файла', 'файлов')}, которые уже занял мод «${c.name}»${rest}. Перекрывающиеся моды работают не одновременно — победит тот, что грузится приоритетнее. Установить всё равно?`,
+      { okLabel: 'Установить', danger: false }
+    );
+    if (!proceed) {
+      state.installing.delete(k);
+      if (modalState) drawModal();
+      return { cancelled: true };
+    }
+  }
   const r = await window.api.mods.install({ categoryId, name: mod.name, styleLabel, fileRef, preview });
   state.installing.delete(k);
   if (r.error && !r.already) toast(`${mod.name}: ${r.error}`, 'error', 6000);
@@ -1066,7 +1081,9 @@ async function installPack(pack) {
     if (!fileRef || !/\.(vpk|zip)$/i.test(fileRef)) { skip++; continue; }
     if (state.installedIndex.has(keyOf(categoryId, mod.name, styleLabel))) { skip++; continue; }
     const r = await doInstall(categoryId, mod, styleLabel, fileRef, mod.preview);
-    if (r?.ok) ok++; else fail++;
+    if (r?.ok) ok++;
+    else if (r?.cancelled) skip++;
+    else fail++;
   }
   toast(`Пак «${pack.name}»: установлено ${ok}, пропущено ${skip}${fail ? `, ошибок ${fail}` : ''}`, fail ? 'warn' : 'ok', 7000);
   await refreshInstalledIndex();
@@ -1087,6 +1104,7 @@ async function renderLibrary() {
       <span class="lib-stats">${installed.length} ${plural(installed.length, 'мод', 'мода', 'модов')} · ${enabledCount} включено</span>
       <button class="btn btn-sm" id="enableAllBtn">Включить всё</button>
       <button class="btn btn-sm" id="disableAllBtn">Отключить всё</button>
+      <button class="btn btn-sm" id="importVpkBtn"><span class="ms">upload_file</span>Импорт VPK</button>
       <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>Папка модов</button>
     </div>
     <div class="lib-list" id="libList">
@@ -1148,6 +1166,7 @@ async function renderLibrary() {
 
   $('#enableAllBtn').addEventListener('click', () => bulkToggle(installed, true));
   $('#disableAllBtn').addEventListener('click', () => bulkToggle(installed, false));
+  $('#importVpkBtn').addEventListener('click', async () => handleImportResult(await window.api.mods.importDialog()));
   $('#openFolderBtn2').addEventListener('click', () => window.api.misc.openLangFolder());
 
   if (external.length) {
@@ -1184,6 +1203,52 @@ async function renderLibrary() {
     });
   }
 }
+
+async function handleImportResult(r) {
+  if (!r || r.cancelled) return;
+  if (r.error) { toast(r.error, 'error', 6000); return; }
+  for (const e of r.errors || []) toast(`${e.source}: ${e.error}`, 'warn', 5000);
+  const n = (r.imported || []).length;
+  if (n) toast(`Импортировано: ${n} ${plural(n, 'мод', 'мода', 'модов')}`);
+  for (const imp of r.imported || []) {
+    if (imp.conflicts?.length) {
+      toast(`«${imp.name}» перекрывается с: ${imp.conflicts.slice(0, 2).join(', ')}${imp.conflicts.length > 2 ? '…' : ''}`, 'warn', 7000);
+    }
+  }
+  await refreshInstalledIndex();
+  if (state.view === 'library') renderLibrary();
+}
+
+// drag & drop of .vpk files anywhere in the window -> import
+let dragDepth = 0;
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
+    dragDepth++;
+    document.body.classList.add('dropping');
+  }
+});
+document.addEventListener('dragleave', () => {
+  if (--dragDepth <= 0) {
+    dragDepth = 0;
+    document.body.classList.remove('dropping');
+  }
+});
+document.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove('dropping');
+  const files = [...(e.dataTransfer?.files || [])];
+  const paths = files.map((f) => {
+    try { return window.api.mods.pathForFile(f); } catch { return null; }
+  }).filter((p) => p && /\.vpk$/i.test(p));
+  if (!paths.length) {
+    if (files.length) toast('Импортировать можно только .vpk файлы', 'warn');
+    return;
+  }
+  handleImportResult(await window.api.mods.importPaths(paths));
+});
 
 async function bulkToggle(installed, enabled) {
   for (const rec of installed) {
@@ -1432,6 +1497,12 @@ async function renderSettings() {
         С <code style="background:none;color:var(--primary-soft)">-language 123</code> игра переключается на английский.
         При смене папки установленные моды переезжают автоматически.
       </div>
+      ${s.minifyDetected ? `
+      <div class="modal-note" style="margin-top:10px">
+        <b>Обнаружен Minify</b> (папка <code style="background:none;color:var(--primary-soft)">dota_minify</code> рядом).
+        Если Minify настроен на ту же языковую папку, что и менеджер, их моды будут перекрывать друг друга —
+        используй разные папки или ставь моды через что-то одно.
+      </div>` : ''}
     </div>
 
     <div class="settings-block" style="animation-delay:120ms">

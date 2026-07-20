@@ -138,6 +138,38 @@ function setupAutoUpdate() {
 
 app.on('window-all-closed', () => app.quit());
 
+// copy user .vpk files into the lang folder and register them in the library
+function importVpkPaths(paths) {
+  try {
+    const results = installer.importVpks(paths);
+    const imported = [];
+    for (const r of results) {
+      if (r.error) continue;
+      const rec = library.add({
+        name: r.name, categoryId: 'imported', styleLabel: null,
+        fileRef: r.source, preview: null, files: r.files,
+      });
+      // best-effort warning: does the new file overlap other enabled mods?
+      let conflicts = [];
+      try {
+        const own = installer.installedContentPaths(rec);
+        conflicts = library.list()
+          .filter((o) => o.id !== rec.id && o.enabled)
+          .filter((o) => {
+            const other = installer.installedContentPaths(o);
+            for (const p of own) if (other.has(p)) return true;
+            return false;
+          })
+          .map((o) => o.name);
+      } catch { /* ignore */ }
+      imported.push({ name: rec.name, relPath: r.files[0].relPath, conflicts });
+    }
+    return { imported, errors: results.filter((r) => r.error) };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
+}
+
 function registerIpc() {
   // ----- window controls -----
   ipcMain.handle('win:minimize', () => win.minimize());
@@ -156,10 +188,16 @@ function registerIpc() {
   ipcMain.handle('app:version', () => app.getVersion());
 
   // ----- settings -----
-  ipcMain.handle('settings:get', () => ({
-    ...settings.all(),
-    dotaPathValid: validateGamePath(settings.get('dotaGamePath')),
-  }));
+  ipcMain.handle('settings:get', () => {
+    const game = settings.get('dotaGamePath');
+    let minifyDetected = false;
+    try { minifyDetected = !!game && fs.existsSync(path.join(game, 'dota_minify')); } catch { /* ignore */ }
+    return {
+      ...settings.all(),
+      dotaPathValid: validateGamePath(game),
+      minifyDetected,
+    };
+  });
 
   ipcMain.handle('settings:set', (e, key, value) => {
     // when the language folder changes, move installed mod files over
@@ -238,6 +276,32 @@ function registerIpc() {
       return { error: String(err.message || err) };
     }
   });
+
+  ipcMain.handle('mods:checkConflicts', async (e, payload) => {
+    // payload: { categoryId, name, fileRef }
+    try {
+      const conflicts = await installer.findConflicts(
+        { categoryId: payload.categoryId, fileRef: payload.fileRef, modName: payload.name },
+        library.list()
+      );
+      return { conflicts };
+    } catch (err) {
+      // conflict check is best-effort — never block installation on its errors
+      return { conflicts: [], error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('mods:importDialog', async () => {
+    const res = await dialog.showOpenDialog(win, {
+      title: 'Выбери .vpk файлы модов',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'VPK моды', extensions: ['vpk'] }],
+    });
+    if (res.canceled || !res.filePaths.length) return { cancelled: true };
+    return importVpkPaths(res.filePaths);
+  });
+
+  ipcMain.handle('mods:importPaths', (e, paths) => importVpkPaths(Array.isArray(paths) ? paths : []));
 
   ipcMain.handle('mods:list', () => {
     let external = [];

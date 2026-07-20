@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   win: {
@@ -24,6 +24,10 @@ contextBridge.exposeInMainWorld('api', {
     remove: (id) => ipcRenderer.invoke('mods:remove', id),
     externalSetEnabled: (fileName, enabled) => ipcRenderer.invoke('mods:externalSetEnabled', fileName, enabled),
     externalRemove: (fileName) => ipcRenderer.invoke('mods:externalRemove', fileName),
+    checkConflicts: (payload) => ipcRenderer.invoke('mods:checkConflicts', payload),
+    importDialog: () => ipcRenderer.invoke('mods:importDialog'),
+    importPaths: (paths) => ipcRenderer.invoke('mods:importPaths', paths),
+    pathForFile: (file) => webUtils.getPathForFile(file),
   },
   presets: {
     list: () => ipcRenderer.invoke('presets:list'),

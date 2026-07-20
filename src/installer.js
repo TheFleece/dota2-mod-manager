@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
+const { listVpkPaths, listVpkPathsFile } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -306,6 +307,106 @@ class Installer {
         }
       }
     }
+  }
+
+  // ---------- conflict detection ----------
+
+  // Game paths a downloaded mod file would provide (vpk index / zip payload)
+  modContentPaths(localFile) {
+    const out = new Set();
+    const lower = localFile.toLowerCase();
+    if (lower.endsWith('.vpk')) {
+      for (const p of listVpkPathsFile(localFile)) out.add(p);
+      return out;
+    }
+    if (!lower.endsWith('.zip')) return out;
+    const zip = new AdmZip(localFile);
+    for (const entry of zip.getEntries()) {
+      if (entry.isDirectory) continue;
+      const rel = entry.entryName.replace(/\\/g, '/');
+      const l = rel.toLowerCase();
+      const baseName = rel.split('/').pop();
+      if (!baseName || l.includes('!guide') || /(^|\/)(guide\.txt|install\.bat|uninstall\.bat|readme[^/]*)$/i.test(l)) continue;
+      if (l.endsWith('_dir.vpk')) {
+        try { for (const p of listVpkPaths(entry.getData())) out.add(p); } catch { /* skip broken vpk */ }
+      } else if (l.endsWith('.vpk')) {
+        // secondary archive parts (pakNN_000.vpk) carry no index
+      } else if (l.includes('maps/')) {
+        const parts = rel.split('/');
+        const mapsIdx = parts.findIndex((p) => p.toLowerCase() === 'maps');
+        out.add(parts.slice(mapsIdx).join('/').toLowerCase());
+      } else {
+        const parts = rel.split('/');
+        out.add((parts.length > 1 ? parts.slice(1).join('/') : rel).toLowerCase());
+      }
+    }
+    return out;
+  }
+
+  // Game paths of an installed library record, read from disk
+  installedContentPaths(rec) {
+    const lang = this.langFolder();
+    const out = new Set();
+    for (const f of rec.files) {
+      if (f.root !== 'lang') continue;
+      if (/\.vpk$/i.test(f.relPath)) {
+        if (!/_dir\.vpk$/i.test(f.relPath)) continue;
+        const abs = path.join(lang, f.relPath);
+        try {
+          if (fs.existsSync(abs)) for (const p of listVpkPathsFile(abs)) out.add(p);
+        } catch { /* unreadable — ignore */ }
+      } else {
+        out.add(f.relPath.replace(/\\/g, '/').toLowerCase());
+      }
+    }
+    return out;
+  }
+
+  // Which of the given (enabled) records overlap with the candidate download
+  async findConflicts({ categoryId, fileRef, modName }, records) {
+    if (['fonts', 'cursors', 'tools'].includes(categoryId)) return [];
+    const local = await this.download(categoryId, fileRef, modName);
+    const candidate = this.modContentPaths(local);
+    if (!candidate.size) return [];
+    const conflicts = [];
+    for (const rec of records) {
+      if (!rec.enabled) continue;
+      const own = this.installedContentPaths(rec);
+      let count = 0;
+      const sample = [];
+      for (const p of candidate) {
+        if (own.has(p)) {
+          count++;
+          if (sample.length < 3) sample.push(p);
+        }
+      }
+      if (count) conflicts.push({ name: rec.name, count, sample });
+    }
+    return conflicts;
+  }
+
+  // ---------- import of user-provided vpk files ----------
+
+  importVpks(paths) {
+    const lang = this.langFolder();
+    fs.mkdirSync(lang, { recursive: true });
+    const used = this.usedPakNames();
+    const results = [];
+    for (const src of paths) {
+      const base = path.basename(src);
+      if (!/\.vpk$/i.test(base)) {
+        results.push({ source: base, error: 'не .vpk файл' });
+        continue;
+      }
+      try {
+        const pakName = this.allocatePak(used, false);
+        this.copyInto(src, path.join(lang, pakName));
+        results.push({ source: base, name: base.replace(/\.vpk$/i, ''), files: [{ root: 'lang', relPath: pakName }] });
+      } catch (err) {
+        results.push({ source: base, error: String(err.message || err) });
+      }
+    }
+    return results;
   }
 
   // Older app versions wrote priority mods as "!pakNN_dir.vpk" — a name the game

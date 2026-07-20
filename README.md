@@ -25,7 +25,8 @@
 | <img src="docs/icons/catalog.svg" width="20"> | **Full catalog** | 1100+ mods in 40 categories: heroes, terrains, shaders, fonts, cursors, announcers, music. Synced with the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository |
 | <img src="docs/icons/install.svg" width="20"> | **One-click install** | The app downloads the mod, picks a free pak slot, gives priority mods low pak numbers and unpacks terrain `maps/` folders |
 | <img src="docs/icons/player.svg" width="20"> | **Built-in previews** | Video and audio previews play in an in-app player |
-| <img src="docs/icons/library.svg" width="20"> | **Library** | Toggle installed mods on and off without deleting them, remove them cleanly, see files installed outside the manager |
+| <img src="docs/icons/library.svg" width="20"> | **Library** | Toggle installed mods on and off without deleting them, remove them cleanly, see files installed outside the manager, import your own `.vpk` files via button or drag & drop |
+| <img src="docs/icons/install.svg" width="20"> | **Conflict warnings** | The app reads VPK indexes and warns before install when two mods override the same game files |
 | <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Sort by date or name; filter by tag, hero or installed state; search across the whole catalog |
 | <img src="docs/icons/pack.svg" width="20"> | **Packs** | Open a themed pack, drop the mods you don't want, save the result as your own pack |
 | <img src="docs/icons/preset.svg" width="20"> | **Presets** | Save named sets of enabled mods and switch between them in one click |
