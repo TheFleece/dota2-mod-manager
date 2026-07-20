@@ -109,12 +109,13 @@ function resolveUrl(url) {
   return `${RAW_BASE}/${url.split('/').map(encodeURIComponent).join('/')}`;
 }
 
-function mediaHtml(url, { hoverPlay = false, autoplay = false, controls = false } = {}) {
+function mediaHtml(url, { hoverPlay = false, autoplay = false, controls = false, fallbackIcon = 'image' } = {}) {
   if (!url) {
-    return `<div class="noimg"><span class="ms" style="font-size:36px">image</span></div>`;
+    return `<div class="noimg"><span class="ms" style="font-size:36px">${esc(fallbackIcon)}</span></div>`;
   }
   if (isVideo(url)) {
-    return `<video src="${esc(url)}" ${controls ? 'controls' : 'muted'} loop playsinline preload="${autoplay ? 'auto' : 'none'}" ${autoplay ? 'autoplay' : ''} ${hoverPlay ? 'data-hoverplay="1"' : ''}></video>`;
+    // preload="metadata" shows the first frame instead of a black box
+    return `<video src="${esc(url)}" ${controls ? 'controls' : 'muted'} loop playsinline preload="${autoplay ? 'auto' : 'metadata'}" ${autoplay ? 'autoplay' : ''} ${hoverPlay ? 'data-hoverplay="1"' : ''}></video>`;
   }
   if (isAudio(url)) {
     return `<div class="audio-wrap"><span class="ms audio-icon">graphic_eq</span><audio src="${esc(url)}" controls preload="none"></audio></div>`;
@@ -151,13 +152,11 @@ function authorUrl(name) {
   return state.catalog?.constants?.MOD_AUTHOR?.[name] || state.catalog?.constants?.MOD_SENDER?.[name] || null;
 }
 
-// media preview a mod can play in the built-in player: a "preview"-type link, or a video preview file
+// media the built-in player can show: only a dedicated "preview"-type link.
+// Mods whose card preview is itself a video already play it on hover/in the modal.
 function modPreviewMedia(categoryId, mod) {
   const link = (mod.links || []).find((l) => l.type === 'preview' && isMedia(l.url));
-  if (link) return resolveUrl(link.url);
-  const p = mod.preview || mod.styles?.[0]?.preview;
-  if (isMedia(p)) return previewUrl(categoryId, p);
-  return null;
+  return link ? resolveUrl(link.url) : null;
 }
 
 // ---------- built-in media player ----------
@@ -716,7 +715,7 @@ function cardHtml(m, i, withCat = false) {
   return `
     <div class="card" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">
-        ${mediaHtml(prev, { hoverPlay: true })}
+        ${mediaHtml(prev, { hoverPlay: true, fallbackIcon: catIcon(cat) })}
         <div class="media-tags">
           ${installed ? '<span class="mtag ok">Установлен</span>' : ''}
           ${isPack ? `<span class="mtag">Пак · ${(m.mods || []).length}</span>` : ''}
@@ -828,7 +827,7 @@ function drawModal() {
   const guide = mod.guideId && state.catalog?.guides?.[mod.guideId];
 
   const links = mod.links || [];
-  const playable = modPreviewMedia(categoryId, { ...mod, preview: cur.preview || mod.preview });
+  const playable = modPreviewMedia(categoryId, mod);
   const mediaUrl = previewUrl(categoryId, cur.preview || mod.preview);
 
   // author: mod.author/sender field, or an "author"-type link whose url is a name or URL
@@ -847,7 +846,7 @@ function drawModal() {
 
   $('#modalContent').innerHTML = `
     <div class="modal-media">
-      ${mediaHtml(mediaUrl, { autoplay: true })}
+      ${mediaHtml(mediaUrl, { autoplay: true, fallbackIcon: catIcon(categoryId) })}
       <button class="modal-close" id="modalCloseBtn" aria-label="Закрыть"><span class="ms">close</span></button>
       ${playable ? `
         <button class="preview-toggle" id="previewPlayBtn">
@@ -1545,6 +1544,8 @@ window.api.update.onUpdate((evt) => {
 
 // ---------- boot ----------
 
+const CATALOG_MAX_AGE = 30 * 60 * 1000;
+
 async function loadCatalog(force = false) {
   if (force) toast('Обновляю каталог…');
   state.catalog = null;
@@ -1553,6 +1554,16 @@ async function loadCatalog(force = false) {
   if (!state.catalog.error) buildModIndex();
   if (state.view === 'catalog') renderCatalog();
   if (force && !state.catalog.error) toast('Каталог обновлён');
+
+  // cached catalog goes stale fast (new mods appear upstream) — refresh in the background
+  if (!force && !state.catalog.error && Date.now() - (state.catalog.fetchedAt || 0) > CATALOG_MAX_AGE) {
+    window.api.catalog.load(true).then((fresh) => {
+      if (fresh.error) return;
+      state.catalog = fresh;
+      buildModIndex();
+      if (state.view === 'catalog') renderCatalog();
+    });
+  }
 }
 
 (async function boot() {

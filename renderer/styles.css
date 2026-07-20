@@ -137,7 +137,7 @@ input, select { font-family: inherit; }
   border-bottom: 1px solid var(--border);
   -webkit-app-region: drag;
 }
-#titlebar button, #titlebar input { -webkit-app-region: no-drag; }
+#titlebar button, #titlebar input, #titlebar .tb-search { -webkit-app-region: no-drag; }
 
 .tb-brand {
   display: flex;
