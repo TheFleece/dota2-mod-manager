@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+let autoUpdater = null;
+try {
+  ({ autoUpdater } = require('electron-updater'));
+} catch { /* dev environment without the dependency installed yet */ }
+
 const { Settings } = require('./src/settings');
 const { Catalog } = require('./src/catalog');
 const { Installer } = require('./src/installer');
@@ -105,7 +110,24 @@ app.whenReady().then(async () => {
   registerIpc();
   createWindow();
   diag('createWindow done');
+  setupAutoUpdate();
 }).catch((e) => diag('whenReady FAIL: ' + (e.stack || e)));
+
+// ---- auto-update via GitHub Releases (packaged builds only) ----
+function setupAutoUpdate() {
+  if (!autoUpdater || !app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.on('update-available', (info) => {
+    if (win && !win.isDestroyed()) win.webContents.send('update', { type: 'available', version: info.version });
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    if (win && !win.isDestroyed()) win.webContents.send('update', { type: 'downloaded', version: info.version });
+  });
+  autoUpdater.on('error', () => { /* offline or rate-limited — silent */ });
+  autoUpdater.checkForUpdates().catch(() => {});
+  // re-check every 4 hours while the app is open
+  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
+}
 
 app.on('window-all-closed', () => app.quit());
 
@@ -119,6 +141,12 @@ function registerIpc() {
   });
   ipcMain.handle('win:close', () => win.close());
   ipcMain.handle('win:isMaximized', () => win.isMaximized());
+
+  // ----- updates -----
+  ipcMain.handle('update:install', () => {
+    if (autoUpdater) autoUpdater.quitAndInstall();
+  });
+  ipcMain.handle('app:version', () => app.getVersion());
 
   // ----- settings -----
   ipcMain.handle('settings:get', () => ({

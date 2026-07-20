@@ -1332,6 +1332,26 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
 
 .mtag.custom { color: var(--warning); border-color: rgba(252, 211, 77, 0.4); }
 
+/* ============ Update bar ============ */
+.update-bar {
+  position: fixed;
+  right: 18px;
+  bottom: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(22, 19, 31, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(196, 181, 253, 0.3);
+  border-radius: var(--radius);
+  padding: 13px 18px;
+  font-size: 13.5px;
+  z-index: 250;
+  box-shadow: var(--shadow), 0 0 40px rgba(139, 111, 240, 0.2);
+  animation: slideIn 0.35s var(--ease);
+}
+.update-bar .ms { color: var(--primary-soft); font-size: 22px; }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }

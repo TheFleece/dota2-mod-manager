@@ -1361,6 +1361,7 @@ async function renderSettings() {
   const s = await window.api.settings.get();
   state.settings = s;
   const cacheSize = await window.api.misc.cacheSize();
+  const appVersion = await window.api.update.version();
 
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">Настройки</h1></div>
@@ -1430,7 +1431,20 @@ async function renderSettings() {
         <a style="color:var(--primary-soft);cursor:pointer;font-size:12.5px" id="srcLink">github.com/h6rd/Dota2PornFxWeb</a>
       </div>
     </div>
+
+    <div class="settings-block" style="animation-delay:240ms">
+      <h3>О программе</h3>
+      <div class="settings-row">
+        <span class="settings-label">Версия</span>
+        <span style="font-variant-numeric:tabular-nums">v${esc(appVersion)}</span>
+        <a style="color:var(--primary-soft);cursor:pointer;font-size:12.5px" id="repoLink">github.com/TheFleece/dota2-mod-manager</a>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-muted)">
+        Обновления скачиваются автоматически из GitHub Releases — когда новая версия готова, появится кнопка установки.
+      </div>
+    </div>
   `;
+  $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
 
   $('#detectBtn').addEventListener('click', async () => {
     const found = await window.api.settings.detectDota();
@@ -1507,6 +1521,25 @@ window.api.onProgress((evt) => {
     $('#progressFill').style.width = '100%';
     clearTimeout(progressHideTimer);
     progressHideTimer = setTimeout(() => bar.classList.add('hidden'), 800);
+  }
+});
+
+// ---------- auto-update ----------
+
+window.api.update.onUpdate((evt) => {
+  if (evt.type === 'available') {
+    toast(`Найдено обновление v${evt.version} — скачиваю в фоне…`, 'ok', 6000);
+  } else if (evt.type === 'downloaded') {
+    const bar = document.createElement('div');
+    bar.className = 'update-bar';
+    bar.innerHTML = `
+      <span class="ms">system_update_alt</span>
+      <span>Обновление <b>v${esc(evt.version)}</b> готово к установке</span>
+      <button class="btn btn-sm btn-primary" id="updateNowBtn">Перезапустить и обновить</button>
+      <button class="btn btn-sm btn-ghost" id="updateLaterBtn">Позже</button>`;
+    document.body.appendChild(bar);
+    bar.querySelector('#updateNowBtn').addEventListener('click', () => window.api.update.install());
+    bar.querySelector('#updateLaterBtn').addEventListener('click', () => bar.remove());
   }
 });
 

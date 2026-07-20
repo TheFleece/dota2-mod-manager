@@ -1,17 +1,56 @@
 {
   "name": "dota2-mod-manager",
-  "version": "0.1.0",
-  "description": "Dota 2 mod launcher/manager powered by the Dota2PornFx catalog",
+  "productName": "Dota 2 Mod Manager",
+  "version": "1.0.0",
+  "description": "Desktop mod manager for Dota 2 — browse, install, toggle and preset 1100+ cosmetic mods from the Dota2PornFx catalog",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheFleece/dota2-mod-manager.git"
   },
   "author": "Mykhailo Lynnyk",
   "license": "GPL-3.0",
+  "homepage": "https://github.com/TheFleece/dota2-mod-manager",
   "devDependencies": {
-    "electron": "^33.0.0"
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16"
+    "adm-zip": "^0.5.16",
+    "electron-updater": "^6.3.9"
+  },
+  "build": {
+    "appId": "com.thefleece.dota2modmanager",
+    "productName": "Dota 2 Mod Manager",
+    "icon": "build/icon.ico",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Dota 2 Mod Manager",
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "TheFleece",
+      "repo": "dota2-mod-manager"
+    }
   }
 }
