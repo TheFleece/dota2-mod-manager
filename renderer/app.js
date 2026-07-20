@@ -201,8 +201,10 @@ function openPlayer(url, title) {
 
   const close = () => {
     media.pause();
+    media.removeAttribute('src'); // release the detached element so audio can't keep playing
+    media.load();
     overlay.remove();
-    document.removeEventListener('keydown', onKey);
+    document.removeEventListener('keydown', onKey, true); // capture flag must match addEventListener
   };
   const onKey = (e) => {
     if (e.key === 'Escape') { e.stopPropagation(); close(); }
@@ -907,8 +909,8 @@ function drawModal() {
       </div>
       ${otherLinks.length || guide ? `
         <div class="modal-links">
-          ${guide ? `<a id="modalGuideLink">Гайд: ${esc(guide.title)}</a>` : ''}
-          ${otherLinks.map((l) => `<a data-link="${links.indexOf(l)}">${esc(LINK_LABEL[l.type] || l.type || 'ссылка')}</a>`).join('')}
+          ${guide ? `<button class="btn btn-sm" id="modalGuideLink"><span class="ms">menu_book</span>Гайд: ${esc(guide.title)}</button>` : ''}
+          ${otherLinks.map((l) => `<button class="btn btn-sm" data-link="${links.indexOf(l)}"><span class="ms">open_in_new</span>${esc(LINK_LABEL[l.type] || l.type || 'Ссылка')}</button>`).join('')}
         </div>` : ''}
       ${categoryId === 'fonts' ? `<div class="modal-note">Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.</div>` : ''}
       ${categoryId === 'cursors' ? `<div class="modal-note">Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически.</div>` : ''}
