@@ -1202,8 +1202,8 @@ async function renderLibrary() {
       row.innerHTML = `
         <div class="lib-thumb"></div>
         <div class="lib-info">
-          <div class="lib-name">${esc(f.name)}</div>
-          <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>внешний файл</span></div>
+          <div class="lib-name">${esc(f.name)}${f.info ? ` <span class="lib-tag">${esc(f.info)}</span>` : ''}</div>
+          <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>${f.info ? 'опознан по содержимому' : 'внешний файл'}</span></div>
         </div>
         <div class="lib-actions">
           <button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.name)}" role="switch" aria-checked="${f.enabled}"></button>

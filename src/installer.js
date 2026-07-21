@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, analyzeVpkPaths, describeHero } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, analyzeVpkPaths, describeHero, describeAnalysis } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -535,7 +535,15 @@ class Installer {
       const base = f.toLowerCase().replace(/\.off$/, '');
       if (/^pak01_/.test(base) || base === 'gameinfo.gi') continue;
       if (!known.has(base)) {
-        out.push({ name: f, size: fs.statSync(full).size, enabled: !f.toLowerCase().endsWith('.off') });
+        const entry = { name: f, size: fs.statSync(full).size, enabled: !f.toLowerCase().endsWith('.off') };
+        if (/_dir\.vpk$/i.test(base)) {
+          try {
+            const a = analyzeVpkPaths(listVpkPathsFile(full));
+            entry.info = describeAnalysis(a);
+            entry.heroes = a.heroes.length;
+          } catch { /* unreadable vpk — leave untagged */ }
+        }
+        out.push(entry);
       }
     }
     return out;
