@@ -41,7 +41,7 @@
 
 ## Installation
 
-1. Download **Dota 2 Mod Manager Setup** from the [latest release](https://github.com/TheFleece/dota2-mod-manager/releases/latest)
+1. Download **[Dota 2 Mod Manager Setup](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe)** (direct link, always the latest version)
 2. Run it. The app installs, creates a desktop shortcut and starts
 3. It finds your Dota 2 installation on its own (you can change the path in Settings)
 4. Add the launch option shown in **Settings** to Steam (`Steam → Dota 2 → Properties → Launch Options`):
@@ -70,7 +70,7 @@ Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest 
 
 ## Установка (Russian)
 
-1. Скачай **Dota 2 Mod Manager Setup** из [последнего релиза](https://github.com/TheFleece/dota2-mod-manager/releases/latest)
+1. Скачай **[Dota 2 Mod Manager Setup](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe)** (прямая ссылка, всегда последняя версия)
 2. Запусти. Приложение установится, создаст ярлык и откроется
 3. Путь к Dota 2 находится автоматически
 4. Добавь параметр запуска из **Настроек** в Steam (`Steam → Dota 2 → Свойства → Параметры запуска`):

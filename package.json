@@ -1,7 +1,7 @@
 {
   "name": "dota2-mod-manager",
   "productName": "Dota 2 Mod Manager",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "Desktop mod manager for Dota 2 — browse, install, toggle and preset 1100+ cosmetic mods from the Dota2PornFx catalog",
   "main": "main.js",
   "scripts": {
@@ -39,7 +39,7 @@
         "nsis"
       ],
       "icon": "build/icon.ico",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "Dota-2-Mod-Manager-Setup.${ext}"
     },
     "nsis": {
       "oneClick": true,
