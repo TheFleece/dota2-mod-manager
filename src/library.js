@@ -93,6 +93,16 @@ class Library {
     return out;
   }
 
+  // every installed file across all roots (lang/fonts/cursor/tools) — used to tell
+  // app-managed content apart from foreign files during the foreign scan
+  knownFiles() {
+    const out = [];
+    for (const m of this.data.installed) {
+      for (const f of m.files) out.push({ root: f.root, relPath: f.relPath });
+    }
+    return out;
+  }
+
   // ---------- presets ----------
 
   listPresets() {

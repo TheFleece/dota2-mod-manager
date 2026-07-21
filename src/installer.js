@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, analyzeVpkPaths, describeHero, describeAnalysis, fingerprintVpk } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, analyzeVpkPaths, describeHero, describeAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -548,31 +548,77 @@ class Installer {
     if (changed) library.save();
   }
 
-  // files present in lang folder but not referenced by the manifest.
-  // The game's own localization files (pak01_*, gameinfo.gi) live in official
-  // language folders like dota_russian — never list them as manageable mods.
-  externalFiles(knownRelPaths) {
-    const lang = this.langFolder();
-    if (!fs.existsSync(lang)) return [];
-    const known = new Set(knownRelPaths.map((p) => p.toLowerCase()));
+  // build a foreign VPK item, tagged and fingerprinted when it has a readable index
+  vpkItem(abs, relPath, displayName, primary) {
+    const item = {
+      kind: 'vpk', key: relPath, name: displayName, primary,
+      size: fs.statSync(abs).size, enabled: !abs.toLowerCase().endsWith('.off'),
+      files: [{ root: 'lang', relPath: relPath.replace(/\.off$/i, '') }],
+    };
+    try {
+      const buf = fs.readFileSync(abs);
+      const a = analyzeVpkPaths(listVpkPaths(buf));
+      item.info = describeAnalysis(a);
+      item.heroes = a.heroes.length;
+      item.fp = fingerprintVpk(buf);
+    } catch { /* data part / unreadable — leave untagged */ }
+    return item;
+  }
+
+  // Foreign content — files not installed through the app — across every place a mod
+  // can live: the language folder root (skins, imported), language\maps (terrains), and
+  // resource\cursor (a cursor set, treated as one item). Each carries a fingerprint so
+  // the caller can recognise it as a specific catalog mod. `primary` items (lang root)
+  // are always listed; maps/cursor items are only worth showing when they match.
+  externalFiles(knownFiles) {
+    const game = this.getGamePath();
+    if (!game) return [];
+    const knownLang = new Set(knownFiles.filter((f) => f.root === 'lang').map((f) => f.relPath.toLowerCase()));
+    const knownCursor = knownFiles.some((f) => f.root === 'cursor');
     const out = [];
-    for (const f of fs.readdirSync(lang)) {
-      const full = path.join(lang, f);
-      if (!fs.statSync(full).isFile()) continue;
-      const base = f.toLowerCase().replace(/\.off$/, '');
-      if (/^pak01_/.test(base) || base === 'gameinfo.gi') continue;
-      if (!known.has(base)) {
-        const entry = { name: f, size: fs.statSync(full).size, enabled: !f.toLowerCase().endsWith('.off') };
-        if (/_dir\.vpk$/i.test(base)) {
-          try {
-            const buf = fs.readFileSync(full);
-            const a = analyzeVpkPaths(listVpkPaths(buf));
-            entry.info = describeAnalysis(a);
-            entry.heroes = a.heroes.length;
-            entry.fp = fingerprintVpk(buf);
-          } catch { /* unreadable vpk — leave untagged */ }
+
+    const lang = this.langFolder();
+    if (fs.existsSync(lang)) {
+      for (const f of fs.readdirSync(lang)) {
+        const full = path.join(lang, f);
+        if (!fs.statSync(full).isFile()) continue;
+        const base = f.toLowerCase().replace(/\.off$/, '');
+        if (/^pak01_/.test(base) || base === 'gameinfo.gi' || knownLang.has(base)) continue;
+        out.push(this.vpkItem(full, f, f, true));
+      }
+      // terrains ship as language\maps\dota.vpk (not a *_dir.vpk in the root)
+      const mapsDir = path.join(lang, 'maps');
+      if (fs.existsSync(mapsDir)) {
+        for (const f of fs.readdirSync(mapsDir)) {
+          if (!/\.vpk$/i.test(f)) continue;
+          const rel = `maps/${f}`;
+          if (!knownLang.has(rel.toLowerCase().replace(/\.off$/, ''))) out.push(this.vpkItem(path.join(mapsDir, f), rel, rel, false));
         }
-        out.push(entry);
+      }
+    }
+
+    // a foreign cursor set (only when the app isn't already managing cursors)
+    if (!knownCursor) {
+      const cursorDir = path.join(game, ...CURSOR_SUBDIR);
+      if (fs.existsSync(cursorDir)) {
+        const files = [];
+        const rels = [];
+        const walk = (d, pre) => {
+          for (const f of fs.readdirSync(d)) {
+            const full = path.join(d, f);
+            const rel = pre ? `${pre}/${f}` : f;
+            if (fs.statSync(full).isDirectory()) walk(full, rel);
+            else { files.push({ path: f.toLowerCase(), data: fs.readFileSync(full) }); rels.push(rel); }
+          }
+        };
+        try { walk(cursorDir, ''); } catch { /* unreadable */ }
+        if (files.length) {
+          out.push({
+            kind: 'cursor', key: '__cursor__', name: 'Курсор', primary: false,
+            size: files.reduce((s, x) => s + x.data.length, 0), enabled: true,
+            files: rels.map((rp) => ({ root: 'cursor', relPath: rp })), fp: fingerprintFiles(files),
+          });
+        }
       }
     }
     return out;

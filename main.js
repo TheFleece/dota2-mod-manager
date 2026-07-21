@@ -328,8 +328,10 @@ function registerIpc() {
   ipcMain.handle('mods:list', () => {
     let external = [];
     try {
-      external = installer.externalFiles(library.knownLangRelPaths());
+      external = installer.externalFiles(library.knownFiles());
       for (const f of external) if (f.fp) f.match = fingerprints.match(f.fp); // recognise catalog mods
+      // lang-root files are always worth listing; maps/cursor only when recognised
+      external = external.filter((f) => f.primary || f.match);
     } catch { /* lang folder may not exist yet */ }
     // imported mods have no catalog identity — tag them by content, match to catalog if known
     const installed = library.list().map((rec) => {
@@ -441,6 +443,33 @@ function registerIpc() {
       const files = [{ root: 'lang', relPath: base }];
       for (const f of fs.readdirSync(lang)) if (partRe.test(f)) files.push({ root: 'lang', relPath: f });
       library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: null, files });
+      return { ok: true, name: m.name };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // adopt a foreign cursor set (resource\cursor) recognised as a catalog mod
+  ipcMain.handle('mods:adoptCursor', (e) => {
+    try {
+      const cursorDir = path.join(installer.getGamePath(), 'dota', 'resource', 'cursor');
+      if (!fs.existsSync(cursorDir)) return { error: 'Папка курсора не найдена' };
+      const files = [];
+      const rels = [];
+      const walk = (d, pre) => {
+        for (const f of fs.readdirSync(d)) {
+          const full = path.join(d, f);
+          const rel = pre ? `${pre}/${f}` : f;
+          if (fs.statSync(full).isDirectory()) walk(full, rel);
+          else { files.push({ path: f.toLowerCase(), data: fs.readFileSync(full) }); rels.push(rel); }
+        }
+      };
+      walk(cursorDir, '');
+      const { fingerprintFiles } = require('./src/vpk');
+      const matches = fingerprints.match(fingerprintFiles(files));
+      if (!matches) return { error: 'Совпадение с каталогом не найдено' };
+      const m = matches[0];
+      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: null, files: rels.map((rp) => ({ root: 'cursor', relPath: rp })) });
       return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };

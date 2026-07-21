@@ -1232,32 +1232,40 @@ async function renderLibrary() {
     for (const f of external) {
       const row = document.createElement('div');
       row.className = `lib-row ${f.enabled ? '' : 'disabled'}`;
+      const label = f.match ? `<span class="lib-tag match">${esc(matchLabel(f.match))}</span>`
+        : f.info ? `<span class="lib-tag">${esc(f.info)}</span>` : '';
+      const sub = f.match ? 'мод из каталога' : f.info ? 'опознан по содержимому' : 'внешний файл';
+      const cursor = f.kind === 'cursor';
       row.innerHTML = `
         <div class="lib-thumb"></div>
         <div class="lib-info">
-          <div class="lib-name">${esc(f.name)}${f.match ? ` <span class="lib-tag match">${esc(matchLabel(f.match))}</span>` : f.info ? ` <span class="lib-tag">${esc(f.info)}</span>` : ''}</div>
-          <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>${f.match ? 'мод из каталога' : f.info ? 'опознан по содержимому' : 'внешний файл'}</span></div>
+          <div class="lib-name">${esc(cursor ? 'Курсор в игре' : f.name)}${label ? ' ' + label : ''}</div>
+          <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>${cursor ? 'resource/cursor' : sub}</span></div>
         </div>
         <div class="lib-actions">
-          <button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.name)}" role="switch" aria-checked="${f.enabled}"></button>
-          ${f.match ? `<button class="btn btn-sm btn-primary" data-extadopt="${esc(f.name)}" title="Привязать к каталогу и управлять как обычным модом"><span class="ms">library_add_check</span>Принять</button>` : ''}
-          ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.name)}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>` : ''}
-          <button class="btn btn-sm btn-danger" data-extdel="${esc(f.name)}">Удалить</button>
+          ${cursor ? '' : `<button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.key)}" role="switch" aria-checked="${f.enabled}"></button>`}
+          ${f.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="Привязать к каталогу и управлять как обычным модом"><span class="ms">library_add_check</span>Принять</button>` : ''}
+          ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.key)}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>` : ''}
+          ${cursor ? '' : `<button class="btn btn-sm btn-danger" data-extdel="${esc(f.key)}">Удалить</button>`}
         </div>
       `;
       extList.appendChild(row);
     }
+    const byKey = (k) => external.find((x) => x.key === k);
     extList.querySelectorAll('.toggle').forEach((t) => {
       t.addEventListener('click', async () => {
-        const f = external.find((x) => x.name === t.dataset.ext);
-        await window.api.mods.externalSetEnabled(f.name, !f.enabled);
+        const f = byKey(t.dataset.ext);
+        await window.api.mods.externalSetEnabled(f.key, !f.enabled);
         renderLibrary();
       });
     });
-    extList.querySelectorAll('[data-extadopt]').forEach((b) => {
+    extList.querySelectorAll('[data-adopt]').forEach((b) => {
       b.addEventListener('click', async () => {
         b.disabled = true;
-        const r = await window.api.mods.adoptExternal(b.dataset.extadopt);
+        const f = byKey(b.dataset.adopt);
+        const r = f.kind === 'cursor'
+          ? await window.api.mods.adoptCursor()
+          : await window.api.mods.adoptExternal(f.key);
         if (r.error) toast(r.error, 'error', 6000);
         else toast(`«${r.name}» принят из каталога`, 'ok');
         await refreshInstalledIndex();
@@ -1266,10 +1274,10 @@ async function renderLibrary() {
     });
     extList.querySelectorAll('[data-extsplit]').forEach((b) => {
       b.addEventListener('click', async () => {
-        const name = b.dataset.extsplit;
-        if (!await confirmDialog(`Разбить «${name}» на отдельные моды по героям? Файл заменится на отдельные управляемые моды.`, { okLabel: 'Разобрать' })) return;
+        const f = byKey(b.dataset.extsplit);
+        if (!await confirmDialog(`Разбить «${f.name}» на отдельные моды по героям? Файл заменится на отдельные управляемые моды.`, { okLabel: 'Разобрать' })) return;
         b.disabled = true;
-        const r = await window.api.mods.splitExternal(name);
+        const r = await window.api.mods.splitExternal(f.key);
         if (r.error) toast(r.error, 'error', 6000);
         else toast(`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
         await refreshInstalledIndex();
@@ -1278,8 +1286,9 @@ async function renderLibrary() {
     });
     extList.querySelectorAll('[data-extdel]').forEach((b) => {
       b.addEventListener('click', async () => {
-        if (!await confirmDialog(`Удалить файл ${b.dataset.extdel}?`)) return;
-        await window.api.mods.externalRemove(b.dataset.extdel);
+        const f = byKey(b.dataset.extdel);
+        if (!await confirmDialog(`Удалить файл ${f.name}?`)) return;
+        await window.api.mods.externalRemove(f.key);
         renderLibrary();
       });
     });
