@@ -291,6 +291,25 @@ function registerIpc() {
     }
   });
 
+  ipcMain.handle('mods:exportSingle', async (e, id) => {
+    const rec = library.find(id);
+    if (!rec) return { error: 'Мод не найден' };
+    try {
+      const buf = installer.mergeToSingleVpk(rec);
+      const safe = rec.name.replace(/[<>:"/\\|?*]/g, '_') || 'mod';
+      const res = await dialog.showSaveDialog(win, {
+        title: 'Сохранить мод одним .vpk файлом',
+        defaultPath: `${safe}.vpk`,
+        filters: [{ name: 'VPK мод', extensions: ['vpk'] }],
+      });
+      if (res.canceled || !res.filePath) return { cancelled: true };
+      fs.writeFileSync(res.filePath, buf);
+      return { ok: true, path: res.filePath, size: buf.length };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
   ipcMain.handle('mods:importDialog', async () => {
     const res = await dialog.showOpenDialog(win, {
       title: 'Выбери .vpk файлы модов',

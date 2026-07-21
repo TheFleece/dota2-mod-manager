@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -307,6 +307,28 @@ class Installer {
         }
       }
     }
+  }
+
+  // ---------- export as a single self-contained vpk ----------
+
+  // Merges a mod's lang files (including multi-part _dir + _NNN sets) into one
+  // self-contained VPK buffer — the single-file format the catalog uses, e.g.
+  // for sharing an imported Dota2Changer pack with a catalog author.
+  mergeToSingleVpk(rec) {
+    const lang = this.langFolder();
+    const dirRec = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+    if (!dirRec) throw new Error('У этого мода нет _dir.vpk — объединять нечего');
+    // resolve real on-disk name (files may be disabled -> ".off")
+    const resolve = (relPath) => {
+      const abs = path.join(lang, relPath);
+      if (fs.existsSync(abs)) return abs;
+      if (fs.existsSync(abs + '.off')) return abs + '.off';
+      return abs;
+    };
+    const dirAbs = resolve(dirRec.relPath);
+    const base = dirRec.relPath.replace(/_dir\.vpk$/i, '');
+    const archivePathFor = (idx) => resolve(`${base}_${String(idx).padStart(3, '0')}.vpk`);
+    return mergeVpkToSingle(dirAbs, archivePathFor);
   }
 
   // ---------- conflict detection ----------

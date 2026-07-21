@@ -1137,6 +1137,9 @@ async function renderLibrary() {
         ${['fonts', 'cursors'].includes(rec.categoryId)
           ? '<span style="font-size:11.5px;color:var(--text-muted)">всегда активен</span>'
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${rec.id}" role="switch" aria-checked="${rec.enabled}" aria-label="Включить/выключить"></button>`}
+        ${rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath))
+          ? `<button class="btn btn-sm" data-export="${rec.id}" title="Сохранить мод одним .vpk файлом (для отправки автору каталога)"><span class="ms">save</span>Экспорт</button>`
+          : ''}
         <button class="btn btn-sm btn-danger" data-del="${rec.id}">Удалить</button>
       </div>
     `;
@@ -1150,6 +1153,19 @@ async function renderLibrary() {
       if (r.error) toast(r.error, 'error');
       renderLibrary();
       refreshInstalledIndex();
+    });
+  });
+  libList.querySelectorAll('[data-export]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const rec = installed.find((m) => m.id === b.dataset.export);
+      b.disabled = true;
+      const prev = b.innerHTML;
+      b.innerHTML = '<span class="ms">hourglass_empty</span>Собираю…';
+      const r = await window.api.mods.exportSingle(rec.id);
+      b.disabled = false;
+      b.innerHTML = prev;
+      if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
+      else if (r.ok) toast(`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
     });
   });
   libList.querySelectorAll('[data-del]').forEach((b) => {

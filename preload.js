@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('api', {
     externalSetEnabled: (fileName, enabled) => ipcRenderer.invoke('mods:externalSetEnabled', fileName, enabled),
     externalRemove: (fileName) => ipcRenderer.invoke('mods:externalRemove', fileName),
     checkConflicts: (payload) => ipcRenderer.invoke('mods:checkConflicts', payload),
+    exportSingle: (id) => ipcRenderer.invoke('mods:exportSingle', id),
     importDialog: () => ipcRenderer.invoke('mods:importDialog'),
     importPaths: (paths) => ipcRenderer.invoke('mods:importPaths', paths),
     pathForFile: (file) => webUtils.getPathForFile(file),
