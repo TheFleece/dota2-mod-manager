@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, analyzeVpkPaths, describeHero } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -410,15 +410,13 @@ class Installer {
     for (const rec of records) {
       if (!rec.enabled) continue;
       const own = this.installedContentPaths(rec);
-      let count = 0;
-      const sample = [];
-      for (const p of candidate) {
-        if (own.has(p)) {
-          count++;
-          if (sample.length < 3) sample.push(p);
-        }
+      const overlap = [];
+      for (const p of candidate) if (own.has(p)) overlap.push(p);
+      if (overlap.length) {
+        const shared = analyzeVpkPaths(overlap);
+        const summary = shared.heroes.map(describeHero).join('; ');
+        conflicts.push({ name: rec.name, count: overlap.length, summary, sample: overlap.slice(0, 3) });
       }
-      if (count) conflicts.push({ name: rec.name, count, sample });
     }
     return conflicts;
   }

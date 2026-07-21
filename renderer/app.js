@@ -1053,8 +1053,11 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   if (chk.conflicts?.length) {
     const c = chk.conflicts[0];
     const rest = chk.conflicts.length > 1 ? ` (и ещё ${chk.conflicts.length - 1})` : '';
+    const what = c.summary
+      ? `оба меняют ${c.summary}`
+      : `перекрываются ${c.count} ${plural(c.count, 'файл', 'файла', 'файлов')}`;
     const proceed = await confirmDialog(
-      `«${mod.name}» меняет ${c.count} ${plural(c.count, 'файл', 'файла', 'файлов')}, которые уже занял мод «${c.name}»${rest}. Перекрывающиеся моды работают не одновременно — победит тот, что грузится приоритетнее. Установить всё равно?`,
+      `«${mod.name}» и уже установленный «${c.name}»${rest} конфликтуют — ${what}. Одновременно работать не будут, победит тот, что грузится приоритетнее. Установить всё равно?`,
       { okLabel: 'Установить', danger: false }
     );
     if (!proceed) {
