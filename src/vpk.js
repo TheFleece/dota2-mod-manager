@@ -353,6 +353,14 @@ function fingerprintVpk(buf) {
   return fingerprintEntries(listVpkEntries(buf));
 }
 
+// Content fingerprint of a loose-file mod (cursors, fonts): sha1 over sorted
+// "path:sha1(bytes)". Paths should already be normalized (top folder stripped,
+// lowercased) so it reproduces from either the source zip or the installed files.
+function fingerprintFiles(files) {
+  const rows = files.map((f) => `${f.path}:${crypto.createHash('sha1').update(f.data).digest('hex')}`);
+  return crypto.createHash('sha1').update(rows.sort().join('\n')).digest('hex');
+}
+
 // Lightweight (path, crc) list — the mod's content signature, no archive reads.
 function listVpkEntries(buf) {
   if (buf.length < 12 || buf.readUInt32LE(0) !== VPK_SIGNATURE) throw new Error('VPK: неверная сигнатура');
@@ -378,7 +386,7 @@ function listVpkEntries(buf) {
 
 module.exports = {
   listVpkPaths, listVpkPathsFile, listVpkEntries, mergeVpkToSingle, splitVpkByHero,
-  readVpkEntries, buildVpk, entryPath, fingerprintVpk, fingerprintEntries,
+  readVpkEntries, buildVpk, entryPath, fingerprintVpk, fingerprintEntries, fingerprintFiles,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
   describeHero, describeAnalysis,
 };

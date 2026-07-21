@@ -1,0 +1,49 @@
+name: Fingerprints
+
+# Keeps fingerprints.json in sync with the catalog: new/changed mods are fetched and
+# fingerprinted, unchanged ones are skipped (state is checkpointed in the repo), and the
+# result is committed only when it actually changes. Pushes to main here don't build a
+# release (that workflow triggers on v* tags only).
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # daily, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fingerprints
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps (skip the electron binary — not needed here)
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Regenerate fingerprints (incremental)
+        run: node tools/gen-fingerprints.js --conc 8
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- fingerprints.json fingerprints.state.json; then
+            echo "fingerprints unchanged"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add fingerprints.json fingerprints.state.json
+            git commit -m "Update mod fingerprints"
+            git push
+          fi
