@@ -1135,7 +1135,7 @@ async function renderLibrary() {
     row.innerHTML = `
       ${prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : `<div class="lib-thumb"></div>`}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(rec.match.name)}${rec.match.styleLabel ? ` · ${esc(rec.match.styleLabel)}` : ''}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}</div>
         <div class="lib-meta">
           <span>${esc(catName(rec.categoryId))}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
@@ -1146,6 +1146,9 @@ async function renderLibrary() {
         ${['fonts', 'cursors'].includes(rec.categoryId)
           ? '<span style="font-size:11.5px;color:var(--text-muted)">всегда активен</span>'
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${rec.id}" role="switch" aria-checked="${rec.enabled}" aria-label="Включить/выключить"></button>`}
+        ${rec.match
+          ? `<button class="btn btn-sm btn-primary" data-adopt="${rec.id}" title="Привязать к каталогу"><span class="ms">library_add_check</span>Привязать</button>`
+          : ''}
         ${rec.heroes >= 2
           ? `<button class="btn btn-sm" data-split="${rec.id}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>`
           : ''}
@@ -1178,6 +1181,16 @@ async function renderLibrary() {
       b.innerHTML = prev;
       if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
       else if (r.ok) toast(`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
+    });
+  });
+  libList.querySelectorAll('[data-adopt]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      const r = await window.api.mods.adoptMod(b.dataset.adopt);
+      if (r.error) toast(r.error, 'error', 6000);
+      else toast(`Привязан к каталогу: «${r.name}»`, 'ok');
+      renderLibrary();
+      refreshInstalledIndex();
     });
   });
   libList.querySelectorAll('[data-split]').forEach((b) => {
@@ -1217,11 +1230,12 @@ async function renderLibrary() {
       row.innerHTML = `
         <div class="lib-thumb"></div>
         <div class="lib-info">
-          <div class="lib-name">${esc(f.name)}${f.info ? ` <span class="lib-tag">${esc(f.info)}</span>` : ''}</div>
-          <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>${f.info ? 'опознан по содержимому' : 'внешний файл'}</span></div>
+          <div class="lib-name">${esc(f.name)}${f.match ? ` <span class="lib-tag match">${esc(f.match.name)}${f.match.styleLabel ? ` · ${esc(f.match.styleLabel)}` : ''}</span>` : f.info ? ` <span class="lib-tag">${esc(f.info)}</span>` : ''}</div>
+          <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>${f.match ? 'мод из каталога' : f.info ? 'опознан по содержимому' : 'внешний файл'}</span></div>
         </div>
         <div class="lib-actions">
           <button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.name)}" role="switch" aria-checked="${f.enabled}"></button>
+          ${f.match ? `<button class="btn btn-sm btn-primary" data-extadopt="${esc(f.name)}" title="Привязать к каталогу и управлять как обычным модом"><span class="ms">library_add_check</span>Принять</button>` : ''}
           ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.name)}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>` : ''}
           <button class="btn btn-sm btn-danger" data-extdel="${esc(f.name)}">Удалить</button>
         </div>
@@ -1232,6 +1246,16 @@ async function renderLibrary() {
       t.addEventListener('click', async () => {
         const f = external.find((x) => x.name === t.dataset.ext);
         await window.api.mods.externalSetEnabled(f.name, !f.enabled);
+        renderLibrary();
+      });
+    });
+    extList.querySelectorAll('[data-extadopt]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        const r = await window.api.mods.adoptExternal(b.dataset.extadopt);
+        if (r.error) toast(r.error, 'error', 6000);
+        else toast(`«${r.name}» принят из каталога`, 'ok');
+        await refreshInstalledIndex();
         renderLibrary();
       });
     });

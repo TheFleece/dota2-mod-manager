@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, analyzeVpkPaths, describeHero, describeAnalysis } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, analyzeVpkPaths, describeHero, describeAnalysis, fingerprintVpk } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -500,8 +500,9 @@ class Installer {
     const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
     if (!dir) return null;
     try {
-      const a = analyzeVpkPaths(listVpkPathsFile(path.join(this.langFolder(), dir.relPath)));
-      return { info: describeAnalysis(a), heroes: a.heroes.length };
+      const buf = fs.readFileSync(path.join(this.langFolder(), dir.relPath));
+      const a = analyzeVpkPaths(listVpkPaths(buf));
+      return { info: describeAnalysis(a), heroes: a.heroes.length, fp: fingerprintVpk(buf) };
     } catch { return null; }
   }
 
@@ -564,9 +565,11 @@ class Installer {
         const entry = { name: f, size: fs.statSync(full).size, enabled: !f.toLowerCase().endsWith('.off') };
         if (/_dir\.vpk$/i.test(base)) {
           try {
-            const a = analyzeVpkPaths(listVpkPathsFile(full));
+            const buf = fs.readFileSync(full);
+            const a = analyzeVpkPaths(listVpkPaths(buf));
             entry.info = describeAnalysis(a);
             entry.heroes = a.heroes.length;
+            entry.fp = fingerprintVpk(buf);
           } catch { /* unreadable vpk — leave untagged */ }
         }
         out.push(entry);

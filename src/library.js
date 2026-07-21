@@ -59,6 +59,12 @@ class Library {
     return rec;
   }
 
+  update(id, fields) {
+    const rec = this.find(id);
+    if (rec) { Object.assign(rec, fields); this.save(); }
+    return rec;
+  }
+
   setEnabled(id, enabled) {
     const rec = this.find(id);
     if (rec) {

@@ -1,6 +1,7 @@
 // Minimal reader for the index of Source-engine VPK "_dir" files (v1/v2).
 // Only walks the directory tree — enough to list which game files a mod overrides.
 const fs = require('fs');
+const crypto = require('crypto');
 
 const VPK_SIGNATURE = 0x55aa1234;
 
@@ -339,6 +340,19 @@ function splitVpkByHero(dirPath, archivePathFor) {
   return heroes.map((h) => ({ id: h.id, name: h.name, buf: buildVpk([...buckets.get(h.id), ...shared]) }));
 }
 
+// Content fingerprint of a mod: sha1 over its sorted (path:crc) index. Independent of
+// packaging (multi-part vs single, filename), so the same mod installed from the site,
+// from another tool, or via this app all hash identically — the basis for recognising
+// a foreign vpk as a specific catalog mod.
+function fingerprintEntries(entries) {
+  const canon = entries.map((e) => `${e.path}:${e.crc}`).sort().join('\n');
+  return crypto.createHash('sha1').update(canon).digest('hex');
+}
+
+function fingerprintVpk(buf) {
+  return fingerprintEntries(listVpkEntries(buf));
+}
+
 // Lightweight (path, crc) list — the mod's content signature, no archive reads.
 function listVpkEntries(buf) {
   if (buf.length < 12 || buf.readUInt32LE(0) !== VPK_SIGNATURE) throw new Error('VPK: неверная сигнатура');
@@ -364,7 +378,7 @@ function listVpkEntries(buf) {
 
 module.exports = {
   listVpkPaths, listVpkPathsFile, listVpkEntries, mergeVpkToSingle, splitVpkByHero,
-  readVpkEntries, buildVpk, entryPath,
+  readVpkEntries, buildVpk, entryPath, fingerprintVpk, fingerprintEntries,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
   describeHero, describeAnalysis,
 };

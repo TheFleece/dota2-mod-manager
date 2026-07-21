@@ -11,10 +11,11 @@ const { Settings } = require('./src/settings');
 const { Catalog } = require('./src/catalog');
 const { Installer } = require('./src/installer');
 const { Library } = require('./src/library');
+const { Fingerprints } = require('./src/fingerprints');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 
 let win;
-let settings, catalog, installer, library;
+let settings, catalog, installer, library, fingerprints;
 
 function sendProgress(evt) {
   if (win && !win.isDestroyed()) win.webContents.send('progress', evt);
@@ -94,6 +95,8 @@ app.whenReady().then(async () => {
   settings = new Settings(userData);
   catalog = new Catalog(userData);
   library = new Library(userData);
+  fingerprints = new Fingerprints(userData);
+  fingerprints.refresh(); // fire-and-forget: pull the latest fp -> mod map
   installer = new Installer({
     userDataDir: userData,
     getGamePath: () => settings.get('dotaGamePath'),
@@ -326,11 +329,15 @@ function registerIpc() {
     let external = [];
     try {
       external = installer.externalFiles(library.knownLangRelPaths());
+      for (const f of external) if (f.fp) f.match = fingerprints.match(f.fp); // recognise catalog mods
     } catch { /* lang folder may not exist yet */ }
-    // imported mods have no catalog identity — tag them by what the vpk contains
+    // imported mods have no catalog identity — tag them by content, match to catalog if known
     const installed = library.list().map((rec) => {
       if (rec.categoryId !== 'imported') return rec;
-      try { return { ...rec, ...(installer.analyzeRecord(rec) || {}) }; } catch { return rec; }
+      try {
+        const a = installer.analyzeRecord(rec) || {};
+        return { ...rec, ...a, match: a.fp ? fingerprints.match(a.fp) : null };
+      } catch { return rec; }
     });
     return { installed, external };
   });
@@ -399,6 +406,40 @@ function registerIpc() {
       installer.remove(rec.files);
       library.removeRecord(id);
       return { ok: true, count: parts.length, names: parts.map((p) => p.name) };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // adopt an imported record whose content matches a catalog mod: relabel it to that
+  // catalog identity so it's managed like a natively installed mod (no re-download)
+  ipcMain.handle('mods:adoptMod', (e, id) => {
+    const rec = library.find(id);
+    if (!rec) return { error: 'Мод не найден' };
+    const a = installer.analyzeRecord(rec);
+    const m = a && fingerprints.match(a.fp);
+    if (!m) return { error: 'Совпадение с каталогом не найдено' };
+    library.update(id, { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null });
+    return { ok: true, name: m.name };
+  });
+
+  // adopt a foreign file in the game folder as its matching catalog mod: register it
+  // (and any multi-part data archives) in the library under the catalog identity
+  ipcMain.handle('mods:adoptExternal', (e, fileName) => {
+    try {
+      const lang = installer.langFolder();
+      const base = fileName.replace(/\.off$/i, '');
+      const buf = fs.readFileSync(path.join(lang, base));
+      const { fingerprintVpk } = require('./src/vpk');
+      const m = fingerprints.match(fingerprintVpk(buf));
+      if (!m) return { error: 'Совпадение с каталогом не найдено' };
+      // include the _dir.vpk and any sibling data archives (<base>_NNN.vpk)
+      const origBase = base.replace(/_dir\.vpk$/i, '');
+      const partRe = new RegExp(`^${origBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i');
+      const files = [{ root: 'lang', relPath: base }];
+      for (const f of fs.readdirSync(lang)) if (partRe.test(f)) files.push({ root: 'lang', relPath: f });
+      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: null, files });
+      return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };
     }
