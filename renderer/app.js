@@ -1135,7 +1135,7 @@ async function renderLibrary() {
     row.innerHTML = `
       ${prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : `<div class="lib-thumb"></div>`}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}</div>
         <div class="lib-meta">
           <span>${esc(catName(rec.categoryId))}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
@@ -1146,6 +1146,9 @@ async function renderLibrary() {
         ${['fonts', 'cursors'].includes(rec.categoryId)
           ? '<span style="font-size:11.5px;color:var(--text-muted)">всегда активен</span>'
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${rec.id}" role="switch" aria-checked="${rec.enabled}" aria-label="Включить/выключить"></button>`}
+        ${rec.heroes >= 2
+          ? `<button class="btn btn-sm" data-split="${rec.id}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>`
+          : ''}
         ${rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath))
           ? `<button class="btn btn-sm" data-export="${rec.id}" title="Сохранить мод одним .vpk файлом (для отправки автору каталога)"><span class="ms">save</span>Экспорт</button>`
           : ''}
@@ -1175,6 +1178,18 @@ async function renderLibrary() {
       b.innerHTML = prev;
       if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
       else if (r.ok) toast(`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
+    });
+  });
+  libList.querySelectorAll('[data-split]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const rec = installed.find((m) => m.id === b.dataset.split);
+      if (!await confirmDialog(`Разбить «${rec.name}» на отдельные моды по героям? Исходный файл заменится на отдельные, каждый можно будет включать и удалять по отдельности.`, { okLabel: 'Разобрать' })) return;
+      b.disabled = true;
+      const r = await window.api.mods.splitMod(rec.id);
+      if (r.error) toast(r.error, 'error', 6000);
+      else toast(`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
+      renderLibrary();
+      refreshInstalledIndex();
     });
   });
   libList.querySelectorAll('[data-del]').forEach((b) => {
@@ -1207,6 +1222,7 @@ async function renderLibrary() {
         </div>
         <div class="lib-actions">
           <button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.name)}" role="switch" aria-checked="${f.enabled}"></button>
+          ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.name)}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>` : ''}
           <button class="btn btn-sm btn-danger" data-extdel="${esc(f.name)}">Удалить</button>
         </div>
       `;
@@ -1216,6 +1232,18 @@ async function renderLibrary() {
       t.addEventListener('click', async () => {
         const f = external.find((x) => x.name === t.dataset.ext);
         await window.api.mods.externalSetEnabled(f.name, !f.enabled);
+        renderLibrary();
+      });
+    });
+    extList.querySelectorAll('[data-extsplit]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        const name = b.dataset.extsplit;
+        if (!await confirmDialog(`Разбить «${name}» на отдельные моды по героям? Файл заменится на отдельные управляемые моды.`, { okLabel: 'Разобрать' })) return;
+        b.disabled = true;
+        const r = await window.api.mods.splitExternal(name);
+        if (r.error) toast(r.error, 'error', 6000);
+        else toast(`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
+        await refreshInstalledIndex();
         renderLibrary();
       });
     });

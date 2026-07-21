@@ -188,24 +188,22 @@ function describeAnalysis(a) {
 const EMPTY = Buffer.alloc(0);
 const INLINE = 0x7fff; // archiveIndex meaning "data lives in the _dir file itself"
 
-/**
- * Rewrites a multi-part VPK (_dir.vpk + _000.vpk, _001.vpk…) into one self-contained
- * single-file VPK v2 with every entry's data embedded — the format the Dota2PornFx
- * catalog uses. Data is copied byte-for-byte; CRCs and preload are preserved.
- *
- * @param {string} dirPath  path to the *_dir.vpk index file
- * @param {(idx: number) => string} [archivePathFor]  resolves external archive N to a path
- * @returns {Buffer} the merged single-file VPK
- */
-function mergeVpkToSingle(dirPath, archivePathFor) {
-  const dirBuf = fs.readFileSync(dirPath);
+// full inner path of a read entry, lowercased (folder " " means the root)
+function entryPath(en) {
+  const dir = en.folder === ' ' ? '' : en.folder + '/';
+  return `${dir}${en.name}.${en.ext}`.toLowerCase();
+}
+
+// Read every entry of a _dir.vpk (following external _NNN archives) into a flat list
+// with its bytes: [{ ext, folder, name, crc, preload, data }], in on-disk tree order.
+function readVpkEntries(dirBuf, dirPath, archivePathFor) {
   if (dirBuf.length < 12 || dirBuf.readUInt32LE(0) !== VPK_SIGNATURE) {
     throw new Error('VPK: неверная сигнатура');
   }
   const version = dirBuf.readUInt32LE(4);
   const treeSize = dirBuf.readUInt32LE(8);
   const headerSize = version === 2 ? 28 : 12;
-  const embeddedBase = headerSize + treeSize; // where inline (0x7fff) data sits in the source
+  const embeddedBase = headerSize + treeSize; // where inline (0x7fff) data sits
 
   const archiveCache = new Map();
   const readArchive = (idx) => {
@@ -219,15 +217,12 @@ function mergeVpkToSingle(dirPath, archivePathFor) {
     return archiveCache.get(idx);
   };
 
-  // walk the tree, grouped ext -> folder -> [{name, crc, preload, data}], preserving order
-  const tree = new Map();
+  const entries = [];
   let pos = headerSize;
   for (;;) {
     const ext = readCString(dirBuf, pos); pos = ext.next; if (!ext.str) break;
-    const folders = tree.get(ext.str) || new Map(); tree.set(ext.str, folders);
     for (;;) {
       const folder = readCString(dirBuf, pos); pos = folder.next; if (!folder.str) break;
-      const names = folders.get(folder.str) || []; folders.set(folder.str, names);
       for (;;) {
         const name = readCString(dirBuf, pos); pos = name.next; if (!name.str) break;
         const crc = dirBuf.readUInt32LE(pos);
@@ -244,20 +239,30 @@ function mergeVpkToSingle(dirPath, archivePathFor) {
           const base = archiveIndex === INLINE ? embeddedBase : 0;
           data = src.subarray(base + entryOffset, base + entryOffset + entryLength);
         }
-        names.push({ name: name.str, crc, preload, data });
+        entries.push({ ext: ext.str, folder: folder.str, name: name.str, crc, preload, data });
       }
     }
   }
+  return entries;
+}
 
-  // lay out the merged data section in tree order, assigning each entry its new offset
+// Build one self-contained single-file VPK v2 from a flat entry list. Groups entries
+// by ext -> folder (first-seen order), embeds every entry's data inline (0x7fff).
+function buildVpk(entries) {
+  const tree = new Map();
+  for (const en of entries) {
+    let folders = tree.get(en.ext); if (!folders) { folders = new Map(); tree.set(en.ext, folders); }
+    let names = folders.get(en.folder); if (!names) { names = []; folders.set(en.folder, names); }
+    names.push(en);
+  }
+
   const dataChunks = [];
   let dataLen = 0;
   for (const [, folders] of tree) for (const [, names] of folders) for (const en of names) {
-    en.offset = dataLen;
+    en._offset = dataLen;
     if (en.data.length) { dataChunks.push(en.data); dataLen += en.data.length; }
   }
 
-  // rebuild the tree with every entry pointing inline (0x7fff) at the merged data
   const z = Buffer.from([0]);
   const cstr = (s) => Buffer.concat([Buffer.from(s, 'utf-8'), z]);
   const parts = [];
@@ -271,7 +276,7 @@ function mergeVpkToSingle(dirPath, archivePathFor) {
         meta.writeUInt32LE(en.crc >>> 0, 0);
         meta.writeUInt16LE(en.preload.length, 4);
         meta.writeUInt16LE(INLINE, 6);
-        meta.writeUInt32LE(en.offset >>> 0, 8);
+        meta.writeUInt32LE(en._offset >>> 0, 8);
         meta.writeUInt32LE(en.data.length >>> 0, 12);
         meta.writeUInt16LE(0xffff, 16);
         parts.push(meta);
@@ -292,8 +297,74 @@ function mergeVpkToSingle(dirPath, archivePathFor) {
   return Buffer.concat([header, treeBuf, ...dataChunks]);
 }
 
+/**
+ * Rewrites a multi-part VPK (_dir.vpk + _000.vpk, _001.vpk…) into one self-contained
+ * single-file VPK v2 with every entry's data embedded — the format the Dota2PornFx
+ * catalog uses. Data is copied byte-for-byte; CRCs and preload are preserved.
+ *
+ * @param {string} dirPath  path to the *_dir.vpk index file
+ * @param {(idx: number) => string} [archivePathFor]  resolves external archive N to a path
+ * @returns {Buffer} the merged single-file VPK
+ */
+function mergeVpkToSingle(dirPath, archivePathFor) {
+  return buildVpk(readVpkEntries(fs.readFileSync(dirPath), dirPath, archivePathFor));
+}
+
+/**
+ * Split a merged multi-hero VPK into one self-contained VPK per detected hero — the
+ * inverse of tools that pack several skins into one file (e.g. Dota 2 Skinchanger).
+ * A file that clearly belongs to a hero (…/heroes/<hero>/… or …/hero_<hero>/…) goes to
+ * that hero; everything else (shared stock, cross-hero assets) is copied into every
+ * output so each result stands alone and installs/removes independently.
+ *
+ * @returns {Array<{ id: string, name: string, buf: Buffer }>} empty if <2 heroes.
+ */
+function splitVpkByHero(dirPath, archivePathFor) {
+  const dirBuf = fs.readFileSync(dirPath);
+  const entries = readVpkEntries(dirBuf, dirPath, archivePathFor);
+  const paths = entries.map(entryPath);
+  const heroes = analyzeVpkPaths(paths).heroes;
+  if (heroes.length < 2) return [];
+  const ids = heroes.map((h) => h.id);
+  const ownerOf = (p) => ids.find((id) =>
+    p.includes(`/heroes/${id}/`) || p.startsWith(`heroes/${id}/`) ||
+    p.includes(`/hero_${id}/`) || p.startsWith(`hero_${id}/`)) || null;
+
+  const buckets = new Map(ids.map((id) => [id, []]));
+  const shared = [];
+  entries.forEach((en, i) => {
+    const owner = ownerOf(paths[i]);
+    if (owner) buckets.get(owner).push(en); else shared.push(en);
+  });
+  return heroes.map((h) => ({ id: h.id, name: h.name, buf: buildVpk([...buckets.get(h.id), ...shared]) }));
+}
+
+// Lightweight (path, crc) list — the mod's content signature, no archive reads.
+function listVpkEntries(buf) {
+  if (buf.length < 12 || buf.readUInt32LE(0) !== VPK_SIGNATURE) throw new Error('VPK: неверная сигнатура');
+  const version = buf.readUInt32LE(4);
+  let pos = version === 2 ? 28 : 12;
+  const out = [];
+  for (;;) {
+    const ext = readCString(buf, pos); pos = ext.next; if (!ext.str) break;
+    for (;;) {
+      const folder = readCString(buf, pos); pos = folder.next; if (!folder.str) break;
+      for (;;) {
+        const name = readCString(buf, pos); pos = name.next; if (!name.str) break;
+        const crc = buf.readUInt32LE(pos);
+        const preloadBytes = buf.readUInt16LE(pos + 4);
+        pos += 18 + preloadBytes;
+        const dir = folder.str === ' ' ? '' : folder.str + '/';
+        out.push({ path: `${dir}${name.str}.${ext.str}`.toLowerCase(), crc: crc >>> 0 });
+      }
+    }
+  }
+  return out;
+}
+
 module.exports = {
-  listVpkPaths, listVpkPathsFile, mergeVpkToSingle,
+  listVpkPaths, listVpkPathsFile, listVpkEntries, mergeVpkToSingle, splitVpkByHero,
+  readVpkEntries, buildVpk, entryPath,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
   describeHero, describeAnalysis,
 };

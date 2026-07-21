@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('api', {
     exportSingle: (id) => ipcRenderer.invoke('mods:exportSingle', id),
     importDialog: () => ipcRenderer.invoke('mods:importDialog'),
     importPaths: (paths) => ipcRenderer.invoke('mods:importPaths', paths),
+    splitMod: (id) => ipcRenderer.invoke('mods:splitMod', id),
+    splitExternal: (fileName) => ipcRenderer.invoke('mods:splitExternal', fileName),
     pathForFile: (file) => webUtils.getPathForFile(file),
   },
   presets: {

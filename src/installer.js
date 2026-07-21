@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, analyzeVpkPaths, describeHero, describeAnalysis } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, analyzeVpkPaths, describeHero, describeAnalysis } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -492,6 +492,32 @@ class Installer {
       }
     }
     return results;
+  }
+
+  // What a stored library record (or a foreign vpk) actually changes — hero(es) and
+  // slots — read from its _dir.vpk on disk. Returns { info, heroes } or null.
+  analyzeRecord(rec) {
+    const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+    if (!dir) return null;
+    try {
+      const a = analyzeVpkPaths(listVpkPathsFile(path.join(this.langFolder(), dir.relPath)));
+      return { info: describeAnalysis(a), heroes: a.heroes.length };
+    } catch { return null; }
+  }
+
+  // Split a merged multi-hero VPK sitting in the lang folder into one managed VPK per
+  // hero, each written to a fresh pak slot. Returns [{ hero, name, files }]; caller
+  // registers them and deletes the source. Empty if fewer than 2 heroes are found.
+  splitVpkFile(sourceRelPath) {
+    const lang = this.langFolder();
+    const parts = splitVpkByHero(path.join(lang, sourceRelPath));
+    if (!parts.length) return [];
+    const used = this.usedPakNames();
+    return parts.map((part) => {
+      const pakName = this.allocatePak(used, false);
+      this.writeInto(part.buf, path.join(lang, pakName));
+      return { hero: part.name, name: part.name, files: [{ root: 'lang', relPath: pakName }] };
+    });
   }
 
   // Older app versions wrote priority mods as "!pakNN_dir.vpk" — a name the game

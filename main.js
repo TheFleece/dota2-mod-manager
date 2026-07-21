@@ -327,7 +327,12 @@ function registerIpc() {
     try {
       external = installer.externalFiles(library.knownLangRelPaths());
     } catch { /* lang folder may not exist yet */ }
-    return { installed: library.list(), external };
+    // imported mods have no catalog identity — tag them by what the vpk contains
+    const installed = library.list().map((rec) => {
+      if (rec.categoryId !== 'imported') return rec;
+      try { return { ...rec, ...(installer.analyzeRecord(rec) || {}) }; } catch { return rec; }
+    });
+    return { installed, external };
   });
 
   ipcMain.handle('mods:setEnabled', (e, id, enabled) => {
@@ -374,6 +379,50 @@ function registerIpc() {
       const abs = path.join(installer.langFolder(), fileName);
       if (fs.existsSync(abs)) fs.rmSync(abs, { force: true });
       return { ok: true };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // split a merged multi-hero library record into one managed mod per hero
+  ipcMain.handle('mods:splitMod', (e, id) => {
+    const rec = library.find(id);
+    if (!rec) return { error: 'Мод не найден' };
+    try {
+      const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+      if (!dir) return { error: 'Нет _dir.vpk для разбора' };
+      const parts = installer.splitVpkFile(dir.relPath);
+      if (!parts.length) return { error: 'В файле меньше двух героев — разбирать нечего' };
+      for (const p of parts) {
+        library.add({ name: p.name, categoryId: 'imported', styleLabel: null, fileRef: rec.name, preview: null, files: p.files });
+      }
+      installer.remove(rec.files);
+      library.removeRecord(id);
+      return { ok: true, count: parts.length, names: parts.map((p) => p.name) };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // split a merged multi-hero external file (placed in the game folder by another tool)
+  ipcMain.handle('mods:splitExternal', (e, fileName) => {
+    try {
+      const lang = installer.langFolder();
+      const base = fileName.replace(/\.off$/i, '');
+      const parts = installer.splitVpkFile(base);
+      if (!parts.length) return { error: 'В файле меньше двух героев — разбирать нечего' };
+      for (const p of parts) {
+        library.add({ name: p.name, categoryId: 'imported', styleLabel: null, fileRef: fileName, preview: null, files: p.files });
+      }
+      // delete the source _dir.vpk (and any multi-part data archives + .off variant)
+      const origBase = base.replace(/_dir\.vpk$/i, '');
+      for (const f of fs.readdirSync(lang)) {
+        const n = f.toLowerCase().replace(/\.off$/i, '');
+        if (n === base.toLowerCase() || new RegExp(`^${origBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i').test(n)) {
+          fs.rmSync(path.join(lang, f), { force: true });
+        }
+      }
+      return { ok: true, count: parts.length, names: parts.map((p) => p.name) };
     } catch (err) {
       return { error: String(err.message || err) };
     }
