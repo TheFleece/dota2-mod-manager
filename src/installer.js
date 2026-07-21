@@ -1,6 +1,7 @@
 // Installer engine: download, extract, pak allocation, per-category install/uninstall
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
 const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, analyzeVpkPaths, describeHero, describeAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
@@ -569,8 +570,9 @@ class Installer {
   // can live: the language folder root (skins, imported), language\maps (terrains), and
   // resource\cursor (a cursor set, treated as one item). Each carries a fingerprint so
   // the caller can recognise it as a specific catalog mod. `primary` items (lang root)
-  // are always listed; maps/cursor items are only worth showing when they match.
-  externalFiles(knownFiles) {
+  // are always listed; maps/cursor items are only worth showing when they match, so the
+  // caller passes scanExtras=false to skip that scan when it has nothing to match against.
+  externalFiles(knownFiles, { scanExtras = true } = {}) {
     const game = this.getGamePath();
     if (!game) return [];
     const knownLang = new Set(knownFiles.filter((f) => f.root === 'lang').map((f) => f.relPath.toLowerCase()));
@@ -588,7 +590,7 @@ class Installer {
       }
       // terrains ship as language\maps\dota.vpk (not a *_dir.vpk in the root)
       const mapsDir = path.join(lang, 'maps');
-      if (fs.existsSync(mapsDir)) {
+      if (scanExtras && fs.existsSync(mapsDir)) {
         for (const f of fs.readdirSync(mapsDir)) {
           if (!/\.vpk$/i.test(f)) continue;
           const rel = `maps/${f}`;
@@ -598,7 +600,7 @@ class Installer {
     }
 
     // a foreign cursor set (only when the app isn't already managing cursors)
-    if (!knownCursor) {
+    if (scanExtras && !knownCursor) {
       const cursorDir = path.join(game, ...CURSOR_SUBDIR);
       if (fs.existsSync(cursorDir)) {
         const files = [];
@@ -621,6 +623,24 @@ class Installer {
         }
       }
     }
+    return out;
+  }
+
+  // basename -> sha1 of every file currently in panorama\fonts, for font subset matching
+  fontFolderHashes() {
+    const game = this.getGamePath();
+    if (!game) return null;
+    const dir = path.join(game, ...FONTS_SUBDIR);
+    if (!fs.existsSync(dir)) return null;
+    const out = {};
+    const walk = (d) => {
+      for (const f of fs.readdirSync(d)) {
+        const full = path.join(d, f);
+        if (fs.statSync(full).isDirectory()) walk(full);
+        else out[f.toLowerCase()] = crypto.createHash('sha1').update(fs.readFileSync(full)).digest('hex');
+      }
+    };
+    walk(dir);
     return out;
   }
 

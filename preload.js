@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('api', {
     adoptMod: (id) => ipcRenderer.invoke('mods:adoptMod', id),
     adoptExternal: (fileName) => ipcRenderer.invoke('mods:adoptExternal', fileName),
     adoptCursor: () => ipcRenderer.invoke('mods:adoptCursor'),
+    adoptFont: (name) => ipcRenderer.invoke('mods:adoptFont', name),
     pathForFile: (file) => webUtils.getPathForFile(file),
   },
   presets: {

@@ -328,10 +328,23 @@ function registerIpc() {
   ipcMain.handle('mods:list', () => {
     let external = [];
     try {
-      external = installer.externalFiles(library.knownFiles());
+      const known = library.knownFiles();
+      const canMatch = fingerprints.hasData();
+      external = installer.externalFiles(known, { scanExtras: canMatch });
       for (const f of external) if (f.fp) f.match = fingerprints.match(f.fp); // recognise catalog mods
       // lang-root files are always worth listing; maps/cursor only when recognised
       external = external.filter((f) => f.primary || f.match);
+      // fonts share panorama\fonts with vanilla — subset-match instead of a folder fp
+      if (canMatch && fingerprints.fonts.length && !known.some((f) => f.root === 'fonts')) {
+        const fh = installer.fontFolderHashes();
+        for (const m of (fh ? fingerprints.matchFonts(fh) : [])) {
+          external.push({
+            kind: 'font', key: `__font__${m.name}`, name: m.name, primary: false,
+            size: 0, enabled: true, files: Object.keys(m.files).map((bn) => ({ root: 'fonts', relPath: bn })),
+            match: [{ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null }],
+          });
+        }
+      }
     } catch { /* lang folder may not exist yet */ }
     // imported mods have no catalog identity — tag them by content, match to catalog if known
     const installed = library.list().map((rec) => {
@@ -443,6 +456,19 @@ function registerIpc() {
       const files = [{ root: 'lang', relPath: base }];
       for (const f of fs.readdirSync(lang)) if (partRe.test(f)) files.push({ root: 'lang', relPath: f });
       library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: null, files });
+      return { ok: true, name: m.name };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // adopt a foreign font mod (its files present in panorama\fonts) as a catalog mod
+  ipcMain.handle('mods:adoptFont', (e, name) => {
+    try {
+      const fh = installer.fontFolderHashes();
+      const m = fh && fingerprints.matchFonts(fh).find((x) => x.name === name);
+      if (!m) return { error: 'Совпадение с каталогом не найдено' };
+      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: null, files: Object.keys(m.files).map((bn) => ({ root: 'fonts', relPath: bn })) });
       return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };

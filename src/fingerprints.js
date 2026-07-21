@@ -9,13 +9,18 @@ const FP_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/ma
 class Fingerprints {
   constructor(userDataDir) {
     this.file = path.join(userDataDir, 'fingerprints.json');
-    this.map = null; // fp -> { name, categoryId, styleLabel }
+    this.map = null;   // fp -> [ { name, categoryId, styleLabel } ]
+    this.fonts = [];   // [ { name, categoryId, styleLabel, files: { basename: sha1 } } ]
+  }
+
+  apply(data) {
+    this.map = data.mods || {};
+    this.fonts = data.fonts || [];
+    return this.map;
   }
 
   loadCache() {
-    try {
-      this.map = JSON.parse(fs.readFileSync(this.file, 'utf-8')).mods || {};
-    } catch { this.map = {}; }
+    try { this.apply(JSON.parse(fs.readFileSync(this.file, 'utf-8'))); } catch { this.map = {}; this.fonts = []; }
     return this.map;
   }
 
@@ -24,12 +29,17 @@ class Fingerprints {
     return this.map;
   }
 
+  // whether we have any data to match against (skip folder scans otherwise)
+  hasData() {
+    return Object.keys(this.ensure()).length > 0 || this.fonts.length > 0;
+  }
+
   async refresh() {
     try {
       const res = await fetch(FP_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
-      this.map = JSON.parse(text).mods || {}; // validate before persisting
+      this.apply(JSON.parse(text)); // validate before persisting
       fs.mkdirSync(path.dirname(this.file), { recursive: true });
       fs.writeFileSync(this.file, text);
     } catch {
@@ -46,6 +56,15 @@ class Fingerprints {
     const v = this.ensure()[fp];
     if (!v) return null;
     return Array.isArray(v) ? v : [v]; // tolerate the older object-valued format
+  }
+
+  // Font mods share panorama\fonts with vanilla files, so they can't be matched by an
+  // exact folder fingerprint. Instead: which known font mods have *all* their files
+  // present in the folder (by basename + content hash)? -> array of matched entries.
+  matchFonts(folderHashes) {
+    this.ensure();
+    return this.fonts.filter((m) =>
+      Object.entries(m.files).every(([name, hash]) => folderHashes[name] === hash));
   }
 }
 

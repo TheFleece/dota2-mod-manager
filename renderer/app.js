@@ -1234,19 +1234,23 @@ async function renderLibrary() {
       row.className = `lib-row ${f.enabled ? '' : 'disabled'}`;
       const label = f.match ? `<span class="lib-tag match">${esc(matchLabel(f.match))}</span>`
         : f.info ? `<span class="lib-tag">${esc(f.info)}</span>` : '';
-      const sub = f.match ? 'мод из каталога' : f.info ? 'опознан по содержимому' : 'внешний файл';
-      const cursor = f.kind === 'cursor';
+      const simple = f.kind === 'cursor' || f.kind === 'font'; // full-folder/subset sets — adopt only
+      const displayName = f.kind === 'cursor' ? 'Курсор в игре' : f.name;
+      const sub = f.kind === 'cursor' ? 'resource/cursor'
+        : f.kind === 'font' ? 'шрифт · panorama/fonts'
+        : f.match ? 'мод из каталога' : f.info ? 'опознан по содержимому' : 'внешний файл';
+      const size = simple ? '' : `<span>${fmtMB(f.size)} MB</span>`;
       row.innerHTML = `
         <div class="lib-thumb"></div>
         <div class="lib-info">
-          <div class="lib-name">${esc(cursor ? 'Курсор в игре' : f.name)}${label ? ' ' + label : ''}</div>
-          <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>${cursor ? 'resource/cursor' : sub}</span></div>
+          <div class="lib-name">${esc(displayName)}${label ? ' ' + label : ''}</div>
+          <div class="lib-meta">${size}<span>${sub}</span></div>
         </div>
         <div class="lib-actions">
-          ${cursor ? '' : `<button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.key)}" role="switch" aria-checked="${f.enabled}"></button>`}
+          ${simple ? '' : `<button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.key)}" role="switch" aria-checked="${f.enabled}"></button>`}
           ${f.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="Привязать к каталогу и управлять как обычным модом"><span class="ms">library_add_check</span>Принять</button>` : ''}
           ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.key)}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>` : ''}
-          ${cursor ? '' : `<button class="btn btn-sm btn-danger" data-extdel="${esc(f.key)}">Удалить</button>`}
+          ${simple ? '' : `<button class="btn btn-sm btn-danger" data-extdel="${esc(f.key)}">Удалить</button>`}
         </div>
       `;
       extList.appendChild(row);
@@ -1263,8 +1267,8 @@ async function renderLibrary() {
       b.addEventListener('click', async () => {
         b.disabled = true;
         const f = byKey(b.dataset.adopt);
-        const r = f.kind === 'cursor'
-          ? await window.api.mods.adoptCursor()
+        const r = f.kind === 'cursor' ? await window.api.mods.adoptCursor()
+          : f.kind === 'font' ? await window.api.mods.adoptFont(f.name)
           : await window.api.mods.adoptExternal(f.key);
         if (r.error) toast(r.error, 'error', 6000);
         else toast(`«${r.name}» принят из каталога`, 'ok');
