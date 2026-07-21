@@ -417,8 +417,9 @@ function registerIpc() {
     const rec = library.find(id);
     if (!rec) return { error: 'Мод не найден' };
     const a = installer.analyzeRecord(rec);
-    const m = a && fingerprints.match(a.fp);
-    if (!m) return { error: 'Совпадение с каталогом не найдено' };
+    const matches = a && fingerprints.match(a.fp);
+    if (!matches) return { error: 'Совпадение с каталогом не найдено' };
+    const m = matches[0]; // identical-content entries are interchangeable; take the first
     library.update(id, { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null });
     return { ok: true, name: m.name };
   });
@@ -431,8 +432,9 @@ function registerIpc() {
       const base = fileName.replace(/\.off$/i, '');
       const buf = fs.readFileSync(path.join(lang, base));
       const { fingerprintVpk } = require('./src/vpk');
-      const m = fingerprints.match(fingerprintVpk(buf));
-      if (!m) return { error: 'Совпадение с каталогом не найдено' };
+      const matches = fingerprints.match(fingerprintVpk(buf));
+      if (!matches) return { error: 'Совпадение с каталогом не найдено' };
+      const m = matches[0]; // identical-content entries are interchangeable; take the first
       // include the _dir.vpk and any sibling data archives (<base>_NNN.vpk)
       const origBase = base.replace(/_dir\.vpk$/i, '');
       const partRe = new RegExp(`^${origBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i');

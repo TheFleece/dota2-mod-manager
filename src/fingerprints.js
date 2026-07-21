@@ -39,9 +39,13 @@ class Fingerprints {
     return this.map;
   }
 
+  // -> array of matching catalog identities (a fingerprint can map to several entries
+  // that share the same file, e.g. GLaDOS + Ru GLaDOS), or null when unknown.
   match(fp) {
     if (!fp) return null;
-    return this.ensure()[fp] || null;
+    const v = this.ensure()[fp];
+    if (!v) return null;
+    return Array.isArray(v) ? v : [v]; // tolerate the older object-valued format
   }
 }
 

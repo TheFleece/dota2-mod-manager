@@ -258,6 +258,11 @@ function keyOf(categoryId, name, styleLabel) {
   return `${categoryId}|${name}|${styleLabel || ''}`;
 }
 
+// label for a fingerprint match (array of catalog identities that share the content)
+function matchLabel(matches) {
+  return matches.map((m) => m.name + (m.styleLabel ? ` · ${m.styleLabel}` : '')).join(' / ');
+}
+
 async function refreshInstalledIndex() {
   const { installed } = await window.api.mods.list();
   state.installedIndex.clear();
@@ -1135,7 +1140,7 @@ async function renderLibrary() {
     row.innerHTML = `
       ${prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : `<div class="lib-thumb"></div>`}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(rec.match.name)}${rec.match.styleLabel ? ` · ${esc(rec.match.styleLabel)}` : ''}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}</div>
         <div class="lib-meta">
           <span>${esc(catName(rec.categoryId))}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
@@ -1230,7 +1235,7 @@ async function renderLibrary() {
       row.innerHTML = `
         <div class="lib-thumb"></div>
         <div class="lib-info">
-          <div class="lib-name">${esc(f.name)}${f.match ? ` <span class="lib-tag match">${esc(f.match.name)}${f.match.styleLabel ? ` · ${esc(f.match.styleLabel)}` : ''}</span>` : f.info ? ` <span class="lib-tag">${esc(f.info)}</span>` : ''}</div>
+          <div class="lib-name">${esc(f.name)}${f.match ? ` <span class="lib-tag match">${esc(matchLabel(f.match))}</span>` : f.info ? ` <span class="lib-tag">${esc(f.info)}</span>` : ''}</div>
           <div class="lib-meta"><span>${fmtMB(f.size)} MB</span><span>${f.match ? 'мод из каталога' : f.info ? 'опознан по содержимому' : 'внешний файл'}</span></div>
         </div>
         <div class="lib-actions">

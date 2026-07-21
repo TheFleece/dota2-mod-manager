@@ -7,7 +7,7 @@ name: Fingerprints
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # daily, 06:00 UTC
+    - cron: '*/30 * * * *'   # every 30 min; a no-op unless the catalog changed
   workflow_dispatch:
 
 permissions:
