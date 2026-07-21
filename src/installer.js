@@ -387,23 +387,72 @@ class Installer {
 
   // ---------- import of user-provided vpk files ----------
 
+  // A VPK mod can be one self-contained "<base>_dir.vpk", or a multi-part set:
+  // "<base>_dir.vpk" (index) + "<base>_000.vpk", "<base>_001.vpk"... (data).
+  // Dota2Changer packs ship as pak01_dir.vpk + pak01_000.vpk, so importing must
+  // rename the whole set together (pakXX_dir.vpk + pakXX_000.vpk) or the game
+  // can't find the data archives.
   importVpks(paths) {
     const lang = this.langFolder();
     fs.mkdirSync(lang, { recursive: true });
     const used = this.usedPakNames();
     const results = [];
+
+    // group selected files into sets keyed by source dir + base name
+    const sets = new Map(); // key -> { srcDir, base, dirFile, sourceLabel }
     for (const src of paths) {
-      const base = path.basename(src);
-      if (!/\.vpk$/i.test(base)) {
-        results.push({ source: base, error: 'не .vpk файл' });
+      const fileName = path.basename(src);
+      if (!/\.vpk$/i.test(fileName)) {
+        results.push({ source: fileName, error: 'не .vpk файл' });
         continue;
       }
+      const srcDir = path.dirname(src);
+      const mDir = fileName.match(/^(.*)_dir\.vpk$/i);
+      const mPart = fileName.match(/^(.*)_\d{3}\.vpk$/i);
+      const base = (mDir && mDir[1]) || (mPart && mPart[1]) || fileName.replace(/\.vpk$/i, '');
+      const key = srcDir.toLowerCase() + '|' + base.toLowerCase();
+      const set = sets.get(key) || { srcDir, base, dirFile: null, sourceLabel: fileName };
+      if (mDir) { set.dirFile = src; set.sourceLabel = fileName; }
+      else if (!mPart) { set.dirFile = src; set.single = true; set.sourceLabel = fileName; }
+      // bare data parts (_NNN) need no explicit entry: discovered from disk below
+      sets.set(key, set);
+    }
+
+    for (const set of sets.values()) {
       try {
-        const pakName = this.allocatePak(used, false);
-        this.copyInto(src, path.join(lang, pakName));
-        results.push({ source: base, name: base.replace(/\.vpk$/i, ''), files: [{ root: 'lang', relPath: pakName }] });
+        // self-contained non-_dir vpk: copy as a fresh dir slot
+        if (set.single) {
+          const pakName = this.allocatePak(used, false);
+          this.copyInto(set.dirFile, path.join(lang, pakName));
+          results.push({ source: set.sourceLabel, name: set.base, files: [{ root: 'lang', relPath: pakName }] });
+          continue;
+        }
+        // find the _dir.vpk (selected, or sitting next to selected data parts)
+        let dirSrc = set.dirFile;
+        if (!dirSrc) {
+          const guess = path.join(set.srcDir, `${set.base}_dir.vpk`);
+          if (fs.existsSync(guess)) dirSrc = guess;
+        }
+        if (!dirSrc) {
+          results.push({ source: set.sourceLabel, error: `нет ${set.base}_dir.vpk рядом с data-частями` });
+          continue;
+        }
+        const pakDir = this.allocatePak(used, false);        // pakXX_dir.vpk
+        const newBase = pakDir.replace(/_dir\.vpk$/i, '');    // pakXX
+        this.copyInto(dirSrc, path.join(lang, pakDir));
+        const files = [{ root: 'lang', relPath: pakDir }];
+        // copy every sibling data archive <base>_NNN.vpk -> pakXX_NNN.vpk
+        const partRe = new RegExp(`^${set.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_(\\d{3})\\.vpk$`, 'i');
+        for (const f of fs.readdirSync(set.srcDir)) {
+          const m = f.match(partRe);
+          if (!m) continue;
+          const partName = `${newBase}_${m[1]}.vpk`;
+          this.copyInto(path.join(set.srcDir, f), path.join(lang, partName));
+          files.push({ root: 'lang', relPath: partName });
+        }
+        results.push({ source: `${set.base}_dir.vpk`, name: set.base, files });
       } catch (err) {
-        results.push({ source: base, error: String(err.message || err) });
+        results.push({ source: set.sourceLabel, error: String(err.message || err) });
       }
     }
     return results;
