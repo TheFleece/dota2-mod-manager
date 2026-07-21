@@ -834,11 +834,17 @@ document.addEventListener('keydown', (e) => {
 
 const LINK_LABEL = { preview: 'Превью', source: 'Источник', author: 'Автор', bug: 'Баг', guide: 'Гайд' };
 
+// A pack's `mods` entry is usually a mod-name string, but the catalog also ships
+// entries shaped like { name, style } — treat both, or the modal crashes on open.
+function packMemberName(entry) {
+  return (typeof entry === 'string' ? entry : entry?.name || '').trim();
+}
+
 function packMembers(mod) {
-  return (mod.mods || []).map((name) => {
-    const hit = state.modIndex.get(name.toLowerCase());
-    return { name, hit };
-  });
+  return (mod.mods || [])
+    .map(packMemberName)
+    .filter(Boolean)
+    .map((name) => ({ name, hit: state.modIndex.get(name.toLowerCase()) }));
 }
 
 function drawModal() {
@@ -1069,7 +1075,7 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
 
 async function installPack(pack) {
   const excluded = modalState?.packExcluded || new Set();
-  const names = (pack.mods || []).filter((n) => !excluded.has(n));
+  const names = (pack.mods || []).map(packMemberName).filter((n) => n && !excluded.has(n));
   closeModal();
   let ok = 0, fail = 0, skip = 0;
   for (const name of names) {

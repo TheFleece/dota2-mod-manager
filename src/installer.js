@@ -18,6 +18,18 @@ function fileUrl(categoryId, fileRef) {
   return `${RAW_BASE}/assets/files/${categoryId}/${encodeURIComponent(fileRef)}`;
 }
 
+// Source 2's resource compiler bakes a fixed set of stock "basic_" / default assets
+// into almost every mod VPK (default fallback textures, basic particle templates,
+// stock cubemaps). They are identical filler across unrelated mods, so counting them
+// made the conflict check fire on nearly every install — two skins for different
+// heroes still "shared" ~30 of these. Drop them so only genuine same-asset clashes count.
+const STOCK_CONTENT_RE = /^(?:materials\/default\/|materials\/particle\/basic_|materials\/models\/cubemaps\/|particles\/(?:models\/)?basic_)/;
+
+function dropStockPaths(paths) {
+  for (const p of paths) if (STOCK_CONTENT_RE.test(p)) paths.delete(p);
+  return paths;
+}
+
 class Installer {
   /**
    * @param {object} opts
@@ -339,7 +351,7 @@ class Installer {
     const lower = localFile.toLowerCase();
     if (lower.endsWith('.vpk')) {
       for (const p of listVpkPathsFile(localFile)) out.add(p);
-      return out;
+      return dropStockPaths(out);
     }
     if (!lower.endsWith('.zip')) return out;
     const zip = new AdmZip(localFile);
@@ -362,7 +374,7 @@ class Installer {
         out.add((parts.length > 1 ? parts.slice(1).join('/') : rel).toLowerCase());
       }
     }
-    return out;
+    return dropStockPaths(out);
   }
 
   // Game paths of an installed library record, read from disk
@@ -381,7 +393,7 @@ class Installer {
         out.add(f.relPath.replace(/\\/g, '/').toLowerCase());
       }
     }
-    return out;
+    return dropStockPaths(out);
   }
 
   // Which of the given (enabled) records overlap with the candidate download
