@@ -18,12 +18,16 @@ function fileUrl(categoryId, fileRef) {
   return `${RAW_BASE}/assets/files/${categoryId}/${encodeURIComponent(fileRef)}`;
 }
 
-// Source 2's resource compiler bakes a fixed set of stock "basic_" / default assets
-// into almost every mod VPK (default fallback textures, basic particle templates,
-// stock cubemaps). They are identical filler across unrelated mods, so counting them
-// made the conflict check fire on nearly every install — two skins for different
-// heroes still "shared" ~30 of these. Drop them so only genuine same-asset clashes count.
-const STOCK_CONTENT_RE = /^(?:materials\/default\/|materials\/particle\/basic_|materials\/models\/cubemaps\/|particles\/(?:models\/)?basic_)/;
+// Engine stock / placeholder assets that mods carry but never really fight over:
+//   - materials/default/, materials/particle/basic_, materials/models/cubemaps/,
+//     particles/basic_ — the "basic_"/default filler Source 2's compiler bakes into
+//     almost every mod VPK;
+//   - models/dev/ (the ERROR placeholder) and models/nomodel/ (the empty null model
+//     used to hide default parts) — shared by unrelated skins that hide something.
+// They are identical across unrelated mods, so counting them made the conflict check
+// fire on nearly every install (two skins for different heroes still "shared" ~30).
+// Drop them so only genuine same-asset clashes warn.
+const STOCK_CONTENT_RE = /^(?:materials\/default\/|materials\/particle\/basic_|materials\/models\/cubemaps\/|particles\/(?:models\/)?basic_|models\/(?:dev|nomodel)\/)/;
 
 function dropStockPaths(paths) {
   for (const p of paths) if (STOCK_CONTENT_RE.test(p)) paths.delete(p);
