@@ -5,7 +5,7 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
 const { t } = require('./i18n');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
@@ -41,9 +41,24 @@ function fileUrl(categoryId, fileRef) {
 // Drop them so only genuine same-asset clashes warn.
 const STOCK_CONTENT_RE = /^(?:materials\/default\/|materials\/particle\/basic_|materials\/models\/cubemaps\/|particles\/(?:models\/)?basic_|models\/(?:dev|nomodel)\/)/;
 
+// drops stock/filler keys from a Map<path, crc> (in place)
 function dropStockPaths(paths) {
-  for (const p of paths) if (STOCK_CONTENT_RE.test(p)) paths.delete(p);
+  for (const p of paths.keys()) if (STOCK_CONTENT_RE.test(p)) paths.delete(p);
   return paths;
+}
+
+// Genuine clashes between two Map<path, crc>: a shared path whose content actually differs.
+// An identical CRC on both sides means the two mods ship the byte-for-byte same file (shared
+// filler assets — particle packs, transparent materials, ...), which is not a conflict at all.
+// A missing CRC (-1, e.g. a loose non-VPK file) is treated as unknown -> counted, to stay safe.
+function conflictingPaths(candidate, installed) {
+  const out = [];
+  for (const [p, cc] of candidate) {
+    if (!installed.has(p)) continue;
+    const ic = installed.get(p);
+    if (cc === -1 || ic === -1 || cc !== ic) out.push(p);
+  }
+  return out;
 }
 
 class Installer {
@@ -410,12 +425,13 @@ class Installer {
 
   // ---------- conflict detection ----------
 
-  // Game paths a downloaded mod file would provide (vpk index / zip payload)
+  // Game paths a downloaded mod file would provide, mapped to their VPK CRC (-1 = unknown,
+  // for loose non-VPK payload files). Returns Map<path, crc>.
   modContentPaths(localFile) {
-    const out = new Set();
+    const out = new Map();
     const lower = localFile.toLowerCase();
     if (lower.endsWith('.vpk')) {
-      for (const p of listVpkPathsFile(localFile)) out.add(p);
+      for (const [p, crc] of listVpkPathCrcsFile(localFile)) out.set(p, crc);
       return dropStockPaths(out);
     }
     if (!lower.endsWith('.zip')) return out;
@@ -427,35 +443,36 @@ class Installer {
       const baseName = rel.split('/').pop();
       if (!baseName || l.includes('!guide') || /(^|\/)(guide\.txt|install\.bat|uninstall\.bat|readme[^/]*)$/i.test(l)) continue;
       if (l.endsWith('_dir.vpk')) {
-        try { for (const p of listVpkPaths(entry.getData())) out.add(p); } catch { /* skip broken vpk */ }
+        try { for (const [p, crc] of listVpkPathCrcs(entry.getData())) out.set(p, crc); } catch { /* skip broken vpk */ }
       } else if (l.endsWith('.vpk')) {
         // secondary archive parts (pakNN_000.vpk) carry no index
       } else if (l.includes('maps/')) {
         const parts = rel.split('/');
         const mapsIdx = parts.findIndex((p) => p.toLowerCase() === 'maps');
-        out.add(parts.slice(mapsIdx).join('/').toLowerCase());
+        out.set(parts.slice(mapsIdx).join('/').toLowerCase(), -1);
       } else {
         const parts = rel.split('/');
-        out.add((parts.length > 1 ? parts.slice(1).join('/') : rel).toLowerCase());
+        out.set((parts.length > 1 ? parts.slice(1).join('/') : rel).toLowerCase(), -1);
       }
     }
     return dropStockPaths(out);
   }
 
-  // Game paths of an installed library record, read from disk
+  // Game paths of an installed library record, read from disk, mapped to their VPK CRC.
+  // Returns Map<path, crc> (-1 = unknown, for loose non-VPK lang files).
   installedContentPaths(rec) {
     const lang = this.langFolder();
-    const out = new Set();
+    const out = new Map();
     for (const f of rec.files) {
       if (f.root !== 'lang') continue;
       if (/\.vpk$/i.test(f.relPath)) {
         if (!/_dir\.vpk$/i.test(f.relPath)) continue;
         const abs = path.join(lang, f.relPath);
         try {
-          if (fs.existsSync(abs)) for (const p of listVpkPathsFile(abs)) out.add(p);
+          if (fs.existsSync(abs)) for (const [p, crc] of listVpkPathCrcsFile(abs)) out.set(p, crc);
         } catch { /* unreadable — ignore */ }
       } else {
-        out.add(f.relPath.replace(/\\/g, '/').toLowerCase());
+        out.set(f.relPath.replace(/\\/g, '/').toLowerCase(), -1);
       }
     }
     return dropStockPaths(out);
@@ -471,8 +488,9 @@ class Installer {
     for (const rec of records) {
       if (!rec.enabled) continue;
       const own = this.installedContentPaths(rec);
-      const overlap = [];
-      for (const p of candidate) if (own.has(p)) overlap.push(p);
+      // only paths the two mods provide with DIFFERENT content are real clashes; a shared
+      // filler asset (same CRC on both sides) is byte-identical and loads fine either way
+      const overlap = conflictingPaths(candidate, own);
       if (overlap.length) {
         const shared = analyzeVpkPaths(overlap);
         const summary = shared.heroes.map(describeHero).join('; ');
@@ -854,4 +872,4 @@ class Installer {
   }
 }
 
-module.exports = { Installer, PRIORITY_CATEGORIES };
+module.exports = { Installer, PRIORITY_CATEGORIES, conflictingPaths };

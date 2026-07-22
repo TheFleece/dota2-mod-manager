@@ -10,7 +10,7 @@ try {
 
 const { Settings } = require('./src/settings');
 const { Catalog } = require('./src/catalog');
-const { Installer } = require('./src/installer');
+const { Installer, conflictingPaths } = require('./src/installer');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
@@ -170,11 +170,8 @@ function registerImportResults(results) {
       const own = installer.installedContentPaths(rec);
       conflicts = library.list()
         .filter((o) => o.id !== rec.id && o.enabled)
-        .filter((o) => {
-          const other = installer.installedContentPaths(o);
-          for (const p of own) if (other.has(p)) return true;
-          return false;
-        })
+        // real clash only when the two mods provide the same path with different content
+        .filter((o) => conflictingPaths(own, installer.installedContentPaths(o)).length > 0)
         .map((o) => o.name);
     } catch { /* ignore */ }
     imported.push({ name: rec.name, relPath: r.files[0].relPath, conflicts });
