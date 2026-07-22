@@ -1021,7 +1021,9 @@ input:-webkit-autofill, input:-webkit-autofill:focus {
 .member-x:hover { color: var(--danger); background: rgba(251, 113, 133, 0.12); }
 
 /* mod picker dialog (combine into pack / add to pack) */
-.pick-list { max-height: 46vh; overflow-y: auto; margin: 14px 0 4px; display: flex; flex-direction: column; gap: 4px; }
+.pick-head { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 0; padding: 0 4px; }
+.pick-count { font-size: 11.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.pick-list { max-height: 46vh; overflow-y: auto; margin: 8px 0 4px; display: flex; flex-direction: column; gap: 4px; }
 .pick-row {
   display: flex; align-items: center; gap: 11px; padding: 8px 10px;
   border-radius: var(--radius-xs); cursor: pointer; transition: background 0.15s;

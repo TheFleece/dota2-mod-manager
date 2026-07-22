@@ -1420,6 +1420,10 @@ function pickModsDialog(candidates, { title = L`Выбери моды`, okLabel 
     overlay.innerHTML = `
       <div class="confirm-box" style="max-width:460px;width:90vw">
         <div class="confirm-msg">${esc(title)}</div>
+        <div class="pick-head">
+          <label class="lib-selectall"><input type="checkbox" class="lib-check" id="pickSelAll">${L`Выбрать всё`}</label>
+          <span class="pick-count" id="pickCount"></span>
+        </div>
         <div class="pick-list">
           ${candidates.map((c) => `
             <label class="pick-row">
@@ -1434,11 +1438,24 @@ function pickModsDialog(candidates, { title = L`Выбери моды`, okLabel 
         </div>
       </div>`;
     document.body.appendChild(overlay);
+    // scope to the list so the "select all" box above it is never counted as a candidate
+    const boxes = [...overlay.querySelectorAll('.pick-list .lib-check')];
+    const selAll = overlay.querySelector('#pickSelAll');
+    const countEl = overlay.querySelector('#pickCount');
+    const sync = () => {
+      const n = boxes.filter((b) => b.checked).length;
+      countEl.textContent = `${n} / ${boxes.length}`;
+      selAll.checked = n === boxes.length;
+      selAll.indeterminate = n > 0 && n < boxes.length;
+    };
+    selAll.addEventListener('change', () => { boxes.forEach((b) => { b.checked = selAll.checked; }); sync(); });
+    boxes.forEach((b) => b.addEventListener('change', sync));
+    sync();
     const done = (v) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) done(null); });
     overlay.querySelector('[data-c="no"]').addEventListener('click', () => done(null));
     overlay.querySelector('[data-c="yes"]').addEventListener('click', () => {
-      const ids = [...overlay.querySelectorAll('input:checked')].map((c) => c.value);
+      const ids = boxes.filter((b) => b.checked).map((b) => b.value);
       done(ids.length ? ids : null);
     });
     const onKey = (e) => { if (e.key === 'Escape') done(null); };
