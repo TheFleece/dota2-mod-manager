@@ -187,6 +187,17 @@ function describeAnalysis(a) {
   return KIND_LABEL[a.kind] || '';
 }
 
+// A short display NAME for a mod from its analysis — used to name imported VPKs by their
+// content (a hero, a set, or a content kind) instead of a bare "pakNN" slot. Null if the
+// content isn't recognisable enough to name.
+const KIND_NAME = { wards: 'Варды', courier: 'Курьер', ui: 'Интерфейс меню', sounds: 'Звуки', terrain: 'Ландшафт' };
+function nameFromAnalysis(a) {
+  if (a.heroes.length === 1) return a.heroes[0].name;
+  if (a.heroes.length >= 2 && a.heroes.length <= 3) return a.heroes.map((h) => h.name).join(', ');
+  if (a.heroes.length > 3) return `Сборка · ${a.heroes.length} героев`;
+  return KIND_NAME[a.kind] || null;
+}
+
 const EMPTY = Buffer.alloc(0);
 const INLINE = 0x7fff; // archiveIndex meaning "data lives in the _dir file itself"
 
@@ -496,5 +507,5 @@ module.exports = {
   readVpkEntries, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
   fingerprintVpk, fingerprintEntries, fingerprintFiles,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
-  describeHero, describeAnalysis,
+  describeHero, describeAnalysis, nameFromAnalysis,
 };

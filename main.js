@@ -156,8 +156,11 @@ function importVpkPaths(paths) {
     const imported = [];
     for (const r of results) {
       if (r.error) continue;
+      // name the import by its content (a hero / set / kind) instead of the bare pak slot
+      const dirRel = (r.files.find((f) => /_dir\.vpk$/i.test(f.relPath)) || r.files[0])?.relPath;
+      const contentName = (dirRel && installer.displayNameForFile(dirRel)) || r.name;
       const rec = library.add({
-        name: r.name, categoryId: 'imported', styleLabel: null,
+        name: contentName, categoryId: 'imported', styleLabel: null,
         fileRef: r.source, preview: null, files: r.files,
       });
       // best-effort warning: does the new file overlap other enabled mods?
@@ -399,7 +402,15 @@ function registerIpc() {
       if (rec.categoryId !== 'imported') return rec;
       try {
         const a = installer.analyzeRecord(rec) || {};
-        return { ...rec, ...a, match: a.fp ? fingerprints.match(a.fp) : null };
+        const matches = a.fp ? fingerprints.match(a.fp) : null;
+        // one-time: give bare "pakNN" imports a real name — the catalog name if the file
+        // is recognised, otherwise the content (hero / set / kind)
+        if (/^!?pak\d+$/i.test(rec.name)) {
+          const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+          const nm = (matches && matches[0] && matches[0].name) || (dir && installer.displayNameForFile(dir.relPath));
+          if (nm && nm !== rec.name) { library.update(rec.id, { name: nm }); rec.name = nm; }
+        }
+        return { ...rec, ...a, match: matches };
       } catch { return rec; }
     });
     let slots = 0;
@@ -501,20 +512,22 @@ function registerIpc() {
 
   // adopt an imported record whose content matches a catalog mod: relabel it to that
   // catalog identity so it's managed like a natively installed mod (no re-download)
-  ipcMain.handle('mods:adoptMod', (e, id) => {
+  ipcMain.handle('mods:adoptMod', (e, id, preview) => {
     const rec = library.find(id);
     if (!rec) return { error: 'Мод не найден' };
     const a = installer.analyzeRecord(rec);
     const matches = a && fingerprints.match(a.fp);
     if (!matches) return { error: 'Совпадение с каталогом не найдено' };
     const m = matches[0]; // identical-content entries are interchangeable; take the first
-    library.update(id, { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null });
+    const fields = { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null };
+    if (preview) fields.preview = preview; // catalog thumbnail resolved by the renderer
+    library.update(id, fields);
     return { ok: true, name: m.name };
   });
 
   // adopt a foreign file in the game folder as its matching catalog mod: register it
   // (and any multi-part data archives) in the library under the catalog identity
-  ipcMain.handle('mods:adoptExternal', (e, fileName) => {
+  ipcMain.handle('mods:adoptExternal', (e, fileName, preview) => {
     try {
       const lang = installer.langFolder();
       const base = fileName.replace(/\.off$/i, '');
@@ -528,7 +541,7 @@ function registerIpc() {
       const partRe = new RegExp(`^${origBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i');
       const files = [{ root: 'lang', relPath: base }];
       for (const f of fs.readdirSync(lang)) if (partRe.test(f)) files.push({ root: 'lang', relPath: f });
-      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: null, files });
+      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: preview || null, files });
       return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };
@@ -536,12 +549,12 @@ function registerIpc() {
   });
 
   // adopt a foreign font mod (its files present in panorama\fonts) as a catalog mod
-  ipcMain.handle('mods:adoptFont', (e, name) => {
+  ipcMain.handle('mods:adoptFont', (e, name, preview) => {
     try {
       const fh = installer.fontFolderHashes();
       const m = fh && fingerprints.matchFonts(fh).find((x) => x.name === name);
       if (!m) return { error: 'Совпадение с каталогом не найдено' };
-      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: null, files: Object.keys(m.files).map((bn) => ({ root: 'fonts', relPath: bn })) });
+      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: preview || null, files: Object.keys(m.files).map((bn) => ({ root: 'fonts', relPath: bn })) });
       return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };
@@ -549,7 +562,7 @@ function registerIpc() {
   });
 
   // adopt a foreign cursor set (resource\cursor) recognised as a catalog mod
-  ipcMain.handle('mods:adoptCursor', (e) => {
+  ipcMain.handle('mods:adoptCursor', (e, preview) => {
     try {
       const cursorDir = path.join(installer.getGamePath(), 'dota', 'resource', 'cursor');
       if (!fs.existsSync(cursorDir)) return { error: 'Папка курсора не найдена' };
@@ -568,7 +581,7 @@ function registerIpc() {
       const matches = fingerprints.match(fingerprintFiles(files));
       if (!matches) return { error: 'Совпадение с каталогом не найдено' };
       const m = matches[0];
-      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: null, files: rels.map((rp) => ({ root: 'cursor', relPath: rp })) });
+      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: preview || null, files: rels.map((rp) => ({ root: 'cursor', relPath: rp })) });
       return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };

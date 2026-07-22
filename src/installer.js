@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -551,6 +551,15 @@ class Installer {
       }
     }
     return results;
+  }
+
+  // A content-derived display name for a lang VPK (hero / set / kind), or null if the
+  // content isn't recognisable — used to name imported files instead of a bare "pakNN".
+  displayNameForFile(relPath) {
+    try {
+      const buf = fs.readFileSync(path.join(this.langFolder(), relPath));
+      return nameFromAnalysis(analyzeVpkPaths(listVpkPaths(buf)));
+    } catch { return null; }
   }
 
   // What a stored library record (or a foreign vpk) actually changes — hero(es) and

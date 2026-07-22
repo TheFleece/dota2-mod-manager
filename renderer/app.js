@@ -471,7 +471,7 @@ $('#openModsFolderBtn').addEventListener('click', async () => {
 
 // ---------- launch + master mods switch (status bar) ----------
 
-$('#launchBtn').addEventListener('click', async () => {
+$('#launchBtn')?.addEventListener('click', async () => {
   if (!state.settings?.dotaPathValid) { toast('Сначала укажи путь к Dota 2 в настройках', 'warn'); return; }
   await window.api.game.launch();
   toast(state.masterOff ? 'Запуск Dota 2 без модов…' : 'Запуск Dota 2 с модами…');
@@ -494,7 +494,7 @@ async function refreshMasterSwitch() {
   paintMasterSwitch();
 }
 
-$('#modsMasterBtn').addEventListener('click', async () => {
+$('#modsMasterBtn')?.addEventListener('click', async () => {
   const btn = $('#modsMasterBtn');
   btn.disabled = true;
   const enable = state.masterOff; // currently off -> turn on, and vice-versa
@@ -1185,7 +1185,7 @@ function libMatchesSearch(rec) {
 }
 
 function isPackableRec(rec) {
-  return rec.kind !== 'pack' && !['fonts', 'cursors'].includes(rec.categoryId)
+  return !!rec && rec.kind !== 'pack' && !['fonts', 'cursors'].includes(rec.categoryId)
     && (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
 }
 
@@ -1201,10 +1201,13 @@ function packThumbGridHtml(rec) {
 }
 
 function memberRowHtml(rec, m, masterOff) {
+  const key = memberKey(rec.id, m.id);
+  const sel = state.librarySel.has(key);
   const p = previewUrl(m.categoryId, m.preview);
   const thumb = p && !isVideo(p) ? `<img class="member-thumb" src="${esc(p)}" loading="lazy" alt="">` : '<div class="member-thumb"></div>';
   return `
-    <div class="member-row ${m.enabled ? '' : 'disabled'}">
+    <div class="member-row ${m.enabled ? '' : 'disabled'} ${sel ? 'selected' : ''}">
+      <input type="checkbox" class="lib-check" data-check="${esc(key)}" ${sel ? 'checked' : ''} aria-label="Выбрать мод в паке">
       ${thumb}
       <div class="member-info">
         <div class="member-name">${esc(m.name)}${m.styleLabel ? ` <span style="color:var(--primary-soft)">(${esc(m.styleLabel)})</span>` : ''}</div>
@@ -1250,7 +1253,10 @@ function packRowHtml(rec, i, masterOff) {
 function normalRowHtml(rec, i, masterOff) {
   const selectable = !['fonts', 'cursors'].includes(rec.categoryId);
   const selected = state.librarySel.has(rec.id);
-  const prev = previewUrl(rec.categoryId, rec.preview);
+  // own preview, else the catalog thumbnail if the file is recognised (so a matched
+  // import shows an image right away, before it's even adopted)
+  let prev = rec.preview ? previewUrl(rec.categoryId, rec.preview) : null;
+  if (!prev && rec.match) { const cp = catalogPreviewFor(rec.match); if (cp) prev = previewUrl(rec.match[0].categoryId, cp); }
   const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
   return `
     <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
@@ -1276,14 +1282,49 @@ function normalRowHtml(rec, i, masterOff) {
     </div>`;
 }
 
+// selection keys: a plain record id, or "m:<packId>:<memberId>" for a pack member
+function isMemberKey(k) { return typeof k === 'string' && k.startsWith('m:'); }
+function memberKey(packId, memberId) { return `m:${packId}:${memberId}`; }
+
 function countPackableSelected() {
   const recs = state.libRecords || [];
   let n = 0;
-  for (const id of state.librarySel) {
-    const r = recs.find((x) => x.id === id);
+  for (const k of state.librarySel) {
+    if (isMemberKey(k)) continue;
+    const r = recs.find((x) => x.id === k);
     if (r && isPackableRec(r)) n++;
   }
   return n;
+}
+
+// top-level records the "select all" checkbox governs (visible, non-font/cursor)
+function selectableRecordIds() {
+  return (state.libRecords || [])
+    .filter((r) => !['fonts', 'cursors'].includes(r.categoryId) && libMatchesSearch(r))
+    .map((r) => r.id);
+}
+
+// catalog thumbnail for a fingerprint match, resolved from the loaded catalog index
+function catalogPreviewFor(match) {
+  const m = match && match[0];
+  if (!m) return null;
+  const hit = state.modIndex.get(m.name.toLowerCase());
+  if (!hit) return null;
+  const mod = hit.mod;
+  if (m.styleLabel && mod.styles) {
+    const st = mod.styles.find((s) => s.label === m.styleLabel);
+    if (st && st.preview) return st.preview;
+  }
+  return mod.preview || (mod.styles && mod.styles[0] && mod.styles[0].preview) || null;
+}
+
+function syncSelectAll() {
+  const cb = $('#selAll');
+  if (!cb) return;
+  const ids = selectableRecordIds();
+  const sel = ids.filter((id) => state.librarySel.has(id)).length;
+  cb.checked = ids.length > 0 && sel === ids.length;
+  cb.indeterminate = sel > 0 && sel < ids.length;
 }
 
 function updateBulkBar() {
@@ -1291,10 +1332,29 @@ function updateBulkBar() {
   if (!bar) return;
   const n = state.librarySel.size;
   bar.classList.toggle('show', n > 0);
+  document.body.classList.toggle('has-selection', n > 0);
   const cnt = $('#bulkCount');
-  if (cnt) cnt.textContent = `Выбрано: ${n}`;
+  if (cnt) cnt.textContent = String(n);
   const cb = $('#bulkCombine');
   if (cb) cb.disabled = countPackableSelected() < 2;
+}
+
+// list body (filtered by the library search) — rebuilt on its own so typing in the
+// search box never re-creates the input and steals focus
+function libraryListHtml(masterOff) {
+  const all = state.libRecords || [];
+  if (!all.length) return '<div class="empty-note">Пока ничего не установлено — загляни в Каталог</div>';
+  const installed = all.filter(libMatchesSearch);
+  if (!installed.length) return '<div class="empty-note">Ничего не найдено по запросу</div>';
+  return installed.map((rec, i) => rec.kind === 'pack' ? packRowHtml(rec, i, masterOff) : normalRowHtml(rec, i, masterOff)).join('');
+}
+
+function paintLibraryList() {
+  const libList = $('#libList');
+  if (!libList) return;
+  libList.innerHTML = libraryListHtml(state.masterOff);
+  syncSelectAll();
+  updateBulkBar();
 }
 
 // modal picker: choose standalone packable mods (returns array of ids, or null)
@@ -1361,27 +1421,25 @@ async function renderLibrary() {
   paintMasterSwitch();
   const masterOff = state.masterOff;
 
-  const installed = installedAll.filter(libMatchesSearch);
-  const external = externalAll.filter((f) => !state.libSearch.trim() || (f.name || '').toLowerCase().includes(state.libSearch.trim().toLowerCase()));
-
-  // drop selection entries for records that no longer exist
+  // drop selection for records (and members whose pack) that no longer exist
   const valid = new Set(installedAll.map((r) => r.id));
-  for (const id of [...state.librarySel]) if (!valid.has(id)) state.librarySel.delete(id);
+  for (const k of [...state.librarySel]) {
+    if (isMemberKey(k)) { if (!valid.has(k.split(':')[1])) state.librarySel.delete(k); }
+    else if (!valid.has(k)) state.librarySel.delete(k);
+  }
 
   const enabledCount = installedAll.filter((m) => m.enabled).length;
   const slots = res.slots || 0;
   const slotCeil = res.slotCeil || 98;
   const nearLimit = slots >= 90;
-
-  const visSelectable = installed.filter((r) => !['fonts', 'cursors'].includes(r.categoryId)).map((r) => r.id);
-  const allSelected = visSelectable.length > 0 && visSelectable.every((id) => state.librarySel.has(id));
+  const external = externalAll;
 
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">Библиотека</h1></div>
     ${masterOff ? `
       <div class="lib-banner off">
         <span class="ms">bolt</span>
-        <div class="banner-body"><b>Моды выключены</b> мастер-переключателем (внизу справа). Игра запустится ванильной. Включи моды, чтобы менять их по отдельности.</div>
+        <div class="banner-body"><b>Моды выключены</b> мастер-переключателем внизу справа — игра запустится ванильной. Включи, чтобы менять моды по отдельности.</div>
       </div>` : ''}
     ${nearLimit && !masterOff ? `
       <div class="lib-banner warn">
@@ -1392,101 +1450,103 @@ async function renderLibrary() {
     <div class="lib-toolbar">
       <div class="lib-search">
         <span class="ms">search</span>
-        <input id="libSearch" placeholder="Поиск в библиотеке…" value="${esc(state.libSearch)}" spellcheck="false">
+        <input id="libSearch" placeholder="Поиск в библиотеке…" value="${esc(state.libSearch)}" spellcheck="false" autocomplete="off">
         <button class="lib-search-clear ${state.libSearch ? 'show' : ''}" id="libSearchClear" aria-label="Очистить"><span class="ms">close</span></button>
       </div>
-      <span class="lib-stats">${installedAll.length} ${plural(installedAll.length, 'мод', 'мода', 'модов')} · ${enabledCount} вкл · ${slots} ${plural(slots, 'слот', 'слота', 'слотов')}</span>
-      <button class="btn btn-sm" id="enableAllBtn" ${masterOff ? 'disabled' : ''}>Включить всё</button>
-      <button class="btn btn-sm" id="disableAllBtn" ${masterOff ? 'disabled' : ''}>Отключить всё</button>
-      <button class="btn btn-sm" id="importVpkBtn"><span class="ms">upload_file</span>Импорт VPK</button>
-      <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>Папка модов</button>
+      <span class="lib-stats">${installedAll.length} ${plural(installedAll.length, 'мод', 'мода', 'модов')} · ${enabledCount} вкл · ${slots}/${slotCeil} ${plural(slots, 'слот', 'слота', 'слотов')}</span>
+      <div class="lib-toolbar-actions">
+        <button class="btn btn-sm" id="importVpkBtn"><span class="ms">upload_file</span>Импорт VPK</button>
+        <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>Папка модов</button>
+      </div>
     </div>
     ${installedAll.length ? `
-      <div class="lib-selectbar">
-        <label class="lib-checkall"><input type="checkbox" class="lib-check" id="selAll" ${allSelected ? 'checked' : ''}>Выбрать все</label>
-        <button class="lnk" id="selNone">Снять выбор</button>
-        <button class="lnk" id="selInvert">Инвертировать</button>
-        <span class="sel-hint">Отметь моды галочками — объединить в пак или массово управлять</span>
+      <div class="lib-listhead">
+        <label class="lib-selectall" title="Выбрать всё"><input type="checkbox" class="lib-check" id="selAll">Выбрать всё</label>
+        <span class="lib-listhead-hint">Отметь моды галочками — объединить в пак или массово управлять</span>
+        <button class="btn btn-ghost btn-xs" id="enableAllBtn" ${masterOff ? 'disabled' : ''}>Включить все</button>
+        <button class="btn btn-ghost btn-xs" id="disableAllBtn" ${masterOff ? 'disabled' : ''}>Выключить все</button>
       </div>` : ''}
-    <div class="lib-list" id="libList">
-      ${installedAll.length
-        ? (installed.length ? installed.map((rec, i) => rec.kind === 'pack' ? packRowHtml(rec, i, masterOff) : normalRowHtml(rec, i, masterOff)).join('') : '<div class="empty-note">Ничего не найдено по запросу</div>')
-        : '<div class="empty-note">Пока ничего не установлено — загляни в Каталог</div>'}
-    </div>
+    <div class="lib-list" id="libList"></div>
     ${external.length ? `
       <div class="section-h" style="margin-top:26px"><span class="ms">folder_zip</span>Внешние файлы в папке модов</div>
       <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">Файлы, установленные не через менеджер</div>
       <div class="lib-list" id="extList"></div>` : ''}
-    <div style="height:64px"></div>
+    <div style="height:72px"></div>
     <div class="bulk-bar" id="bulkBar">
-      <span class="bulk-count" id="bulkCount">Выбрано: 0</span>
-      <button class="btn btn-sm" id="bulkEnable" ${masterOff ? 'disabled' : ''}><span class="ms">toggle_on</span>Включить</button>
-      <button class="btn btn-sm" id="bulkDisable" ${masterOff ? 'disabled' : ''}><span class="ms">toggle_off</span>Выключить</button>
-      <button class="btn btn-sm btn-primary" id="bulkCombine"><span class="ms">merge</span>Объединить в пак</button>
-      <button class="btn btn-sm btn-danger" id="bulkRemove"><span class="ms">delete</span>Удалить</button>
-      <button class="btn btn-sm btn-ghost" id="bulkClear">Отмена</button>
+      <span class="bulk-count"><b id="bulkCount">0</b> выбрано</span>
+      <div class="bulk-actions">
+        <button class="btn btn-sm" id="bulkEnable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_checked</span>Включить</button>
+        <button class="btn btn-sm" id="bulkDisable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_unchecked</span>Выключить</button>
+        <button class="btn btn-sm btn-primary" id="bulkCombine"><span class="ms">merge</span>Объединить в пак</button>
+        <button class="btn btn-sm btn-danger" id="bulkRemove"><span class="ms">delete</span>Удалить</button>
+      </div>
+      <button class="bulk-close" id="bulkClear" aria-label="Сбросить выбор" title="Сбросить выбор"><span class="ms">close</span></button>
     </div>
   `;
 
-  bindLibrary(installedAll, external);
-  updateBulkBar();
+  paintLibraryList();
+  bindLibrary(external);
 }
 
-async function bindLibrary(installed, external) {
-  const byId = (id) => installed.find((r) => r.id === id);
+async function bindLibrary(external) {
+  const byId = (id) => (state.libRecords || []).find((r) => r.id === id);
   const reRender = async () => { await refreshInstalledIndex(); renderLibrary(); };
 
-  // ----- search -----
+  // ----- search (repaints only the list so the input never loses focus) -----
   let searchTimer = null;
   $('#libSearch')?.addEventListener('input', (e) => {
+    state.libSearch = e.target.value;
+    $('#libSearchClear')?.classList.toggle('show', !!state.libSearch);
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => { state.libSearch = e.target.value; renderLibrary(); }, 160);
+    searchTimer = setTimeout(() => paintLibraryList(), 140);
   });
-  $('#libSearchClear')?.addEventListener('click', () => { state.libSearch = ''; renderLibrary(); });
+  $('#libSearchClear')?.addEventListener('click', () => {
+    state.libSearch = '';
+    const inp = $('#libSearch'); if (inp) inp.value = '';
+    $('#libSearchClear')?.classList.remove('show');
+    paintLibraryList();
+    inp?.focus();
+  });
 
-  // ----- selection controls -----
+  // ----- select all / none (tri-state checkbox) -----
   $('#selAll')?.addEventListener('change', (e) => {
-    const ids = installed.filter((r) => !['fonts', 'cursors'].includes(r.categoryId) && libMatchesSearch(r)).map((r) => r.id);
+    const ids = selectableRecordIds();
     if (e.target.checked) ids.forEach((id) => state.librarySel.add(id));
     else ids.forEach((id) => state.librarySel.delete(id));
-    renderLibrary();
-  });
-  $('#selNone')?.addEventListener('click', () => { state.librarySel.clear(); renderLibrary(); });
-  $('#selInvert')?.addEventListener('click', () => {
-    installed.filter((r) => !['fonts', 'cursors'].includes(r.categoryId) && libMatchesSearch(r)).forEach((r) => {
-      if (state.librarySel.has(r.id)) state.librarySel.delete(r.id); else state.librarySel.add(r.id);
-    });
-    renderLibrary();
+    paintLibraryList();
   });
 
   // ----- bulk bar -----
-  $('#bulkClear')?.addEventListener('click', () => { state.librarySel.clear(); renderLibrary(); });
+  $('#bulkClear')?.addEventListener('click', () => { state.librarySel.clear(); paintLibraryList(); });
   $('#bulkEnable')?.addEventListener('click', () => bulkSetEnabled(true));
   $('#bulkDisable')?.addEventListener('click', () => bulkSetEnabled(false));
   $('#bulkRemove')?.addEventListener('click', async () => {
-    const ids = [...state.librarySel];
-    if (!ids.length) return;
-    if (!await confirmDialog(`Удалить выбранное (${ids.length})?`)) return;
-    for (const id of ids) await window.api.mods.remove(id);
+    const keys = [...state.librarySel];
+    if (!keys.length) return;
+    if (!await confirmDialog(`Удалить выбранное (${keys.length})?`)) return;
+    for (const k of keys) {
+      if (isMemberKey(k)) { const [, packId, memberId] = k.split(':'); await window.api.packs.removeMember(packId, memberId); }
+      else await window.api.mods.remove(k);
+    }
     state.librarySel.clear();
     toast('Удалено');
     reRender();
   });
-  $('#bulkCombine')?.addEventListener('click', () => combineIntoNewPack([...state.librarySel].filter((id) => { const r = byId(id); return r && isPackableRec(r); })));
+  $('#bulkCombine')?.addEventListener('click', () => combineIntoNewPack([...state.librarySel].filter((k) => !isMemberKey(k) && isPackableRec(byId(k)))));
   $('#combineHintBtn')?.addEventListener('click', async () => {
     const ids = await pickModsDialog(standalonePackable(), { title: 'Выбери моды для объединения в пак', okLabel: 'Далее' });
     if (ids) combineIntoNewPack(ids);
   });
 
-  // ----- checkbox selection (delegated, no re-render to keep scroll) -----
+  // ----- checkbox selection (delegated; repaint-free to keep scroll) -----
   const libList = $('#libList');
   libList?.addEventListener('change', (e) => {
     const cb = e.target.closest('.lib-check[data-check]');
     if (!cb) return;
-    const id = cb.dataset.check;
-    if (cb.checked) state.librarySel.add(id); else state.librarySel.delete(id);
-    cb.closest('.lib-row')?.classList.toggle('selected', cb.checked);
-    const sa = $('#selAll'); if (sa) sa.checked = false;
+    const key = cb.dataset.check;
+    if (cb.checked) state.librarySel.add(key); else state.librarySel.delete(key);
+    cb.closest('.lib-row, .member-row')?.classList.toggle('selected', cb.checked);
+    syncSelectAll();
     updateBulkBar();
   });
 
@@ -1571,7 +1631,8 @@ async function bindLibrary(installed, external) {
     }
     if (el.dataset.adopt) {
       el.disabled = true;
-      const r = await window.api.mods.adoptMod(el.dataset.adopt);
+      const rec = byId(el.dataset.adopt);
+      const r = await window.api.mods.adoptMod(el.dataset.adopt, catalogPreviewFor(rec && rec.match));
       if (r.error) toast(r.error, 'error', 6000);
       else toast(`Привязан к каталогу: «${r.name}»`, 'ok');
       reRender();
@@ -1590,8 +1651,8 @@ async function bindLibrary(installed, external) {
   });
 
   // ----- toolbar -----
-  $('#enableAllBtn')?.addEventListener('click', () => bulkToggle(installed, true));
-  $('#disableAllBtn')?.addEventListener('click', () => bulkToggle(installed, false));
+  $('#enableAllBtn')?.addEventListener('click', () => bulkToggle(state.libRecords || [], true));
+  $('#disableAllBtn')?.addEventListener('click', () => bulkToggle(state.libRecords || [], false));
   $('#importVpkBtn')?.addEventListener('click', async () => handleImportResult(await window.api.mods.importDialog()));
   $('#openFolderBtn2')?.addEventListener('click', () => window.api.misc.openLangFolder());
 
@@ -1635,9 +1696,10 @@ async function bindLibrary(installed, external) {
       b.addEventListener('click', async () => {
         b.disabled = true;
         const f = byKey(b.dataset.adopt);
-        const r = f.kind === 'cursor' ? await window.api.mods.adoptCursor()
-          : f.kind === 'font' ? await window.api.mods.adoptFont(f.name)
-          : await window.api.mods.adoptExternal(f.key);
+        const prev = catalogPreviewFor(f.match);
+        const r = f.kind === 'cursor' ? await window.api.mods.adoptCursor(prev)
+          : f.kind === 'font' ? await window.api.mods.adoptFont(f.name, prev)
+          : await window.api.mods.adoptExternal(f.key, prev);
         if (r.error) toast(r.error, 'error', 6000);
         else toast(`«${r.name}» принят из каталога`, 'ok');
         await refreshInstalledIndex();
@@ -1684,7 +1746,12 @@ async function handleImportResult(r) {
 
 // drag & drop of .vpk files anywhere in the window -> import
 let dragDepth = 0;
-document.addEventListener('dragover', (e) => e.preventDefault());
+// setting dropEffect=copy on every dragover is what actually lets Windows deliver the
+// drop; without it some setups report effect "none" and the drop event never fires
+document.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+});
 document.addEventListener('dragenter', (e) => {
   e.preventDefault();
   if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
@@ -1722,14 +1789,19 @@ async function bulkToggle(installed, enabled) {
   refreshInstalledIndex();
 }
 
-// enable/disable exactly the ticked records (bulk-bar action)
+// enable/disable exactly the ticked items — works on both top-level mods and pack members
 async function bulkSetEnabled(enabled) {
-  const ids = [...state.librarySel];
-  if (!ids.length) return;
-  for (const id of ids) {
-    const rec = (state.libRecords || []).find((r) => r.id === id);
-    if (!rec || ['fonts', 'cursors'].includes(rec.categoryId)) continue;
-    if (rec.enabled !== enabled) await window.api.mods.setEnabled(id, enabled);
+  const keys = [...state.librarySel];
+  if (!keys.length) return;
+  for (const k of keys) {
+    if (isMemberKey(k)) {
+      const [, packId, memberId] = k.split(':');
+      await window.api.packs.setMemberEnabled(packId, memberId, enabled);
+    } else {
+      const rec = (state.libRecords || []).find((r) => r.id === k);
+      if (!rec || ['fonts', 'cursors'].includes(rec.categoryId)) continue;
+      if (rec.enabled !== enabled) await window.api.mods.setEnabled(k, enabled);
+    }
   }
   toast(enabled ? 'Включено' : 'Выключено');
   await refreshInstalledIndex();
