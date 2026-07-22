@@ -26,3 +26,40 @@ jobs:
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # Notify Discord after the release is published. This lives in the same workflow as the
+  # build because a release published by the default GITHUB_TOKEN does NOT trigger a separate
+  # "on: release" workflow (GitHub blocks token-triggered workflows to avoid recursion).
+  notify:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord notification
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          NAME=$(gh release view "$TAG" --repo "$REPO" --json name -q '.name' 2>/dev/null)
+          URL=$(gh release view "$TAG" --repo "$REPO" --json url -q '.url' 2>/dev/null)
+          [ -z "$NAME" ] && NAME="$TAG"
+          [ -z "$URL" ] && URL="https://github.com/$REPO/releases/tag/$TAG"
+          PAYLOAD=$(jq -n \
+            --arg name "$NAME" \
+            --arg url "$URL" \
+            '{
+              "content": "**Mod Manager Updated!**",
+              "embeds": [
+                {
+                  "title": $name,
+                  "url": $url,
+                  "description": "A new release has been published!\n\n[**Open Release Page**](\($url))",
+                  "color": 8585067
+                }
+              ],
+              "username": "GitHub",
+              "avatar_url": "https://i.postimg.cc/zGJTFHyj/github.webp"
+            }')
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
