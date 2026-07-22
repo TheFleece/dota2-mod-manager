@@ -1298,6 +1298,35 @@ function countCombinableSelected() {
   return n;
 }
 
+// selected top-level records that are recognised catalog mods (can be adopted)
+function countAdoptableSelected() {
+  const recs = state.libRecords || [];
+  let n = 0;
+  for (const k of state.librarySel) {
+    if (isMemberKey(k)) continue;
+    const r = recs.find((x) => x.id === k);
+    if (r && r.match) n++;
+  }
+  return n;
+}
+
+// adopt every recognised mod at once — installed records and foreign files alike
+async function adoptAll() {
+  const recs = (state.libRecords || []).filter((r) => r.match);
+  const exts = (state.libExternal || []).filter((f) => f.match);
+  if (!recs.length && !exts.length) return;
+  for (const r of recs) await window.api.mods.adoptMod(r.id, catalogPreviewFor(r.match));
+  for (const f of exts) {
+    const prev = catalogPreviewFor(f.match);
+    if (f.kind === 'cursor') await window.api.mods.adoptCursor(prev);
+    else if (f.kind === 'font') await window.api.mods.adoptFont(f.name, prev);
+    else await window.api.mods.adoptExternal(f.key, prev);
+  }
+  toast(`Привязано: ${recs.length + exts.length}`, 'ok');
+  await refreshInstalledIndex();
+  renderLibrary();
+}
+
 // top-level records the "select all" checkbox governs (visible, non-font/cursor)
 function selectableRecordIds() {
   return (state.libRecords || [])
@@ -1338,6 +1367,8 @@ function updateBulkBar() {
   if (cnt) cnt.textContent = String(n);
   const cb = $('#bulkCombine');
   if (cb) cb.disabled = countCombinableSelected() < 2;
+  const ab = $('#bulkAdopt');
+  if (ab) ab.classList.toggle('hidden', countAdoptableSelected() === 0);
 }
 
 // list body (filtered by the library search) — rebuilt on its own so typing in the
@@ -1439,6 +1470,8 @@ async function renderLibrary() {
   const slotCeil = res.slotCeil || 98;
   const nearLimit = slots >= 90;
   const external = externalAll;
+  state.libExternal = externalAll;
+  const matchedCount = installedAll.filter((r) => r.match).length + externalAll.filter((f) => f.match).length;
 
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">Библиотека</h1></div>
@@ -1446,6 +1479,12 @@ async function renderLibrary() {
       <div class="lib-banner off">
         <span class="ms">bolt</span>
         <div class="banner-body"><b>Моды выключены</b> мастер-переключателем внизу справа — игра запустится ванильной. Включи, чтобы менять моды по отдельности.</div>
+      </div>` : ''}
+    ${matchedCount > 0 ? `
+      <div class="lib-banner info">
+        <span class="ms">library_add_check</span>
+        <div class="banner-body"><b>${matchedCount}</b> ${plural(matchedCount, 'файл опознан', 'файла опознаны', 'файлов опознаны')} как моды из каталога — привяжи, чтобы получить превью и управлять как обычными.</div>
+        <button class="btn btn-sm btn-primary" id="adoptAllBtn"><span class="ms">library_add_check</span>Привязать все</button>
       </div>` : ''}
     ${nearLimit && !masterOff ? `
       <div class="lib-banner warn">
@@ -1484,6 +1523,7 @@ async function renderLibrary() {
         <button class="btn btn-sm" id="bulkEnable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_checked</span>Включить</button>
         <button class="btn btn-sm" id="bulkDisable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_unchecked</span>Выключить</button>
         <button class="btn btn-sm btn-primary" id="bulkCombine"><span class="ms">merge</span>Объединить в пак</button>
+        <button class="btn btn-sm hidden" id="bulkAdopt"><span class="ms">library_add_check</span>Привязать</button>
         <button class="btn btn-sm btn-danger" id="bulkRemove"><span class="ms">delete</span>Удалить</button>
       </div>
       <button class="bulk-close" id="bulkClear" aria-label="Сбросить выбор" title="Сбросить выбор"><span class="ms">close</span></button>
@@ -1546,6 +1586,15 @@ async function bindLibrary(external) {
   $('#combineHintBtn')?.addEventListener('click', async () => {
     const ids = await pickModsDialog(standalonePackable(), { title: 'Выбери моды для объединения в пак', okLabel: 'Далее' });
     if (ids) combineSelection(ids);
+  });
+  $('#adoptAllBtn')?.addEventListener('click', adoptAll);
+  $('#bulkAdopt')?.addEventListener('click', async () => {
+    const recs = [...state.librarySel].filter((k) => !isMemberKey(k)).map(byId).filter((r) => r && r.match);
+    if (!recs.length) return;
+    for (const r of recs) await window.api.mods.adoptMod(r.id, catalogPreviewFor(r.match));
+    state.librarySel.clear();
+    toast(`Привязано: ${recs.length}`, 'ok');
+    reRender();
   });
 
   // ----- checkbox selection (delegated; repaint-free to keep scroll) -----
