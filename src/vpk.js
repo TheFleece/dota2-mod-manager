@@ -3,12 +3,13 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { t } = require('./i18n');
 
 const VPK_SIGNATURE = 0x55aa1234;
 
 function readCString(buf, pos) {
   const end = buf.indexOf(0, pos);
-  if (end === -1) throw new Error('VPK: незакрытая строка в дереве');
+  if (end === -1) throw new Error(t('VPK: незакрытая строка в дереве'));
   return { str: buf.toString('utf-8', pos, end), next: end + 1 };
 }
 
@@ -18,7 +19,7 @@ function readCString(buf, pos) {
  */
 function listVpkPaths(buf) {
   if (buf.length < 12 || buf.readUInt32LE(0) !== VPK_SIGNATURE) {
-    throw new Error('VPK: неверная сигнатура');
+    throw new Error(t('VPK: неверная сигнатура'));
   }
   const version = buf.readUInt32LE(4);
   let pos = version === 2 ? 28 : 12; // v2 header carries 16 extra bytes of section sizes
@@ -100,7 +101,7 @@ const SLOT_DISPLAY = {
   legs: 'ноги', mount: 'ездовое', ambient: 'эффекты', misc: 'разное', base: 'модель',
 };
 
-function slotDisplayName(slot) { return SLOT_DISPLAY[slot] || slot; }
+function slotDisplayName(slot) { return t(SLOT_DISPLAY[slot] || slot); }
 
 function slotFromModelStem(hero, stem) {
   if (stem === hero || /^\d+$/.test(stem)) return 'base'; // bare hero name or "1.vmdl" = base body override
@@ -170,12 +171,12 @@ function analyzeVpk(buf) {
   return analyzeVpkPaths(listVpkPaths(buf));
 }
 
-// Human, Russian one-liner for a single detected hero, e.g. "Nyx Assassin (модель, оружие)".
+// Human one-liner for a single detected hero, e.g. "Nyx Assassin (model, weapon)".
 function describeHero(h) {
   const parts = [];
-  if (h.base) parts.push('модель');
+  if (h.base) parts.push(t('модель'));
   for (const s of h.slots) parts.push(slotDisplayName(s));
-  if (!parts.length && !h.models) parts.push('перекраска');
+  if (!parts.length && !h.models) parts.push(t('перекраска'));
   return h.name + (parts.length ? ` (${parts.join(', ')})` : '');
 }
 
@@ -184,7 +185,7 @@ const KIND_LABEL = { wards: 'варды', courier: 'курьер', ui: 'инте
 // Human summary of a whole analysis: hero skins, or a coarse content kind.
 function describeAnalysis(a) {
   if (a.heroes.length) return a.heroes.map(describeHero).join('; ');
-  return KIND_LABEL[a.kind] || '';
+  return t(KIND_LABEL[a.kind] || '');
 }
 
 // A short display NAME for a mod from its analysis — used to name imported VPKs by their
@@ -194,8 +195,8 @@ const KIND_NAME = { wards: 'Варды', courier: 'Курьер', ui: 'Инте�
 function nameFromAnalysis(a) {
   if (a.heroes.length === 1) return a.heroes[0].name;
   if (a.heroes.length >= 2 && a.heroes.length <= 3) return a.heroes.map((h) => h.name).join(', ');
-  if (a.heroes.length > 3) return `Сборка · ${a.heroes.length} героев`;
-  return KIND_NAME[a.kind] || null;
+  if (a.heroes.length > 3) return t('Сборка · {0} героев', a.heroes.length);
+  return KIND_NAME[a.kind] ? t(KIND_NAME[a.kind]) : null;
 }
 
 const EMPTY = Buffer.alloc(0);
@@ -211,7 +212,7 @@ function entryPath(en) {
 // with its bytes: [{ ext, folder, name, crc, preload, data }], in on-disk tree order.
 function readVpkEntries(dirBuf, dirPath, archivePathFor) {
   if (dirBuf.length < 12 || dirBuf.readUInt32LE(0) !== VPK_SIGNATURE) {
-    throw new Error('VPK: неверная сигнатура');
+    throw new Error(t('VPK: неверная сигнатура'));
   }
   const version = dirBuf.readUInt32LE(4);
   const treeSize = dirBuf.readUInt32LE(8);
@@ -481,7 +482,7 @@ function fingerprintFiles(files) {
 
 // Lightweight (path, crc) list — the mod's content signature, no archive reads.
 function listVpkEntries(buf) {
-  if (buf.length < 12 || buf.readUInt32LE(0) !== VPK_SIGNATURE) throw new Error('VPK: неверная сигнатура');
+  if (buf.length < 12 || buf.readUInt32LE(0) !== VPK_SIGNATURE) throw new Error(t('VPK: неверная сигнатура'));
   const version = buf.readUInt32LE(4);
   let pos = version === 2 ? 28 : 12;
   const out = [];

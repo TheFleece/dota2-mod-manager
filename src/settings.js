@@ -7,6 +7,11 @@ const DEFAULTS = {
   // "russian" keeps the game in Russian while loading mods (dota_russian + -language russian);
   // "123" switches the game UI to English
   langSuffix: 'russian',
+  // app UI language: "en" | "ru". English is the default until the user picks otherwise.
+  uiLang: 'en',
+  // one-time language picker: false for fresh installs AND for users updating from a
+  // version without this key, so everybody sees the picker once after this release.
+  langPromptSeen: false,
 };
 
 class Settings {

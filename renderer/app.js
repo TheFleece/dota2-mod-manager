@@ -78,10 +78,14 @@ function fmtMB(bytes) { return (bytes / 1024 / 1024).toFixed(1); }
 
 function fmtDate(unix) {
   if (!unix) return '';
-  return new Date(unix * 1000).toLocaleDateString('ru', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(unix * 1000).toLocaleDateString(window.i18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function plural(n, one, few, many) {
+  if (window.I18N_LANG === 'en') {
+    const pair = window.EN_PLURAL[many];
+    return pair ? (n === 1 ? pair[0] : pair[1]) : many;
+  }
   const m10 = n % 10, m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return one;
   if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
@@ -130,7 +134,7 @@ function mediaHtml(url, { hoverPlay = false, autoplay = false, controls = false,
 
 // ---------- custom confirm dialog ----------
 
-function confirmDialog(message, { okLabel = 'Удалить', danger = true } = {}) {
+function confirmDialog(message, { okLabel = L`Удалить`, danger = true } = {}) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
@@ -138,7 +142,7 @@ function confirmDialog(message, { okLabel = 'Удалить', danger = true } = 
       <div class="confirm-box">
         <div class="confirm-msg">${esc(message)}</div>
         <div class="confirm-actions">
-          <button class="btn" data-c="no">Отмена</button>
+          <button class="btn" data-c="no">${L`Отмена`}</button>
           <button class="btn ${danger ? 'btn-danger-solid' : 'btn-primary'}" data-c="yes">${esc(okLabel)}</button>
         </div>
       </div>`;
@@ -154,7 +158,7 @@ function confirmDialog(message, { okLabel = 'Удалить', danger = true } = 
 }
 
 // text-input dialog (returns the entered string, or null if cancelled)
-function promptDialog(message, { placeholder = '', value = '', okLabel = 'ОК' } = {}) {
+function promptDialog(message, { placeholder = '', value = '', okLabel = L`ОК` } = {}) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
@@ -163,7 +167,7 @@ function promptDialog(message, { placeholder = '', value = '', okLabel = 'ОК' 
         <div class="confirm-msg">${esc(message)}</div>
         <input class="input" id="promptInput" placeholder="${esc(placeholder)}" value="${esc(value)}" style="margin:14px 0 4px;width:100%">
         <div class="confirm-actions">
-          <button class="btn" data-c="no">Отмена</button>
+          <button class="btn" data-c="no">${L`Отмена`}</button>
           <button class="btn btn-primary" data-c="yes">${esc(okLabel)}</button>
         </div>
       </div>`;
@@ -212,13 +216,13 @@ function openPlayer(url, title) {
         ? `<div class="player-audio-visual"><span class="ms">graphic_eq</span></div><audio src="${esc(url)}" autoplay></audio>`
         : `<video src="${esc(url)}" autoplay playsinline></video>`}
       <div class="player-title">${esc(title || '')}</div>
-      <button class="player-close" aria-label="Закрыть"><span class="ms">close</span></button>
+      <button class="player-close" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
       <div class="player-controls">
-        <button class="pl-btn" data-act="play" aria-label="Пауза"><span class="ms">pause</span></button>
+        <button class="pl-btn" data-act="play" aria-label="${L`Пауза`}"><span class="ms">pause</span></button>
         <div class="pl-progress"><div class="pl-fill"></div><div class="pl-knob"></div></div>
         <span class="pl-time">0:00 / 0:00</span>
-        <button class="pl-btn" data-act="mute" aria-label="Звук"><span class="ms">volume_up</span></button>
-        ${audio ? '' : '<button class="pl-btn" data-act="fs" aria-label="На весь экран"><span class="ms">fullscreen</span></button>'}
+        <button class="pl-btn" data-act="mute" aria-label="${L`Звук`}"><span class="ms">volume_up</span></button>
+        ${audio ? '' : `<button class="pl-btn" data-act="fs" aria-label="${L`На весь экран`}"><span class="ms">fullscreen</span></button>`}
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -368,8 +372,8 @@ function buildModIndex() {
 }
 
 function catName(id) {
-  if (id === 'all') return 'Все категории';
-  return CAT_RU[id] || state.catalog?.constants?.translations?.[id] || id;
+  if (id === 'all') return tr('Все категории');
+  return tr(CAT_RU[id]) || state.catalog?.constants?.translations?.[id] || id;
 }
 
 function catIcon(id) { return CAT_ICON[id] || 'extension'; }
@@ -477,9 +481,9 @@ $('#openModsFolderBtn').addEventListener('click', async () => {
 // ---------- launch + master mods switch (status bar) ----------
 
 $('#launchBtn')?.addEventListener('click', async () => {
-  if (!state.settings?.dotaPathValid) { toast('Сначала укажи путь к Dota 2 в настройках', 'warn'); return; }
+  if (!state.settings?.dotaPathValid) { toast(L`Сначала укажи путь к Dota 2 в настройках`, 'warn'); return; }
   await window.api.game.launch();
-  toast(state.masterOff ? 'Запуск Dota 2 без модов…' : 'Запуск Dota 2 с модами…');
+  toast(state.masterOff ? L`Запуск Dota 2 без модов…` : L`Запуск Dota 2 с модами…`);
 });
 
 function paintMasterSwitch() {
@@ -488,7 +492,7 @@ function paintMasterSwitch() {
   const on = !state.masterOff;
   btn.classList.toggle('on', on);
   btn.setAttribute('aria-checked', String(on));
-  $('#modsMasterState').textContent = on ? 'вкл' : 'выкл';
+  $('#modsMasterState').textContent = on ? L`вкл` : L`выкл`;
 }
 
 async function refreshMasterSwitch() {
@@ -508,7 +512,7 @@ $('#modsMasterBtn')?.addEventListener('click', async () => {
   if (r.error) { toast(r.error, 'error'); return; }
   state.masterOff = !enable;
   paintMasterSwitch();
-  toast(enable ? 'Моды включены' : 'Моды выключены — игра запустится ванильной');
+  toast(enable ? L`Моды включены` : L`Моды выключены — игра запустится ванильной`);
   if (state.view === 'library') renderLibrary();
 });
 
@@ -550,12 +554,12 @@ function renderRail() {
   const cats = new Set(visibleCategories().map((c) => c.id));
   let html = `
     <button class="rail-item ${state.activeCategory === 'all' ? 'active' : ''}" data-cat="all">
-      <span class="ms">apps</span>Все категории
+      <span class="ms">apps</span>${L`Все категории`}
     </button>`;
   for (const [label, ids] of RAIL_SECTIONS) {
     const present = ids.filter((id) => cats.has(id));
     if (!present.length) continue;
-    html += `<div class="rail-section">${esc(label)}</div>`;
+    html += `<div class="rail-section">${esc(tr(label))}</div>`;
     for (const id of present) {
       html += `
         <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
@@ -583,14 +587,14 @@ function renderRail() {
 
 function renderCatalog() {
   if (!state.catalog) {
-    viewRoot.innerHTML = `<div class="empty-note">Загрузка каталога…</div>`;
+    viewRoot.innerHTML = `<div class="empty-note">${L`Загрузка каталога…`}</div>`;
     return;
   }
   if (state.catalog.error) {
     viewRoot.innerHTML = `
       <div class="empty-note">
-        Не удалось загрузить каталог: ${esc(state.catalog.error)}<br><br>
-        <button class="btn btn-primary" id="retryCat">Повторить</button>
+        ${L`Не удалось загрузить каталог: ${esc(state.catalog.error)}`}<br><br>
+        <button class="btn btn-primary" id="retryCat">${L`Повторить`}</button>
       </div>`;
     $('#retryCat').addEventListener('click', () => loadCatalog(true));
     return;
@@ -620,13 +624,13 @@ function renderHome() {
 
   viewRoot.innerHTML = `
     <div class="home-hero">
-      <h1>Моды для Dota 2</h1>
-      <p>${cats.reduce((n, c) => n + categoryMods(c.id).length, 0)} модов в ${cats.length} категориях · каталог Dota2PornFx${state.catalog.fetchedAt ? ' · обновлён ' + new Date(state.catalog.fetchedAt).toLocaleDateString('ru') : ''}</p>
+      <h1>${L`Моды для Dota 2`}</h1>
+      <p>${L`${cats.reduce((n, c) => n + categoryMods(c.id).length, 0)} модов в ${cats.length} категориях · каталог Dota2PornFx`}${state.catalog.fetchedAt ? L` · обновлён ${new Date(state.catalog.fetchedAt).toLocaleDateString(window.i18nLocale())}` : ''}</p>
     </div>
     ${recent.length ? `
-      <div class="section-h"><span class="ms">new_releases</span>Недавно добавленные</div>
+      <div class="section-h"><span class="ms">new_releases</span>${L`Недавно добавленные`}</div>
       <div class="recent-row">${recent.map((m, i) => cardHtml(m, i, true)).join('')}</div>` : ''}
-    <div class="section-h"><span class="ms">apps</span>Категории</div>
+    <div class="section-h"><span class="ms">apps</span>${L`Категории`}</div>
     <div class="cat-tiles">
       ${cats.map((c, i) => {
         const prev = c.preview ? `${RAW_BASE}/assets/previews/categories/${encodeURIComponent(c.preview)}` : null;
@@ -670,11 +674,11 @@ function renderSearchResults() {
 
   viewRoot.innerHTML = `
     <div class="view-header">
-      <h1 class="view-title">Поиск: <span class="accent">${esc(state.search.trim())}</span></h1>
+      <h1 class="view-title">${L`Поиск:`} <span class="accent">${esc(state.search.trim())}</span></h1>
     </div>
     ${toolbarHtml(mods.length, { tags: [], groups: [], installable })}
     <div class="grid" id="modGrid">
-      ${mods.length ? mods.map((m, i) => cardHtml(m, i, true)).join('') : `<div class="empty-note">Ничего не найдено</div>`}
+      ${mods.length ? mods.map((m, i) => cardHtml(m, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено`}</div>`}
     </div>
   `;
   bindToolbar();
@@ -697,7 +701,7 @@ function renderCategory(categoryId) {
 
   let gridHtml = '';
   if (!mods.length) {
-    gridHtml = '<div class="empty-note">Ничего не найдено — сбрось фильтры</div>';
+    gridHtml = `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
   } else if (grouped) {
     let lastGroup = null;
     mods.forEach((m, i) => {
@@ -734,14 +738,14 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
       <div class="select-wrap">
         <span class="ms">sort</span>
         <select id="sortSelect">
-          ${SORTS.map((s) => `<option value="${s.key}" ${f.sort === s.key ? 'selected' : ''}>${s.label}</option>`).join('')}
+          ${SORTS.map((s) => `<option value="${s.key}" ${f.sort === s.key ? 'selected' : ''}>${esc(tr(s.label))}</option>`).join('')}
         </select>
       </div>
       ${heroes.length ? `
         <div class="select-wrap">
           <span class="ms">person</span>
           <select id="heroSelect">
-            <option value="">Все герои</option>
+            <option value="">${L`Все герои`}</option>
             ${heroes.map((h) => `<option value="${esc(h)}" ${f.hero === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}
           </select>
         </div>` : ''}
@@ -749,14 +753,14 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
         <div class="select-wrap">
           <span class="ms">${categoryId === 'hero-items' ? 'person' : catIcon(categoryId) || 'group'}</span>
           <select id="groupSelect">
-            <option value="">${GROUP_LABEL[categoryId] || 'Все группы'}</option>
+            <option value="">${esc(tr(GROUP_LABEL[categoryId] || 'Все группы'))}</option>
             ${groups.map((g) => `<option value="${esc(g)}" ${f.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
           </select>
         </div>` : ''}
       ${installable ? `
       <div class="sep"></div>
       <button class="fchip ${f.installedOnly ? 'active' : ''}" id="installedChip">
-        <span class="ms">check_circle</span>Установленные
+        <span class="ms">check_circle</span>${L`Установленные`}
       </button>` : ''}
       ${tags.length ? '<div class="sep"></div>' : ''}
       ${tags.map(([tag, cnt]) => `
@@ -810,15 +814,15 @@ function cardHtml(m, i, withCat = false) {
       <div class="card-media">
         ${mediaHtml(prev, { hoverPlay: true, fallbackIcon: catIcon(cat) })}
         <div class="media-tags">
-          ${installed ? '<span class="mtag ok">Установлен</span>' : ''}
-          ${isPack ? `<span class="mtag">Пак · ${(m.mods || []).length}</span>` : ''}
-          ${m._custom ? '<span class="mtag custom">Свой</span>' : ''}
-          ${external ? '<span class="mtag">Ссылка</span>' : ''}
+          ${installed ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}
+          ${isPack ? `<span class="mtag">${L`Пак · ${(m.mods || []).length}`}</span>` : ''}
+          ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
+          ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
           ${tags.map((t) => `<span class="mtag">${esc(tagLabel(cat, t))}</span>`).join('')}
         </div>
         ${playable ? `
-          <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="Смотреть превью">
-            <span class="ms">play_arrow</span>Превью
+          <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="${L`Смотреть превью`}">
+            <span class="ms">play_arrow</span>${L`Превью`}
           </button>` : ''}
         ${m.styles ? `
           <div class="media-swatches">
@@ -884,7 +888,7 @@ function refreshCardBadges() {
     const installed = isInstalled(cat, mod);
     const badge = card.querySelector('.mtag.ok');
     if (installed && !badge) {
-      card.querySelector('.media-tags')?.insertAdjacentHTML('afterbegin', '<span class="mtag ok">Установлен</span>');
+      card.querySelector('.media-tags')?.insertAdjacentHTML('afterbegin', `<span class="mtag ok">${L`Установлен`}</span>`);
     } else if (!installed && badge) {
       badge.remove();
     }
@@ -962,10 +966,10 @@ function drawModal() {
   $('#modalContent').innerHTML = `
     <div class="modal-media">
       ${mediaHtml(mediaUrl, { autoplay: true, fallbackIcon: catIcon(categoryId) })}
-      <button class="modal-close" id="modalCloseBtn" aria-label="Закрыть"><span class="ms">close</span></button>
+      <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
       ${playable ? `
         <button class="preview-toggle" id="previewPlayBtn">
-          <span class="ms">play_circle</span>Смотреть превью
+          <span class="ms">play_circle</span>${L`Смотреть превью`}
         </button>` : ''}
     </div>
     <div class="modal-body">
@@ -975,7 +979,7 @@ function drawModal() {
       <div class="modal-sub">
         <span>${esc(catName(categoryId))}</span>
         ${mod._group ? `<span>· ${esc(mod._group)}</span>` : ''}
-        ${mod._custom ? '<span>· свой пак</span>' : ''}
+        ${mod._custom ? `<span>${L`· свой пак`}</span>` : ''}
         ${mod.meta?.date ? `<span>· ${fmtDate(mod.meta.date)}</span>` : ''}
         ${authorName ? `
           <button class="author-chip ${authorHref ? 'clickable' : ''}" id="authorChip" ${authorHref ? '' : 'disabled'}>
@@ -1000,33 +1004,33 @@ function drawModal() {
               ${thumb && !isVideo(thumb) ? `<img class="pack-thumb" src="${esc(thumb)}" loading="lazy" alt="">` : '<div class="pack-thumb"></div>'}
               <div class="pack-info">
                 <div class="pack-mod-name">${esc(x.name)}</div>
-                <div class="pack-mod-cat">${x.hit ? esc(catName(x.hit.categoryId)) : 'не найден в каталоге'}${inst ? ' · установлен' : ''}</div>
+                <div class="pack-mod-cat">${x.hit ? esc(catName(x.hit.categoryId)) : L`не найден в каталоге`}${inst ? L` · установлен` : ''}</div>
               </div>
-              <button class="pack-x" data-toggle="${esc(x.name)}" aria-label="${excluded ? 'Вернуть' : 'Убрать'}">
+              <button class="pack-x" data-toggle="${esc(x.name)}" aria-label="${excluded ? L`Вернуть` : L`Убрать`}">
                 <span class="ms">${excluded ? 'add' : 'close'}</span>
               </button>
             </div>`;
           }).join('')}
         </div>
         <div class="pack-save-row">
-          <input class="input" id="packSaveName" placeholder="Название своего пака…" value="${mod._custom ? esc(mod.name) : ''}">
-          <button class="btn btn-sm" id="packSaveBtn"><span class="ms">bookmark_add</span>Сохранить пак</button>
-          ${mod._custom ? `<button class="btn btn-sm btn-danger" id="packDeleteBtn">Удалить пак</button>` : ''}
+          <input class="input" id="packSaveName" placeholder="${L`Название своего пака…`}" value="${mod._custom ? esc(mod.name) : ''}">
+          <button class="btn btn-sm" id="packSaveBtn"><span class="ms">bookmark_add</span>${L`Сохранить пак`}</button>
+          ${mod._custom ? `<button class="btn btn-sm btn-danger" id="packDeleteBtn">${L`Удалить пак`}</button>` : ''}
         </div>` : ''}
       <div class="modal-actions">
-        ${isPack ? `<button class="btn btn-primary" id="installPackBtn" ${activeCount ? '' : 'disabled'}><span class="ms">download</span>Установить пак (${activeCount})</button>` : ''}
+        ${isPack ? `<button class="btn btn-primary" id="installPackBtn" ${activeCount ? '' : 'disabled'}><span class="ms">download</span>${L`Установить пак (${activeCount})`}</button>` : ''}
         ${!isPack && target ? (installedRec
-          ? `<button class="btn btn-danger" id="uninstallBtn"><span class="ms">delete</span>Удалить</button>`
-          : `<button class="btn btn-primary" id="installBtn" ${busy ? 'disabled' : ''}><span class="ms">download</span>${busy ? 'Установка…' : 'Установить'}</button>`) : ''}
-        ${!isPack && !target && mod.file ? `<button class="btn" id="openLinkBtn"><span class="ms">open_in_new</span>Открыть ссылку</button>` : ''}
+          ? `<button class="btn btn-danger" id="uninstallBtn"><span class="ms">delete</span>${L`Удалить`}</button>`
+          : `<button class="btn btn-primary" id="installBtn" ${busy ? 'disabled' : ''}><span class="ms">download</span>${busy ? L`Установка…` : L`Установить`}</button>`) : ''}
+        ${!isPack && !target && mod.file ? `<button class="btn" id="openLinkBtn"><span class="ms">open_in_new</span>${L`Открыть ссылку`}</button>` : ''}
       </div>
       ${otherLinks.length || guide ? `
         <div class="modal-links">
-          ${guide ? `<button class="btn btn-sm" id="modalGuideLink"><span class="ms">menu_book</span>Гайд: ${esc(guide.title)}</button>` : ''}
-          ${otherLinks.map((l) => `<button class="btn btn-sm" data-link="${links.indexOf(l)}"><span class="ms">open_in_new</span>${esc(LINK_LABEL[l.type] || l.type || 'Ссылка')}</button>`).join('')}
+          ${guide ? `<button class="btn btn-sm" id="modalGuideLink"><span class="ms">menu_book</span>${L`Гайд: ${esc(guide.title)}`}</button>` : ''}
+          ${otherLinks.map((l) => `<button class="btn btn-sm" data-link="${links.indexOf(l)}"><span class="ms">open_in_new</span>${esc(tr(LINK_LABEL[l.type] || l.type || 'Ссылка'))}</button>`).join('')}
         </div>` : ''}
-      ${categoryId === 'fonts' ? `<div class="modal-note">Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.</div>` : ''}
-      ${categoryId === 'cursors' ? `<div class="modal-note">Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически.</div>` : ''}
+      ${categoryId === 'fonts' ? `<div class="modal-note">${L`Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.`}</div>` : ''}
+      ${categoryId === 'cursors' ? `<div class="modal-note">${L`Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически.`}</div>` : ''}
     </div>
   `;
 
@@ -1055,20 +1059,20 @@ function drawModal() {
   if (packSaveBtn) {
     packSaveBtn.addEventListener('click', () => {
       const name = $('#packSaveName').value.trim();
-      if (!name) { toast('Введи название пака', 'warn'); return; }
+      if (!name) { toast(L`Введи название пака`, 'warn'); return; }
       const modNames = members.filter((x) => !modalState.packExcluded.has(x.name)).map((x) => x.name);
-      if (!modNames.length) { toast('В паке не осталось модов', 'warn'); return; }
+      if (!modNames.length) { toast(L`В паке не осталось модов`, 'warn'); return; }
       const packs = customPacks().filter((p) => p.name !== name && p.name !== (mod._custom ? mod.name : null));
       packs.push({ name, mods: modNames });
       saveCustomPacks(packs);
-      toast(`Пак «${name}» сохранён — он появился в категории Паки`);
+      toast(L`Пак «${name}» сохранён — он появился в категории Паки`);
       if (state.view === 'catalog' && state.activeCategory === 'packs') { closeModal(); renderCatalog(); }
     });
   }
   const packDeleteBtn = $('#packDeleteBtn');
   if (packDeleteBtn) {
     packDeleteBtn.addEventListener('click', async () => {
-      if (!await confirmDialog(`Удалить пак «${mod.name}»?`)) return;
+      if (!await confirmDialog(L`Удалить пак «${mod.name}»?`)) return;
       saveCustomPacks(customPacks().filter((p) => p.name !== mod.name));
       closeModal();
       renderCatalog();
@@ -1089,10 +1093,10 @@ function drawModal() {
   const uninstallBtn = $('#uninstallBtn');
   if (uninstallBtn) {
     uninstallBtn.addEventListener('click', async () => {
-      if (!await confirmDialog(`Удалить «${mod.name}»?`)) return;
+      if (!await confirmDialog(L`Удалить «${mod.name}»?`)) return;
       const r = await window.api.mods.remove(installedRec.id);
       if (r.error) toast(r.error, 'error');
-      else toast(`${mod.name} удалён`);
+      else toast(L`${mod.name} удалён`);
       await refreshInstalledIndex();
       refreshCardBadges();
       drawModal();
@@ -1126,7 +1130,7 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   const k = keyOf(categoryId, mod.name, styleLabel);
   if (state.installing.has(k)) return;
   if (!state.settings?.dotaPathValid && categoryId !== 'tools') {
-    toast('Сначала укажи путь к Dota 2 в настройках', 'warn');
+    toast(L`Сначала укажи путь к Dota 2 в настройках`, 'warn');
     return;
   }
   state.installing.add(k);
@@ -1134,13 +1138,13 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   const chk = await window.api.mods.checkConflicts({ categoryId, name: mod.name, fileRef });
   if (chk.conflicts?.length) {
     const c = chk.conflicts[0];
-    const rest = chk.conflicts.length > 1 ? ` (и ещё ${chk.conflicts.length - 1})` : '';
+    const rest = chk.conflicts.length > 1 ? L` (и ещё ${chk.conflicts.length - 1})` : '';
     const what = c.summary
-      ? `оба меняют ${c.summary}`
-      : `перекрываются ${c.count} ${plural(c.count, 'файл', 'файла', 'файлов')}`;
+      ? L`оба меняют ${c.summary}`
+      : L`перекрываются ${c.count} ${plural(c.count, 'файл', 'файла', 'файлов')}`;
     const proceed = await confirmDialog(
-      `«${mod.name}» и уже установленный «${c.name}»${rest} конфликтуют — ${what}. Одновременно работать не будут, победит тот, что грузится приоритетнее. Установить всё равно?`,
-      { okLabel: 'Установить', danger: false }
+      L`«${mod.name}» и уже установленный «${c.name}»${rest} конфликтуют — ${what}. Одновременно работать не будут, победит тот, что грузится приоритетнее. Установить всё равно?`,
+      { okLabel: L`Установить`, danger: false }
     );
     if (!proceed) {
       state.installing.delete(k);
@@ -1151,7 +1155,7 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   const r = await window.api.mods.install({ categoryId, name: mod.name, styleLabel, fileRef, preview });
   state.installing.delete(k);
   if (r.error && !r.already) toast(`${mod.name}: ${r.error}`, 'error', 6000);
-  else if (!r.error) toast(`${mod.name} установлен`);
+  else if (!r.error) toast(L`${mod.name} установлен`);
   await refreshInstalledIndex();
   refreshCardBadges();
   if (modalState) drawModal();
@@ -1176,7 +1180,7 @@ async function installPack(pack) {
     else if (r?.cancelled) skip++;
     else fail++;
   }
-  toast(`Пак «${pack.name}»: установлено ${ok}, пропущено ${skip}${fail ? `, ошибок ${fail}` : ''}`, fail ? 'warn' : 'ok', 7000);
+  toast(L`Пак «${pack.name}»: установлено ${ok}, пропущено ${skip}${fail ? L`, ошибок ${fail}` : ''}`, fail ? 'warn' : 'ok', 7000);
   await refreshInstalledIndex();
   render();
 }
@@ -1212,15 +1216,15 @@ function memberRowHtml(rec, m, masterOff) {
   const thumb = p && !isVideo(p) ? `<img class="member-thumb" src="${esc(p)}" loading="lazy" alt="">` : '<div class="member-thumb"></div>';
   return `
     <div class="member-row ${m.enabled ? '' : 'disabled'} ${sel ? 'selected' : ''}">
-      <input type="checkbox" class="lib-check" data-check="${esc(key)}" ${sel ? 'checked' : ''} aria-label="Выбрать мод в паке">
+      <input type="checkbox" class="lib-check" data-check="${esc(key)}" ${sel ? 'checked' : ''} aria-label="${L`Выбрать мод в паке`}">
       ${thumb}
       <div class="member-info">
         <div class="member-name">${esc(m.name)}${m.styleLabel ? ` <span style="color:var(--primary-soft)">(${esc(m.styleLabel)})</span>` : ''}</div>
         <div class="member-meta">${esc(m.info || catName(m.categoryId))}</div>
       </div>
       <div class="member-actions">
-        <button class="toggle sm ${m.enabled ? 'on' : ''}" data-mtoggle="${esc(m.id)}" data-pack="${esc(rec.id)}" role="switch" aria-checked="${m.enabled}" aria-label="Включить/выключить мод в паке" ${masterOff ? 'disabled' : ''}></button>
-        <button class="member-x" data-mremove="${esc(m.id)}" data-pack="${esc(rec.id)}" aria-label="Удалить из пака" title="Удалить из пака"><span class="ms">close</span></button>
+        <button class="toggle sm ${m.enabled ? 'on' : ''}" data-mtoggle="${esc(m.id)}" data-pack="${esc(rec.id)}" role="switch" aria-checked="${m.enabled}" aria-label="${L`Включить/выключить мод в паке`}" ${masterOff ? 'disabled' : ''}></button>
+        <button class="member-x" data-mremove="${esc(m.id)}" data-pack="${esc(rec.id)}" aria-label="${L`Удалить из пака`}" title="${L`Удалить из пака`}"><span class="ms">close</span></button>
       </div>
     </div>`;
 }
@@ -1233,21 +1237,21 @@ function packRowHtml(rec, i, masterOff) {
   const langDir = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
   return `
     <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
-      <input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="Выбрать пак">
-      <button class="pack-expand ${open ? 'open' : ''}" data-expand="${esc(rec.id)}" aria-expanded="${open}" aria-label="Развернуть состав пака"><span class="ms">chevron_right</span></button>
+      <input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать пак`}">
+      <button class="pack-expand ${open ? 'open' : ''}" data-expand="${esc(rec.id)}" aria-expanded="${open}" aria-label="${L`Развернуть состав пака`}"><span class="ms">chevron_right</span></button>
       ${packThumbGridHtml(rec)}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}</span></div>
+        <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">${L`Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}`}</span></div>
         <div class="lib-meta">
-          <span>${onCount} из ${members.length} включено</span>
-          <span>${langDir ? esc(langDir.relPath) : 'пусто'}</span>
+          <span>${L`${onCount} из ${members.length} включено`}</span>
+          <span>${langDir ? esc(langDir.relPath) : L`пусто`}</span>
         </div>
       </div>
       <div class="lib-actions">
-        <button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="Включить/выключить пак целиком" ${masterOff ? 'disabled' : ''}></button>
-        <button class="btn btn-sm" data-addto="${esc(rec.id)}" title="Добавить моды в пак"><span class="ms">add</span>Добавить</button>
-        <button class="btn btn-sm" data-disband="${esc(rec.id)}" title="Разобрать пак обратно на отдельные моды"><span class="ms">call_split</span>Разобрать</button>
-        <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">Удалить</button>
+        <button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить пак целиком`}" ${masterOff ? 'disabled' : ''}></button>
+        <button class="btn btn-sm" data-addto="${esc(rec.id)}" title="${L`Добавить моды в пак`}"><span class="ms">add</span>${L`Добавить`}</button>
+        <button class="btn btn-sm" data-disband="${esc(rec.id)}" title="${L`Разобрать пак обратно на отдельные моды`}"><span class="ms">call_split</span>${L`Разобрать`}</button>
+        <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">${L`Удалить`}</button>
       </div>
     </div>
     <div class="pack-members ${open ? 'open' : ''}" data-members="${esc(rec.id)}">
@@ -1265,24 +1269,24 @@ function normalRowHtml(rec, i, masterOff) {
   const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
   return `
     <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
-      ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="Выбрать мод">` : '<span style="width:18px;flex-shrink:0"></span>'}
+      ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
       ${prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : '<div class="lib-thumb"></div>'}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}</div>
         <div class="lib-meta">
           <span>${esc(catName(rec.categoryId))}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
-          <span>${new Date(rec.installedAt).toLocaleDateString('ru')}</span>
+          <span>${new Date(rec.installedAt).toLocaleDateString(window.i18nLocale())}</span>
         </div>
       </div>
       <div class="lib-actions">
         ${['fonts', 'cursors'].includes(rec.categoryId)
-          ? '<span style="font-size:11.5px;color:var(--text-muted)">всегда активен</span>'
-          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="Включить/выключить" ${masterOff ? 'disabled' : ''}></button>`}
-        ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="Привязать к каталогу"><span class="ms">library_add_check</span>Привязать</button>` : ''}
-        ${rec.heroes >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>` : ''}
-        ${rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath)) ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="Сохранить мод одним .vpk файлом (для отправки автору каталога)"><span class="ms">save</span>Экспорт</button>` : ''}
-        <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">Удалить</button>
+          ? `<span style="font-size:11.5px;color:var(--text-muted)">${L`всегда активен`}</span>`
+          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${masterOff ? 'disabled' : ''}></button>`}
+        ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
+        ${rec.heroes >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
+        ${rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath)) ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить мод одним .vpk файлом (для отправки автору каталога)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
+        <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">${L`Удалить`}</button>
       </div>
     </div>`;
 }
@@ -1327,7 +1331,7 @@ async function adoptAll() {
     else if (f.kind === 'font') await window.api.mods.adoptFont(f.name, prev);
     else await window.api.mods.adoptExternal(f.key, prev);
   }
-  toast(`Привязано: ${recs.length + exts.length}`, 'ok');
+  toast(L`Привязано: ${recs.length + exts.length}`, 'ok');
   await refreshInstalledIndex();
   renderLibrary();
 }
@@ -1389,9 +1393,9 @@ function countMembersSelected() {
 // search box never re-creates the input and steals focus
 function libraryListHtml(masterOff) {
   const all = state.libRecords || [];
-  if (!all.length) return '<div class="empty-note">Пока ничего не установлено — загляни в Каталог</div>';
+  if (!all.length) return `<div class="empty-note">${L`Пока ничего не установлено — загляни в Каталог`}</div>`;
   const installed = all.filter(libMatchesSearch);
-  if (!installed.length) return '<div class="empty-note">Ничего не найдено по запросу</div>';
+  if (!installed.length) return `<div class="empty-note">${L`Ничего не найдено по запросу`}</div>`;
   return installed.map((rec, i) => rec.kind === 'pack' ? packRowHtml(rec, i, masterOff) : normalRowHtml(rec, i, masterOff)).join('');
 }
 
@@ -1404,9 +1408,9 @@ function paintLibraryList() {
 }
 
 // modal picker: choose standalone packable mods (returns array of ids, or null)
-function pickModsDialog(candidates, { title = 'Выбери моды', okLabel = 'Готово' } = {}) {
+function pickModsDialog(candidates, { title = L`Выбери моды`, okLabel = L`Готово` } = {}) {
   return new Promise((resolve) => {
-    if (!candidates.length) { toast('Нет отдельных модов для добавления', 'warn'); resolve(null); return; }
+    if (!candidates.length) { toast(L`Нет отдельных модов для добавления`, 'warn'); resolve(null); return; }
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML = `
@@ -1421,7 +1425,7 @@ function pickModsDialog(candidates, { title = 'Выбери моды', okLabel =
             </label>`).join('')}
         </div>
         <div class="confirm-actions">
-          <button class="btn" data-c="no">Отмена</button>
+          <button class="btn" data-c="no">${L`Отмена`}</button>
           <button class="btn btn-primary" data-c="yes">${esc(okLabel)}</button>
         </div>
       </div>`;
@@ -1447,18 +1451,18 @@ function standalonePackable() {
 
 // combine a selection (standalone mods and/or existing packs) into one pack
 async function combineSelection(ids) {
-  if (!ids || ids.length < 2) { toast('Выбери минимум 2 элемента', 'warn'); return; }
+  if (!ids || ids.length < 2) { toast(L`Выбери минимум 2 элемента`, 'warn'); return; }
   const recs = (state.libRecords || []).filter((r) => ids.includes(r.id));
   const existingPack = recs.find((r) => r.kind === 'pack');
-  const name = await promptDialog(existingPack ? 'Название объединённого пака:' : 'Название пака:', {
-    placeholder: 'напр. «Анимешный сет»', value: existingPack ? existingPack.name : '', okLabel: 'Объединить',
+  const name = await promptDialog(existingPack ? L`Название объединённого пака:` : L`Название пака:`, {
+    placeholder: L`напр. «Анимешный сет»`, value: existingPack ? existingPack.name : '', okLabel: L`Объединить`,
   });
   if (name === null) return;
   const r = await window.api.packs.combine(name, ids);
   if (r.error) { toast(r.error, 'error', 6000); return; }
   state.librarySel.clear();
-  toast(`Пак «${r.pack.name}»: ${r.pack.members.length} ${plural(r.pack.members.length, 'мод', 'мода', 'модов')}`, 'ok', 6000);
-  if (r.conflicts?.length) toast(`Пересечения файлов: ${r.conflicts.length} (победил тот, что раньше в паке)`, 'warn', 6000);
+  toast(L`Пак «${r.pack.name}»: ${r.pack.members.length} ${plural(r.pack.members.length, 'мод', 'мода', 'модов')}`, 'ok', 6000);
+  if (r.conflicts?.length) toast(L`Пересечения файлов: ${r.conflicts.length} (победил тот, что раньше в паке)`, 'warn', 6000);
   await refreshInstalledIndex();
   renderLibrary();
 }
@@ -1489,60 +1493,60 @@ async function renderLibrary() {
   const matchedCount = installedAll.filter((r) => r.match).length + externalAll.filter((f) => f.match).length;
 
   viewRoot.innerHTML = `
-    <div class="view-header"><h1 class="view-title">Библиотека</h1></div>
+    <div class="view-header"><h1 class="view-title">${L`Библиотека`}</h1></div>
     ${masterOff ? `
       <div class="lib-banner off">
         <span class="ms">bolt</span>
-        <div class="banner-body"><b>Моды выключены</b> мастер-переключателем внизу справа — игра запустится ванильной. Включи, чтобы менять моды по отдельности.</div>
+        <div class="banner-body"><b>${L`Моды выключены`}</b>${L` мастер-переключателем внизу справа — игра запустится ванильной. Включи, чтобы менять моды по отдельности.`}</div>
       </div>` : ''}
     ${matchedCount > 0 ? `
       <div class="lib-banner info">
         <span class="ms">library_add_check</span>
-        <div class="banner-body"><b>${matchedCount}</b> ${plural(matchedCount, 'файл опознан', 'файла опознаны', 'файлов опознаны')} как моды из каталога — привяжи, чтобы получить превью и управлять как обычными.</div>
-        <button class="btn btn-sm btn-primary" id="adoptAllBtn"><span class="ms">library_add_check</span>Привязать все</button>
+        <div class="banner-body"><b>${matchedCount}</b> ${plural(matchedCount, 'файл опознан', 'файла опознаны', 'файлов опознаны')}${L` как моды из каталога — привяжи, чтобы получить превью и управлять как обычными.`}</div>
+        <button class="btn btn-sm btn-primary" id="adoptAllBtn"><span class="ms">library_add_check</span>${L`Привязать все`}</button>
       </div>` : ''}
     ${nearLimit && !masterOff ? `
       <div class="lib-banner warn">
         <span class="ms">warning</span>
-        <div class="banner-body">Занято <b>${slots}</b> из ${slotCeil} слотов. Игра не грузит больше ~99 отдельных паков — объедини моды в один, чтобы уместить больше.</div>
-        <button class="btn btn-sm btn-primary" id="combineHintBtn"><span class="ms">merge</span>Объединить</button>
+        <div class="banner-body">${L`Занято`} <b>${slots}</b>${L` из ${slotCeil} слотов. Игра не грузит больше ~99 отдельных паков — объедини моды в один, чтобы уместить больше.`}</div>
+        <button class="btn btn-sm btn-primary" id="combineHintBtn"><span class="ms">merge</span>${L`Объединить`}</button>
       </div>` : ''}
     <div class="lib-toolbar">
       <div class="lib-search">
         <span class="ms">search</span>
-        <input id="libSearch" placeholder="Поиск в библиотеке…" value="${esc(state.libSearch)}" spellcheck="false" autocomplete="off">
-        <button class="lib-search-clear ${state.libSearch ? 'show' : ''}" id="libSearchClear" aria-label="Очистить"><span class="ms">close</span></button>
+        <input id="libSearch" placeholder="${L`Поиск в библиотеке…`}" value="${esc(state.libSearch)}" spellcheck="false" autocomplete="off">
+        <button class="lib-search-clear ${state.libSearch ? 'show' : ''}" id="libSearchClear" aria-label="${L`Очистить`}"><span class="ms">close</span></button>
       </div>
-      <span class="lib-stats">${installedAll.length} ${plural(installedAll.length, 'мод', 'мода', 'модов')} · ${enabledCount} вкл · ${slots}/${slotCeil} ${plural(slots, 'слот', 'слота', 'слотов')}</span>
+      <span class="lib-stats">${installedAll.length} ${plural(installedAll.length, 'мод', 'мода', 'модов')} · ${enabledCount} ${L`вкл`} · ${slots}/${slotCeil} ${plural(slots, 'слот', 'слота', 'слотов')}</span>
       <div class="lib-toolbar-actions">
-        <button class="btn btn-sm" id="importVpkBtn"><span class="ms">upload_file</span>Импорт VPK</button>
-        <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>Папка модов</button>
+        <button class="btn btn-sm" id="importVpkBtn"><span class="ms">upload_file</span>${L`Импорт VPK`}</button>
+        <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>${L`Папка модов`}</button>
       </div>
     </div>
     ${installedAll.length ? `
       <div class="lib-listhead">
-        <label class="lib-selectall" title="Выбрать всё"><input type="checkbox" class="lib-check" id="selAll">Выбрать всё</label>
-        <span class="lib-listhead-hint">Отметь моды галочками — объединить в пак или массово управлять</span>
-        <button class="btn btn-ghost btn-xs" id="enableAllBtn" ${masterOff ? 'disabled' : ''}>Включить все</button>
-        <button class="btn btn-ghost btn-xs" id="disableAllBtn" ${masterOff ? 'disabled' : ''}>Выключить все</button>
+        <label class="lib-selectall" title="${L`Выбрать всё`}"><input type="checkbox" class="lib-check" id="selAll">${L`Выбрать всё`}</label>
+        <span class="lib-listhead-hint">${L`Отметь моды галочками — объединить в пак или массово управлять`}</span>
+        <button class="btn btn-ghost btn-xs" id="enableAllBtn" ${masterOff ? 'disabled' : ''}>${L`Включить все`}</button>
+        <button class="btn btn-ghost btn-xs" id="disableAllBtn" ${masterOff ? 'disabled' : ''}>${L`Выключить все`}</button>
       </div>` : ''}
     <div class="lib-list" id="libList"></div>
     ${external.length ? `
-      <div class="section-h" style="margin-top:26px"><span class="ms">folder_zip</span>Внешние файлы в папке модов</div>
-      <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">Файлы, установленные не через менеджер</div>
+      <div class="section-h" style="margin-top:26px"><span class="ms">folder_zip</span>${L`Внешние файлы в папке модов`}</div>
+      <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">${L`Файлы, установленные не через менеджер`}</div>
       <div class="lib-list" id="extList"></div>` : ''}
     <div style="height:72px"></div>
     <div class="bulk-bar" id="bulkBar">
-      <span class="bulk-count"><b id="bulkCount">0</b> выбрано</span>
+      <span class="bulk-count"><b id="bulkCount">0</b> ${L`выбрано`}</span>
       <div class="bulk-actions">
-        <button class="btn btn-sm" id="bulkEnable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_checked</span>Включить</button>
-        <button class="btn btn-sm" id="bulkDisable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_unchecked</span>Выключить</button>
-        <button class="btn btn-sm btn-primary hidden" id="bulkCombine"><span class="ms">merge</span>Объединить в пак</button>
-        <button class="btn btn-sm hidden" id="bulkExtract"><span class="ms">unarchive</span>Вытащить из пака</button>
-        <button class="btn btn-sm hidden" id="bulkAdopt"><span class="ms">library_add_check</span>Привязать</button>
-        <button class="btn btn-sm btn-danger" id="bulkRemove"><span class="ms">delete</span>Удалить</button>
+        <button class="btn btn-sm" id="bulkEnable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_checked</span>${L`Включить`}</button>
+        <button class="btn btn-sm" id="bulkDisable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_unchecked</span>${L`Выключить`}</button>
+        <button class="btn btn-sm btn-primary hidden" id="bulkCombine"><span class="ms">merge</span>${L`Объединить в пак`}</button>
+        <button class="btn btn-sm hidden" id="bulkExtract"><span class="ms">unarchive</span>${L`Вытащить из пака`}</button>
+        <button class="btn btn-sm hidden" id="bulkAdopt"><span class="ms">library_add_check</span>${L`Привязать`}</button>
+        <button class="btn btn-sm btn-danger" id="bulkRemove"><span class="ms">delete</span>${L`Удалить`}</button>
       </div>
-      <button class="bulk-close" id="bulkClear" aria-label="Сбросить выбор" title="Сбросить выбор"><span class="ms">close</span></button>
+      <button class="bulk-close" id="bulkClear" aria-label="${L`Сбросить выбор`}" title="${L`Сбросить выбор`}"><span class="ms">close</span></button>
     </div>
   `;
 
@@ -1585,13 +1589,13 @@ async function bindLibrary(external) {
   $('#bulkRemove')?.addEventListener('click', async () => {
     const keys = [...state.librarySel];
     if (!keys.length) return;
-    if (!await confirmDialog(`Удалить выбранное (${keys.length})?`)) return;
+    if (!await confirmDialog(L`Удалить выбранное (${keys.length})?`)) return;
     for (const k of keys) {
       if (isMemberKey(k)) { const [, packId, memberId] = k.split(':'); await window.api.packs.removeMember(packId, memberId); }
       else await window.api.mods.remove(k);
     }
     state.librarySel.clear();
-    toast('Удалено');
+    toast(L`Удалено`);
     reRender();
   });
   $('#bulkCombine')?.addEventListener('click', () => combineSelection([...state.librarySel].filter((k) => {
@@ -1600,7 +1604,7 @@ async function bindLibrary(external) {
     return r && (isPackableRec(r) || r.kind === 'pack');
   })));
   $('#combineHintBtn')?.addEventListener('click', async () => {
-    const ids = await pickModsDialog(standalonePackable(), { title: 'Выбери моды для объединения в пак', okLabel: 'Далее' });
+    const ids = await pickModsDialog(standalonePackable(), { title: L`Выбери моды для объединения в пак`, okLabel: L`Далее` });
     if (ids) combineSelection(ids);
   });
   $('#bulkExtract')?.addEventListener('click', async () => {
@@ -1620,7 +1624,7 @@ async function bindLibrary(external) {
       total += r.count || 0;
     }
     state.librarySel.clear();
-    toast(`Вытащено из пака: ${total}`, 'ok');
+    toast(L`Вытащено из пака: ${total}`, 'ok');
     reRender();
   });
   $('#adoptAllBtn')?.addEventListener('click', adoptAll);
@@ -1629,7 +1633,7 @@ async function bindLibrary(external) {
     if (!recs.length) return;
     for (const r of recs) await window.api.mods.adoptMod(r.id, catalogPreviewFor(r.match));
     state.librarySel.clear();
-    toast(`Привязано: ${recs.length}`, 'ok');
+    toast(L`Привязано: ${recs.length}`, 'ok');
     reRender();
   });
 
@@ -1678,38 +1682,38 @@ async function bindLibrary(external) {
     if (el.dataset.mremove) {
       const pack = byId(el.dataset.pack);
       const m = pack?.members.find((x) => x.id === el.dataset.mremove);
-      if (!await confirmDialog(`Убрать «${m?.name || 'мод'}» из пака?`, { okLabel: 'Убрать' })) return;
+      if (!await confirmDialog(L`Убрать «${m?.name || tr('мод')}» из пака?`, { okLabel: L`Убрать` })) return;
       const r = await window.api.packs.removeMember(el.dataset.pack, el.dataset.mremove);
       if (r.error) toast(r.error, 'error', 6000);
-      else if (r.removedPack) toast('Пак удалён — в нём не осталось модов');
-      else toast('Убрано из пака');
+      else if (r.removedPack) toast(L`Пак удалён — в нём не осталось модов`);
+      else toast(L`Убрано из пака`);
       reRender();
       return;
     }
     if (el.dataset.addto) {
-      const ids = await pickModsDialog(standalonePackable(), { title: 'Добавить моды в пак', okLabel: 'Добавить' });
+      const ids = await pickModsDialog(standalonePackable(), { title: L`Добавить моды в пак`, okLabel: L`Добавить` });
       if (!ids) return;
       const r = await window.api.packs.addMembers(el.dataset.addto, ids);
       if (r.error) toast(r.error, 'error', 6000);
-      else toast(`Добавлено в пак: ${r.added}`);
+      else toast(L`Добавлено в пак: ${r.added}`);
       reRender();
       return;
     }
     if (el.dataset.disband) {
       const rec = byId(el.dataset.disband);
-      if (!await confirmDialog(`Разобрать пак «${rec.name}» на отдельные моды? Каждый мод снова займёт свой слот.`, { okLabel: 'Разобрать' })) return;
+      if (!await confirmDialog(L`Разобрать пак «${rec.name}» на отдельные моды? Каждый мод снова займёт свой слот.`, { okLabel: L`Разобрать` })) return;
       const r = await window.api.packs.disband(el.dataset.disband);
       if (r.error) toast(r.error, 'error', 6000);
-      else toast(`Разобрано на ${r.count}: ${r.names.slice(0, 4).join(', ')}${r.names.length > 4 ? '…' : ''}`, 'ok', 6000);
+      else toast(L`Разобрано на ${r.count}: ${r.names.slice(0, 4).join(', ')}${r.names.length > 4 ? '…' : ''}`, 'ok', 6000);
       reRender();
       return;
     }
     if (el.dataset.del) {
       const rec = byId(el.dataset.del);
-      if (!await confirmDialog(rec.kind === 'pack' ? `Удалить пак «${rec.name}» со всеми модами внутри?` : `Удалить «${rec.name}»?`)) return;
+      if (!await confirmDialog(rec.kind === 'pack' ? L`Удалить пак «${rec.name}» со всеми модами внутри?` : L`Удалить «${rec.name}»?`)) return;
       const r = await window.api.mods.remove(rec.id);
       if (r.error) toast(r.error, 'error');
-      else toast(`${rec.name} удалён`);
+      else toast(L`${rec.name} удалён`);
       reRender();
       return;
     }
@@ -1717,11 +1721,11 @@ async function bindLibrary(external) {
       const rec = byId(el.dataset.export);
       el.disabled = true;
       const prev = el.innerHTML;
-      el.innerHTML = '<span class="ms">hourglass_empty</span>Собираю…';
+      el.innerHTML = `<span class="ms">hourglass_empty</span>${L`Собираю…`}`;
       const r = await window.api.mods.exportSingle(rec.id);
       el.disabled = false; el.innerHTML = prev;
       if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
-      else if (r.ok) toast(`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
+      else if (r.ok) toast(L`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
       return;
     }
     if (el.dataset.adopt) {
@@ -1729,17 +1733,17 @@ async function bindLibrary(external) {
       const rec = byId(el.dataset.adopt);
       const r = await window.api.mods.adoptMod(el.dataset.adopt, catalogPreviewFor(rec && rec.match));
       if (r.error) toast(r.error, 'error', 6000);
-      else toast(`Привязан к каталогу: «${r.name}»`, 'ok');
+      else toast(L`Привязан к каталогу: «${r.name}»`, 'ok');
       reRender();
       return;
     }
     if (el.dataset.split) {
       const rec = byId(el.dataset.split);
-      if (!await confirmDialog(`Разбить «${rec.name}» на отдельные моды по героям? Исходный файл заменится на отдельные, каждый можно будет включать и удалять по отдельности.`, { okLabel: 'Разобрать' })) return;
+      if (!await confirmDialog(L`Разбить «${rec.name}» на отдельные моды по героям? Исходный файл заменится на отдельные, каждый можно будет включать и удалять по отдельности.`, { okLabel: L`Разобрать` })) return;
       el.disabled = true;
       const r = await window.api.mods.splitMod(rec.id);
       if (r.error) toast(r.error, 'error', 6000);
-      else toast(`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
+      else toast(L`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
       reRender();
       return;
     }
@@ -1759,10 +1763,10 @@ async function bindLibrary(external) {
       const label = f.match ? `<span class="lib-tag match">${esc(matchLabel(f.match))}</span>`
         : f.info ? `<span class="lib-tag">${esc(f.info)}</span>` : '';
       const simple = f.kind === 'cursor' || f.kind === 'font'; // full-folder/subset sets — adopt only
-      const displayName = f.kind === 'cursor' ? 'Курсор в игре' : f.name;
+      const displayName = f.kind === 'cursor' ? L`Курсор в игре` : f.name;
       const sub = f.kind === 'cursor' ? 'resource/cursor'
-        : f.kind === 'font' ? 'шрифт · panorama/fonts'
-        : f.match ? 'мод из каталога' : f.info ? 'опознан по содержимому' : 'внешний файл';
+        : f.kind === 'font' ? L`шрифт · panorama/fonts`
+        : f.match ? L`мод из каталога` : f.info ? L`опознан по содержимому` : L`внешний файл`;
       const size = simple ? '' : `<span>${fmtMB(f.size)} MB</span>`;
       row.innerHTML = `
         <div class="lib-thumb"></div>
@@ -1772,9 +1776,9 @@ async function bindLibrary(external) {
         </div>
         <div class="lib-actions">
           ${simple ? '' : `<button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.key)}" role="switch" aria-checked="${f.enabled}"></button>`}
-          ${f.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="Привязать к каталогу и управлять как обычным модом"><span class="ms">library_add_check</span>Принять</button>` : ''}
-          ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.key)}" title="Разбить на отдельные моды по героям"><span class="ms">call_split</span>Разобрать</button>` : ''}
-          ${simple ? '' : `<button class="btn btn-sm btn-danger" data-extdel="${esc(f.key)}">Удалить</button>`}
+          ${f.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="${L`Привязать к каталогу и управлять как обычным модом`}"><span class="ms">library_add_check</span>${L`Принять`}</button>` : ''}
+          ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.key)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
+          ${simple ? '' : `<button class="btn btn-sm btn-danger" data-extdel="${esc(f.key)}">${L`Удалить`}</button>`}
         </div>
       `;
       extList.appendChild(row);
@@ -1796,7 +1800,7 @@ async function bindLibrary(external) {
           : f.kind === 'font' ? await window.api.mods.adoptFont(f.name, prev)
           : await window.api.mods.adoptExternal(f.key, prev);
         if (r.error) toast(r.error, 'error', 6000);
-        else toast(`«${r.name}» принят из каталога`, 'ok');
+        else toast(L`«${r.name}» принят из каталога`, 'ok');
         await refreshInstalledIndex();
         renderLibrary();
       });
@@ -1804,11 +1808,11 @@ async function bindLibrary(external) {
     extList.querySelectorAll('[data-extsplit]').forEach((b) => {
       b.addEventListener('click', async () => {
         const f = byKey(b.dataset.extsplit);
-        if (!await confirmDialog(`Разбить «${f.name}» на отдельные моды по героям? Файл заменится на отдельные управляемые моды.`, { okLabel: 'Разобрать' })) return;
+        if (!await confirmDialog(L`Разбить «${f.name}» на отдельные моды по героям? Файл заменится на отдельные управляемые моды.`, { okLabel: L`Разобрать` })) return;
         b.disabled = true;
         const r = await window.api.mods.splitExternal(f.key);
         if (r.error) toast(r.error, 'error', 6000);
-        else toast(`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
+        else toast(L`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
         await refreshInstalledIndex();
         renderLibrary();
       });
@@ -1816,7 +1820,7 @@ async function bindLibrary(external) {
     extList.querySelectorAll('[data-extdel]').forEach((b) => {
       b.addEventListener('click', async () => {
         const f = byKey(b.dataset.extdel);
-        if (!await confirmDialog(`Удалить файл ${f.name}?`)) return;
+        if (!await confirmDialog(L`Удалить файл ${f.name}?`)) return;
         await window.api.mods.externalRemove(f.key);
         renderLibrary();
       });
@@ -1829,10 +1833,10 @@ async function handleImportResult(r) {
   if (r.error) { toast(r.error, 'error', 6000); return; }
   for (const e of r.errors || []) toast(`${e.source}: ${e.error}`, 'warn', 5000);
   const n = (r.imported || []).length;
-  if (n) toast(`Импортировано: ${n} ${plural(n, 'мод', 'мода', 'модов')}`);
+  if (n) toast(L`Импортировано: ${n} ${plural(n, 'мод', 'мода', 'модов')}`);
   for (const imp of r.imported || []) {
     if (imp.conflicts?.length) {
-      toast(`«${imp.name}» перекрывается с: ${imp.conflicts.slice(0, 2).join(', ')}${imp.conflicts.length > 2 ? '…' : ''}`, 'warn', 7000);
+      toast(L`«${imp.name}» перекрывается с: ${imp.conflicts.slice(0, 2).join(', ')}${imp.conflicts.length > 2 ? '…' : ''}`, 'warn', 7000);
     }
   }
   await refreshInstalledIndex();
@@ -1866,7 +1870,7 @@ document.addEventListener('drop', async (e) => {
   document.body.classList.remove('dropping');
   const vpkFiles = [...(e.dataTransfer?.files || [])].filter((f) => /\.vpk$/i.test(f.name || ''));
   if (!vpkFiles.length) {
-    if ((e.dataTransfer?.files || []).length) toast('Импортировать можно только .vpk файлы', 'warn');
+    if ((e.dataTransfer?.files || []).length) toast(L`Импортировать можно только .vpk файлы`, 'warn');
     return;
   }
   // prefer real on-disk paths (lets the importer pick up sibling _NNN parts too)
@@ -1881,7 +1885,7 @@ document.addEventListener('drop', async (e) => {
     const items = await Promise.all(vpkFiles.map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
     handleImportResult(await window.api.mods.importBuffers(items));
   } catch {
-    toast('Не удалось прочитать перетащенные файлы', 'error');
+    toast(L`Не удалось прочитать перетащенные файлы`, 'error');
   }
 });
 
@@ -1908,7 +1912,7 @@ async function bulkSetEnabled(enabled) {
       if (rec.enabled !== enabled) await window.api.mods.setEnabled(k, enabled);
     }
   }
-  toast(enabled ? 'Включено' : 'Выключено');
+  toast(enabled ? L`Включено` : L`Выключено`);
   await refreshInstalledIndex();
   renderLibrary();
 }
@@ -1921,16 +1925,16 @@ async function renderPresets() {
   const byId = new Map(installed.map((m) => [m.id, m]));
 
   viewRoot.innerHTML = `
-    <div class="view-header"><h1 class="view-title">Пресеты</h1></div>
+    <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
     <div style="color:var(--text-muted);font-size:13px;margin-bottom:14px">
-      Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные.
+      ${L`Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные.`}
     </div>
     <div class="preset-new">
-      <input class="input" id="presetName" placeholder="Название пресета (напр. «Анимешный», «Минимал»)">
-      <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>Сохранить текущее состояние</button>
+      <input class="input" id="presetName" placeholder="${L`Название пресета (напр. «Анимешный», «Минимал»)`}">
+      <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>${L`Сохранить текущее состояние`}</button>
     </div>
     <div id="presetList">
-      ${presets.length ? '' : '<div class="empty-note">Пресетов пока нет</div>'}
+      ${presets.length ? '' : `<div class="empty-note">${L`Пресетов пока нет`}</div>`}
     </div>
   `;
 
@@ -1944,19 +1948,19 @@ async function renderPresets() {
       <div class="preset-head">
         <div class="preset-name">${esc(p.name)}</div>
         <span style="font-size:12px;color:var(--text-muted)">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
-        <button class="btn btn-sm btn-primary" data-apply="${p.id}">Применить</button>
-        <button class="btn btn-sm btn-danger" data-pdel="${p.id}">Удалить</button>
+        <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
+        <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
       </div>
-      <div class="preset-mods">${names.length ? esc(names.join(' · ')) : 'пусто (всё будет выключено)'}</div>
+      <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>
     `;
     list.appendChild(card);
   });
 
   $('#savePresetBtn').addEventListener('click', async () => {
     const name = $('#presetName').value.trim();
-    if (!name) { toast('Введи название пресета', 'warn'); return; }
+    if (!name) { toast(L`Введи название пресета`, 'warn'); return; }
     await window.api.presets.save(name);
-    toast(`Пресет «${name}» сохранён`);
+    toast(L`Пресет «${name}» сохранён`);
     renderPresets();
   });
 
@@ -1964,14 +1968,14 @@ async function renderPresets() {
     b.addEventListener('click', async () => {
       const r = await window.api.presets.apply(b.dataset.apply);
       if (r.error) toast(r.error, 'error', 6000);
-      else toast('Пресет применён');
+      else toast(L`Пресет применён`);
       refreshInstalledIndex();
     });
   });
   list.querySelectorAll('[data-pdel]').forEach((b) => {
     b.addEventListener('click', async () => {
       const p = presets.find((x) => x.id === b.dataset.pdel);
-      if (!await confirmDialog(`Удалить пресет «${p?.name || ''}»?`)) return;
+      if (!await confirmDialog(L`Удалить пресет «${p?.name || ''}»?`)) return;
       await window.api.presets.delete(b.dataset.pdel);
       renderPresets();
     });
@@ -1986,7 +1990,7 @@ async function renderTools() {
   const toolRecs = new Map(installed.filter((m) => m.categoryId === 'tools').map((m) => [m.name, m]));
 
   viewRoot.innerHTML = `
-    <div class="view-header"><h1 class="view-title">Инструменты</h1></div>
+    <div class="view-header"><h1 class="view-title">${L`Инструменты`}</h1></div>
     <div class="tool-grid">
       ${tools.map((t, i) => {
         const dl = t.file && /\.(zip|exe)$/i.test(t.file);
@@ -1996,12 +2000,12 @@ async function renderTools() {
           <div class="tool-name">${esc(t.name)}</div>
           <div class="tool-actions">
             ${dl ? (rec
-              ? `<button class="btn btn-sm btn-primary" data-run="${esc(rec.files[0]?.relPath || '')}"><span class="ms">play_arrow</span>Запустить</button>
-                 <button class="btn btn-sm" data-open="${esc(rec.files[0]?.relPath || '')}">Папка</button>
-                 <button class="btn btn-sm btn-danger" data-tdel="${rec.id}">Удалить</button>`
-              : `<button class="btn btn-sm btn-primary" data-get="${i}"><span class="ms">download</span>Скачать</button>`)
-              : (t.file ? `<button class="btn btn-sm" data-url="${esc(t.file)}"><span class="ms">open_in_new</span>Открыть сайт</button>` : '')}
-            ${t.guideId && state.catalog?.guides?.[t.guideId] ? `<button class="btn btn-sm btn-ghost" data-guide="${esc(t.guideId)}">Гайд</button>` : ''}
+              ? `<button class="btn btn-sm btn-primary" data-run="${esc(rec.files[0]?.relPath || '')}"><span class="ms">play_arrow</span>${L`Запустить`}</button>
+                 <button class="btn btn-sm" data-open="${esc(rec.files[0]?.relPath || '')}">${L`Папка`}</button>
+                 <button class="btn btn-sm btn-danger" data-tdel="${rec.id}">${L`Удалить`}</button>`
+              : `<button class="btn btn-sm btn-primary" data-get="${i}"><span class="ms">download</span>${L`Скачать`}</button>`)
+              : (t.file ? `<button class="btn btn-sm" data-url="${esc(t.file)}"><span class="ms">open_in_new</span>${L`Открыть сайт`}</button>` : '')}
+            ${t.guideId && state.catalog?.guides?.[t.guideId] ? `<button class="btn btn-sm btn-ghost" data-guide="${esc(t.guideId)}">${L`Гайд`}</button>` : ''}
           </div>
         </div>`;
       }).join('')}
@@ -2012,10 +2016,10 @@ async function renderTools() {
     b.addEventListener('click', async () => {
       const t = tools[Number(b.dataset.get)];
       b.disabled = true;
-      b.textContent = 'Скачивание…';
+      b.textContent = L`Скачивание…`;
       const r = await window.api.mods.install({ categoryId: 'tools', name: t.name, styleLabel: null, fileRef: t.file, preview: t.preview });
       if (r.error && !r.already) toast(`${t.name}: ${r.error}`, 'error', 6000);
-      else toast(`${t.name} готов`);
+      else toast(L`${t.name} готов`);
       renderTools();
     });
   });
@@ -2066,12 +2070,12 @@ function renderGuideSteps(steps) {
 function renderGuides() {
   const guides = state.catalog?.guides || {};
   viewRoot.innerHTML = `
-    <div class="view-header"><h1 class="view-title">Гайды</h1></div>
+    <div class="view-header"><h1 class="view-title">${L`Гайды`}</h1></div>
     <div style="color:var(--text-muted);font-size:13px;margin-bottom:16px">
-      Гайды из репозитория Dota2PornFx. Менеджер делает бóльшую часть шагов автоматически — гайды пригодятся для ручной установки и решения проблем.
+      ${L`Гайды из репозитория Dota2PornFx. Менеджер делает бóльшую часть шагов автоматически — гайды пригодятся для ручной установки и решения проблем.`}
     </div>
     ${Object.entries(guides).map(([id, g]) => {
-      const content = g.content?.ru || g.content?.en || [];
+      const content = (window.I18N_LANG === 'en' ? (g.content?.en || g.content?.ru) : (g.content?.ru || g.content?.en)) || [];
       return `
       <div class="guide-card" data-guide="${esc(id)}">
         <div class="guide-title">
@@ -2110,24 +2114,41 @@ async function renderSettings() {
   const appVersion = await window.api.update.version();
 
   viewRoot.innerHTML = `
-    <div class="view-header"><h1 class="view-title">Настройки</h1></div>
+    <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
 
     <div class="settings-block">
-      <h3>Путь к Dota 2</h3>
+      <h3>${L`Язык приложения`}</h3>
       <div class="settings-row">
-        <span class="mono" style="flex:1">${esc(s.dotaGamePath || 'не найден')}</span>
-        <span class="dot ${s.dotaPathValid ? 'ok' : 'bad'}"></span>
+        <span class="settings-label">${L`Язык приложения`}</span>
+        <div class="select-wrap">
+          <span class="ms">translate</span>
+          <select class="input" id="uiLangSelect" style="padding-left:30px">
+            <option value="en" ${s.uiLang === 'en' ? 'selected' : ''}>English</option>
+            <option value="ru" ${s.uiLang === 'ru' ? 'selected' : ''}>Русский</option>
+          </select>
+        </div>
       </div>
-      <div class="settings-row">
-        <button class="btn btn-sm" id="detectBtn">Найти автоматически</button>
-        <button class="btn btn-sm" id="browseBtn">Указать вручную</button>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+        ${L`Меняет язык интерфейса и папку модов (English — dota_123, Русский — dota_russian). Установленные моды переезжают автоматически.`}
       </div>
     </div>
 
     <div class="settings-block" style="animation-delay:60ms">
-      <h3>Папка модов и параметры запуска</h3>
+      <h3>${L`Путь к Dota 2`}</h3>
       <div class="settings-row">
-        <span class="settings-label">Языковая папка</span>
+        <span class="mono" style="flex:1">${esc(s.dotaGamePath || L`не найден`)}</span>
+        <span class="dot ${s.dotaPathValid ? 'ok' : 'bad'}"></span>
+      </div>
+      <div class="settings-row">
+        <button class="btn btn-sm" id="detectBtn">${L`Найти автоматически`}</button>
+        <button class="btn btn-sm" id="browseBtn">${L`Указать вручную`}</button>
+      </div>
+    </div>
+
+    <div class="settings-block" style="animation-delay:120ms">
+      <h3>${L`Папка модов и параметры запуска`}</h3>
+      <div class="settings-row">
+        <span class="settings-label">${L`Языковая папка`}</span>
         <div class="select-wrap">
           <span class="ms">folder</span>
           <select class="input" id="langSelect" style="padding-left:30px">
@@ -2136,95 +2157,94 @@ async function renderSettings() {
         </div>
       </div>
       <div class="settings-row">
-        <span class="settings-label">Параметр запуска Steam</span>
+        <span class="settings-label">${L`Параметр запуска Steam`}</span>
         <span class="launch-code">-language ${esc(s.langSuffix)}
-          <button class="btn btn-sm" id="copyLaunchBtn">Копировать</button>
+          <button class="btn btn-sm" id="copyLaunchBtn">${L`Копировать`}</button>
         </span>
       </div>
       <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
-        Steam → Библиотека → ПКМ по Dota 2 → Свойства → Параметры запуска → вставь строку выше.
-        Моды (кроме шрифтов и курсоров) работают только с этим параметром.
+        ${L`Steam → Библиотека → ПКМ по Dota 2 → Свойства → Параметры запуска → вставь строку выше. Моды (кроме шрифтов и курсоров) работают только с этим параметром.`}
       </div>
       <div class="modal-note" style="margin-top:10px">
-        <b>Дота на русском?</b> Выбирай <code style="background:none;color:var(--primary-soft)">dota_russian</code> и параметр
-        <code style="background:none;color:var(--primary-soft)">-language russian</code> — тогда игра останется русской.
-        С <code style="background:none;color:var(--primary-soft)">-language 123</code> игра переключается на английский.
-        При смене папки установленные моды переезжают автоматически.
+        <b>${L`Дота на русском?`}</b>${L` Выбирай `}<code style="background:none;color:var(--primary-soft)">dota_russian</code>${L` и параметр `}<code style="background:none;color:var(--primary-soft)">-language russian</code>${L` — тогда игра останется русской. С `}<code style="background:none;color:var(--primary-soft)">-language 123</code>${L` игра переключается на английский. При смене папки установленные моды переезжают автоматически.`}
       </div>
       ${s.minifyDetected ? `
       <div class="modal-note" style="margin-top:10px">
-        <b>Обнаружен Minify</b> (папка <code style="background:none;color:var(--primary-soft)">dota_minify</code> рядом).
-        Если Minify настроен на ту же языковую папку, что и менеджер, их моды будут перекрывать друг друга —
-        используй разные папки или ставь моды через что-то одно.
+        <b>${L`Обнаружен Minify`}</b>${L` (папка `}<code style="background:none;color:var(--primary-soft)">dota_minify</code>${L` рядом). Если Minify настроен на ту же языковую папку, что и менеджер, их моды будут перекрывать друг друга — используй разные папки или ставь моды через что-то одно.`}
       </div>` : ''}
     </div>
 
-    <div class="settings-block" style="animation-delay:120ms">
-      <h3>Кэш загрузок</h3>
+    <div class="settings-block" style="animation-delay:180ms">
+      <h3>${L`Кэш загрузок`}</h3>
       <div class="settings-row">
-        <span class="settings-label">Размер</span>
+        <span class="settings-label">${L`Размер`}</span>
         <span style="font-variant-numeric:tabular-nums">${fmtMB(cacheSize)} MB</span>
-        <button class="btn btn-sm" id="clearCacheBtn">Очистить</button>
+        <button class="btn btn-sm" id="clearCacheBtn">${L`Очистить`}</button>
       </div>
       <div style="font-size:12.5px;color:var(--text-muted)">
-        Скачанные архивы модов. Нужны для быстрой переустановки — удаление ничего не сломает.
-      </div>
-    </div>
-
-    <div class="settings-block" style="animation-delay:180ms">
-      <h3>Каталог</h3>
-      <div class="settings-row">
-        <span class="settings-label">Обновлён</span>
-        <span>${state.catalog?.fetchedAt ? new Date(state.catalog.fetchedAt).toLocaleString('ru') : '—'}</span>
-        <button class="btn btn-sm" id="refreshCatBtn2">Обновить сейчас</button>
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">Источник</span>
-        <a style="color:var(--primary-soft);cursor:pointer;font-size:12.5px" id="srcLink">github.com/h6rd/Dota2PornFxWeb</a>
+        ${L`Скачанные архивы модов. Нужны для быстрой переустановки — удаление ничего не сломает.`}
       </div>
     </div>
 
     <div class="settings-block" style="animation-delay:240ms">
-      <h3>О программе</h3>
+      <h3>${L`Каталог`}</h3>
       <div class="settings-row">
-        <span class="settings-label">Версия</span>
+        <span class="settings-label">${L`Обновлён`}</span>
+        <span>${state.catalog?.fetchedAt ? new Date(state.catalog.fetchedAt).toLocaleString(window.i18nLocale()) : '—'}</span>
+        <button class="btn btn-sm" id="refreshCatBtn2">${L`Обновить сейчас`}</button>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">${L`Источник`}</span>
+        <a style="color:var(--primary-soft);cursor:pointer;font-size:12.5px" id="srcLink">github.com/h6rd/Dota2PornFxWeb</a>
+      </div>
+    </div>
+
+    <div class="settings-block" style="animation-delay:300ms">
+      <h3>${L`О программе`}</h3>
+      <div class="settings-row">
+        <span class="settings-label">${L`Версия`}</span>
         <span style="font-variant-numeric:tabular-nums">v${esc(appVersion)}</span>
         <a style="color:var(--primary-soft);cursor:pointer;font-size:12.5px" id="repoLink">github.com/TheFleece/dota2-mod-manager</a>
       </div>
       <div style="font-size:12.5px;color:var(--text-muted)">
-        Обновления скачиваются автоматически из GitHub Releases — когда новая версия готова, появится кнопка установки.
+        ${L`Обновления скачиваются автоматически из GitHub Releases — когда новая версия готова, появится кнопка установки.`}
       </div>
     </div>
   `;
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
 
+  $('#uiLangSelect').addEventListener('change', async (e) => {
+    await applyLanguage(e.target.value);
+    toast(e.target.value === 'ru' ? L`Язык переключён на Русский` : L`Язык переключён на English`);
+    renderSettings();
+  });
   $('#detectBtn').addEventListener('click', async () => {
     const found = await window.api.settings.detectDota();
-    if (found) toast('Dota 2 найдена: ' + found);
-    else toast('Не нашёл автоматически — укажи вручную', 'warn');
+    if (found) toast(L`Dota 2 найдена: ${found}`);
+    else toast(L`Не нашёл автоматически — укажи вручную`, 'warn');
     renderSettings();
     refreshSidebarStatus();
   });
   $('#browseBtn').addEventListener('click', async () => {
     const r = await window.api.settings.browseDota();
     if (r?.error) toast(r.error, 'error');
-    if (r?.path) toast('Путь сохранён');
+    if (r?.path) toast(L`Путь сохранён`);
     renderSettings();
     refreshSidebarStatus();
   });
   $('#langSelect').addEventListener('change', async (e) => {
     await window.api.settings.set('langSuffix', e.target.value);
-    toast(`Папка модов: dota_${e.target.value}. Не забудь сменить параметр запуска!`, 'warn', 6000);
+    toast(L`Папка модов: dota_${e.target.value}. Не забудь сменить параметр запуска!`, 'warn', 6000);
     renderSettings();
     refreshSidebarStatus();
   });
   $('#copyLaunchBtn').addEventListener('click', () => {
     navigator.clipboard.writeText(`-language ${s.langSuffix}`);
-    toast('Скопировано в буфер');
+    toast(L`Скопировано в буфер`);
   });
   $('#clearCacheBtn').addEventListener('click', async () => {
     await window.api.misc.clearCache();
-    toast('Кэш очищен');
+    toast(L`Кэш очищен`);
     renderSettings();
   });
   $('#refreshCatBtn2').addEventListener('click', async () => {
@@ -2243,10 +2263,10 @@ async function refreshSidebarStatus() {
   const txtEl = $('#dotaStatusText');
   if (s.dotaPathValid) {
     dotEl.className = 'dot ok';
-    txtEl.textContent = `Dota 2 подключена · dota_${s.langSuffix} · параметр: -language ${s.langSuffix}`;
+    txtEl.textContent = L`Dota 2 подключена · dota_${s.langSuffix} · параметр: -language ${s.langSuffix}`;
   } else {
     dotEl.className = 'dot bad';
-    txtEl.textContent = 'Dota 2 не найдена — укажи путь в настройках';
+    txtEl.textContent = L`Dota 2 не найдена — укажи путь в настройках`;
   }
 }
 
@@ -2257,7 +2277,7 @@ window.api.onProgress((evt) => {
   const bar = $('#progressBar');
   if (evt.type === 'download') {
     bar.classList.remove('hidden');
-    $('#progressLabel').textContent = `Скачивание: ${evt.label}`;
+    $('#progressLabel').textContent = L`Скачивание: ${evt.label}`;
     if (evt.total > 0) {
       $('#progressSize').textContent = `${fmtMB(evt.loaded)} / ${fmtMB(evt.total)} MB`;
       $('#progressFill').style.width = `${(evt.loaded / evt.total) * 100}%`;
@@ -2280,15 +2300,15 @@ window.api.onProgress((evt) => {
 
 window.api.update.onUpdate((evt) => {
   if (evt.type === 'available') {
-    toast(`Найдено обновление v${evt.version} — скачиваю в фоне…`, 'ok', 6000);
+    toast(L`Найдено обновление v${evt.version} — скачиваю в фоне…`, 'ok', 6000);
   } else if (evt.type === 'downloaded') {
     const bar = document.createElement('div');
     bar.className = 'update-bar';
     bar.innerHTML = `
       <span class="ms">system_update_alt</span>
-      <span>Обновление <b>v${esc(evt.version)}</b> готово к установке</span>
-      <button class="btn btn-sm btn-primary" id="updateNowBtn">Перезапустить и обновить</button>
-      <button class="btn btn-sm btn-ghost" id="updateLaterBtn">Позже</button>`;
+      <span>${L`Обновление `}<b>v${esc(evt.version)}</b>${L` готово к установке`}</span>
+      <button class="btn btn-sm btn-primary" id="updateNowBtn">${L`Перезапустить и обновить`}</button>
+      <button class="btn btn-sm btn-ghost" id="updateLaterBtn">${L`Позже`}</button>`;
     document.body.appendChild(bar);
     bar.querySelector('#updateNowBtn').addEventListener('click', () => window.api.update.install());
     bar.querySelector('#updateLaterBtn').addEventListener('click', () => bar.remove());
@@ -2300,13 +2320,13 @@ window.api.update.onUpdate((evt) => {
 const CATALOG_MAX_AGE = 30 * 60 * 1000;
 
 async function loadCatalog(force = false) {
-  if (force) toast('Обновляю каталог…');
+  if (force) toast(L`Обновляю каталог…`);
   state.catalog = null;
   if (state.view === 'catalog') renderCatalog();
   state.catalog = await window.api.catalog.load(force);
   if (!state.catalog.error) buildModIndex();
   if (state.view === 'catalog') renderCatalog();
-  if (force && !state.catalog.error) toast('Каталог обновлён');
+  if (force && !state.catalog.error) toast(L`Каталог обновлён`);
 
   // cached catalog goes stale fast (new mods appear upstream) — refresh in the background
   if (!force && !state.catalog.error && Date.now() - (state.catalog.fetchedAt || 0) > CATALOG_MAX_AGE) {
@@ -2319,11 +2339,94 @@ async function loadCatalog(force = false) {
   }
 }
 
+// ---------- language ----------
+
+// translate the static app chrome (index.html markup) in place, preserving child nodes
+function applyStaticI18n() {
+  document.documentElement.lang = window.I18N_LANG;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const txt = tr(el.getAttribute('data-i18n'));
+    if (el.firstChild && el.firstChild.nodeType === 3) el.firstChild.nodeValue = txt;
+    else el.insertBefore(document.createTextNode(txt), el.firstChild);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => el.setAttribute('placeholder', tr(el.getAttribute('data-i18n-ph'))));
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => el.setAttribute('title', tr(el.getAttribute('data-i18n-title'))));
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => el.setAttribute('aria-label', tr(el.getAttribute('data-i18n-aria'))));
+}
+
+// switch the whole app language: UI text + the Dota language folder (English -> dota_123,
+// Russian -> dota_russian). main.js migrates installed mods to the new folder automatically.
+async function applyLanguage(lang) {
+  lang = lang === 'ru' ? 'ru' : 'en';
+  window.I18N_LANG = lang;
+  try { localStorage.setItem('uiLang', lang); } catch { /* ignore */ }
+  await window.api.settings.set('uiLang', lang);
+  const desiredSuffix = lang === 'ru' ? 'russian' : '123';
+  const cur = await window.api.settings.get();
+  if (cur.langSuffix !== desiredSuffix) await window.api.settings.set('langSuffix', desiredSuffix);
+  applyStaticI18n();
+  paintMasterSwitch();
+  await refreshSidebarStatus();
+  render();
+}
+
+// one-time chooser shown on first launch and once after this release ships. English is the
+// default. Resolves once the user picks (the choice is applied by applyLanguage).
+function showLanguagePicker() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'lang-pick-overlay';
+    overlay.innerHTML = `
+      <div class="lang-pick-box">
+        <div class="lang-pick-logo">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4v8l-7 8-7-8V6z"/><path d="M12 8v6"/><path d="M9 11h6"/></svg>
+        </div>
+        <h2>Choose your language</h2>
+        <p>Выберите язык · you can change this anytime in Settings</p>
+        <div class="lang-pick-opts">
+          <button class="lang-pick-btn" data-lang="en">
+            <span class="lp-flag">EN</span>
+            <span class="lp-text"><b>English</b><small>Game folder: dota_123</small></span>
+            <span class="ms lp-go">chevron_right</span>
+          </button>
+          <button class="lang-pick-btn" data-lang="ru">
+            <span class="lp-flag">RU</span>
+            <span class="lp-text"><b>Русский</b><small>Папка игры: dota_russian</small></span>
+            <span class="ms lp-go">chevron_right</span>
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    overlay.querySelectorAll('.lang-pick-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        overlay.querySelectorAll('.lang-pick-btn').forEach((b) => (b.disabled = true));
+        await applyLanguage(btn.dataset.lang);
+        await window.api.settings.set('langPromptSeen', true);
+        overlay.classList.remove('show');
+        setTimeout(() => { overlay.remove(); resolve(); }, 180);
+      });
+    });
+  });
+}
+
+// ---------- boot ----------
+
 (async function boot() {
   const maxed = await window.api.win.isMaximized();
   if (maxed) $('#winMax').innerHTML = '<svg viewBox="0 0 12 12" width="12" height="12"><rect x="2" y="3.5" width="6.5" height="6.5" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><path d="M4 3.5V2.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>';
+
+  // language: settings.json is the source of truth; reconcile the localStorage-seeded value
+  const cfg = await window.api.settings.get();
+  window.I18N_LANG = cfg.uiLang === 'ru' ? 'ru' : 'en';
+  try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
+  applyStaticI18n();
+
   await refreshSidebarStatus();
   await refreshMasterSwitch();
   await refreshInstalledIndex();
   await loadCatalog();
+
+  // first launch, or first launch after this release — let the user pick a language
+  if (!cfg.langPromptSeen) await showLanguagePicker();
 })();

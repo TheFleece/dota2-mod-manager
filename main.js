@@ -14,6 +14,8 @@ const { Installer } = require('./src/installer');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
+const i18n = require('./src/i18n');
+const { t } = i18n;
 
 let win;
 let settings, catalog, installer, library, fingerprints;
@@ -101,6 +103,7 @@ app.whenReady().then(async () => {
   diag('whenReady');
   const userData = app.getPath('userData');
   settings = new Settings(userData);
+  i18n.setLang(settings.get('uiLang'));
   catalog = new Catalog(userData);
   library = new Library(userData);
   fingerprints = new Fingerprints(userData);
@@ -244,6 +247,8 @@ function registerIpc() {
   });
 
   ipcMain.handle('settings:set', (e, key, value) => {
+    // keep main-process strings (dialogs, errors) in sync with the UI language
+    if (key === 'uiLang') i18n.setLang(value);
     // when the language folder changes, move installed mod files over
     if (key === 'langSuffix' && value !== settings.get('langSuffix')) {
       const game = settings.get('dotaGamePath');
@@ -280,14 +285,14 @@ function registerIpc() {
 
   ipcMain.handle('settings:browseDota', async () => {
     const res = await dialog.showOpenDialog(win, {
-      title: 'Выбери папку game внутри dota 2 beta',
+      title: t('Выбери папку game внутри dota 2 beta'),
       properties: ['openDirectory'],
     });
     if (res.canceled || !res.filePaths[0]) return null;
     let p = res.filePaths[0];
     // allow picking "dota 2 beta" root as well
     if (!validateGamePath(p) && validateGamePath(path.join(p, 'game'))) p = path.join(p, 'game');
-    if (!validateGamePath(p)) return { error: 'В этой папке не найдена Dota 2 (нет подпапки dota)' };
+    if (!validateGamePath(p)) return { error: t('В этой папке не найдена Dota 2 (нет подпапки dota)') };
     settings.set('dotaGamePath', p);
     return { path: p };
   });
@@ -306,7 +311,7 @@ function registerIpc() {
     // payload: { categoryId, name, styleLabel, fileRef, preview }
     try {
       const existing = library.findByKey(payload.categoryId, payload.name, payload.styleLabel);
-      if (existing) return { error: 'Уже установлено', already: true };
+      if (existing) return { error: t('Уже установлено'), already: true };
       const files = await installer.install({
         categoryId: payload.categoryId,
         modName: payload.name,
@@ -340,14 +345,14 @@ function registerIpc() {
 
   ipcMain.handle('mods:exportSingle', async (e, id) => {
     const rec = library.find(id);
-    if (!rec) return { error: 'Мод не найден' };
+    if (!rec) return { error: t('Мод не найден') };
     try {
       const buf = installer.mergeToSingleVpk(rec);
       const safe = rec.name.replace(/[<>:"/\\|?*]/g, '_') || 'mod';
       const res = await dialog.showSaveDialog(win, {
-        title: 'Сохранить мод одним .vpk файлом',
+        title: t('Сохранить мод одним .vpk файлом'),
         defaultPath: `${safe}.vpk`,
-        filters: [{ name: 'VPK мод', extensions: ['vpk'] }],
+        filters: [{ name: t('VPK мод'), extensions: ['vpk'] }],
       });
       if (res.canceled || !res.filePath) return { cancelled: true };
       fs.writeFileSync(res.filePath, buf);
@@ -359,9 +364,9 @@ function registerIpc() {
 
   ipcMain.handle('mods:importDialog', async () => {
     const res = await dialog.showOpenDialog(win, {
-      title: 'Выбери .vpk файлы модов',
+      title: t('Выбери .vpk файлы модов'),
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'VPK моды', extensions: ['vpk'] }],
+      filters: [{ name: t('VPK моды'), extensions: ['vpk'] }],
     });
     if (res.canceled || !res.filePaths.length) return { cancelled: true };
     return importVpkPaths(res.filePaths);
@@ -450,7 +455,7 @@ function registerIpc() {
 
   ipcMain.handle('mods:setEnabled', (e, id, enabled) => {
     const rec = library.find(id);
-    if (!rec) return { error: 'Мод не найден' };
+    if (!rec) return { error: t('Мод не найден') };
     try {
       installer.setEnabled(rec.files, enabled);
       library.setEnabled(id, enabled);
@@ -462,7 +467,7 @@ function registerIpc() {
 
   ipcMain.handle('mods:remove', (e, id) => {
     const rec = library.find(id);
-    if (!rec) return { error: 'Мод не найден' };
+    if (!rec) return { error: t('Мод не найден') };
     try {
       if (rec.kind === 'pack') installer.removePackFully(rec);
       else installer.remove(rec.files);
@@ -501,12 +506,12 @@ function registerIpc() {
   // split a merged multi-hero library record into one managed mod per hero
   ipcMain.handle('mods:splitMod', (e, id) => {
     const rec = library.find(id);
-    if (!rec) return { error: 'Мод не найден' };
+    if (!rec) return { error: t('Мод не найден') };
     try {
       const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
-      if (!dir) return { error: 'Нет _dir.vpk для разбора' };
+      if (!dir) return { error: t('Нет _dir.vpk для разбора') };
       const parts = installer.splitVpkFile(dir.relPath);
-      if (!parts.length) return { error: 'В файле меньше двух героев — разбирать нечего' };
+      if (!parts.length) return { error: t('В файле меньше двух героев — разбирать нечего') };
       for (const p of parts) {
         library.add({ name: p.name, categoryId: 'imported', styleLabel: null, fileRef: rec.name, preview: null, files: p.files });
       }
@@ -522,10 +527,10 @@ function registerIpc() {
   // catalog identity so it's managed like a natively installed mod (no re-download)
   ipcMain.handle('mods:adoptMod', (e, id, preview) => {
     const rec = library.find(id);
-    if (!rec) return { error: 'Мод не найден' };
+    if (!rec) return { error: t('Мод не найден') };
     const a = installer.analyzeRecord(rec);
     const matches = a && fingerprints.match(a.fp);
-    if (!matches) return { error: 'Совпадение с каталогом не найдено' };
+    if (!matches) return { error: t('Совпадение с каталогом не найдено') };
     const m = matches[0]; // identical-content entries are interchangeable; take the first
     const fields = { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null };
     if (preview) fields.preview = preview; // catalog thumbnail resolved by the renderer
@@ -542,7 +547,7 @@ function registerIpc() {
       const buf = fs.readFileSync(path.join(lang, base));
       const { fingerprintVpk } = require('./src/vpk');
       const matches = fingerprints.match(fingerprintVpk(buf));
-      if (!matches) return { error: 'Совпадение с каталогом не найдено' };
+      if (!matches) return { error: t('Совпадение с каталогом не найдено') };
       const m = matches[0]; // identical-content entries are interchangeable; take the first
       // include the _dir.vpk and any sibling data archives (<base>_NNN.vpk)
       const origBase = base.replace(/_dir\.vpk$/i, '');
@@ -561,7 +566,7 @@ function registerIpc() {
     try {
       const fh = installer.fontFolderHashes();
       const m = fh && fingerprints.matchFonts(fh).find((x) => x.name === name);
-      if (!m) return { error: 'Совпадение с каталогом не найдено' };
+      if (!m) return { error: t('Совпадение с каталогом не найдено') };
       library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: preview || null, files: Object.keys(m.files).map((bn) => ({ root: 'fonts', relPath: bn })) });
       return { ok: true, name: m.name };
     } catch (err) {
@@ -573,7 +578,7 @@ function registerIpc() {
   ipcMain.handle('mods:adoptCursor', (e, preview) => {
     try {
       const cursorDir = path.join(installer.getGamePath(), 'dota', 'resource', 'cursor');
-      if (!fs.existsSync(cursorDir)) return { error: 'Папка курсора не найдена' };
+      if (!fs.existsSync(cursorDir)) return { error: t('Папка курсора не найдена') };
       const files = [];
       const rels = [];
       const walk = (d, pre) => {
@@ -587,7 +592,7 @@ function registerIpc() {
       walk(cursorDir, '');
       const { fingerprintFiles } = require('./src/vpk');
       const matches = fingerprints.match(fingerprintFiles(files));
-      if (!matches) return { error: 'Совпадение с каталогом не найдено' };
+      if (!matches) return { error: t('Совпадение с каталогом не найдено') };
       const m = matches[0];
       library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: preview || null, files: rels.map((rp) => ({ root: 'cursor', relPath: rp })) });
       return { ok: true, name: m.name };
@@ -602,7 +607,7 @@ function registerIpc() {
       const lang = installer.langFolder();
       const base = fileName.replace(/\.off$/i, '');
       const parts = installer.splitVpkFile(base);
-      if (!parts.length) return { error: 'В файле меньше двух героев — разбирать нечего' };
+      if (!parts.length) return { error: t('В файле меньше двух героев — разбирать нечего') };
       for (const p of parts) {
         library.add({ name: p.name, categoryId: 'imported', styleLabel: null, fileRef: fileName, preview: null, files: p.files });
       }
@@ -631,14 +636,14 @@ function registerIpc() {
       const packs = recs.filter((r) => r.kind === 'pack');
       const mods = recs.filter((r) => packableRecord(r));
       const totalMembers = packs.reduce((n, p) => n + (p.members ? p.members.length : 0), 0) + mods.length;
-      if (totalMembers < 2) return { error: 'Выбери минимум 2 мода (или пак и мод / два пака)' };
+      if (totalMembers < 2) return { error: t('Выбери минимум 2 мода (или пак и мод / два пака)') };
 
       // reuse the first selected pack as the target (absorb the rest into it), else new
       let target = packs[0];
       const otherPacks = packs.slice(1);
       if (!target) {
         target = library.add({
-          name: (payload.name && payload.name.trim()) || `Пак (${totalMembers})`,
+          name: (payload.name && payload.name.trim()) || t('Пак ({0})', totalMembers),
           categoryId: 'combined', styleLabel: null, fileRef: null, preview: null, files: [], kind: 'pack', members: [],
         });
       } else if (payload.name && payload.name.trim()) {
@@ -674,10 +679,10 @@ function registerIpc() {
   // Add more library mods into an existing pack.
   ipcMain.handle('packs:addMembers', (e, packId, modIds) => {
     const pack = library.find(packId);
-    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    if (!pack || pack.kind !== 'pack') return { error: t('Пак не найден') };
     try {
       const recs = (modIds || []).map((id) => library.find(id)).filter(packableRecord);
-      if (!recs.length) return { error: 'Нет совместимых модов для добавления' };
+      if (!recs.length) return { error: t('Нет совместимых модов для добавления') };
       for (const r of recs) {
         pack.members.push(installer.addPackMemberFromRecord(pack.id, r, crypto.randomUUID()));
         try { installer.remove(r.files); } catch { /* noop */ }
@@ -693,9 +698,9 @@ function registerIpc() {
   // Enable/disable one member inside a pack (rebuilds the merged VPK from enabled members).
   ipcMain.handle('packs:setMemberEnabled', (e, packId, memberId, enabled) => {
     const pack = library.find(packId);
-    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    if (!pack || pack.kind !== 'pack') return { error: t('Пак не найден') };
     const m = (pack.members || []).find((x) => x.id === memberId);
-    if (!m) return { error: 'Мод в паке не найден' };
+    if (!m) return { error: t('Мод в паке не найден') };
     try {
       m.enabled = !!enabled;
       const conflicts = deployAndApply(pack);
@@ -708,9 +713,9 @@ function registerIpc() {
   // Remove one member from a pack. If it was the last one, the pack itself is removed.
   ipcMain.handle('packs:removeMember', (e, packId, memberId) => {
     const pack = library.find(packId);
-    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    if (!pack || pack.kind !== 'pack') return { error: t('Пак не найден') };
     const idx = (pack.members || []).findIndex((x) => x.id === memberId);
-    if (idx < 0) return { error: 'Мод в паке не найден' };
+    if (idx < 0) return { error: t('Мод в паке не найден') };
     try {
       try { fs.rmSync(installer.packMemberFile(pack.id, pack.members[idx].id), { force: true }); } catch { /* noop */ }
       pack.members.splice(idx, 1);
@@ -730,7 +735,7 @@ function registerIpc() {
   // rest of the pack intact (removes the pack entirely if nothing is left).
   ipcMain.handle('packs:extractMembers', (e, packId, memberIds) => {
     const pack = library.find(packId);
-    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    if (!pack || pack.kind !== 'pack') return { error: t('Пак не найден') };
     try {
       const ids = new Set(memberIds || []);
       const names = [];
@@ -758,7 +763,7 @@ function registerIpc() {
   // Disband a pack back into standalone mods (one deployed pak per member).
   ipcMain.handle('packs:disband', (e, packId) => {
     const pack = library.find(packId);
-    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    if (!pack || pack.kind !== 'pack') return { error: t('Пак не найден') };
     try {
       const names = [];
       for (const m of pack.members || []) {
@@ -788,7 +793,7 @@ function registerIpc() {
   });
   ipcMain.handle('presets:apply', (e, id) => {
     const preset = library.getPreset(id);
-    if (!preset) return { error: 'Пресет не найден' };
+    if (!preset) return { error: t('Пресет не найден') };
     const wanted = new Set(preset.modIds);
     const errors = [];
     for (const rec of library.list()) {
@@ -851,7 +856,7 @@ function registerIpc() {
         return null;
       };
       const exe = findExe(dir);
-      if (!exe) return { error: 'exe не найден в папке инструмента' };
+      if (!exe) return { error: t('exe не найден в папке инструмента') };
       shell.openPath(exe);
       return { ok: true };
     } catch (err) {

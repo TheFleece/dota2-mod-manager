@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
 const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { t } = require('./i18n');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -69,7 +70,7 @@ class Installer {
 
   langFolder() {
     const game = this.getGamePath();
-    if (!game) throw new Error('Путь к Dota 2 не задан');
+    if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     return path.join(game, `dota_${this.getLangSuffix()}`);
   }
 
@@ -84,7 +85,7 @@ class Installer {
     if (fs.existsSync(dest) && fs.statSync(dest).size > 0) return dest; // cached
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status} — не удалось скачать ${safeName}`);
+    if (!res.ok) throw new Error(t('HTTP {0} — не удалось скачать {1}', res.status, safeName));
     const total = Number(res.headers.get('content-length')) || 0;
     const tmp = dest + '.part';
     const out = fs.createWriteStream(tmp);
@@ -186,7 +187,7 @@ class Installer {
         return name;
       }
     }
-    throw new Error('Свободных слотов pakNN не осталось (10-99 заняты)');
+    throw new Error(t('Свободных слотов pakNN не осталось (10-99 заняты)'));
   }
 
   // ---------- helpers ----------
@@ -210,7 +211,7 @@ class Installer {
   async install({ categoryId, modName, fileRef }) {
     const isPriority = PRIORITY_CATEGORIES.includes(categoryId);
     const local = await this.download(categoryId, fileRef, modName);
-    this.onProgress({ type: 'stage', label: modName, stage: 'установка' });
+    this.onProgress({ type: 'stage', label: modName, stage: t('установка') });
 
     if (categoryId === 'fonts') return this.installFonts(local, modName);
     if (categoryId === 'cursors') return this.installCursor(local, modName);
@@ -276,7 +277,7 @@ class Installer {
   // Custom files go to game\dota\panorama\fonts. Vanilla originals are backed up once.
   installFonts(localZip, modName) {
     const game = this.getGamePath();
-    if (!game) throw new Error('Путь к Dota 2 не задан');
+    if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     const target = path.join(game, ...FONTS_SUBDIR);
     fs.mkdirSync(target, { recursive: true });
     const zip = new AdmZip(localZip);
@@ -298,14 +299,14 @@ class Installer {
       this.writeInto(entry.getData(), destAbs);
       records.push({ root: 'fonts', relPath: fname });
     }
-    if (!records.length) throw new Error(`${modName}: в архиве не найдено assets/custom`);
+    if (!records.length) throw new Error(t('{0}: в архиве не найдено assets/custom', modName));
     return records;
   }
 
   // Cursors: zip has <Name>/cursor/* → game\dota\resource\cursor (vanilla backed up once)
   installCursor(localZip, modName) {
     const game = this.getGamePath();
-    if (!game) throw new Error('Путь к Dota 2 не задан');
+    if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     const target = path.join(game, ...CURSOR_SUBDIR);
     fs.mkdirSync(target, { recursive: true });
     const zip = new AdmZip(localZip);
@@ -326,7 +327,7 @@ class Installer {
       this.writeInto(entry.getData(), destAbs);
       records.push({ root: 'cursor', relPath: fname });
     }
-    if (!records.length) throw new Error(`${modName}: в архиве не найдена папка cursor`);
+    if (!records.length) throw new Error(t('{0}: в архиве не найдена папка cursor', modName));
     return records;
   }
 
@@ -350,7 +351,7 @@ class Installer {
       case 'fonts': return path.join(game, ...FONTS_SUBDIR);
       case 'cursor': return path.join(game, ...CURSOR_SUBDIR);
       case 'tools': return this.toolsDir;
-      default: throw new Error(`Неизвестный root: ${root}`);
+      default: throw new Error(t('Неизвестный root: {0}', root));
     }
   }
 
@@ -394,7 +395,7 @@ class Installer {
   mergeToSingleVpk(rec) {
     const lang = this.langFolder();
     const dirRec = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
-    if (!dirRec) throw new Error('У этого мода нет _dir.vpk — объединять нечего');
+    if (!dirRec) throw new Error(t('У этого мода нет _dir.vpk — объединять нечего'));
     // resolve real on-disk name (files may be disabled -> ".off")
     const resolve = (relPath) => {
       const abs = path.join(lang, relPath);
@@ -499,7 +500,7 @@ class Installer {
     for (const src of paths) {
       const fileName = path.basename(src);
       if (!/\.vpk$/i.test(fileName)) {
-        results.push({ source: fileName, error: 'не .vpk файл' });
+        results.push({ source: fileName, error: t('не .vpk файл') });
         continue;
       }
       const srcDir = path.dirname(src);
@@ -530,7 +531,7 @@ class Installer {
           if (fs.existsSync(guess)) dirSrc = guess;
         }
         if (!dirSrc) {
-          results.push({ source: set.sourceLabel, error: `нет ${set.base}_dir.vpk рядом с data-частями` });
+          results.push({ source: set.sourceLabel, error: t('нет {0}_dir.vpk рядом с data-частями', set.base) });
           continue;
         }
         const pakDir = this.allocatePak(used, false);        // pakXX_dir.vpk
@@ -804,7 +805,7 @@ class Installer {
         try { walk(cursorDir, ''); } catch { /* unreadable */ }
         if (files.length) {
           out.push({
-            kind: 'cursor', key: '__cursor__', name: 'Курсор', primary: false,
+            kind: 'cursor', key: '__cursor__', name: t('Курсор'), primary: false,
             size: files.reduce((s, x) => s + x.data.length, 0), enabled: true,
             files: rels.map((rp) => ({ root: 'cursor', relPath: rp })), fp: fingerprintFiles(files),
           });
