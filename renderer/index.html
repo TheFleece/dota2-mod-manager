@@ -64,7 +64,16 @@
     <footer id="statusbar">
       <span class="dot" id="dotaStatusDot"></span>
       <span id="dotaStatusText">Поиск Dota 2…</span>
-      <button class="status-link" id="openModsFolderBtn">Открыть папку модов</button>
+      <div class="sb-right">
+        <button class="status-link" id="openModsFolderBtn">Открыть папку модов</button>
+        <button class="mods-switch on" id="modsMasterBtn" role="switch" aria-checked="true" title="Включить/выключить все моды сразу (для запуска ванильной игры)">
+          <span class="mods-switch-txt">Моды: <b id="modsMasterState">вкл</b></span>
+          <span class="mods-switch-track"><span class="mods-switch-thumb"></span></span>
+        </button>
+        <button class="btn btn-primary btn-play" id="launchBtn" title="Запустить Dota 2 через Steam с твоими параметрами запуска">
+          <span class="ms">play_arrow</span>Играть
+        </button>
+      </div>
     </footer>
 
     <!-- Progress bar (bottom) -->

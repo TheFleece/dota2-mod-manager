@@ -41,7 +41,7 @@ class Library {
     ) || null;
   }
 
-  add({ name, categoryId, styleLabel, fileRef, preview, files }) {
+  add({ name, categoryId, styleLabel, fileRef, preview, files, kind, members }) {
     const id = crypto.randomUUID();
     const rec = {
       id,
@@ -54,6 +54,8 @@ class Library {
       enabled: true,
       installedAt: Date.now(),
     };
+    if (kind) rec.kind = kind;            // e.g. 'pack' — a combined multi-mod slot
+    if (members) rec.members = members;   // pack members: [{ id, name, categoryId, enabled, ... }]
     this.data.installed.push(rec);
     this.save();
     return rec;

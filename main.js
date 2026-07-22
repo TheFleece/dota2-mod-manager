@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 let autoUpdater = null;
 try {
@@ -60,6 +61,13 @@ function createWindow() {
             await win.webContents.executeJavaScript(
               `document.querySelector('.rail-item[data-cat="${process.env.MM_CAT}"]')?.click()`);
             await new Promise((r) => setTimeout(r, 2500));
+          }
+          if (process.env.MM_CLICK) {
+            // dev-only: click a comma-separated list of CSS selectors before capture
+            for (const sel of process.env.MM_CLICK.split('||')) {
+              await win.webContents.executeJavaScript(`document.querySelector(${JSON.stringify(sel)})?.click()`);
+              await new Promise((r) => setTimeout(r, 700));
+            }
           }
           if (process.env.MM_MODAL) {
             await win.webContents.executeJavaScript(`
@@ -167,10 +175,33 @@ function importVpkPaths(paths) {
       } catch { /* ignore */ }
       imported.push({ name: rec.name, relPath: r.files[0].relPath, conflicts });
     }
+    if (imported.length && installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
     return { imported, errors: results.filter((r) => r.error) };
   } catch (err) {
     return { error: String(err.message || err) };
   }
+}
+
+// after any deploy, if the master switch is off, sweep freshly written files off too
+function afterDeployMaster() {
+  try { if (installer.masterIsOff()) installer.setMasterEnabled(false); } catch { /* noop */ }
+}
+
+// rebuild a pack's deployed VPK, persist its files, and re-apply pack + master off-state
+function deployAndApply(pack) {
+  const { files, conflicts } = installer.deployPack(pack);
+  library.update(pack.id, { files, members: pack.members });
+  if (pack.enabled === false && files.length) { try { installer.setEnabled(files, false); } catch { /* noop */ } }
+  afterDeployMaster();
+  return conflicts;
+}
+
+// a library record that can go into a combined pack: a lang-folder skin/import with a
+// _dir.vpk (not a pack itself, not a loose font/cursor set, not a terrain maps file)
+function packableRecord(rec) {
+  return rec && rec.kind !== 'pack'
+    && rec.categoryId !== 'fonts' && rec.categoryId !== 'cursors'
+    && (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
 }
 
 function registerIpc() {
@@ -272,6 +303,9 @@ function registerIpc() {
         fileRef: payload.fileRef,
       });
       const rec = library.add({ ...payload, files });
+      // installed while the master switch is off? sweep the fresh file off too, so the
+      // library state stays consistent (all mods off) until the user turns them back on.
+      if (installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
       sendProgress({ type: 'done', label: payload.name });
       return { ok: true, record: rec };
     } catch (err) {
@@ -326,6 +360,20 @@ function registerIpc() {
   ipcMain.handle('mods:importPaths', (e, paths) => importVpkPaths(Array.isArray(paths) ? paths : []));
 
   ipcMain.handle('mods:list', () => {
+    // folder sync: a mod deleted straight from the game folder drops out of the library
+    try {
+      for (const rec of [...library.list()]) {
+        if (rec.kind === 'pack') {
+          if ((rec.files || []).length && !installer.langPrimaryPresent(rec)) {
+            installer.removePackFully(rec);
+            library.removeRecord(rec.id);
+          }
+        } else if (!installer.langPrimaryPresent(rec)) {
+          library.removeRecord(rec.id);
+        }
+      }
+    } catch { /* no game path yet — nothing to sync */ }
+
     let external = [];
     try {
       const known = library.knownFiles();
@@ -354,7 +402,31 @@ function registerIpc() {
         return { ...rec, ...a, match: a.fp ? fingerprints.match(a.fp) : null };
       } catch { return rec; }
     });
-    return { installed, external };
+    let slots = 0;
+    try { slots = installer.usedModSlots(); } catch { /* no game path */ }
+    return { installed, external, slots, slotCeil: 98 };
+  });
+
+  // ----- launch + master mods switch -----
+
+  // Launch Dota via Steam so the user's own launch options apply (-novid, -fps max,
+  // -language russian … differ per user). rungameid mirrors clicking Play in Steam.
+  ipcMain.handle('game:launch', () => {
+    shell.openExternal('steam://rungameid/570');
+    return { ok: true };
+  });
+
+  ipcMain.handle('mods:masterState', () => {
+    try { return { off: installer.masterIsOff() }; } catch { return { off: false }; }
+  });
+
+  ipcMain.handle('mods:setMaster', (e, enabled) => {
+    try {
+      const r = installer.setMasterEnabled(!!enabled);
+      return { ok: true, ...r };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
   });
 
   ipcMain.handle('mods:setEnabled', (e, id, enabled) => {
@@ -373,7 +445,8 @@ function registerIpc() {
     const rec = library.find(id);
     if (!rec) return { error: 'Мод не найден' };
     try {
-      installer.remove(rec.files);
+      if (rec.kind === 'pack') installer.removePackFully(rec);
+      else installer.remove(rec.files);
       library.removeRecord(id);
       return { ok: true };
     } catch (err) {
@@ -521,6 +594,106 @@ function registerIpc() {
         }
       }
       return { ok: true, count: parts.length, names: parts.map((p) => p.name) };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // ----- combined packs -----
+
+  // Combine 2+ library mods into a single pak slot. Each mod becomes a member (its own
+  // VPK stored under packs/<id>), its standalone deployment is removed, and one merged
+  // VPK is written. Members stay individually toggleable/removable inside the pack.
+  ipcMain.handle('packs:create', (e, payload) => {
+    try {
+      const recs = (payload.modIds || []).map((id) => library.find(id)).filter(packableRecord);
+      if (recs.length < 2) return { error: 'Выбери минимум 2 совместимых мода (скины или импорт)' };
+      // create the pack record first so member files are stored under its final id
+      const pack = library.add({
+        name: payload.name && payload.name.trim() ? payload.name.trim() : `Пак (${recs.length})`,
+        categoryId: 'combined', styleLabel: null, fileRef: null, preview: null, files: [], kind: 'pack', members: [],
+      });
+      pack.members = recs.map((r) => installer.addPackMemberFromRecord(pack.id, r, crypto.randomUUID()));
+      // members are copied out — remove each source mod's own deployment + record (frees slots)
+      for (const r of recs) { try { installer.remove(r.files); } catch { /* noop */ } library.removeRecord(r.id); }
+      const conflicts = deployAndApply(pack);
+      return { ok: true, pack: library.find(pack.id), conflicts };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // Add more library mods into an existing pack.
+  ipcMain.handle('packs:addMembers', (e, packId, modIds) => {
+    const pack = library.find(packId);
+    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    try {
+      const recs = (modIds || []).map((id) => library.find(id)).filter(packableRecord);
+      if (!recs.length) return { error: 'Нет совместимых модов для добавления' };
+      for (const r of recs) {
+        pack.members.push(installer.addPackMemberFromRecord(pack.id, r, crypto.randomUUID()));
+        try { installer.remove(r.files); } catch { /* noop */ }
+        library.removeRecord(r.id);
+      }
+      const conflicts = deployAndApply(pack);
+      return { ok: true, pack: library.find(pack.id), added: recs.length, conflicts };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // Enable/disable one member inside a pack (rebuilds the merged VPK from enabled members).
+  ipcMain.handle('packs:setMemberEnabled', (e, packId, memberId, enabled) => {
+    const pack = library.find(packId);
+    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    const m = (pack.members || []).find((x) => x.id === memberId);
+    if (!m) return { error: 'Мод в паке не найден' };
+    try {
+      m.enabled = !!enabled;
+      const conflicts = deployAndApply(pack);
+      return { ok: true, conflicts };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // Remove one member from a pack. If it was the last one, the pack itself is removed.
+  ipcMain.handle('packs:removeMember', (e, packId, memberId) => {
+    const pack = library.find(packId);
+    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    const idx = (pack.members || []).findIndex((x) => x.id === memberId);
+    if (idx < 0) return { error: 'Мод в паке не найден' };
+    try {
+      try { fs.rmSync(installer.packMemberFile(pack.id, pack.members[idx].id), { force: true }); } catch { /* noop */ }
+      pack.members.splice(idx, 1);
+      if (!pack.members.length) {
+        installer.removePackFully(pack);
+        library.removeRecord(pack.id);
+        return { ok: true, removedPack: true };
+      }
+      deployAndApply(pack);
+      return { ok: true };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // Disband a pack back into standalone mods (one deployed pak per member).
+  ipcMain.handle('packs:disband', (e, packId) => {
+    const pack = library.find(packId);
+    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    try {
+      const names = [];
+      for (const m of pack.members || []) {
+        const { files } = installer.deployMemberAsMod(pack, m);
+        const rec = library.add({ name: m.name, categoryId: m.categoryId || 'imported', styleLabel: m.styleLabel || null, fileRef: pack.name, preview: m.preview || null, files });
+        if (m.enabled === false) { try { installer.setEnabled(files, false); } catch { /* noop */ } library.setEnabled(rec.id, false); }
+        names.push(m.name);
+      }
+      installer.removePackFully(pack);
+      library.removeRecord(pack.id);
+      afterDeployMaster();
+      return { ok: true, count: names.length, names };
     } catch (err) {
       return { error: String(err.message || err) };
     }

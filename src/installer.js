@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, analyzeVpkPaths, describeHero, describeAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
@@ -13,6 +13,15 @@ const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-atta
 
 const FONTS_SUBDIR = ['dota', 'panorama', 'fonts'];
 const CURSOR_SUBDIR = ['dota', 'resource', 'cursor'];
+
+// Master "mods off" switch: every active mod pak is renamed <file>.moff so the game
+// ignores it (it only mounts pakNN_dir.vpk). Distinct from the per-mod ".off" state so
+// the two never clobber each other. Official localization (pak01_*) / gameinfo.gi are
+// never touched — turning mods off must not strip the game's own language files.
+const MASTER_OFF = '.moff';
+function isOfficialLangFile(baseLower) {
+  return /^pak01_/.test(baseLower) || baseLower === 'gameinfo.gi';
+}
 
 function fileUrl(categoryId, fileRef) {
   if (/^https?:\/\//i.test(fileRef)) return fileRef;
@@ -47,9 +56,11 @@ class Installer {
     this.downloadsDir = path.join(userDataDir, 'downloads');
     this.toolsDir = path.join(userDataDir, 'tools');
     this.backupsDir = path.join(userDataDir, 'backups');
+    this.packsDir = path.join(userDataDir, 'packs'); // per-member source VPKs of combined packs
     fs.mkdirSync(this.downloadsDir, { recursive: true });
     fs.mkdirSync(this.toolsDir, { recursive: true });
     fs.mkdirSync(this.backupsDir, { recursive: true });
+    fs.mkdirSync(this.packsDir, { recursive: true });
     this.getGamePath = getGamePath;
     this.getLangSuffix = getLangSuffix;
     this.onProgress = onProgress || (() => {});
@@ -102,11 +113,59 @@ class Installer {
     const used = new Set();
     if (fs.existsSync(lang)) {
       for (const f of fs.readdirSync(lang)) {
-        // consider disabled files as occupying their base name too
-        used.add(f.toLowerCase().replace(/\.off$/, ''));
+        // disabled (.off) and master-off (.moff) files still occupy their base slot
+        used.add(f.toLowerCase().replace(/\.moff$/, '').replace(/\.off$/, ''));
       }
     }
     return used;
+  }
+
+  // ---------- master mods on/off ----------
+
+  // Is this base name a mod pak the master switch may toggle? (i.e. not the game's own
+  // localization / gameinfo). Accepts a lowercased name without .off/.moff suffix.
+  isTogglableModFile(baseLower) {
+    return !isOfficialLangFile(baseLower);
+  }
+
+  // true when the master switch is currently "off" (any .moff file present in lang root)
+  masterIsOff() {
+    const lang = this.langFolder();
+    if (!fs.existsSync(lang)) return false;
+    for (const f of fs.readdirSync(lang)) if (f.toLowerCase().endsWith(MASTER_OFF)) return true;
+    return false;
+  }
+
+  // Enable/disable every mod pak at once without losing per-mod state:
+  //  off -> rename each active mod file <f> to <f>.moff (skips .off and official files)
+  //  on  -> rename each <f>.moff back to <f>
+  // Also covers the language\maps folder (terrain mods live there as dota.vpk).
+  setMasterEnabled(enabled) {
+    const lang = this.langFolder();
+    if (!fs.existsSync(lang)) return { changed: 0 };
+    let changed = 0;
+    const sweep = (dir) => {
+      for (const f of fs.readdirSync(dir)) {
+        const full = path.join(dir, f);
+        if (!fs.statSync(full).isFile()) continue;
+        const lower = f.toLowerCase();
+        if (enabled) {
+          if (lower.endsWith(MASTER_OFF)) {
+            fs.renameSync(full, path.join(dir, f.slice(0, -MASTER_OFF.length)));
+            changed++;
+          }
+        } else {
+          if (lower.endsWith(MASTER_OFF) || lower.endsWith('.off')) continue; // already off
+          if (dir === lang && !this.isTogglableModFile(lower)) continue;       // official files
+          fs.renameSync(full, full + MASTER_OFF);
+          changed++;
+        }
+      }
+    };
+    sweep(lang);
+    const mapsDir = path.join(lang, 'maps');
+    if (fs.existsSync(mapsDir)) sweep(mapsDir);
+    return { changed };
   }
 
   allocatePak(used, priority) {
@@ -313,7 +372,7 @@ class Installer {
         continue;
       }
       const abs = path.join(rootAbs, f.relPath);
-      for (const p of [abs, abs + '.off']) {
+      for (const p of [abs, abs + '.off', abs + MASTER_OFF]) {
         if (fs.existsSync(p)) fs.rmSync(p, { force: true });
       }
       if (f.root === 'fonts' || f.root === 'cursor') {
@@ -338,8 +397,7 @@ class Installer {
     // resolve real on-disk name (files may be disabled -> ".off")
     const resolve = (relPath) => {
       const abs = path.join(lang, relPath);
-      if (fs.existsSync(abs)) return abs;
-      if (fs.existsSync(abs + '.off')) return abs + '.off';
+      for (const suf of ['', '.off', MASTER_OFF]) if (fs.existsSync(abs + suf)) return abs + suf;
       return abs;
     };
     const dirAbs = resolve(dirRec.relPath);
@@ -522,6 +580,106 @@ class Installer {
     });
   }
 
+  // ---------- combined packs (many mods -> one pakNN slot) ----------
+
+  packFolder(packId) { return path.join(this.packsDir, packId); }
+  packMemberFile(packId, memberId) { return path.join(this.packFolder(packId), `${memberId}.vpk`); }
+
+  // Flatten a library record into one self-contained VPK and store it as a pack member.
+  // Returns the member descriptor (identity + a content summary for the UI) to record in
+  // the pack manifest. The record's own deployed files are left for the caller to remove.
+  addPackMemberFromRecord(packId, rec, memberId) {
+    const buf = this.mergeToSingleVpk(rec);
+    fs.mkdirSync(this.packFolder(packId), { recursive: true });
+    fs.writeFileSync(this.packMemberFile(packId, memberId), buf);
+    let heroes = 0, info = '', fp = null;
+    try {
+      const a = analyzeVpkPaths(listVpkPaths(buf));
+      heroes = a.heroes.length; info = describeAnalysis(a); fp = fingerprintVpk(buf);
+    } catch { /* summary is best-effort */ }
+    return {
+      id: memberId, name: rec.name, categoryId: rec.categoryId, styleLabel: rec.styleLabel || null,
+      preview: rec.preview || null, enabled: rec.enabled !== false, heroes, info, fp,
+    };
+  }
+
+  // Remove a pack's currently deployed files (index + every data volume, in any state:
+  // active, .off or .moff) from the language folder, so it can be rebuilt cleanly.
+  removePackDeployed(pack) {
+    const lang = this.langFolder();
+    if (!fs.existsSync(lang)) return;
+    const base = this.packBase(pack);
+    if (!base) return;
+    const re = new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(_dir|_\\d{3})\\.vpk(\\.off|\\.moff)?$`, 'i');
+    for (const f of fs.readdirSync(lang)) if (re.test(f)) fs.rmSync(path.join(lang, f), { force: true });
+  }
+
+  // The pak slot base ("pak10") a pack deploys to — reused across rebuilds so the slot
+  // stays stable. Taken from the pack's recorded files, else null (allocate on deploy).
+  packBase(pack) {
+    const dir = (pack.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+    return dir ? dir.relPath.replace(/_dir\.vpk$/i, '') : null;
+  }
+
+  // (Re)build a pack's single deployed VPK from its enabled members. Removes the old
+  // deployment first, then combines enabled member sources into the pack's slot. Returns
+  // { files, conflicts } — caller stores files on the record and re-applies enabled/master
+  // state. With no enabled members nothing is written (files: []).
+  deployPack(pack) {
+    const lang = this.langFolder();
+    fs.mkdirSync(lang, { recursive: true });
+    this.removePackDeployed(pack);
+    const enabled = (pack.members || []).filter((m) => m.enabled);
+    if (!enabled.length) return { files: [], conflicts: [] };
+    let base = this.packBase(pack);
+    if (!base) base = this.allocatePak(this.usedPakNames(), false).replace(/_dir\.vpk$/i, '');
+    const members = enabled.map((m) => ({ key: m.id, buf: fs.readFileSync(this.packMemberFile(pack.id, m.id)) }));
+    const { dir, parts, conflicts } = combineVpksToFiles(members, lang, base);
+    const files = [{ root: 'lang', relPath: dir }, ...parts.map((p) => ({ root: 'lang', relPath: p }))];
+    return { files, conflicts };
+  }
+
+  // Fully delete a pack: its deployed VPK and every stored member source.
+  removePackFully(pack) {
+    this.removePackDeployed(pack);
+    try { fs.rmSync(this.packFolder(pack.id), { recursive: true, force: true }); } catch { /* noop */ }
+  }
+
+  // Turn a stored pack member back into a standalone deployed mod in a fresh pak slot.
+  // Returns { files } for a new library record; caller deletes the member from the pack.
+  deployMemberAsMod(pack, member) {
+    const lang = this.langFolder();
+    fs.mkdirSync(lang, { recursive: true });
+    const buf = fs.readFileSync(this.packMemberFile(pack.id, member.id));
+    const pakName = this.allocatePak(this.usedPakNames(), false);
+    this.writeInto(buf, path.join(lang, pakName));
+    return { files: [{ root: 'lang', relPath: pakName }] };
+  }
+
+  // Does a record's primary VPK still exist on disk (active/.off/.moff)? Used to sync the
+  // library with the folder — a mod deleted from the folder should drop out of the library.
+  langPrimaryPresent(rec) {
+    let lang;
+    try { lang = this.langFolder(); } catch { return true; } // no game path — can't tell, keep it
+    if (!fs.existsSync(lang)) return true; // folder missing entirely — don't nuke the manifest
+    const primary = (rec.files || []).find((f) => f.root === 'lang' && /\.vpk$/i.test(f.relPath));
+    if (!primary) return true; // fonts/cursors/tools live elsewhere — not folder-synced
+    return ['', '.off', '.moff'].some((suf) => fs.existsSync(path.join(lang, primary.relPath + suf)));
+  }
+
+  // Number of occupied pak slots (mod paks only, excluding the game's own pak01_*), used
+  // to warn/suggest combining when the library approaches the 99-slot ceiling.
+  usedModSlots() {
+    const lang = this.langFolder();
+    if (!fs.existsSync(lang)) return 0;
+    const bases = new Set();
+    for (const f of fs.readdirSync(lang)) {
+      const m = f.toLowerCase().replace(/\.moff$/, '').replace(/\.off$/, '').match(/^(pak\d+)_dir\.vpk$/);
+      if (m && !/^pak01$/.test(m[1])) bases.add(m[1]);
+    }
+    return bases.size;
+  }
+
   // Older app versions wrote priority mods as "!pakNN_dir.vpk" — a name the game
   // never mounts, so those mods silently did nothing. Rename them to real low
   // pak slots and fix the matching manifest records.
@@ -584,8 +742,9 @@ class Installer {
       for (const f of fs.readdirSync(lang)) {
         const full = path.join(lang, f);
         if (!fs.statSync(full).isFile()) continue;
+        if (f.toLowerCase().endsWith(MASTER_OFF)) continue; // master-off files: handled by the toggle, not foreign
         const base = f.toLowerCase().replace(/\.off$/, '');
-        if (/^pak01_/.test(base) || base === 'gameinfo.gi' || knownLang.has(base)) continue;
+        if (isOfficialLangFile(base) || knownLang.has(base)) continue;
         out.push(this.vpkItem(full, f, f, true));
       }
       // terrains ship as language\maps\dota.vpk (not a *_dir.vpk in the root)

@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('api', {
     exportSingle: (id) => ipcRenderer.invoke('mods:exportSingle', id),
     importDialog: () => ipcRenderer.invoke('mods:importDialog'),
     importPaths: (paths) => ipcRenderer.invoke('mods:importPaths', paths),
+    masterState: () => ipcRenderer.invoke('mods:masterState'),
+    setMaster: (enabled) => ipcRenderer.invoke('mods:setMaster', enabled),
     splitMod: (id) => ipcRenderer.invoke('mods:splitMod', id),
     splitExternal: (fileName) => ipcRenderer.invoke('mods:splitExternal', fileName),
     adoptMod: (id) => ipcRenderer.invoke('mods:adoptMod', id),
@@ -35,6 +37,16 @@ contextBridge.exposeInMainWorld('api', {
     adoptCursor: () => ipcRenderer.invoke('mods:adoptCursor'),
     adoptFont: (name) => ipcRenderer.invoke('mods:adoptFont', name),
     pathForFile: (file) => webUtils.getPathForFile(file),
+  },
+  game: {
+    launch: () => ipcRenderer.invoke('game:launch'),
+  },
+  packs: {
+    create: (name, modIds) => ipcRenderer.invoke('packs:create', { name, modIds }),
+    addMembers: (packId, modIds) => ipcRenderer.invoke('packs:addMembers', packId, modIds),
+    setMemberEnabled: (packId, memberId, enabled) => ipcRenderer.invoke('packs:setMemberEnabled', packId, memberId, enabled),
+    removeMember: (packId, memberId) => ipcRenderer.invoke('packs:removeMember', packId, memberId),
+    disband: (packId) => ipcRenderer.invoke('packs:disband', packId),
   },
   presets: {
     list: () => ipcRenderer.invoke('presets:list'),

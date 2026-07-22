@@ -1,6 +1,7 @@
 // Minimal reader for the index of Source-engine VPK "_dir" files (v1/v2).
 // Only walks the directory tree — enough to list which game files a mod overrides.
 const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
 const VPK_SIGNATURE = 0x55aa1234;
@@ -298,6 +299,112 @@ function buildVpk(entries) {
   return Buffer.concat([header, treeBuf, ...dataChunks]);
 }
 
+// Build a _dir.vpk index that references data in *external* archives (_NNN.vpk). Entries
+// must already carry { archiveIndex, offset, length } pointing into those archives. Unlike
+// buildVpk (single-file, inline 0x7fff) this holds no file data — the tree only.
+function buildVpkDir(entries) {
+  const tree = new Map();
+  for (const en of entries) {
+    let folders = tree.get(en.ext); if (!folders) { folders = new Map(); tree.set(en.ext, folders); }
+    let names = folders.get(en.folder); if (!names) { names = []; folders.set(en.folder, names); }
+    names.push(en);
+  }
+  const z = Buffer.from([0]);
+  const cstr = (s) => Buffer.concat([Buffer.from(s, 'utf-8'), z]);
+  const parts = [];
+  for (const [ext, folders] of tree) {
+    parts.push(cstr(ext));
+    for (const [folder, names] of folders) {
+      parts.push(cstr(folder));
+      for (const en of names) {
+        parts.push(cstr(en.name));
+        const meta = Buffer.alloc(18);
+        meta.writeUInt32LE(en.crc >>> 0, 0);
+        meta.writeUInt16LE(en.preload.length, 4);
+        meta.writeUInt16LE(en.archiveIndex & 0xffff, 6);
+        meta.writeUInt32LE(en.offset >>> 0, 8);
+        meta.writeUInt32LE(en.length >>> 0, 12);
+        meta.writeUInt16LE(0xffff, 16);
+        parts.push(meta);
+        if (en.preload.length) parts.push(en.preload);
+      }
+      parts.push(z); // end of names
+    }
+    parts.push(z); // end of folders
+  }
+  parts.push(z); // end of extensions
+  const treeBuf = Buffer.concat(parts);
+
+  const header = Buffer.alloc(28);
+  header.writeUInt32LE(VPK_SIGNATURE, 0);
+  header.writeUInt32LE(2, 4);
+  header.writeUInt32LE(treeBuf.length, 8);
+  header.writeUInt32LE(0, 12); // no inline data section — all data lives in _NNN archives
+  return Buffer.concat([header, treeBuf]);
+}
+
+/**
+ * Combine several independent single-file VPK mods into ONE multi-part VPK
+ * (<base>_dir.vpk index + <base>_NNN.vpk data volumes) written straight to disk. This is
+ * how many mods share a single pakNN slot — the game caps usable pak numbers at 99, so
+ * packing lets a library grow past that. Data is streamed volume-by-volume (each capped at
+ * `volumeCap`) so a multi-GB pack never has to sit in memory at once.
+ *
+ * When two members provide the same inner path the first member wins and the later one's
+ * copy is dropped (recorded in `conflicts`) — a merged VPK can't hold two files at one path.
+ *
+ * @param {Array<{key:string, buf:Buffer}>} members  self-contained VPK buffers, in priority order
+ * @param {string} outDir   directory to write <base>_dir.vpk and volumes into
+ * @param {string} outBase  slot base name, e.g. "pak10"
+ * @param {{volumeCap?:number}} [opts]
+ * @returns {{ dir:string, parts:string[], memberPaths:Record<string,string[]>, conflicts:Array }}
+ */
+function combineVpksToFiles(members, outDir, outBase, { volumeCap = 1 << 30 } = {}) {
+  fs.mkdirSync(outDir, { recursive: true });
+  const entries = [];
+  const seen = new Set();
+  const conflicts = [];
+  const memberPaths = {};
+  const partName = (i) => `${outBase}_${String(i).padStart(3, '0')}.vpk`;
+
+  let volIdx = 0;
+  let volPos = 0;
+  let fd = fs.openSync(path.join(outDir, partName(0)), 'w');
+  const parts = [partName(0)];
+  const rollVolume = () => {
+    fs.closeSync(fd);
+    volIdx++; volPos = 0;
+    fd = fs.openSync(path.join(outDir, partName(volIdx)), 'w');
+    parts.push(partName(volIdx));
+  };
+
+  try {
+    for (const m of members) {
+      const memEntries = readVpkEntries(m.buf, '', () => { throw new Error('combine: member must be single-file'); });
+      memberPaths[m.key] = [];
+      for (const en of memEntries) {
+        const p = entryPath(en);
+        if (seen.has(p)) { conflicts.push({ key: m.key, path: p }); continue; }
+        seen.add(p);
+        memberPaths[m.key].push(p);
+        // never split one file across volumes; roll to a fresh volume if it wouldn't fit
+        if (en.data.length && volPos > 0 && volPos + en.data.length > volumeCap) rollVolume();
+        const offset = volPos;
+        if (en.data.length) { fs.writeSync(fd, en.data, 0, en.data.length, volPos); volPos += en.data.length; }
+        entries.push({
+          ext: en.ext, folder: en.folder, name: en.name, crc: en.crc, preload: en.preload,
+          archiveIndex: volIdx, offset, length: en.data.length,
+        });
+      }
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  fs.writeFileSync(path.join(outDir, `${outBase}_dir.vpk`), buildVpkDir(entries));
+  return { dir: `${outBase}_dir.vpk`, parts, memberPaths, conflicts };
+}
+
 /**
  * Rewrites a multi-part VPK (_dir.vpk + _000.vpk, _001.vpk…) into one self-contained
  * single-file VPK v2 with every entry's data embedded — the format the Dota2PornFx
@@ -386,7 +493,8 @@ function listVpkEntries(buf) {
 
 module.exports = {
   listVpkPaths, listVpkPathsFile, listVpkEntries, mergeVpkToSingle, splitVpkByHero,
-  readVpkEntries, buildVpk, entryPath, fingerprintVpk, fingerprintEntries, fingerprintFiles,
+  readVpkEntries, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
+  fingerprintVpk, fingerprintEntries, fingerprintFiles,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
   describeHero, describeAnalysis,
 };
