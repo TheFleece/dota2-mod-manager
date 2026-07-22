@@ -1148,6 +1148,10 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
     );
     if (!proceed) {
       state.installing.delete(k);
+      // the conflict check downloaded the file to inspect it, which left the progress bar
+      // on screen; no install follows on cancel, so nothing else would ever clear it
+      const bar = $('#progressBar');
+      if (bar) { bar.classList.add('hidden'); const fill = $('#progressFill'); if (fill) fill.style.width = '0%'; }
       if (modalState) drawModal();
       return { cancelled: true };
     }
