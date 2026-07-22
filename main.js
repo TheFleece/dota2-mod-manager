@@ -726,6 +726,35 @@ function registerIpc() {
     }
   });
 
+  // Extract selected members out of a pack back into standalone deployed mods, keeping the
+  // rest of the pack intact (removes the pack entirely if nothing is left).
+  ipcMain.handle('packs:extractMembers', (e, packId, memberIds) => {
+    const pack = library.find(packId);
+    if (!pack || pack.kind !== 'pack') return { error: 'Пак не найден' };
+    try {
+      const ids = new Set(memberIds || []);
+      const names = [];
+      for (const m of (pack.members || []).filter((x) => ids.has(x.id))) {
+        const { files } = installer.deployMemberAsMod(pack, m);
+        const rec = library.add({ name: m.name, categoryId: m.categoryId || 'imported', styleLabel: m.styleLabel || null, fileRef: pack.name, preview: m.preview || null, files });
+        if (m.enabled === false) { try { installer.setEnabled(files, false); } catch { /* noop */ } library.setEnabled(rec.id, false); }
+        try { fs.rmSync(installer.packMemberFile(pack.id, m.id), { force: true }); } catch { /* noop */ }
+        names.push(m.name);
+      }
+      pack.members = (pack.members || []).filter((x) => !ids.has(x.id));
+      if (!pack.members.length) {
+        installer.removePackFully(pack);
+        library.removeRecord(pack.id);
+        afterDeployMaster();
+        return { ok: true, count: names.length, names, removedPack: true };
+      }
+      deployAndApply(pack);
+      return { ok: true, count: names.length, names };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
   // Disband a pack back into standalone mods (one deployed pak per member).
   ipcMain.handle('packs:disband', (e, packId) => {
     const pack = library.find(packId);

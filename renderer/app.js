@@ -297,13 +297,18 @@ function matchLabel(matches) {
   return matches.map((m) => m.name + (m.styleLabel ? ` · ${m.styleLabel}` : '')).join(' / ');
 }
 
-async function refreshInstalledIndex() {
-  const { installed } = await window.api.mods.list();
+// refresh the catalog "installed" lookup + the library tab counter from a list
+function applyInstalled(installed) {
   state.installedIndex.clear();
   for (const rec of installed) {
     state.installedIndex.set(keyOf(rec.categoryId, rec.name, rec.styleLabel), rec);
   }
   $('#libCount').textContent = installed.length || '';
+}
+
+async function refreshInstalledIndex() {
+  const { installed } = await window.api.mods.list();
+  applyInstalled(installed);
 }
 
 // ---------- catalog data helpers ----------
@@ -1366,9 +1371,18 @@ function updateBulkBar() {
   const cnt = $('#bulkCount');
   if (cnt) cnt.textContent = String(n);
   const cb = $('#bulkCombine');
-  if (cb) cb.disabled = countCombinableSelected() < 2;
+  if (cb) cb.classList.toggle('hidden', countCombinableSelected() < 2);
   const ab = $('#bulkAdopt');
   if (ab) ab.classList.toggle('hidden', countAdoptableSelected() === 0);
+  const eb = $('#bulkExtract');
+  if (eb) eb.classList.toggle('hidden', countMembersSelected() === 0);
+}
+
+// how many selected items are pack members (governs the "extract from pack" action)
+function countMembersSelected() {
+  let n = 0;
+  for (const k of state.librarySel) if (isMemberKey(k)) n++;
+  return n;
 }
 
 // list body (filtered by the library search) — rebuilt on its own so typing in the
@@ -1454,6 +1468,7 @@ async function renderLibrary() {
   const installedAll = res.installed;
   const externalAll = res.external || [];
   state.libRecords = installedAll;
+  applyInstalled(installedAll); // keep the tab counter + catalog badges in sync with the folder
   try { const ms = await window.api.mods.masterState(); state.masterOff = !!ms.off; } catch { state.masterOff = false; }
   paintMasterSwitch();
   const masterOff = state.masterOff;
@@ -1522,7 +1537,8 @@ async function renderLibrary() {
       <div class="bulk-actions">
         <button class="btn btn-sm" id="bulkEnable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_checked</span>Включить</button>
         <button class="btn btn-sm" id="bulkDisable" ${masterOff ? 'disabled' : ''}><span class="ms">radio_button_unchecked</span>Выключить</button>
-        <button class="btn btn-sm btn-primary" id="bulkCombine"><span class="ms">merge</span>Объединить в пак</button>
+        <button class="btn btn-sm btn-primary hidden" id="bulkCombine"><span class="ms">merge</span>Объединить в пак</button>
+        <button class="btn btn-sm hidden" id="bulkExtract"><span class="ms">unarchive</span>Вытащить из пака</button>
         <button class="btn btn-sm hidden" id="bulkAdopt"><span class="ms">library_add_check</span>Привязать</button>
         <button class="btn btn-sm btn-danger" id="bulkRemove"><span class="ms">delete</span>Удалить</button>
       </div>
@@ -1586,6 +1602,26 @@ async function bindLibrary(external) {
   $('#combineHintBtn')?.addEventListener('click', async () => {
     const ids = await pickModsDialog(standalonePackable(), { title: 'Выбери моды для объединения в пак', okLabel: 'Далее' });
     if (ids) combineSelection(ids);
+  });
+  $('#bulkExtract')?.addEventListener('click', async () => {
+    // group selected member keys by their pack, extract each group in one rebuild
+    const byPack = new Map();
+    for (const k of state.librarySel) {
+      if (!isMemberKey(k)) continue;
+      const [, packId, memberId] = k.split(':');
+      if (!byPack.has(packId)) byPack.set(packId, []);
+      byPack.get(packId).push(memberId);
+    }
+    if (!byPack.size) return;
+    let total = 0;
+    for (const [packId, memberIds] of byPack) {
+      const r = await window.api.packs.extractMembers(packId, memberIds);
+      if (r.error) { toast(r.error, 'error', 6000); continue; }
+      total += r.count || 0;
+    }
+    state.librarySel.clear();
+    toast(`Вытащено из пака: ${total}`, 'ok');
+    reRender();
   });
   $('#adoptAllBtn')?.addEventListener('click', adoptAll);
   $('#bulkAdopt')?.addEventListener('click', async () => {

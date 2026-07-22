@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('api', {
     addMembers: (packId, modIds) => ipcRenderer.invoke('packs:addMembers', packId, modIds),
     setMemberEnabled: (packId, memberId, enabled) => ipcRenderer.invoke('packs:setMemberEnabled', packId, memberId, enabled),
     removeMember: (packId, memberId) => ipcRenderer.invoke('packs:removeMember', packId, memberId),
+    extractMembers: (packId, memberIds) => ipcRenderer.invoke('packs:extractMembers', packId, memberIds),
     disband: (packId) => ipcRenderer.invoke('packs:disband', packId),
   },
   presets: {
