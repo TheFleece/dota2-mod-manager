@@ -149,40 +149,47 @@ function setupAutoUpdate() {
 
 app.on('window-all-closed', () => app.quit());
 
+// register installer.importVpks/importVpkBuffers results into the library
+function registerImportResults(results) {
+  const imported = [];
+  for (const r of results) {
+    if (r.error) continue;
+    // name the import by its content (a hero / set / kind) instead of the bare pak slot
+    const dirRel = (r.files.find((f) => /_dir\.vpk$/i.test(f.relPath)) || r.files[0])?.relPath;
+    const contentName = (dirRel && installer.displayNameForFile(dirRel)) || r.name;
+    const rec = library.add({
+      name: contentName, categoryId: 'imported', styleLabel: null,
+      fileRef: r.source, preview: null, files: r.files,
+    });
+    // best-effort warning: does the new file overlap other enabled mods?
+    let conflicts = [];
+    try {
+      const own = installer.installedContentPaths(rec);
+      conflicts = library.list()
+        .filter((o) => o.id !== rec.id && o.enabled)
+        .filter((o) => {
+          const other = installer.installedContentPaths(o);
+          for (const p of own) if (other.has(p)) return true;
+          return false;
+        })
+        .map((o) => o.name);
+    } catch { /* ignore */ }
+    imported.push({ name: rec.name, relPath: r.files[0].relPath, conflicts });
+  }
+  if (imported.length && installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
+  return { imported, errors: results.filter((r) => r.error) };
+}
+
 // copy user .vpk files into the lang folder and register them in the library
 function importVpkPaths(paths) {
-  try {
-    const results = installer.importVpks(paths);
-    const imported = [];
-    for (const r of results) {
-      if (r.error) continue;
-      // name the import by its content (a hero / set / kind) instead of the bare pak slot
-      const dirRel = (r.files.find((f) => /_dir\.vpk$/i.test(f.relPath)) || r.files[0])?.relPath;
-      const contentName = (dirRel && installer.displayNameForFile(dirRel)) || r.name;
-      const rec = library.add({
-        name: contentName, categoryId: 'imported', styleLabel: null,
-        fileRef: r.source, preview: null, files: r.files,
-      });
-      // best-effort warning: does the new file overlap other enabled mods?
-      let conflicts = [];
-      try {
-        const own = installer.installedContentPaths(rec);
-        conflicts = library.list()
-          .filter((o) => o.id !== rec.id && o.enabled)
-          .filter((o) => {
-            const other = installer.installedContentPaths(o);
-            for (const p of own) if (other.has(p)) return true;
-            return false;
-          })
-          .map((o) => o.name);
-      } catch { /* ignore */ }
-      imported.push({ name: rec.name, relPath: r.files[0].relPath, conflicts });
-    }
-    if (imported.length && installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
-    return { imported, errors: results.filter((r) => r.error) };
-  } catch (err) {
-    return { error: String(err.message || err) };
-  }
+  try { return registerImportResults(installer.importVpks(Array.isArray(paths) ? paths : [])); }
+  catch (err) { return { error: String(err.message || err) }; }
+}
+
+// same, but from raw bytes — the drag-and-drop fallback when a real path can't be resolved
+function importVpkBuffers(items) {
+  try { return registerImportResults(installer.importVpkBuffers(Array.isArray(items) ? items : [])); }
+  catch (err) { return { error: String(err.message || err) }; }
 }
 
 // after any deploy, if the master switch is off, sweep freshly written files off too
@@ -361,6 +368,7 @@ function registerIpc() {
   });
 
   ipcMain.handle('mods:importPaths', (e, paths) => importVpkPaths(Array.isArray(paths) ? paths : []));
+  ipcMain.handle('mods:importBuffers', (e, items) => importVpkBuffers(items));
 
   ipcMain.handle('mods:list', () => {
     // folder sync: a mod deleted straight from the game folder drops out of the library
@@ -614,23 +622,50 @@ function registerIpc() {
 
   // ----- combined packs -----
 
-  // Combine 2+ library mods into a single pak slot. Each mod becomes a member (its own
-  // VPK stored under packs/<id>), its standalone deployment is removed, and one merged
-  // VPK is written. Members stay individually toggleable/removable inside the pack.
-  ipcMain.handle('packs:create', (e, payload) => {
+  // Combine any mix of standalone mods and existing packs into one pack. Packs are
+  // absorbed by moving their stored member VPKs into the target pack, so two packs (or a
+  // pack + mods) are effectively taken apart and rebuilt together into a single slot.
+  ipcMain.handle('packs:combine', (e, payload) => {
     try {
-      const recs = (payload.modIds || []).map((id) => library.find(id)).filter(packableRecord);
-      if (recs.length < 2) return { error: 'Выбери минимум 2 совместимых мода (скины или импорт)' };
-      // create the pack record first so member files are stored under its final id
-      const pack = library.add({
-        name: payload.name && payload.name.trim() ? payload.name.trim() : `Пак (${recs.length})`,
-        categoryId: 'combined', styleLabel: null, fileRef: null, preview: null, files: [], kind: 'pack', members: [],
-      });
-      pack.members = recs.map((r) => installer.addPackMemberFromRecord(pack.id, r, crypto.randomUUID()));
-      // members are copied out — remove each source mod's own deployment + record (frees slots)
-      for (const r of recs) { try { installer.remove(r.files); } catch { /* noop */ } library.removeRecord(r.id); }
-      const conflicts = deployAndApply(pack);
-      return { ok: true, pack: library.find(pack.id), conflicts };
+      const recs = (payload.modIds || []).map((id) => library.find(id)).filter(Boolean);
+      const packs = recs.filter((r) => r.kind === 'pack');
+      const mods = recs.filter((r) => packableRecord(r));
+      const totalMembers = packs.reduce((n, p) => n + (p.members ? p.members.length : 0), 0) + mods.length;
+      if (totalMembers < 2) return { error: 'Выбери минимум 2 мода (или пак и мод / два пака)' };
+
+      // reuse the first selected pack as the target (absorb the rest into it), else new
+      let target = packs[0];
+      const otherPacks = packs.slice(1);
+      if (!target) {
+        target = library.add({
+          name: (payload.name && payload.name.trim()) || `Пак (${totalMembers})`,
+          categoryId: 'combined', styleLabel: null, fileRef: null, preview: null, files: [], kind: 'pack', members: [],
+        });
+      } else if (payload.name && payload.name.trim()) {
+        target.name = payload.name.trim();
+      }
+      fs.mkdirSync(installer.packFolder(target.id), { recursive: true });
+
+      // standalone mods -> new members (their own deployment is removed)
+      for (const r of mods) {
+        target.members.push(installer.addPackMemberFromRecord(target.id, r, crypto.randomUUID()));
+        try { installer.remove(r.files); } catch { /* noop */ }
+        library.removeRecord(r.id);
+      }
+      // other packs -> move each stored member VPK into the target, then delete the pack
+      for (const p of otherPacks) {
+        for (const m of p.members || []) {
+          const src = installer.packMemberFile(p.id, m.id);
+          if (!fs.existsSync(src)) continue;
+          const newId = crypto.randomUUID();
+          fs.renameSync(src, installer.packMemberFile(target.id, newId));
+          target.members.push({ ...m, id: newId });
+        }
+        installer.removePackFully(p);
+        library.removeRecord(p.id);
+      }
+      const conflicts = deployAndApply(target);
+      return { ok: true, pack: library.find(target.id), conflicts };
     } catch (err) {
       return { error: String(err.message || err) };
     }

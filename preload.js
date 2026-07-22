@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('api', {
     exportSingle: (id) => ipcRenderer.invoke('mods:exportSingle', id),
     importDialog: () => ipcRenderer.invoke('mods:importDialog'),
     importPaths: (paths) => ipcRenderer.invoke('mods:importPaths', paths),
+    importBuffers: (items) => ipcRenderer.invoke('mods:importBuffers', items),
     masterState: () => ipcRenderer.invoke('mods:masterState'),
     setMaster: (enabled) => ipcRenderer.invoke('mods:setMaster', enabled),
     splitMod: (id) => ipcRenderer.invoke('mods:splitMod', id),
@@ -42,7 +43,7 @@ contextBridge.exposeInMainWorld('api', {
     launch: () => ipcRenderer.invoke('game:launch'),
   },
   packs: {
-    create: (name, modIds) => ipcRenderer.invoke('packs:create', { name, modIds }),
+    combine: (name, modIds) => ipcRenderer.invoke('packs:combine', { name, modIds }),
     addMembers: (packId, modIds) => ipcRenderer.invoke('packs:addMembers', packId, modIds),
     setMemberEnabled: (packId, memberId, enabled) => ipcRenderer.invoke('packs:setMemberEnabled', packId, memberId, enabled),
     removeMember: (packId, memberId) => ipcRenderer.invoke('packs:removeMember', packId, memberId),

@@ -1,6 +1,7 @@
 // Installer engine: download, extract, pak allocation, per-category install/uninstall
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
@@ -560,6 +561,25 @@ class Installer {
       const buf = fs.readFileSync(path.join(this.langFolder(), relPath));
       return nameFromAnalysis(analyzeVpkPaths(listVpkPaths(buf)));
     } catch { return null; }
+  }
+
+  // Import dropped .vpk files given as raw bytes (used when the drop can't resolve a real
+  // on-disk path). Bytes are staged in a temp folder so the normal path-based importer
+  // handles grouping of multi-part sets, then the temp folder is removed.
+  importVpkBuffers(items) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-import-'));
+    try {
+      const paths = [];
+      for (const it of items || []) {
+        if (!it || !/\.vpk$/i.test(it.name || '')) continue;
+        const p = path.join(tmp, path.basename(it.name));
+        fs.writeFileSync(p, Buffer.from(it.data));
+        paths.push(p);
+      }
+      return this.importVpks(paths);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* noop */ }
+    }
   }
 
   // What a stored library record (or a foreign vpk) actually changes — hero(es) and

@@ -892,7 +892,7 @@ input, select { font-family: inherit; }
 .lib-search .ms { font-size: 16px; color: var(--text-faint); }
 .lib-search input {
   border: none; background: none; color: var(--text); font-size: 13px;
-  padding: 0 8px; width: 100%; font-family: inherit;
+  padding: 0 8px; width: 100%; font-family: inherit; outline: none;
 }
 .lib-search input::placeholder { color: var(--text-faint); }
 .lib-search-clear { border: none; background: none; color: var(--text-faint); display: none; }

@@ -1286,13 +1286,14 @@ function normalRowHtml(rec, i, masterOff) {
 function isMemberKey(k) { return typeof k === 'string' && k.startsWith('m:'); }
 function memberKey(packId, memberId) { return `m:${packId}:${memberId}`; }
 
-function countPackableSelected() {
+// units that can be combined into one pack: standalone packable mods AND existing packs
+function countCombinableSelected() {
   const recs = state.libRecords || [];
   let n = 0;
   for (const k of state.librarySel) {
     if (isMemberKey(k)) continue;
     const r = recs.find((x) => x.id === k);
-    if (r && isPackableRec(r)) n++;
+    if (r && (isPackableRec(r) || r.kind === 'pack')) n++;
   }
   return n;
 }
@@ -1336,7 +1337,7 @@ function updateBulkBar() {
   const cnt = $('#bulkCount');
   if (cnt) cnt.textContent = String(n);
   const cb = $('#bulkCombine');
-  if (cb) cb.disabled = countPackableSelected() < 2;
+  if (cb) cb.disabled = countCombinableSelected() < 2;
 }
 
 // list body (filtered by the library search) — rebuilt on its own so typing in the
@@ -1399,14 +1400,19 @@ function standalonePackable() {
   }));
 }
 
-async function combineIntoNewPack(ids) {
-  if (!ids || ids.length < 2) { toast('Нужно минимум 2 мода', 'warn'); return; }
-  const name = await promptDialog('Название пака:', { placeholder: 'напр. «Анимешный сет»', okLabel: 'Объединить' });
+// combine a selection (standalone mods and/or existing packs) into one pack
+async function combineSelection(ids) {
+  if (!ids || ids.length < 2) { toast('Выбери минимум 2 элемента', 'warn'); return; }
+  const recs = (state.libRecords || []).filter((r) => ids.includes(r.id));
+  const existingPack = recs.find((r) => r.kind === 'pack');
+  const name = await promptDialog(existingPack ? 'Название объединённого пака:' : 'Название пака:', {
+    placeholder: 'напр. «Анимешный сет»', value: existingPack ? existingPack.name : '', okLabel: 'Объединить',
+  });
   if (name === null) return;
-  const r = await window.api.packs.create(name, ids);
+  const r = await window.api.packs.combine(name, ids);
   if (r.error) { toast(r.error, 'error', 6000); return; }
   state.librarySel.clear();
-  toast(`Пак «${r.pack.name}» собран из ${r.pack.members.length} ${plural(r.pack.members.length, 'мода', 'модов', 'модов')}`, 'ok', 6000);
+  toast(`Пак «${r.pack.name}»: ${r.pack.members.length} ${plural(r.pack.members.length, 'мод', 'мода', 'модов')}`, 'ok', 6000);
   if (r.conflicts?.length) toast(`Пересечения файлов: ${r.conflicts.length} (победил тот, что раньше в паке)`, 'warn', 6000);
   await refreshInstalledIndex();
   renderLibrary();
@@ -1532,10 +1538,14 @@ async function bindLibrary(external) {
     toast('Удалено');
     reRender();
   });
-  $('#bulkCombine')?.addEventListener('click', () => combineIntoNewPack([...state.librarySel].filter((k) => !isMemberKey(k) && isPackableRec(byId(k)))));
+  $('#bulkCombine')?.addEventListener('click', () => combineSelection([...state.librarySel].filter((k) => {
+    if (isMemberKey(k)) return false;
+    const r = byId(k);
+    return r && (isPackableRec(r) || r.kind === 'pack');
+  })));
   $('#combineHintBtn')?.addEventListener('click', async () => {
     const ids = await pickModsDialog(standalonePackable(), { title: 'Выбери моды для объединения в пак', okLabel: 'Далее' });
-    if (ids) combineIntoNewPack(ids);
+    if (ids) combineSelection(ids);
   });
 
   // ----- checkbox selection (delegated; repaint-free to keep scroll) -----
@@ -1769,15 +1779,25 @@ document.addEventListener('drop', async (e) => {
   e.preventDefault();
   dragDepth = 0;
   document.body.classList.remove('dropping');
-  const files = [...(e.dataTransfer?.files || [])];
-  const paths = files.map((f) => {
-    try { return window.api.mods.pathForFile(f); } catch { return null; }
-  }).filter((p) => p && /\.vpk$/i.test(p));
-  if (!paths.length) {
-    if (files.length) toast('Импортировать можно только .vpk файлы', 'warn');
+  const vpkFiles = [...(e.dataTransfer?.files || [])].filter((f) => /\.vpk$/i.test(f.name || ''));
+  if (!vpkFiles.length) {
+    if ((e.dataTransfer?.files || []).length) toast('Импортировать можно только .vpk файлы', 'warn');
     return;
   }
-  handleImportResult(await window.api.mods.importPaths(paths));
+  // prefer real on-disk paths (lets the importer pick up sibling _NNN parts too)
+  const paths = vpkFiles.map((f) => { try { return window.api.mods.pathForFile(f); } catch { return null; } })
+    .filter((p) => p && /\.vpk$/i.test(p));
+  if (paths.length === vpkFiles.length) {
+    handleImportResult(await window.api.mods.importPaths(paths));
+    return;
+  }
+  // fallback: some setups don't expose a path for dropped files — send the raw bytes
+  try {
+    const items = await Promise.all(vpkFiles.map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
+    handleImportResult(await window.api.mods.importBuffers(items));
+  } catch {
+    toast('Не удалось прочитать перетащенные файлы', 'error');
+  }
 });
 
 async function bulkToggle(installed, enabled) {
