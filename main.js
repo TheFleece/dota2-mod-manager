@@ -273,10 +273,19 @@ const PRESENCE_VIEWS = {
 // and that is the only language signal we have about them.
 function presenceActivity() {
   let mods = 0;
-  try { mods = library.list().filter((r) => r.enabled).length; } catch { /* no library yet */ }
+  let masterOff = false;
+  try {
+    mods = library.list().filter((r) => r.enabled).length;
+    // the master switch renames files rather than clearing each record's own flag, so the
+    // per-mod count still reads "on" while nothing is actually loading
+    masterOff = installer.masterIsOff();
+  } catch { /* no library or no game path yet */ }
+  let state = t('Ещё без модов');
+  if (masterOff) state = t('Моды выключены');
+  else if (mods) state = t('{0} модов включено', mods);
   return {
     details: t(PRESENCE_VIEWS[presenceView] || PRESENCE_VIEWS.catalog),
-    state: mods ? t('{0} модов включено', mods) : t('Ещё без модов'),
+    state,
     buttons: [{ label: t('Скачать Mod Manager'), url: 'https://thefleece.github.io/dota2-mod-manager/' }],
   };
 }
@@ -782,6 +791,9 @@ function registerIpc() {
     // mods that overwrite each other's files — surfaced as a warning in the library
     let conflicts = [];
     try { conflicts = installer.libraryConflicts(installed); } catch { /* best-effort */ }
+    // the renderer re-lists after every install, toggle, preset and bulk action, so this is
+    // the one place that keeps the Discord status honest without hooking a dozen handlers
+    refreshPresence();
     return { installed, external, slots, slotCeil: 98, conflicts };
   });
 
@@ -801,6 +813,7 @@ function registerIpc() {
   ipcMain.handle('mods:setMaster', (e, enabled) => {
     try {
       const r = installer.setMasterEnabled(!!enabled);
+      refreshPresence();
       return { ok: true, ...r };
     } catch (err) {
       return { error: String(err.message || err) };

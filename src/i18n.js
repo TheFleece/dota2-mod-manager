@@ -99,6 +99,7 @@ const EN = {
   'В настройках': 'In the settings',
   '{0} модов включено': '{0} mods enabled',
   'Ещё без модов': 'No mods yet',
+  'Моды выключены': 'Mods turned off',
   'Скачать Mod Manager': 'Get Mod Manager',
 
   // ---- vpk.js (parse errors + content labels) ----

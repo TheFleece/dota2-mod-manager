@@ -175,8 +175,8 @@ class DiscordPresence {
       details: a.details || undefined,
       state: a.state || undefined,
       timestamps: { start: this.startedAt },
-      // shows only once art with these keys is uploaded under Rich Presence -> Art Assets
-      assets: { large_image: 'app', large_text: 'Dota 2 Mod Manager' },
+      // No `assets`: naming an art key that was never uploaded makes Discord draw a broken
+      // placeholder, while sending none at all makes it fall back to the application icon.
     };
     if (a.buttons && a.buttons.length && !this.dropButtons) activity.buttons = a.buttons.slice(0, 2);
 
