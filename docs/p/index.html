@@ -27,84 +27,85 @@
     display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #12101c;
   }
   h1 { font-size: 20px; margin: 0 0 8px; }
-  p { margin: 0 0 18px; color: #a8a2c0; }
+  p { margin: 0 0 22px; color: #a8a2c0; }
   .btn {
-    display: inline-block; padding: 11px 22px; border-radius: 10px;
-    background: #7c5cff; color: #fff; text-decoration: none; font-weight: 600;
-    border: 0; cursor: pointer; font-size: 15px;
+    display: inline-block; padding: 12px 24px; border-radius: 11px;
+    background: #7c5cff; color: #fff; text-decoration: none; font-weight: 600; font-size: 15px;
   }
   .btn:hover { background: #8f74ff; }
-  .btn.ghost { background: transparent; color: #b7aee0; border: 1px solid #322c4d; }
-  .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .code {
-    margin-top: 22px; padding: 11px 13px; border: 1px solid #262135; border-radius: 10px;
-    background: #14121d; color: #8f88ab; font-size: 11.5px; line-height: 1.5;
-    word-break: break-all; text-align: left; max-height: 96px; overflow: auto;
-  }
-  .muted { font-size: 12.5px; color: #726c8c; margin-top: 16px; }
+  .muted { font-size: 12.5px; color: #726c8c; margin: 26px 0 0; }
   .muted a { color: #a992ff; }
   .bad { color: #ff8098; }
+  .lang { position: fixed; top: 16px; right: 18px; display: flex; gap: 4px; }
+  .lang button {
+    background: none; border: 1px solid #2a2440; color: #726c8c; cursor: pointer;
+    font: 600 11.5px/1 system-ui, sans-serif; padding: 6px 10px; border-radius: 8px;
+  }
+  .lang button.on { color: #d8d2f0; border-color: #4a3f75; background: #1a1630; }
 </style>
 </head>
 <body>
+<div class="lang">
+  <button type="button" data-lang="en">EN</button>
+  <button type="button" data-lang="ru">RU</button>
+</div>
 <div class="box">
   <div class="logo">D2M</div>
-  <h1 id="title">Opening the preset…</h1>
-  <p id="lead">If nothing happens, use the button below.</p>
-  <div class="row">
-    <a class="btn" id="open" href="#">Open in Mod Manager</a>
-    <button class="btn ghost" id="copy" type="button">Copy link</button>
-  </div>
-  <div class="code" id="code"></div>
-  <p class="muted" id="foot">
-    Don't have the app? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Download it</a>,
-    then paste the line above into Presets → Paste a link.
-  </p>
+  <h1 id="title"></h1>
+  <p id="lead"></p>
+  <a class="btn" id="open" href="#"></a>
+  <p class="muted" id="foot"></p>
 </div>
 <script>
-  var ru = (navigator.language || '').toLowerCase().indexOf('ru') === 0;
-  var T = ru ? {
-    title: 'Открываю пресет…',
-    lead: 'Если ничего не произошло, нажми кнопку ниже.',
-    open: 'Открыть в Mod Manager',
-    copy: 'Копировать ссылку',
-    copied: 'Скопировано',
-    foot: 'Нет приложения? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Скачай</a>, потом вставь строку выше в Пресеты → Вставить ссылку.',
-    bad: 'В ссылке нет пресета',
-    badLead: 'Похоже, ссылку обрезали при копировании. Попроси прислать её целиком.'
-  } : {
-    title: 'Opening the preset…',
-    lead: 'If nothing happens, use the button below.',
-    open: 'Open in Mod Manager',
-    copy: 'Copy link',
-    copied: 'Copied',
-    foot: "Don't have the app? <a href=\"https://github.com/TheFleece/dota2-mod-manager/releases/latest\">Download it</a>, then paste the line above into Presets → Paste a link.",
-    bad: 'No preset in this link',
-    badLead: 'It looks like the link got cut off. Ask for the whole thing.'
+  var STR = {
+    en: {
+      title: 'Opening the preset…', lead: 'If nothing happens, use the button below.',
+      open: 'Open in Mod Manager',
+      foot: 'Don\'t have the app? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Download it</a> and open this link again.',
+      bad: 'No preset in this link', badLead: 'It looks like the link got cut off. Ask for the whole thing.'
+    },
+    ru: {
+      title: 'Открываю пресет…', lead: 'Если ничего не произошло, нажми кнопку ниже.',
+      open: 'Открыть в Mod Manager',
+      foot: 'Нет приложения? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Скачай</a> и открой эту ссылку ещё раз.',
+      bad: 'В ссылке нет пресета', badLead: 'Похоже, ссылку обрезали при копировании. Попроси прислать её целиком.'
+    }
   };
 
   var $ = function (id) { return document.getElementById(id); };
   var code = (location.hash || '').replace(/^#/, '');
-  $('open').textContent = T.open;
-  $('copy').textContent = T.copy;
-  $('foot').innerHTML = T.foot;
-
   // only ever build a link out of the exact alphabet the app emits
-  if (!/^[A-Za-z0-9_-]+$/.test(code)) {
-    $('title').textContent = T.bad;
-    $('title').className = 'bad';
-    $('lead').textContent = T.badLead;
+  var ok = /^[A-Za-z0-9_-]+$/.test(code);
+  var saved = null;
+  try { saved = localStorage.getItem('d2mmLang'); } catch (e) { /* private mode */ }
+  var lang = saved || ((navigator.language || '').toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en');
+
+  function apply(l) {
+    lang = l;
+    var t = STR[l];
+    document.documentElement.lang = l;
+    try { localStorage.setItem('d2mmLang', l); } catch (e) { /* private mode */ }
+    Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
+      b.classList.toggle('on', b.dataset.lang === l);
+    });
+    $('title').textContent = ok ? t.title : t.bad;
+    $('title').className = ok ? '' : 'bad';
+    $('lead').textContent = ok ? t.lead : t.badLead;
+    $('open').textContent = t.open;
+    $('foot').innerHTML = t.foot;
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
+    b.addEventListener('click', function () { apply(b.dataset.lang); });
+  });
+  apply(lang);
+
+  if (!ok) {
     $('open').style.display = 'none';
-    $('copy').style.display = 'none';
+    $('foot').style.display = 'none';
   } else {
     var deep = 'd2mm://preset/' + code;
-    $('title').textContent = T.title;
-    $('lead').textContent = T.lead;
     $('open').href = deep;
-    $('code').textContent = deep;
-    $('copy').onclick = function () {
-      navigator.clipboard.writeText(deep).then(function () { $('copy').textContent = T.copied; });
-    };
     // browsers differ on whether a custom scheme may fire without a click, so try once and
     // leave the button as the reliable path
     try { location.href = deep; } catch (e) { /* the button still works */ }

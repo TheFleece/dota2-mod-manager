@@ -30,9 +30,19 @@
   .btn.ghost { background: transparent; color: #b7aee0; border: 1px solid #322c4d; }
   .note { margin-top: 30px; font-size: 12.5px; color: #726c8c; }
   .note a { color: #a992ff; }
+  .lang { position: fixed; top: 16px; right: 18px; display: flex; gap: 4px; }
+  .lang button {
+    background: none; border: 1px solid #2a2440; color: #726c8c; cursor: pointer;
+    font: 600 11.5px/1 system-ui, sans-serif; padding: 6px 10px; border-radius: 8px;
+  }
+  .lang button.on { color: #d8d2f0; border-color: #4a3f75; background: #1a1630; }
 </style>
 </head>
 <body>
+<div class="lang">
+  <button type="button" data-lang="en">EN</button>
+  <button type="button" data-lang="ru">RU</button>
+</div>
 <div class="box">
   <div class="logo">D2M</div>
   <h1>Dota 2 Mod Manager</h1>
@@ -44,13 +54,36 @@
   <p class="note" id="note">Got a preset link from a friend? Open it — it lands straight in the app.</p>
 </div>
 <script>
-  if ((navigator.language || '').toLowerCase().indexOf('ru') === 0) {
-    document.getElementById('lead').textContent =
-      'Ставь, выключай и настраивай косметические моды для Dota 2, делись сборками пресетами.';
-    document.getElementById('dl').textContent = 'Скачать для Windows';
-    document.getElementById('note').textContent =
-      'Прислали ссылку на пресет? Просто открой её — сборка попадёт прямо в приложение.';
+  var STR = {
+    en: {
+      lead: 'Browse, install and toggle cosmetic mods for Dota 2, and share your builds as presets.',
+      dl: 'Download for Windows',
+      note: 'Got a preset link from a friend? Open it — it lands straight in the app.'
+    },
+    ru: {
+      lead: 'Ставь, выключай и настраивай косметические моды для Dota 2, делись сборками пресетами.',
+      dl: 'Скачать для Windows',
+      note: 'Прислали ссылку на пресет? Просто открой её — сборка попадёт прямо в приложение.'
+    }
+  };
+  var saved = null;
+  try { saved = localStorage.getItem('d2mmLang'); } catch (e) { /* private mode */ }
+
+  function apply(l) {
+    var t = STR[l];
+    document.documentElement.lang = l;
+    try { localStorage.setItem('d2mmLang', l); } catch (e) { /* private mode */ }
+    Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
+      b.classList.toggle('on', b.dataset.lang === l);
+    });
+    document.getElementById('lead').textContent = t.lead;
+    document.getElementById('dl').textContent = t.dl;
+    document.getElementById('note').textContent = t.note;
   }
+  Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
+    b.addEventListener('click', function () { apply(b.dataset.lang); });
+  });
+  apply(saved || ((navigator.language || '').toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en'));
 </script>
 </body>
 </html>

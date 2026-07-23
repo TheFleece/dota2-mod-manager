@@ -61,7 +61,6 @@ contextBridge.exposeInMainWorld('api', {
     shareLink: (id) => ipcRenderer.invoke('presets:shareLink', id),
     importDialog: () => ipcRenderer.invoke('presets:importDialog'),
     importFile: (filePath) => ipcRenderer.invoke('presets:importFile', filePath),
-    importLink: (text) => ipcRenderer.invoke('presets:importLink', text),
     resolve: (id) => ipcRenderer.invoke('presets:resolve', id),
     onLink: (cb) => ipcRenderer.on('preset-link', (e, res) => cb(res)),
   },

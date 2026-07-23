@@ -487,6 +487,40 @@ $('#launchBtn')?.addEventListener('click', async () => {
   toast(state.masterOff ? L`Запуск Dota 2 без модов…` : L`Запуск Dota 2 с модами…`);
 });
 
+// Discord account in the title bar. Empty (and invisible) when the build has no client id,
+// so a user never meets a sign-in button that cannot work.
+function paintAccount() {
+  const host = $('#tbAccount');
+  if (!host) return;
+  const s = state.settings || {};
+  if (!s.discordConfigured) { host.innerHTML = ''; return; }
+  const acc = s.account;
+  host.innerHTML = acc
+    ? `<button class="tb-user" id="tbUserBtn" title="${esc(L`Выйти из аккаунта`)}">
+         ${acc.avatar ? `<img src="${esc(acc.avatar)}" alt="">` : '<span class="ms">person</span>'}
+         <span class="tb-user-name">${esc(acc.username)}</span>
+       </button>`
+    : `<button class="tb-login" id="tbLoginBtn" title="${esc(L`Вход нужен, чтобы подписывать свои сборки`)}">
+         <span class="ms">login</span>${L`Войти`}
+       </button>`;
+
+  $('#tbLoginBtn')?.addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    toast(L`Открыл Discord в браузере — подтверди вход там`, 'ok', 6000);
+    const r = await window.api.account.signIn();
+    if (r.error) toast(r.error, 'error', 7000);
+    else toast(L`Привет, ${r.account.username}`);
+    state.settings = await window.api.settings.get();
+    paintAccount();
+  });
+  $('#tbUserBtn')?.addEventListener('click', async () => {
+    if (!await confirmDialog(L`Выйти из аккаунта «${acc.username}»?`, { okLabel: L`Выйти`, danger: false })) return;
+    await window.api.account.signOut();
+    state.settings = await window.api.settings.get();
+    paintAccount();
+  });
+}
+
 function paintMasterSwitch() {
   const btn = $('#modsMasterBtn');
   if (!btn) return;
@@ -2091,68 +2125,17 @@ function shareDialog(plan) {
   });
 }
 
-// The generated link, already in the clipboard. Two forms are offered because chat clients
-// only make http(s) clickable: the web one to paste into Discord, the d2mm:// one for
-// anyone who would rather hand over the raw thing.
-function linkDialog(r) {
-  const overlay = document.createElement('div');
-  overlay.className = 'confirm-overlay';
-  overlay.innerHTML = `
-    <div class="confirm-box share-box">
-      <div class="share-title">${L`Ссылка скопирована`}</div>
-      <div class="share-line">
-        <span class="ms">link</span>
-        <div>${r.count} ${plural(r.count, 'мод из каталога', 'мода из каталога', 'модов из каталога')}
-        <span class="share-hint">${L`Вставь в чат — она кликабельная и откроет пресет в менеджере.`}</span></div>
-      </div>
-      <div class="link-field">
-        <textarea class="input link-out" readonly rows="4" id="linkWeb">${esc(r.web)}</textarea>
-        <button class="btn link-copy" data-c="web" title="${L`Копировать`}" aria-label="${L`Копировать`}"><span class="ms">content_copy</span></button>
-      </div>
-      <div class="link-alt">
-        <span>${L`Прямая ссылка (чаты её не подсвечивают, но её можно вставить в «Вставить ссылку»):`}</span>
-        <div class="link-field">
-          <textarea class="input link-out" readonly rows="3" id="linkDirect">${esc(r.direct)}</textarea>
-          <button class="btn link-copy" data-c="direct" title="${L`Копировать`}" aria-label="${L`Копировать`}"><span class="ms">content_copy</span></button>
-        </div>
-      </div>
-      <div class="confirm-actions">
-        <button class="btn btn-primary" data-c="ok">${L`Готово`}</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  const done = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
-  const onKey = (e) => { if (e.key === 'Escape') done(); };
-  const copy = (text) => { navigator.clipboard.writeText(text); toast(L`Скопировано в буфер`); };
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) done(); });
-  overlay.querySelector('[data-c="ok"]').addEventListener('click', done);
-  overlay.querySelector('[data-c="web"]').addEventListener('click', () => copy(r.web));
-  overlay.querySelector('[data-c="direct"]').addEventListener('click', () => copy(r.direct));
-  document.addEventListener('keydown', onKey);
-  // Size each box to its link: a short one shows in full instead of through a slit, a long
-  // one stops at MAX_LINK_ROWS and scrolls. Whole lines either way, so a box never ends
-  // halfway through a row of characters. Done synchronously (a rAF never fires while the
-  // window is hidden) and again once webfonts land, because the width the text wraps at
-  // depends on the icon button, which is wider before its font arrives.
-  // The count is an estimate; `rows` is what guarantees the box ends on a line boundary,
-  // so no arithmetic slip here can leave half a row of characters showing.
-  const MAX_LINK_ROWS = 7;
-  const fitLinkBoxes = () => overlay.querySelectorAll('.link-out').forEach((el) => {
-    const cs = getComputedStyle(el);
-    const line = parseFloat(cs.lineHeight) || 17;
-    const padding = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-    el.rows = 1;
-    const needed = Math.ceil((el.scrollHeight - padding) / line);
-    el.rows = Math.max(1, Math.min(needed, MAX_LINK_ROWS));
-    el.scrollTop = 0;
-    // a capped box always shows a sliver of the next line (a textarea is a little taller
-    // than its rows); fade it so it reads as "there is more" and not as a clipped glyph
-    el.parentElement.classList.toggle('scrolls', needed > MAX_LINK_ROWS);
-  });
-  fitLinkBoxes();
-  document.fonts?.ready.then(() => { if (overlay.isConnected) fitLinkBoxes(); });
-  overlay.querySelector('#linkWeb').select();
-  overlay.querySelector('#linkWeb').scrollTop = 0;
+// Copy feedback in place of a dialog: the button goes green and says so for a few
+// seconds. The original markup is stashed on the element so a double click can't lose it.
+function flashCopied(btn) {
+  clearTimeout(btn._copiedTimer);
+  if (!btn._copiedOriginal) btn._copiedOriginal = btn.innerHTML;
+  btn.classList.add('copied');
+  btn.innerHTML = `<span class="ms">check</span>${L`Скопировано`}`;
+  btn._copiedTimer = setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = btn._copiedOriginal;
+  }, 5000);
 }
 
 // a received preset that hasn't been installed yet
@@ -2191,7 +2174,6 @@ async function renderPresets() {
       <input class="input" id="presetName" placeholder="${L`Название пресета (напр. «Анимешный», «Минимал»)`}">
       <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>${L`Сохранить текущее состояние`}</button>
       <button class="btn" id="importPresetBtn"><span class="ms">upload_file</span>${L`Открыть .d2mm`}</button>
-      <button class="btn" id="pasteLinkBtn"><span class="ms">link</span>${L`Вставить ссылку`}</button>
     </div>
     <div id="presetList">
       ${presets.length ? '' : `<div class="empty-note">${L`Пресетов пока нет`}</div>`}
@@ -2229,10 +2211,6 @@ async function renderPresets() {
     renderPresets();
   });
   $('#importPresetBtn').addEventListener('click', async () => handlePresetImport(await window.api.presets.importDialog()));
-  $('#pasteLinkBtn').addEventListener('click', async () => {
-    const text = await promptDialog(L`Вставь ссылку на пресет (d2mm://preset/…)`, { placeholder: 'd2mm://preset/…', okLabel: L`Добавить` });
-    if (text) handlePresetImport(await window.api.presets.importLink(text));
-  });
 
   list.querySelectorAll('[data-apply]').forEach((b) => {
     b.addEventListener('click', async () => {
@@ -2247,7 +2225,7 @@ async function renderPresets() {
       const r = await window.api.presets.shareLink(b.dataset.link);
       if (r.error) { toast(r.error, 'warn', 7000); return; }
       navigator.clipboard.writeText(r.web);
-      linkDialog(r);
+      flashCopied(b);
     });
   });
   list.querySelectorAll('[data-share]').forEach((b) => {
@@ -2445,29 +2423,6 @@ async function renderSettings() {
       </div>
     </div>
 
-    <div class="settings-block" style="animation-delay:40ms">
-      <h3>${L`Аккаунт`}</h3>
-      ${s.account ? `
-        <div class="account-row">
-          ${s.account.avatar ? `<img class="account-avatar" src="${esc(s.account.avatar)}" alt="">` : '<div class="account-avatar"></div>'}
-          <div class="account-info">
-            <div class="account-name">${esc(s.account.username)}</div>
-            <div class="account-sub">${L`Discord подключён — ник подставляется в пресеты, которыми делишься`}</div>
-          </div>
-          <button class="btn btn-sm" id="signOutBtn">${L`Выйти`}</button>
-        </div>`
-      : s.discordConfigured ? `
-        <div class="account-row">
-          <div class="account-avatar"></div>
-          <div class="account-info">
-            <div class="account-name">${L`Не выполнен вход`}</div>
-            <div class="account-sub">${L`Нужен только чтобы подписывать свои сборки. Пароль вводится в браузере, приложение его не видит.`}</div>
-          </div>
-          <button class="btn btn-sm btn-primary" id="signInBtn"><span class="ms">login</span>${L`Войти через Discord`}</button>
-        </div>`
-      : `<div style="font-size:12.5px;color:var(--text-muted)">${L`Вход через Discord в этой сборке пока не настроен.`}</div>`}
-    </div>
-
     <div class="settings-block" style="animation-delay:60ms">
       <h3>${L`Путь к Dota 2`}</h3>
       <div class="settings-row">
@@ -2576,18 +2531,6 @@ async function renderSettings() {
   $('#copyLaunchBtn').addEventListener('click', () => {
     navigator.clipboard.writeText(`-language ${s.langSuffix}`);
     toast(L`Скопировано в буфер`);
-  });
-  $('#signInBtn')?.addEventListener('click', async (e) => {
-    e.target.disabled = true;
-    toast(L`Открыл Discord в браузере — подтверди вход там`, 'ok', 6000);
-    const r = await window.api.account.signIn();
-    if (r.error) toast(r.error, 'error', 7000);
-    else toast(L`Привет, ${r.account.username}`);
-    renderSettings();
-  });
-  $('#signOutBtn')?.addEventListener('click', async () => {
-    await window.api.account.signOut();
-    renderSettings();
   });
   $('#clearCacheBtn').addEventListener('click', async () => {
     await window.api.misc.clearCache();
@@ -2765,9 +2708,11 @@ function showLanguagePicker() {
 
   // language: settings.json is the source of truth; reconcile the localStorage-seeded value
   const cfg = await window.api.settings.get();
+  state.settings = cfg;
   window.I18N_LANG = cfg.uiLang === 'ru' ? 'ru' : 'en';
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();
+  paintAccount();
 
   await refreshSidebarStatus();
   await refreshMasterSwitch();

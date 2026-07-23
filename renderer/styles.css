@@ -144,6 +144,8 @@ input, select { font-family: inherit; }
   align-items: center;
   gap: 8px;
   color: var(--primary-soft);
+  flex-shrink: 0;        /* never let a crowded title bar wrap the product name */
+  white-space: nowrap;
 }
 .tb-title {
   font-family: var(--font-head);
@@ -244,6 +246,23 @@ input, select { font-family: inherit; }
 }
 .tb-search-clear:hover { color: var(--text); }
 .tb-search-clear .ms { font-size: 14px; }
+
+/* Discord account, between the search and the window buttons */
+.tb-account { display: flex; align-items: center; margin-left: 10px; -webkit-app-region: no-drag; }
+.tb-account:empty { display: none; }
+.tb-login, .tb-user {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 13px; max-width: 160px; flex-shrink: 0;
+  border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-muted);
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.tb-login:hover, .tb-user:hover { background: var(--surface-hover); border-color: var(--border-strong); color: var(--text); }
+.tb-login .ms, .tb-user .ms { font-size: 17px; }
+.tb-login:disabled { opacity: 0.5; cursor: default; }
+.tb-user img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.tb-user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 96px; }
 
 .tb-controls { display: flex; height: 100%; }
 .tb-ctl {
@@ -1090,39 +1109,13 @@ input:-webkit-autofill, input:-webkit-autofill:focus {
 .share-item-size { font-size: 11.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .share-total { font-size: 13px; color: var(--text-muted); margin-top: 14px; }
 .share-total b { color: var(--text); }
-/* a link box with its own copy button, so the dialog's action row stays one button wide */
-.link-field { display: flex; align-items: stretch; gap: 8px; margin-top: 12px; position: relative; }
-.link-field.scrolls::after {
-  content: '';
-  position: absolute; left: 1px; right: 51px; bottom: 1px; height: 15px;
-  background: linear-gradient(rgba(0, 0, 0, 0), var(--surface-solid));
-  border-radius: 0 0 var(--radius-xs) var(--radius-xs);
-  pointer-events: none;
-}
-.link-out {
-  flex: 1; min-width: 0; resize: none; overflow-y: auto;
-  font-family: var(--font-mono, ui-monospace, monospace); font-size: 11.5px; line-height: 1.5;
-  word-break: break-all;
-}
-.share-box .confirm-actions { margin-top: 18px; }
-/* fixed width: until the icon font arrives the glyph name renders as plain text, and an
-   auto-width button would squeeze the link box down to about one character per line */
-.link-copy { flex-shrink: 0; width: 42px; padding: 0; justify-content: center; overflow: hidden; }
-.link-copy .ms { font-size: 17px; }
-.link-alt { margin-top: 15px; font-size: 11.5px; color: var(--text-muted); }
-.link-alt .link-field { margin-top: 6px; }
-.link-alt .link-out { opacity: 0.75; }
 
-/* Discord account in Settings */
-.account-row { display: flex; align-items: center; gap: 13px; }
-.account-avatar {
-  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-  background: var(--bg-elev); border: 1px solid var(--border); object-fit: cover;
+/* "copied" confirmation shown on the button itself instead of a dialog */
+.btn.copied {
+  color: var(--success);
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.45);
 }
-.account-info { flex: 1; min-width: 0; }
-.account-name { font-weight: 600; font-size: 14px; }
-.account-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
 /* ============ Tools / Guides ============ */
 .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
 .tool-card {

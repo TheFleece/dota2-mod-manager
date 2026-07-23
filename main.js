@@ -1175,8 +1175,6 @@ function registerIpc() {
     }
   });
 
-  ipcMain.handle('presets:importLink', (e, text) => importPresetLink(text));
-
   ipcMain.handle('presets:importDialog', async () => {
     const res = await dialog.showOpenDialog(win, {
       title: t('Выбери файл пресета (.d2mm)'),

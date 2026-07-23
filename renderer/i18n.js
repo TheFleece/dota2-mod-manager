@@ -149,7 +149,6 @@ const EN = {
   'пусто': 'empty',
   'Включить/выключить пак целиком': 'Enable/disable whole pack',
   'Добавить моды в пак': 'Add mods to pack',
-  'Добавить': 'Add',
   'Разобрать пак обратно на отдельные моды': 'Disband the pack back into separate mods',
   'Разобрать': 'Split',
 
@@ -301,26 +300,14 @@ const EN = {
   'Файл': 'File',
   'Скопировать короткую ссылку — работает, пока в пресете только моды из каталога':
     'Copy a short link — available while the preset holds catalog mods only',
-  'Вставить ссылку': 'Paste a link',
-  'Вставь ссылку на пресет (d2mm://preset/…)': 'Paste a preset link (d2mm://preset/…)',
   'Добавить': 'Add',
-  'Ссылка скопирована': 'Link copied',
-  'Вставь в чат — она кликабельная и откроет пресет в менеджере.':
-    'Paste it into a chat — it is clickable and opens the preset in the manager.',
-  'Прямая ссылка (чаты её не подсвечивают, но её можно вставить в «Вставить ссылку»):':
-    'Direct link (chats will not make it clickable, but it can be pasted into "Paste a link"):',
-  'Готово': 'Done',
 
   // ---------- account ----------
-  'Аккаунт': 'Account',
-  'Discord подключён — ник подставляется в пресеты, которыми делишься':
-    'Discord connected — your nickname goes on the presets you share',
-  'Выйти': 'Sign out',
-  'Не выполнен вход': 'Not signed in',
-  'Нужен только чтобы подписывать свои сборки. Пароль вводится в браузере, приложение его не видит.':
-    'Only used to sign your builds. The password is typed in your browser; the app never sees it.',
-  'Войти через Discord': 'Sign in with Discord',
-  'Вход через Discord в этой сборке пока не настроен.': 'Discord sign-in is not configured in this build yet.',
+  'Скопировано': 'Copied',
+  'Войти': 'Sign in',
+  'Вход нужен, чтобы подписывать свои сборки': 'Signing in puts your name on the builds you share',
+  'Выйти из аккаунта': 'Sign out',
+  'Выйти из аккаунта «{0}»?': 'Sign out of «{0}»?',
   'Открыл Discord в браузере — подтверди вход там': 'Discord is open in your browser — confirm the sign-in there',
   'Привет, {0}': 'Hi, {0}',
   'Название пресета (напр. «Анимешный», «Минимал»)': 'Preset name (e.g. «Anime», «Minimal»)',
