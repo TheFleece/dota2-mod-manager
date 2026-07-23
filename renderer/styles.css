@@ -1090,13 +1090,28 @@ input:-webkit-autofill, input:-webkit-autofill:focus {
 .share-item-size { font-size: 11.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .share-total { font-size: 13px; color: var(--text-muted); margin-top: 14px; }
 .share-total b { color: var(--text); }
+/* a link box with its own copy button, so the dialog's action row stays one button wide */
+.link-field { display: flex; align-items: stretch; gap: 8px; margin-top: 12px; position: relative; }
+.link-field.scrolls::after {
+  content: '';
+  position: absolute; left: 1px; right: 51px; bottom: 1px; height: 15px;
+  background: linear-gradient(rgba(0, 0, 0, 0), var(--surface-solid));
+  border-radius: 0 0 var(--radius-xs) var(--radius-xs);
+  pointer-events: none;
+}
 .link-out {
-  width: 100%; margin-top: 12px; resize: none;
+  flex: 1; min-width: 0; resize: none; overflow-y: auto;
   font-family: var(--font-mono, ui-monospace, monospace); font-size: 11.5px; line-height: 1.5;
   word-break: break-all;
 }
-.link-alt { margin-top: 14px; font-size: 11.5px; color: var(--text-muted); }
-.link-alt .link-out { margin-top: 6px; opacity: 0.75; }
+.share-box .confirm-actions { margin-top: 18px; }
+/* fixed width: until the icon font arrives the glyph name renders as plain text, and an
+   auto-width button would squeeze the link box down to about one character per line */
+.link-copy { flex-shrink: 0; width: 42px; padding: 0; justify-content: center; overflow: hidden; }
+.link-copy .ms { font-size: 17px; }
+.link-alt { margin-top: 15px; font-size: 11.5px; color: var(--text-muted); }
+.link-alt .link-field { margin-top: 6px; }
+.link-alt .link-out { opacity: 0.75; }
 
 /* Discord account in Settings */
 .account-row { display: flex; align-items: center; gap: 13px; }
@@ -1375,7 +1390,8 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
   animation: modalIn 0.28s var(--ease);
 }
 .confirm-msg { font-size: 15px; font-weight: 600; margin-bottom: 20px; line-height: 1.5; }
-.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; }
+/* wraps rather than spilling out of the box when labels are long (RU labels are) */
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 
 /* ============ Preview badge on cards ============ */
 .mtag-play {

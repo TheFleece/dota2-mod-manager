@@ -309,8 +309,6 @@ const EN = {
     'Paste it into a chat — it is clickable and opens the preset in the manager.',
   'Прямая ссылка (чаты её не подсвечивают, но её можно вставить в «Вставить ссылку»):':
     'Direct link (chats will not make it clickable, but it can be pasted into "Paste a link"):',
-  'Копировать прямую': 'Copy the direct one',
-  'Копировать ещё раз': 'Copy again',
   'Готово': 'Done',
 
   // ---------- account ----------

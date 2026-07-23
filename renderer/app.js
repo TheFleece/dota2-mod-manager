@@ -2105,14 +2105,18 @@ function linkDialog(r) {
         <div>${r.count} ${plural(r.count, 'мод из каталога', 'мода из каталога', 'модов из каталога')}
         <span class="share-hint">${L`Вставь в чат — она кликабельная и откроет пресет в менеджере.`}</span></div>
       </div>
-      <textarea class="input link-out" readonly rows="4" id="linkWeb">${esc(r.web)}</textarea>
+      <div class="link-field">
+        <textarea class="input link-out" readonly rows="4" id="linkWeb">${esc(r.web)}</textarea>
+        <button class="btn link-copy" data-c="web" title="${L`Копировать`}" aria-label="${L`Копировать`}"><span class="ms">content_copy</span></button>
+      </div>
       <div class="link-alt">
         <span>${L`Прямая ссылка (чаты её не подсвечивают, но её можно вставить в «Вставить ссылку»):`}</span>
-        <textarea class="input link-out" readonly rows="3" id="linkDirect">${esc(r.direct)}</textarea>
+        <div class="link-field">
+          <textarea class="input link-out" readonly rows="3" id="linkDirect">${esc(r.direct)}</textarea>
+          <button class="btn link-copy" data-c="direct" title="${L`Копировать`}" aria-label="${L`Копировать`}"><span class="ms">content_copy</span></button>
+        </div>
       </div>
       <div class="confirm-actions">
-        <button class="btn" data-c="direct"><span class="ms">content_copy</span>${L`Копировать прямую`}</button>
-        <button class="btn" data-c="web"><span class="ms">content_copy</span>${L`Копировать ещё раз`}</button>
         <button class="btn btn-primary" data-c="ok">${L`Готово`}</button>
       </div>
     </div>`;
@@ -2125,7 +2129,30 @@ function linkDialog(r) {
   overlay.querySelector('[data-c="web"]').addEventListener('click', () => copy(r.web));
   overlay.querySelector('[data-c="direct"]').addEventListener('click', () => copy(r.direct));
   document.addEventListener('keydown', onKey);
+  // Size each box to its link: a short one shows in full instead of through a slit, a long
+  // one stops at MAX_LINK_ROWS and scrolls. Whole lines either way, so a box never ends
+  // halfway through a row of characters. Done synchronously (a rAF never fires while the
+  // window is hidden) and again once webfonts land, because the width the text wraps at
+  // depends on the icon button, which is wider before its font arrives.
+  // The count is an estimate; `rows` is what guarantees the box ends on a line boundary,
+  // so no arithmetic slip here can leave half a row of characters showing.
+  const MAX_LINK_ROWS = 7;
+  const fitLinkBoxes = () => overlay.querySelectorAll('.link-out').forEach((el) => {
+    const cs = getComputedStyle(el);
+    const line = parseFloat(cs.lineHeight) || 17;
+    const padding = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    el.rows = 1;
+    const needed = Math.ceil((el.scrollHeight - padding) / line);
+    el.rows = Math.max(1, Math.min(needed, MAX_LINK_ROWS));
+    el.scrollTop = 0;
+    // a capped box always shows a sliver of the next line (a textarea is a little taller
+    // than its rows); fade it so it reads as "there is more" and not as a clipped glyph
+    el.parentElement.classList.toggle('scrolls', needed > MAX_LINK_ROWS);
+  });
+  fitLinkBoxes();
+  document.fonts?.ready.then(() => { if (overlay.isConnected) fitLinkBoxes(); });
   overlay.querySelector('#linkWeb').select();
+  overlay.querySelector('#linkWeb').scrollTop = 0;
 }
 
 // a received preset that hasn't been installed yet
