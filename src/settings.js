@@ -15,6 +15,8 @@ const DEFAULTS = {
   // Discord identity, when signed in: { id, username, avatar }. No token is ever kept —
   // it is used once to read the name and dropped (see src/discord-auth.js).
   account: null,
+  // show "Playing Dota 2 Mod Manager" in Discord while the app is open
+  discordPresence: true,
 };
 
 class Settings {

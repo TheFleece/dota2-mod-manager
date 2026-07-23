@@ -139,4 +139,4 @@ async function signIn() {
   };
 }
 
-module.exports = { signIn, isConfigured, REDIRECT_URI, PORT };
+module.exports = { signIn, isConfigured, CLIENT_ID, REDIRECT_URI, PORT };

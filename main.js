@@ -16,12 +16,14 @@ const { Fingerprints } = require('./src/fingerprints');
 const { writePresetFile, readPresetFile } = require('./src/preset-share');
 const { SCHEME, encodePresetLink, decodePresetLink } = require('./src/preset-link');
 const discordAuth = require('./src/discord-auth');
+const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
 let win;
-let settings, catalog, installer, library, fingerprints;
+let settings, catalog, installer, library, fingerprints, presence;
+let presenceView = 'catalog';
 
 function sendProgress(evt) {
   if (win && !win.isDestroyed()) win.webContents.send('progress', evt);
@@ -117,6 +119,7 @@ app.whenReady().then(async () => {
     getLangSuffix: () => settings.get('langSuffix'),
     onProgress: sendProgress,
   });
+  presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
 
   // auto-detect dota on first run
   if (!validateGamePath(settings.get('dotaGamePath'))) {
@@ -147,6 +150,7 @@ app.whenReady().then(async () => {
   // launched BY a link (cold start): the renderer has to exist before it can be told
   const cold = firstLink(process.argv);
   if (cold) win.webContents.once('did-finish-load', () => handleDeepLink(cold));
+  applyPresenceSetting();
   setupAutoUpdate();
 }).catch((e) => diag('whenReady FAIL: ' + (e.stack || e)));
 
@@ -252,6 +256,41 @@ function deployAndApply(pack) {
   if (pack.enabled === false && files.length) { try { installer.setEnabled(files, false); } catch { /* noop */ } }
   afterDeployMaster();
   return conflicts;
+}
+
+// ---------- Discord presence ----------
+
+const PRESENCE_VIEWS = {
+  catalog: 'Смотрит каталог модов',
+  library: 'В своей библиотеке',
+  presets: 'Собирает пресет',
+  tools: 'В инструментах',
+  guides: 'Читает гайды',
+  settings: 'В настройках',
+};
+
+// The status is written in the language the user chose for the app: their friends read it,
+// and that is the only language signal we have about them.
+function presenceActivity() {
+  let mods = 0;
+  try { mods = library.list().filter((r) => r.enabled).length; } catch { /* no library yet */ }
+  return {
+    details: t(PRESENCE_VIEWS[presenceView] || PRESENCE_VIEWS.catalog),
+    state: mods ? t('{0} модов включено', mods) : t('Ещё без модов'),
+    buttons: [{ label: t('Скачать Mod Manager'), url: 'https://thefleece.github.io/dota2-mod-manager/' }],
+  };
+}
+
+function refreshPresence() {
+  if (presence && presence.enabled) presence.set(presenceActivity());
+}
+
+// Follows the setting: turning it off tears the connection down, not just the updates.
+function applyPresenceSetting() {
+  if (!presence) return;
+  if (settings.get('discordPresence') === false) { presence.stop(); return; }
+  presence.start();
+  refreshPresence();
 }
 
 // ---------- shared presets (.d2mm) ----------
@@ -549,7 +588,16 @@ function registerIpc() {
       }
     }
     settings.set(key, value);
+    // the status text is localized, so a language change has to redraw it too
+    if (key === 'discordPresence' || key === 'uiLang') applyPresenceSetting();
     return settings.all();
+  });
+
+  // ----- Discord presence -----
+  // the renderer tells us which tab is open; everything else comes from the library
+  ipcMain.handle('presence:view', (e, view) => {
+    presenceView = typeof view === 'string' ? view : 'catalog';
+    refreshPresence();
   });
 
   // ----- account (Discord) -----

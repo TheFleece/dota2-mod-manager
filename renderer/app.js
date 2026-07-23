@@ -471,6 +471,7 @@ function switchView(view) {
   document.querySelectorAll('.tb-tab').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
   state.view = view;
   $('#catRail').classList.toggle('hidden', view !== 'catalog');
+  window.api.presence.view(view); // what Discord shows the user is doing
   render();
 }
 
@@ -2423,6 +2424,18 @@ async function renderSettings() {
       </div>
     </div>
 
+    <div class="settings-block" style="animation-delay:50ms">
+      <h3>Discord</h3>
+      <div class="settings-row">
+        <span class="settings-label">${L`Показывать в Discord, что ты в Mod Manager`}</span>
+        <button class="toggle ${s.discordPresence === false ? '' : 'on'}" id="presenceToggle" role="switch"
+                aria-checked="${s.discordPresence !== false}" aria-label="${L`Показывать в Discord, что ты в Mod Manager`}"></button>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+        ${L`Друзья увидят «Играет в Dota 2 Mod Manager», текущую вкладку и сколько модов включено. В самом Discord это работает, только если включено «Отображать текущую активность как статус».`}
+      </div>
+    </div>
+
     <div class="settings-block" style="animation-delay:60ms">
       <h3>${L`Путь к Dota 2`}</h3>
       <div class="settings-row">
@@ -2531,6 +2544,12 @@ async function renderSettings() {
   $('#copyLaunchBtn').addEventListener('click', () => {
     navigator.clipboard.writeText(`-language ${s.langSuffix}`);
     toast(L`Скопировано в буфер`);
+  });
+  $('#presenceToggle')?.addEventListener('click', async (e) => {
+    const on = !e.currentTarget.classList.contains('on');
+    e.currentTarget.classList.toggle('on', on);
+    e.currentTarget.setAttribute('aria-checked', String(on));
+    state.settings = await window.api.settings.set('discordPresence', on);
   });
   $('#clearCacheBtn').addEventListener('click', async () => {
     await window.api.misc.clearCache();

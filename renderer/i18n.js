@@ -303,6 +303,9 @@ const EN = {
   'Добавить': 'Add',
 
   // ---------- account ----------
+  'Показывать в Discord, что ты в Mod Manager': 'Show in Discord that you are in Mod Manager',
+  'Друзья увидят «Играет в Dota 2 Mod Manager», текущую вкладку и сколько модов включено. В самом Discord это работает, только если включено «Отображать текущую активность как статус».':
+    'Friends will see «Playing Dota 2 Mod Manager», the tab you are on and how many mods are enabled. In Discord itself this only shows while «Display current activity as a status message» is on.',
   'Скопировано': 'Copied',
   'Войти': 'Sign in',
   'Вход нужен, чтобы подписывать свои сборки': 'Signing in puts your name on the builds you share',

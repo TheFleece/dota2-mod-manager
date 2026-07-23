@@ -90,6 +90,17 @@ const EN = {
   'файла нет в архиве': 'the file is not in the archive',
   'Пресет': 'Preset',
 
+  // ---- discord-presence.js (status text friends see) ----
+  'Смотрит каталог модов': 'Browsing the mod catalog',
+  'В своей библиотеке': 'In their mod library',
+  'Собирает пресет': 'Putting a preset together',
+  'В инструментах': 'In the tools',
+  'Читает гайды': 'Reading the guides',
+  'В настройках': 'In the settings',
+  '{0} модов включено': '{0} mods enabled',
+  'Ещё без модов': 'No mods yet',
+  'Скачать Mod Manager': 'Get Mod Manager',
+
   // ---- vpk.js (parse errors + content labels) ----
   'VPK: незакрытая строка в дереве': 'VPK: unterminated string in the tree',
   'VPK: неверная сигнатура': 'VPK: bad signature',

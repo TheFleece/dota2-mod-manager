@@ -68,6 +68,9 @@ contextBridge.exposeInMainWorld('api', {
     signIn: () => ipcRenderer.invoke('account:signIn'),
     signOut: () => ipcRenderer.invoke('account:signOut'),
   },
+  presence: {
+    view: (name) => ipcRenderer.invoke('presence:view', name),
+  },
   misc: {
     openLangFolder: () => ipcRenderer.invoke('misc:openLangFolder'),
     openToolsFolder: (sub) => ipcRenderer.invoke('misc:openToolsFolder', sub),
