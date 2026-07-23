@@ -26,7 +26,7 @@ const { t } = require('./i18n');
 // every OAuth request anyway. The client SECRET is a different thing and is never needed
 // here: the implicit grant doesn't use one, so none exists in this repo.
 // REDIRECT_URI below must be listed verbatim under OAuth2 -> Redirects for this app.
-const CLIENT_ID = '1529828316784099429';
+const CLIENT_ID = '1529830456697163867';
 
 // Discord matches redirect URIs exactly, so the port can't be random.
 const PORT = 53174;
