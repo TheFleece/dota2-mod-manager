@@ -1984,6 +1984,9 @@ document.addEventListener('drop', async (e) => {
   toast(L`Моды перетаскивай в «Библиотеку», пресеты — в «Пресеты»`, 'warn', 5000);
 });
 
+// a d2mm:// link clicked outside the app (or the one it was launched with)
+window.api.presets.onLink((res) => handlePresetImport(res));
+
 async function bulkToggle(installed, enabled) {
   for (const rec of installed) {
     if (['fonts', 'cursors'].includes(rec.categoryId)) continue;
@@ -2055,7 +2058,7 @@ function shareDialog(plan) {
               </label>`).join('')}
           </div>` : ''}
         ${gone ? `<div class="share-line muted"><span class="ms">block</span><div>${gone} ${plural(gone, 'мод не получится передать', 'мода не получится передать', 'модов не получится передать')}</div></div>` : ''}
-        <input class="input" id="shareAuthor" placeholder="${L`Твой ник (необязательно)`}" maxlength="80" style="margin-top:12px">
+        <input class="input" id="shareAuthor" placeholder="${L`Твой ник (необязательно)`}" maxlength="80" style="margin-top:12px" value="${esc(state.settings?.account?.username || '')}">
         <input class="input" id="shareNote" placeholder="${L`Пара слов о сборке (необязательно)`}" maxlength="200" style="margin-top:8px">
         <div class="share-total">${L`Размер файла:`} <b id="shareSize"></b></div>
         <div class="confirm-actions">
@@ -2086,6 +2089,37 @@ function shareDialog(plan) {
     const onKey = (e) => { if (e.key === 'Escape') done(null); };
     document.addEventListener('keydown', onKey);
   });
+}
+
+// the generated link, already in the clipboard — shown so it can be re-copied or checked
+function linkDialog(link, count) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  overlay.innerHTML = `
+    <div class="confirm-box share-box">
+      <div class="share-title">${L`Ссылка скопирована`}</div>
+      <div class="share-line">
+        <span class="ms">link</span>
+        <div>${count} ${plural(count, 'мод из каталога', 'мода из каталога', 'модов из каталога')}
+        <span class="share-hint">${L`Отправь эту строку — у получателя она откроется в менеджере.`}</span></div>
+      </div>
+      <textarea class="input link-out" readonly rows="3">${esc(link)}</textarea>
+      <div class="confirm-actions">
+        <button class="btn" data-c="copy"><span class="ms">content_copy</span>${L`Копировать ещё раз`}</button>
+        <button class="btn btn-primary" data-c="ok">${L`Готово`}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const done = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') done(); };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) done(); });
+  overlay.querySelector('[data-c="ok"]').addEventListener('click', done);
+  overlay.querySelector('[data-c="copy"]').addEventListener('click', () => {
+    navigator.clipboard.writeText(link);
+    toast(L`Скопировано в буфер`);
+  });
+  document.addEventListener('keydown', onKey);
+  overlay.querySelector('.link-out').select();
 }
 
 // a received preset that hasn't been installed yet
@@ -2124,6 +2158,7 @@ async function renderPresets() {
       <input class="input" id="presetName" placeholder="${L`Название пресета (напр. «Анимешный», «Минимал»)`}">
       <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>${L`Сохранить текущее состояние`}</button>
       <button class="btn" id="importPresetBtn"><span class="ms">upload_file</span>${L`Открыть .d2mm`}</button>
+      <button class="btn" id="pasteLinkBtn"><span class="ms">link</span>${L`Вставить ссылку`}</button>
     </div>
     <div id="presetList">
       ${presets.length ? '' : `<div class="empty-note">${L`Пресетов пока нет`}</div>`}
@@ -2144,7 +2179,8 @@ async function renderPresets() {
           <div class="preset-name">${esc(p.name)}</div>
           <span style="font-size:12px;color:var(--text-muted)">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
           <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
-          <button class="btn btn-sm" data-share="${p.id}" title="${L`Сохранить пресет файлом, чтобы отправить другому`}"><span class="ms">ios_share</span>${L`Поделиться`}</button>
+          ${p.shareable ? `<button class="btn btn-sm" data-link="${p.id}" title="${L`Скопировать короткую ссылку — работает, пока в пресете только моды из каталога`}"><span class="ms">link</span>${L`Ссылка`}</button>` : ''}
+          <button class="btn btn-sm" data-share="${p.id}" title="${L`Сохранить пресет файлом, чтобы отправить другому`}"><span class="ms">ios_share</span>${L`Файл`}</button>
           <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
         </div>
         <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>`;
@@ -2160,6 +2196,10 @@ async function renderPresets() {
     renderPresets();
   });
   $('#importPresetBtn').addEventListener('click', async () => handlePresetImport(await window.api.presets.importDialog()));
+  $('#pasteLinkBtn').addEventListener('click', async () => {
+    const text = await promptDialog(L`Вставь ссылку на пресет (d2mm://preset/…)`, { placeholder: 'd2mm://preset/…', okLabel: L`Добавить` });
+    if (text) handlePresetImport(await window.api.presets.importLink(text));
+  });
 
   list.querySelectorAll('[data-apply]').forEach((b) => {
     b.addEventListener('click', async () => {
@@ -2167,6 +2207,14 @@ async function renderPresets() {
       if (r.error) toast(r.error, 'error', 6000);
       else toast(L`Пресет применён`);
       refreshInstalledIndex();
+    });
+  });
+  list.querySelectorAll('[data-link]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const r = await window.api.presets.shareLink(b.dataset.link);
+      if (r.error) { toast(r.error, 'warn', 7000); return; }
+      navigator.clipboard.writeText(r.link);
+      linkDialog(r.link, r.count);
     });
   });
   list.querySelectorAll('[data-share]').forEach((b) => {
@@ -2364,6 +2412,29 @@ async function renderSettings() {
       </div>
     </div>
 
+    <div class="settings-block" style="animation-delay:40ms">
+      <h3>${L`Аккаунт`}</h3>
+      ${s.account ? `
+        <div class="account-row">
+          ${s.account.avatar ? `<img class="account-avatar" src="${esc(s.account.avatar)}" alt="">` : '<div class="account-avatar"></div>'}
+          <div class="account-info">
+            <div class="account-name">${esc(s.account.username)}</div>
+            <div class="account-sub">${L`Discord подключён — ник подставляется в пресеты, которыми делишься`}</div>
+          </div>
+          <button class="btn btn-sm" id="signOutBtn">${L`Выйти`}</button>
+        </div>`
+      : s.discordConfigured ? `
+        <div class="account-row">
+          <div class="account-avatar"></div>
+          <div class="account-info">
+            <div class="account-name">${L`Не выполнен вход`}</div>
+            <div class="account-sub">${L`Нужен только чтобы подписывать свои сборки. Пароль вводится в браузере, приложение его не видит.`}</div>
+          </div>
+          <button class="btn btn-sm btn-primary" id="signInBtn"><span class="ms">login</span>${L`Войти через Discord`}</button>
+        </div>`
+      : `<div style="font-size:12.5px;color:var(--text-muted)">${L`Вход через Discord в этой сборке пока не настроен.`}</div>`}
+    </div>
+
     <div class="settings-block" style="animation-delay:60ms">
       <h3>${L`Путь к Dota 2`}</h3>
       <div class="settings-row">
@@ -2472,6 +2543,18 @@ async function renderSettings() {
   $('#copyLaunchBtn').addEventListener('click', () => {
     navigator.clipboard.writeText(`-language ${s.langSuffix}`);
     toast(L`Скопировано в буфер`);
+  });
+  $('#signInBtn')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    toast(L`Открыл Discord в браузере — подтверди вход там`, 'ok', 6000);
+    const r = await window.api.account.signIn();
+    if (r.error) toast(r.error, 'error', 7000);
+    else toast(L`Привет, ${r.account.username}`);
+    renderSettings();
+  });
+  $('#signOutBtn')?.addEventListener('click', async () => {
+    await window.api.account.signOut();
+    renderSettings();
   });
   $('#clearCacheBtn').addEventListener('click', async () => {
     await window.api.misc.clearCache();

@@ -46,6 +46,21 @@ const EN = {
   'отправитель не вложил файл': 'the sender left the file out',
   'файл пресета недоступен': 'the preset file is gone',
   'нет в файле': 'not in the file',
+  'В пресете есть свои моды — ссылкой не поделиться, только файлом':
+    'This preset has mods of your own — share it as a file, a link cannot carry them',
+
+  // ---- preset-link.js ----
+  'Это не похоже на ссылку на пресет': 'That does not look like a preset link',
+  'Ссылка слишком длинная': 'The link is too long',
+  'Ссылка повреждена': 'The link is damaged',
+
+  // ---- discord-auth.js ----
+  'Вход через Discord пока не настроен в этой сборке': 'Discord sign-in is not configured in this build yet',
+  'Ответ Discord не совпал с запросом': "Discord's answer did not match the request",
+  'Discord не выдал токен': 'Discord returned no token',
+  'Вход занял слишком много времени': 'Sign-in took too long',
+  'Порт {0} занят — закрой другой вход и попробуй снова': 'Port {0} is busy — close the other sign-in and try again',
+  'Discord не отдал профиль (HTTP {0})': 'Discord did not return the profile (HTTP {0})',
   'exe не найден в папке инструмента': 'No .exe found in the tool folder',
 
   // ---- installer.js ----

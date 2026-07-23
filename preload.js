@@ -58,9 +58,16 @@ contextBridge.exposeInMainWorld('api', {
     apply: (id) => ipcRenderer.invoke('presets:apply', id),
     exportPlan: (id) => ipcRenderer.invoke('presets:exportPlan', id),
     exportFile: (id, opts) => ipcRenderer.invoke('presets:export', id, opts),
+    shareLink: (id) => ipcRenderer.invoke('presets:shareLink', id),
     importDialog: () => ipcRenderer.invoke('presets:importDialog'),
     importFile: (filePath) => ipcRenderer.invoke('presets:importFile', filePath),
+    importLink: (text) => ipcRenderer.invoke('presets:importLink', text),
     resolve: (id) => ipcRenderer.invoke('presets:resolve', id),
+    onLink: (cb) => ipcRenderer.on('preset-link', (e, res) => cb(res)),
+  },
+  account: {
+    signIn: () => ipcRenderer.invoke('account:signIn'),
+    signOut: () => ipcRenderer.invoke('account:signOut'),
   },
   misc: {
     openLangFolder: () => ipcRenderer.invoke('misc:openLangFolder'),

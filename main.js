@@ -14,6 +14,8 @@ const { Installer, conflictingPaths } = require('./src/installer');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
 const { writePresetFile, readPresetFile } = require('./src/preset-share');
+const { SCHEME, encodePresetLink, decodePresetLink } = require('./src/preset-link');
+const discordAuth = require('./src/discord-auth');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const i18n = require('./src/i18n');
 const { t } = i18n;
@@ -137,8 +139,14 @@ app.whenReady().then(async () => {
   }
 
   registerIpc();
+  // only the installed build claims the scheme — a dev run must not point the system's
+  // d2mm:// handler at a local electron binary
+  if (app.isPackaged) app.setAsDefaultProtocolClient(SCHEME);
   createWindow();
   diag('createWindow done');
+  // launched BY a link (cold start): the renderer has to exist before it can be told
+  const cold = firstLink(process.argv);
+  if (cold) win.webContents.once('did-finish-load', () => handleDeepLink(cold));
   setupAutoUpdate();
 }).catch((e) => diag('whenReady FAIL: ' + (e.stack || e)));
 
@@ -159,6 +167,38 @@ function setupAutoUpdate() {
 }
 
 app.on('window-all-closed', () => app.quit());
+
+// ---------- d2mm:// links ----------
+
+// A preset link clicked anywhere on the system lands here. Nothing installs: it parks in
+// the Presets tab exactly like a dropped file, and the user decides.
+function handleDeepLink(url) {
+  if (!url || !url.startsWith(`${SCHEME}://`)) return;
+  const res = importPresetLink(url.replace(new RegExp(`^${SCHEME}://preset/`), ''));
+  if (win && !win.isDestroyed()) {
+    win.show();
+    win.focus();
+    win.webContents.send('preset-link', res);
+  }
+}
+
+const firstLink = (argv) => (argv || []).find((a) => typeof a === 'string' && a.startsWith(`${SCHEME}://`));
+
+// One running copy only — two instances writing manifest.json would race each other, and
+// a link clicked while the app is open must reach the window that already exists.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', (e, argv) => {
+    if (win && !win.isDestroyed()) {
+      if (win.isMinimized()) win.restore();
+      win.show();
+      win.focus();
+    }
+    handleDeepLink(firstLink(argv));
+  });
+  app.on('open-url', (e, url) => { e.preventDefault(); handleDeepLink(url); }); // macOS
+}
 
 // register installer.importVpks/importVpkBuffers results into the library
 function registerImportResults(results) {
@@ -328,9 +368,24 @@ function installedFpIndex() {
   return map;
 }
 
+// The mods of a preset flattened for a link, or null if even one of them can't be named —
+// a link carries identities only, so a single import makes the whole preset file-only.
+// A pack flattens to its members: packing is a local storage choice, not part of the build.
+function presetLinkMods(preset, cat) {
+  const out = [];
+  for (const id of preset.modIds || []) {
+    const rec = library.find(id);
+    if (!rec) continue;
+    for (const it of (rec.kind === 'pack' ? rec.members || [] : [rec])) {
+      if (it.categoryId === 'imported' || !cat.lookup(it.categoryId, it.name, it.styleLabel)) return null;
+      out.push({ categoryId: it.categoryId, name: it.name, styleLabel: it.styleLabel || null });
+    }
+  }
+  return out.length ? out : null;
+}
+
 // What installing a received preset would actually do, for the card in the Presets tab.
-async function sharedPresetStatus(preset) {
-  const cat = await catalogIndex();
+async function sharedPresetStatus(preset, cat) {
   const fpIndex = installedFpIndex();
   const out = { installed: 0, download: 0, embedded: 0, unavailable: [] };
   const visit = (e) => {
@@ -395,6 +450,21 @@ function importPresetFile(filePath) {
   }
 }
 
+// A pasted d2mm://preset/... link. Same landing as a file: it parks in the Presets tab as
+// a wish list and installs nothing until asked. No stash — a link has no payload to keep.
+function importPresetLink(text) {
+  try {
+    const decoded = decodePresetLink(text);
+    if (!decoded.mods.length) return { error: t('В пресете нет модов') };
+    const preset = library.addSharedPreset({
+      name: decoded.name, note: '', author: decoded.author, wanted: decoded.mods,
+    });
+    return { ok: true, preset };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
+}
+
 // enable exactly the preset's mods, disable everything else
 function applyPreset(preset) {
   const wanted = new Set(preset.modIds);
@@ -447,6 +517,7 @@ function registerIpc() {
       ...settings.all(),
       dotaPathValid: validateGamePath(game),
       minifyDetected,
+      discordConfigured: discordAuth.isConfigured(),
     };
   });
 
@@ -479,6 +550,23 @@ function registerIpc() {
     }
     settings.set(key, value);
     return settings.all();
+  });
+
+  // ----- account (Discord) -----
+  ipcMain.handle('account:signIn', async () => {
+    try {
+      const account = await discordAuth.signIn();
+      settings.set('account', account);
+      if (win && !win.isDestroyed()) { win.show(); win.focus(); }
+      return { ok: true, account };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('account:signOut', () => {
+    settings.set('account', null);
+    return { ok: true };
   });
 
   ipcMain.handle('settings:detectDota', async () => {
@@ -1001,11 +1089,12 @@ function registerIpc() {
 
   // ----- presets -----
   ipcMain.handle('presets:list', async () => {
-    const presets = library.listPresets();
-    // a received preset shows what installing it would cost before anything is downloaded
-    return Promise.all(presets.map(async (p) => (p.wanted
-      ? { ...p, status: await sharedPresetStatus(p).catch(() => null) }
-      : p)));
+    const cat = await catalogIndex();
+    return Promise.all(library.listPresets().map(async (p) => (p.wanted
+      // a received preset shows what installing it would cost before anything downloads
+      ? { ...p, status: await sharedPresetStatus(p, cat).catch(() => null) }
+      // and an own preset only offers a link when every mod in it can be named
+      : { ...p, shareable: !!presetLinkMods(p, cat) })));
   });
   ipcMain.handle('presets:save', (e, name) => {
     library.savePreset(name);
@@ -1071,6 +1160,22 @@ function registerIpc() {
       return { error: String(err.message || err) };
     }
   });
+
+  ipcMain.handle('presets:shareLink', async (e, id) => {
+    const preset = library.getPreset(id);
+    if (!preset) return { error: t('Пресет не найден') };
+    try {
+      const mods = presetLinkMods(preset, await catalogIndex());
+      if (!mods) return { error: t('В пресете есть свои моды — ссылкой не поделиться, только файлом') };
+      const account = settings.get('account');
+      const link = encodePresetLink({ name: preset.name, author: account && account.username, mods });
+      return { ok: true, link, count: mods.length };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('presets:importLink', (e, text) => importPresetLink(text));
 
   ipcMain.handle('presets:importDialog', async () => {
     const res = await dialog.showOpenDialog(win, {

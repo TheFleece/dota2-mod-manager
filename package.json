@@ -34,6 +34,21 @@
       "renderer/**/*",
       "package.json"
     ],
+    "protocols": [
+      {
+        "name": "Dota 2 Mod Manager preset",
+        "schemes": [
+          "d2mm"
+        ]
+      }
+    ],
+    "fileAssociations": [
+      {
+        "ext": "d2mm",
+        "name": "Dota 2 Mod Manager preset",
+        "role": "Editor"
+      }
+    ],
     "win": {
       "target": [
         "nsis"

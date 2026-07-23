@@ -295,6 +295,33 @@ const EN = {
   'Сюда можно перетащить файл пресета .d2mm': 'You can drop a .d2mm preset file here',
   'Не удалось прочитать файл пресета': 'Could not read the preset file',
   'Моды перетаскивай в «Библиотеку», пресеты — в «Пресеты»': 'Drop mods in the Library, presets in the Presets tab',
+
+  // ---------- preset links ----------
+  'Ссылка': 'Link',
+  'Файл': 'File',
+  'Скопировать короткую ссылку — работает, пока в пресете только моды из каталога':
+    'Copy a short link — available while the preset holds catalog mods only',
+  'Вставить ссылку': 'Paste a link',
+  'Вставь ссылку на пресет (d2mm://preset/…)': 'Paste a preset link (d2mm://preset/…)',
+  'Добавить': 'Add',
+  'Ссылка скопирована': 'Link copied',
+  'Отправь эту строку — у получателя она откроется в менеджере.':
+    'Send this string — it opens in the manager on their side.',
+  'Копировать ещё раз': 'Copy again',
+  'Готово': 'Done',
+
+  // ---------- account ----------
+  'Аккаунт': 'Account',
+  'Discord подключён — ник подставляется в пресеты, которыми делишься':
+    'Discord connected — your nickname goes on the presets you share',
+  'Выйти': 'Sign out',
+  'Не выполнен вход': 'Not signed in',
+  'Нужен только чтобы подписывать свои сборки. Пароль вводится в браузере, приложение его не видит.':
+    'Only used to sign your builds. The password is typed in your browser; the app never sees it.',
+  'Войти через Discord': 'Sign in with Discord',
+  'Вход через Discord в этой сборке пока не настроен.': 'Discord sign-in is not configured in this build yet.',
+  'Открыл Discord в браузере — подтверди вход там': 'Discord is open in your browser — confirm the sign-in there',
+  'Привет, {0}': 'Hi, {0}',
   'Название пресета (напр. «Анимешный», «Минимал»)': 'Preset name (e.g. «Anime», «Minimal»)',
   'Сохранить текущее состояние': 'Save current state',
   'Пресетов пока нет': 'No presets yet',

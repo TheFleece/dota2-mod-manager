@@ -12,6 +12,9 @@ const DEFAULTS = {
   // one-time language picker: false for fresh installs AND for users updating from a
   // version without this key, so everybody sees the picker once after this release.
   langPromptSeen: false,
+  // Discord identity, when signed in: { id, username, avatar }. No token is ever kept —
+  // it is used once to read the name and dropped (see src/discord-auth.js).
+  account: null,
 };
 
 class Settings {
