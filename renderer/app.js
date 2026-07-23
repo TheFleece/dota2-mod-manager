@@ -2105,10 +2105,10 @@ function linkDialog(r) {
         <div>${r.count} ${plural(r.count, 'мод из каталога', 'мода из каталога', 'модов из каталога')}
         <span class="share-hint">${L`Вставь в чат — она кликабельная и откроет пресет в менеджере.`}</span></div>
       </div>
-      <textarea class="input link-out" readonly rows="2" id="linkWeb">${esc(r.web)}</textarea>
+      <textarea class="input link-out" readonly rows="4" id="linkWeb">${esc(r.web)}</textarea>
       <div class="link-alt">
         <span>${L`Прямая ссылка (чаты её не подсвечивают, но её можно вставить в «Вставить ссылку»):`}</span>
-        <textarea class="input link-out" readonly rows="2" id="linkDirect">${esc(r.direct)}</textarea>
+        <textarea class="input link-out" readonly rows="3" id="linkDirect">${esc(r.direct)}</textarea>
       </div>
       <div class="confirm-actions">
         <button class="btn" data-c="direct"><span class="ms">content_copy</span>${L`Копировать прямую`}</button>

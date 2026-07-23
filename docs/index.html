@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dota 2 Mod Manager</title>
+<meta name="description" content="Desktop mod manager for Dota 2 — browse, install, toggle and preset cosmetic mods.">
+<!-- Publishing /docs makes this the site root; without it GitHub serves its own 404 here. -->
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: radial-gradient(120% 90% at 50% -10%, #1a1630 0%, #0d0d13 60%);
+    color: #e9e7f2; font: 15px/1.65 system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  .box { width: min(560px, 90vw); padding: 40px 30px; text-align: center; }
+  .logo {
+    width: 66px; height: 66px; margin: 0 auto 22px; border-radius: 17px;
+    background: linear-gradient(140deg, #7c5cff, #b79dff);
+    display: grid; place-items: center; font-weight: 800; font-size: 20px; color: #12101c;
+  }
+  h1 { font-size: 27px; margin: 0 0 10px; letter-spacing: -0.4px; }
+  p { margin: 0 0 26px; color: #a8a2c0; }
+  .row { display: flex; gap: 11px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 12px 24px; border-radius: 11px;
+    background: #7c5cff; color: #fff; text-decoration: none; font-weight: 600; font-size: 15px;
+  }
+  .btn:hover { background: #8f74ff; }
+  .btn.ghost { background: transparent; color: #b7aee0; border: 1px solid #322c4d; }
+  .note { margin-top: 30px; font-size: 12.5px; color: #726c8c; }
+  .note a { color: #a992ff; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">D2M</div>
+  <h1>Dota 2 Mod Manager</h1>
+  <p id="lead">Browse, install and toggle cosmetic mods for Dota 2, and share your builds as presets.</p>
+  <div class="row">
+    <a class="btn" href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe" id="dl">Download for Windows</a>
+    <a class="btn ghost" href="https://github.com/TheFleece/dota2-mod-manager">GitHub</a>
+  </div>
+  <p class="note" id="note">Got a preset link from a friend? Open it — it lands straight in the app.</p>
+</div>
+<script>
+  if ((navigator.language || '').toLowerCase().indexOf('ru') === 0) {
+    document.getElementById('lead').textContent =
+      'Ставь, выключай и настраивай косметические моды для Dota 2, делись сборками пресетами.';
+    document.getElementById('dl').textContent = 'Скачать для Windows';
+    document.getElementById('note').textContent =
+      'Прислали ссылку на пресет? Просто открой её — сборка попадёт прямо в приложение.';
+  }
+</script>
+</body>
+</html>
