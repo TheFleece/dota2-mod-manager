@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy · Dota 2 Mod Manager</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; background: #0d0d13; color: #d8d4e8;
+    font: 15px/1.7 system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 56px 22px 90px; }
+  h1 { font-size: 26px; margin: 0 0 6px; color: #fff; letter-spacing: -0.3px; }
+  h2 { font-size: 16px; margin: 34px 0 10px; color: #fff; }
+  p, li { margin: 0 0 13px; }
+  ul { padding-left: 20px; }
+  a { color: #a992ff; }
+  code { background: #1a1630; padding: 2px 6px; border-radius: 5px; font-size: 13px; }
+  .date { color: #6f6990; font-size: 13px; margin-bottom: 26px; }
+  .back { display: inline-block; margin-top: 34px; color: #a992ff; text-decoration: none; }
+  .lang { position: fixed; top: 16px; right: 18px; display: flex; gap: 4px; }
+  .lang button {
+    background: none; border: 1px solid #2a2440; color: #726c8c; cursor: pointer;
+    font: 600 11.5px/1 system-ui, sans-serif; padding: 6px 10px; border-radius: 8px;
+  }
+  .lang button.on { color: #d8d2f0; border-color: #4a3f75; background: #1a1630; }
+  article { display: none; }
+  article.on { display: block; }
+</style>
+</head>
+<body>
+<div class="lang">
+  <button type="button" data-lang="en">EN</button>
+  <button type="button" data-lang="ru">RU</button>
+</div>
+<div class="wrap">
+
+<article data-lang="en">
+  <h1>Privacy Policy</h1>
+  <div class="date">Dota 2 Mod Manager · updated 23 July 2026</div>
+
+  <p>Dota 2 Mod Manager runs on your computer. This project has no server, no account
+  database and no analytics. What you do in the app stays on your machine.</p>
+
+  <h2>What the app keeps, and where</h2>
+  <p>Your settings, the list of installed mods and your presets sit in one folder on your
+  PC: <code>%APPDATA%\Dota 2 Mod Manager</code>. Delete that folder and all of it is gone.</p>
+
+  <h2>Signing in with Discord</h2>
+  <p>Sign-in is optional and the app works fully without it. It asks Discord for a single
+  permission, <code>identify</code>, which returns your Discord user ID, your display name
+  and your avatar. The app reads them once, saves them to the folder above, and throws the
+  access token away. That token never touches your disk.</p>
+  <p>You never type your Discord password into the app. You type it into your own browser,
+  on discord.com. Signing out deletes the saved ID, name and avatar.</p>
+  <p>Your name leaves your computer in one case: a preset you chose to share carries it,
+  because you asked the app to sign your build.</p>
+
+  <h2>Discord status</h2>
+  <p>While the app is open it tells the Discord client on your own machine what to show:
+  the app name, which tab you have open, how many mods you have enabled and how long the
+  session has run. That travels over a local socket, not the internet. Turn it off in
+  Settings and the app closes the connection.</p>
+
+  <h2>What the app downloads</h2>
+  <ul>
+    <li>The mod catalog and the mod files, from <code>raw.githubusercontent.com</code>.</li>
+    <li>Mod fingerprints, from this project's own repository.</li>
+    <li>Updates, from GitHub Releases.</li>
+    <li>Your Discord avatar, from <code>cdn.discordapp.com</code>, once, when you sign in.</li>
+  </ul>
+  <p>GitHub and Discord see your IP address when your computer asks them for a file, the
+  way every download works. Nothing about those requests reaches the author of this app.</p>
+
+  <h2>Preset links</h2>
+  <p>A shared preset link carries its contents after the <code>#</code> in the address.
+  Browsers never send that part to a server, so the page that opens your link works without
+  its host learning which mods you shared.</p>
+
+  <h2>Children</h2>
+  <p>This app is not directed at children under 13.</p>
+
+  <h2>Questions</h2>
+  <p>Open an issue at
+  <a href="https://github.com/TheFleece/dota2-mod-manager/issues">github.com/TheFleece/dota2-mod-manager</a>.</p>
+
+  <a class="back" href="../">← Dota 2 Mod Manager</a>
+</article>
+
+<article data-lang="ru">
+  <h1>Политика конфиденциальности</h1>
+  <div class="date">Dota 2 Mod Manager · обновлено 23 июля 2026</div>
+
+  <p>Dota 2 Mod Manager работает на твоём компьютере. У проекта нет сервера, базы аккаунтов
+  и аналитики. То, что ты делаешь в приложении, остаётся на твоей машине.</p>
+
+  <h2>Что приложение хранит и где</h2>
+  <p>Настройки, список установленных модов и пресеты лежат в одной папке на компьютере:
+  <code>%APPDATA%\Dota 2 Mod Manager</code>. Удалишь папку - исчезнет всё это.</p>
+
+  <h2>Вход через Discord</h2>
+  <p>Вход необязателен, без него приложение работает полностью. Оно запрашивает у Discord
+  одно право, <code>identify</code>: в ответ приходят ID пользователя, отображаемое имя и
+  аватарка. Приложение читает их один раз, сохраняет в папку выше и выбрасывает токен
+  доступа. На диск токен не попадает.</p>
+  <p>Пароль Discord в приложение вводить не нужно и негде: ты вводишь его в своём браузере
+  на discord.com. Выход из аккаунта стирает сохранённые ID, имя и аватарку.</p>
+  <p>Имя покидает компьютер в одном случае: его несёт пресет, которым ты сам решил
+  поделиться, потому что ты попросил подписать сборку.</p>
+
+  <h2>Статус в Discord</h2>
+  <p>Пока приложение открыто, оно сообщает клиенту Discord на твоей же машине, что показать:
+  название приложения, открытую вкладку, число включённых модов и время сессии. Это идёт
+  через локальный сокет, а не через интернет. Выключишь в Настройках - приложение разорвёт
+  соединение.</p>
+
+  <h2>Что приложение скачивает</h2>
+  <ul>
+    <li>Каталог модов и сами моды с <code>raw.githubusercontent.com</code>.</li>
+    <li>Отпечатки модов из репозитория этого проекта.</li>
+    <li>Обновления из GitHub Releases.</li>
+    <li>Твою аватарку Discord с <code>cdn.discordapp.com</code>, один раз, при входе.</li>
+  </ul>
+  <p>GitHub и Discord видят твой IP-адрес, когда компьютер просит у них файл, как при любой
+  загрузке. До автора приложения об этих запросах не доходит ничего.</p>
+
+  <h2>Ссылки на пресеты</h2>
+  <p>Ссылка на пресет несёт содержимое после <code>#</code> в адресе. Браузеры эту часть на
+  сервер не отправляют, поэтому страница, которая открывает твою ссылку, работает, а её
+  хостинг не узнаёт, какими модами ты поделился.</p>
+
+  <h2>Дети</h2>
+  <p>Приложение не предназначено для детей младше 13 лет.</p>
+
+  <h2>Вопросы</h2>
+  <p>Заводи issue на
+  <a href="https://github.com/TheFleece/dota2-mod-manager/issues">github.com/TheFleece/dota2-mod-manager</a>.</p>
+
+  <a class="back" href="../">← Dota 2 Mod Manager</a>
+</article>
+
+</div>
+<script>
+  var saved = null;
+  try { saved = localStorage.getItem('d2mmLang'); } catch (e) { /* private mode */ }
+  function apply(l) {
+    document.documentElement.lang = l;
+    try { localStorage.setItem('d2mmLang', l); } catch (e) { /* private mode */ }
+    Array.prototype.forEach.call(document.querySelectorAll('article'), function (a) {
+      a.classList.toggle('on', a.dataset.lang === l);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
+      b.classList.toggle('on', b.dataset.lang === l);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
+    b.addEventListener('click', function () { apply(b.dataset.lang); });
+  });
+  apply(saved || ((navigator.language || '').toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en'));
+</script>
+</body>
+</html>

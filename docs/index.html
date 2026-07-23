@@ -52,18 +52,21 @@
     <a class="btn ghost" href="https://github.com/TheFleece/dota2-mod-manager">GitHub</a>
   </div>
   <p class="note" id="note">Got a preset link from a friend? Open it — it lands straight in the app.</p>
+  <p class="note"><a href="privacy/" id="lnPrivacy">Privacy</a> · <a href="terms/" id="lnTerms">Terms</a></p>
 </div>
 <script>
   var STR = {
     en: {
       lead: 'Browse, install and toggle cosmetic mods for Dota 2, and share your builds as presets.',
       dl: 'Download for Windows',
-      note: 'Got a preset link from a friend? Open it — it lands straight in the app.'
+      note: 'Got a preset link from a friend? Open it — it lands straight in the app.',
+      privacy: 'Privacy', terms: 'Terms'
     },
     ru: {
       lead: 'Ставь, выключай и настраивай косметические моды для Dota 2, делись сборками пресетами.',
       dl: 'Скачать для Windows',
-      note: 'Прислали ссылку на пресет? Просто открой её — сборка попадёт прямо в приложение.'
+      note: 'Прислали ссылку на пресет? Просто открой её — сборка попадёт прямо в приложение.',
+      privacy: 'Конфиденциальность', terms: 'Условия'
     }
   };
   var saved = null;
@@ -79,6 +82,8 @@
     document.getElementById('lead').textContent = t.lead;
     document.getElementById('dl').textContent = t.dl;
     document.getElementById('note').textContent = t.note;
+    document.getElementById('lnPrivacy').textContent = t.privacy;
+    document.getElementById('lnTerms').textContent = t.terms;
   }
   Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
     b.addEventListener('click', function () { apply(b.dataset.lang); });
