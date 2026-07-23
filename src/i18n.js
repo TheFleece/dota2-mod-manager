@@ -35,6 +35,17 @@ const EN = {
   'Нет совместимых модов для добавления': 'No compatible mods to add',
   'Мод в паке не найден': 'Mod not found in the pack',
   'Пресет не найден': 'Preset not found',
+  'Сохранить пресет для друга': 'Save the preset to share',
+  'Пресет Mod Manager': 'Mod Manager preset',
+  'Выбери файл пресета (.d2mm)': 'Pick a preset file (.d2mm)',
+  'сборка пресета': 'building preset',
+  'В пресете нет модов': 'The preset has no mods',
+  'нет в каталоге': 'not in the catalog',
+  'нет в каталоге и нечего вложить': 'not in the catalog and there is nothing to embed',
+  'файл участника пака не найден': 'the pack member file is missing',
+  'отправитель не вложил файл': 'the sender left the file out',
+  'файл пресета недоступен': 'the preset file is gone',
+  'нет в файле': 'not in the file',
   'exe не найден в папке инструмента': 'No .exe found in the tool folder',
 
   // ---- installer.js ----
@@ -51,6 +62,18 @@ const EN = {
   'в папке нет .vpk файлов': 'no .vpk files in this folder',
   'в архиве нет .vpk файлов': 'no .vpk files in this archive',
   'Курсор': 'Cursor',
+
+  'Пустой VPK': 'Empty VPK',
+
+  // ---- preset-share.js (.d2mm validation) ----
+  'preset.json повреждён': 'preset.json is damaged',
+  'Это не файл пресета Mod Manager': 'This is not a Mod Manager preset file',
+  'Файл собран более новой версией приложения': 'The file was made by a newer version of the app',
+  'Слишком много модов в пресете': 'Too many mods in the preset',
+  'Файл не открывается как пресет': 'The file cannot be opened as a preset',
+  'Недопустимое имя файла в архиве': 'Bad file name inside the archive',
+  'файла нет в архиве': 'the file is not in the archive',
+  'Пресет': 'Preset',
 
   // ---- vpk.js (parse errors + content labels) ----
   'VPK: незакрытая строка в дереве': 'VPK: unterminated string in the tree',

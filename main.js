@@ -13,6 +13,7 @@ const { Catalog } = require('./src/catalog');
 const { Installer, conflictingPaths } = require('./src/installer');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
+const { writePresetFile, readPresetFile } = require('./src/preset-share');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const i18n = require('./src/i18n');
 const { t } = i18n;
@@ -211,6 +212,205 @@ function deployAndApply(pack) {
   if (pack.enabled === false && files.length) { try { installer.setEnabled(files, false); } catch { /* noop */ } }
   afterDeployMaster();
   return conflicts;
+}
+
+// ---------- shared presets (.d2mm) ----------
+
+// where an imported .d2mm waits until the user installs it
+function sharedPresetFile(presetId) {
+  return path.join(app.getPath('userData'), 'shared-presets', `${presetId}.d2mm`);
+}
+
+function dropSharedPresetFile(preset) {
+  const f = preset && preset.source && preset.source.file;
+  if (f) { try { fs.rmSync(f, { force: true }); } catch { /* noop */ } }
+}
+
+// "<categoryId>|<name>|<styleLabel>" -> what mods:install needs to fetch it
+async function catalogIndex() {
+  const map = new Map();
+  const key = (c, n, s) => `${c}|${n}|${s || ''}`;
+  let data;
+  try { data = await catalog.load(); } catch { return map; } // offline with no cache
+  for (const [categoryId, list] of Object.entries((data.mods && data.mods.modsData) || {})) {
+    if (!Array.isArray(list)) continue;
+    for (const m of list) {
+      if (Array.isArray(m.styles)) {
+        for (const s of m.styles) {
+          map.set(key(categoryId, m.name, s.label), { categoryId, name: m.name, styleLabel: s.label, fileRef: s.file, preview: s.preview });
+        }
+      } else {
+        map.set(key(categoryId, m.name, null), { categoryId, name: m.name, styleLabel: null, fileRef: m.file, preview: m.preview });
+      }
+    }
+  }
+  map.lookup = (c, n, s) => map.get(key(c, n, s)) || null;
+  return map;
+}
+
+// How one library record travels: as a catalog identity when the catalog can hand it to
+// the receiver, otherwise as its own bytes. `loadData` is deferred so building the plan
+// (which only needs sizes) doesn't merge tens of MB per mod.
+function shareEntryFor(rec, cat) {
+  const hit = rec.categoryId !== 'imported' && cat.lookup(rec.categoryId, rec.name, rec.styleLabel);
+  if (hit) {
+    return {
+      kind: 'catalog', categoryId: rec.categoryId, name: rec.name,
+      styleLabel: rec.styleLabel || null, fp: (installer.analyzeRecord(rec) || {}).fp || null, size: 0,
+    };
+  }
+  const hasVpk = (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+  if (!hasVpk) {
+    return { kind: 'missing', name: rec.name, reason: t('нет в каталоге и нечего вложить') };
+  }
+  let size = 0;
+  try {
+    const lang = installer.langFolder();
+    for (const f of (rec.files || []).filter((x) => x.root === 'lang')) {
+      const p = ['', '.off', '.moff'].map((s) => path.join(lang, f.relPath) + s).find((x) => fs.existsSync(x));
+      if (p) size += fs.statSync(p).size;
+    }
+  } catch { /* size stays an estimate of 0 */ }
+  const a = installer.analyzeRecord(rec) || {};
+  return {
+    kind: 'embedded', name: rec.name, categoryId: rec.categoryId, info: a.info || '', fp: a.fp || null,
+    size, loadData: () => installer.mergeToSingleVpk(rec),
+  };
+}
+
+// A pack travels as its members: each one keeps its own identity, and the receiver's app
+// rebuilds the pack from them. Member VPKs are already sitting flattened in packsDir.
+function packShareEntry(rec, cat) {
+  const members = (rec.members || []).map((m) => {
+    const hit = m.categoryId !== 'imported' && cat.lookup(m.categoryId, m.name, m.styleLabel);
+    if (hit) {
+      return { kind: 'catalog', categoryId: m.categoryId, name: m.name, styleLabel: m.styleLabel || null, fp: m.fp || null, size: 0 };
+    }
+    const src = installer.packMemberFile(rec.id, m.id);
+    if (!fs.existsSync(src)) return { kind: 'missing', name: m.name, reason: t('файл участника пака не найден') };
+    return {
+      kind: 'embedded', name: m.name, categoryId: m.categoryId, info: m.info || '', fp: m.fp || null,
+      size: fs.statSync(src).size, loadData: () => fs.readFileSync(src),
+    };
+  });
+  return { kind: 'pack', name: rec.name, members };
+}
+
+// Every mod of a preset, described the way it would be shared.
+async function presetShareEntries(preset) {
+  const cat = await catalogIndex();
+  const out = [];
+  for (const id of preset.modIds || []) {
+    const rec = library.find(id);
+    if (!rec) continue;
+    out.push(rec.kind === 'pack' ? packShareEntry(rec, cat) : shareEntryFor(rec, cat));
+  }
+  return out;
+}
+
+// strips the deferred loaders so the plan can cross the IPC boundary; `key` is what the
+// renderer sends back to leave an oversized mod out of the file
+function planShape(entries) {
+  const plain = (e, key) => ({ key, kind: e.kind, name: e.name, size: e.size || 0, info: e.info || '', reason: e.reason || '' });
+  return entries.map((e, i) => (e.kind === 'pack'
+    ? { ...plain(e, String(i)), members: e.members.map((m, j) => plain(m, `${i}.${j}`)) }
+    : plain(e, String(i))));
+}
+
+// fingerprint -> installed record id, so a shared mod already on disk isn't written twice
+function installedFpIndex() {
+  const map = new Map();
+  for (const rec of library.list()) {
+    if (rec.kind === 'pack') continue;
+    const a = installer.analyzeRecord(rec);
+    if (a && a.fp) map.set(a.fp, rec.id);
+  }
+  return map;
+}
+
+// What installing a received preset would actually do, for the card in the Presets tab.
+async function sharedPresetStatus(preset) {
+  const cat = await catalogIndex();
+  const fpIndex = installedFpIndex();
+  const out = { installed: 0, download: 0, embedded: 0, unavailable: [] };
+  const visit = (e) => {
+    if (e.kind === 'catalog') {
+      if (library.findByKey(e.categoryId, e.name, e.styleLabel)) out.installed++;
+      else if (cat.lookup(e.categoryId, e.name, e.styleLabel)) out.download++;
+      else out.unavailable.push(e.name);
+    } else if (e.kind === 'embedded') {
+      if (e.fp && fpIndex.has(e.fp)) out.installed++;
+      else out.embedded++;
+    } else {
+      out.unavailable.push(e.name);
+    }
+  };
+  for (const e of preset.wanted || []) {
+    if (e.kind === 'pack') e.members.forEach(visit);
+    else visit(e);
+  }
+  return out;
+}
+
+// Build a fresh pack out of standalone records (the subset of packs:combine a received
+// preset needs — it never absorbs packs the user already has).
+function packFromRecords(name, recIds) {
+  const recs = recIds.map((id) => library.find(id)).filter(packableRecord);
+  if (recs.length < 2) return null; // nothing to save by packing — leave them standalone
+  const target = library.add({
+    name, categoryId: 'combined', styleLabel: null, fileRef: null, preview: null,
+    files: [], kind: 'pack', members: [],
+  });
+  fs.mkdirSync(installer.packFolder(target.id), { recursive: true });
+  for (const r of recs) {
+    target.members.push(installer.addPackMemberFromRecord(target.id, r, crypto.randomUUID()));
+    try { installer.remove(r.files); } catch { /* noop */ }
+    library.removeRecord(r.id);
+  }
+  deployAndApply(target);
+  return target;
+}
+
+// Validate a received .d2mm and park it in the Presets tab as a not-yet-installed preset.
+// Nothing is written into the game folder here — the user sees the contents first.
+function importPresetFile(filePath) {
+  try {
+    const { manifest } = readPresetFile(filePath);
+    if (!manifest.mods.length) return { error: t('В пресете нет модов') };
+    const preset = library.addSharedPreset({
+      name: manifest.name, note: manifest.note, author: manifest.author, wanted: manifest.mods,
+    });
+    // the archive has to survive until "Install": its embedded VPKs live nowhere else
+    const embeds = (e) => e.kind === 'embedded' || (e.kind === 'pack' && e.members.some((m) => m.kind === 'embedded'));
+    if (manifest.mods.some(embeds)) {
+      const dest = sharedPresetFile(preset.id);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(filePath, dest);
+      preset.source.file = dest;
+      library.save();
+    }
+    return { ok: true, preset };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
+}
+
+// enable exactly the preset's mods, disable everything else
+function applyPreset(preset) {
+  const wanted = new Set(preset.modIds);
+  const errors = [];
+  for (const rec of library.list()) {
+    const shouldEnable = wanted.has(rec.id);
+    if (rec.enabled !== shouldEnable) {
+      try {
+        installer.setEnabled(rec.files, shouldEnable);
+        library.setEnabled(rec.id, shouldEnable);
+      } catch (err) {
+        errors.push(`${rec.name}: ${err.message}`);
+      }
+    }
+  }
+  return errors;
 }
 
 // a library record that can go into a combined pack: a lang-folder skin/import with a
@@ -800,32 +1000,159 @@ function registerIpc() {
   });
 
   // ----- presets -----
-  ipcMain.handle('presets:list', () => library.listPresets());
+  ipcMain.handle('presets:list', async () => {
+    const presets = library.listPresets();
+    // a received preset shows what installing it would cost before anything is downloaded
+    return Promise.all(presets.map(async (p) => (p.wanted
+      ? { ...p, status: await sharedPresetStatus(p).catch(() => null) }
+      : p)));
+  });
   ipcMain.handle('presets:save', (e, name) => {
     library.savePreset(name);
     return library.listPresets();
   });
   ipcMain.handle('presets:delete', (e, id) => {
+    dropSharedPresetFile(library.getPreset(id));
     library.deletePreset(id);
     return library.listPresets();
   });
   ipcMain.handle('presets:apply', (e, id) => {
     const preset = library.getPreset(id);
     if (!preset) return { error: t('Пресет не найден') };
-    const wanted = new Set(preset.modIds);
+    const errors = applyPreset(preset);
+    return errors.length ? { error: errors.join('\n') } : { ok: true };
+  });
+
+  // ----- sharing presets as .d2mm -----
+
+  ipcMain.handle('presets:exportPlan', async (e, id) => {
+    const preset = library.getPreset(id);
+    if (!preset) return { error: t('Пресет не найден') };
+    try {
+      return { name: preset.name, entries: planShape(await presetShareEntries(preset)) };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('presets:export', async (e, id, opts) => {
+    const preset = library.getPreset(id);
+    if (!preset) return { error: t('Пресет не найден') };
+    const safe = preset.name.replace(/[<>:"/\\|?*]/g, '_') || 'preset';
+    const res = await dialog.showSaveDialog(win, {
+      title: t('Сохранить пресет для друга'),
+      defaultPath: `${safe}.d2mm`,
+      filters: [{ name: t('Пресет Mod Manager'), extensions: ['d2mm'] }],
+    });
+    if (res.canceled || !res.filePath) return { cancelled: true };
+    try {
+      const skip = new Set((opts && opts.skip) || []);
+      sendProgress({ type: 'stage', label: preset.name, stage: t('сборка пресета') });
+      // pull the bytes only now, and only for what the user kept ticked
+      const prep = (entry, key) => {
+        if (entry.kind === 'pack') return { ...entry, members: entry.members.map((m, j) => prep(m, `${key}.${j}`)) };
+        const { loadData, ...rest } = entry;
+        if (entry.kind !== 'embedded') return rest;
+        if (skip.has(key)) return { kind: 'missing', name: entry.name, reason: t('отправитель не вложил файл') };
+        return { ...rest, data: loadData() };
+      };
+      const entries = (await presetShareEntries(preset)).map((entry, i) => prep(entry, String(i)));
+      const written = writePresetFile(res.filePath, {
+        name: preset.name,
+        note: (opts && String(opts.note || '').slice(0, 600)) || '',
+        author: { name: (opts && String(opts.author || '').slice(0, 80)) || '' },
+        app: app.getVersion(),
+        catalogFetchedAt: catalog.cacheInfo().fetchedAt,
+      }, entries);
+      sendProgress({ type: 'done', label: preset.name });
+      return { ok: true, path: written.path, size: written.size };
+    } catch (err) {
+      sendProgress({ type: 'error', label: preset.name, message: String(err.message || err) });
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('presets:importDialog', async () => {
+    const res = await dialog.showOpenDialog(win, {
+      title: t('Выбери файл пресета (.d2mm)'),
+      properties: ['openFile'],
+      filters: [{ name: t('Пресет Mod Manager'), extensions: ['d2mm'] }],
+    });
+    if (res.canceled || !res.filePaths[0]) return { cancelled: true };
+    return importPresetFile(res.filePaths[0]);
+  });
+
+  ipcMain.handle('presets:importFile', (e, filePath) => importPresetFile(filePath));
+
+  ipcMain.handle('presets:resolve', async (e, id) => {
+    const preset = library.getPreset(id);
+    if (!preset || !preset.wanted) return { error: t('Пресет не найден') };
+    const stash = preset.source && preset.source.file;
+    let bundle = null;
+    if (stash && fs.existsSync(stash)) {
+      try { bundle = readPresetFile(stash); } catch (err) { return { error: String(err.message || err) }; }
+    }
+    const cat = await catalogIndex();
+    const fpIndex = installedFpIndex();
     const errors = [];
-    for (const rec of library.list()) {
-      const shouldEnable = wanted.has(rec.id);
-      if (rec.enabled !== shouldEnable) {
-        try {
-          installer.setEnabled(rec.files, shouldEnable);
-          library.setEnabled(rec.id, shouldEnable);
-        } catch (err) {
-          errors.push(`${rec.name}: ${err.message}`);
+
+    // -> id of the library record that now provides this mod, or null
+    const resolveEntry = async (entry) => {
+      try {
+        if (entry.kind === 'catalog') {
+          const have = library.findByKey(entry.categoryId, entry.name, entry.styleLabel);
+          if (have) return have.id;
+          const hit = cat.lookup(entry.categoryId, entry.name, entry.styleLabel);
+          if (!hit) { errors.push(`${entry.name}: ${t('нет в каталоге')}`); return null; }
+          const files = await installer.install({ categoryId: hit.categoryId, modName: hit.name, fileRef: hit.fileRef });
+          return library.add({
+            categoryId: hit.categoryId, name: hit.name, styleLabel: hit.styleLabel,
+            fileRef: hit.fileRef, preview: hit.preview, files,
+          }).id;
         }
+        if (entry.kind === 'embedded') {
+          if (entry.fp && fpIndex.has(entry.fp)) return fpIndex.get(entry.fp); // already on disk
+          if (!bundle) { errors.push(`${entry.name}: ${t('файл пресета недоступен')}`); return null; }
+          sendProgress({ type: 'stage', label: entry.name, stage: t('установка') });
+          const files = installer.installVpkBuffer(bundle.readMod(entry.file));
+          const rec = library.add({
+            categoryId: 'imported', name: entry.name, styleLabel: null,
+            fileRef: null, preview: null, files,
+          });
+          if (entry.fp) fpIndex.set(entry.fp, rec.id);
+          return rec.id;
+        }
+        errors.push(`${entry.name}: ${entry.reason || t('нет в файле')}`);
+        return null;
+      } catch (err) {
+        errors.push(`${entry.name}: ${String(err.message || err)}`);
+        return null;
+      }
+    };
+
+    const ids = [];
+    for (const entry of preset.wanted) {
+      if (entry.kind === 'pack') {
+        const memberIds = [];
+        for (const m of entry.members) { const r = await resolveEntry(m); if (r) memberIds.push(r); }
+        const built = packFromRecords(entry.name, memberIds);
+        if (built) ids.push(built.id); else ids.push(...memberIds);
+      } else {
+        const r = await resolveEntry(entry);
+        if (r) ids.push(r);
       }
     }
-    return errors.length ? { error: errors.join('\n') } : { ok: true };
+
+    preset.modIds = [...new Set(ids)];
+    delete preset.wanted;                       // resolved: it's an ordinary preset now
+    if (preset.source) preset.source.file = null;
+    library.save();
+    if (stash) { try { fs.rmSync(stash, { force: true }); } catch { /* noop */ } }
+
+    errors.push(...applyPreset(preset));
+    afterDeployMaster();
+    sendProgress({ type: 'done', label: preset.name });
+    return { ok: true, installed: preset.modIds.length, errors };
   });
 
   // ----- misc -----

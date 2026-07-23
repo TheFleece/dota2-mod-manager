@@ -739,6 +739,18 @@ class Installer {
     return results;
   }
 
+  // Install a VPK handed over as bytes (a mod embedded in a shared preset). The index is
+  // parsed first: whatever a stranger put in that archive, only something that really is a
+  // VPK ever reaches the game folder, and the slot name is ours, never theirs.
+  installVpkBuffer(buf) {
+    if (!listVpkPaths(buf).length) throw new Error(t('Пустой VPK'));
+    const lang = this.langFolder();
+    fs.mkdirSync(lang, { recursive: true });
+    const pakName = this.allocatePak(this.usedPakNames(), false);
+    this.writeInto(buf, path.join(lang, pakName));
+    return [{ root: 'lang', relPath: pakName }];
+  }
+
   // A content-derived display name for a lang VPK (hero / set / kind), or null if the
   // content isn't recognisable — used to name imported files instead of a bare "pakNN".
   displayNameForFile(relPath) {

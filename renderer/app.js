@@ -1914,6 +1914,8 @@ document.addEventListener('dragenter', (e) => {
   e.preventDefault();
   if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
     dragDepth++;
+    // the hint has to say what THIS tab takes, since the two tabs take different files
+    document.body.dataset.drop = ['library', 'presets'].includes(state.view) ? state.view : 'none';
     document.body.classList.add('dropping');
   }
 });
@@ -1923,18 +1925,18 @@ document.addEventListener('dragleave', () => {
     document.body.classList.remove('dropping');
   }
 });
-document.addEventListener('drop', async (e) => {
-  e.preventDefault();
-  dragDepth = 0;
-  document.body.classList.remove('dropping');
-  const dropped = [...(e.dataTransfer?.files || [])];
-  if (!dropped.length) return;
-  // A dropped folder has no extension and no type — the main process walks it for .vpk
-  // files, which is how a whole unzipped Skinchanger pack can be dropped in at once.
-  const isFolder = (f) => !f.type && !/\.[a-z0-9]+$/i.test(f.name || '');
-  const wanted = dropped.filter((f) => /\.(vpk|zip)$/i.test(f.name || '') || isFolder(f));
+// A dropped folder has no extension and no type — the main process walks it for .vpk
+// files, which is how a whole unzipped Skinchanger pack can be dropped in at once.
+const isFolderFile = (f) => !f.type && !/\.[a-z0-9]+$/i.test(f.name || '');
+
+// Library tab: mod files, an archive of them, or a folder to scan.
+async function dropMods(dropped) {
+  const wanted = dropped.filter((f) => /\.(vpk|zip)$/i.test(f.name || '') || isFolderFile(f));
   if (!wanted.length) {
-    toast(L`Импортировать можно .vpk файлы, .zip или папку с ними`, 'warn');
+    const hint = dropped.some((f) => /\.d2mm$/i.test(f.name || ''))
+      ? L`Это пресет — открой его во вкладке «Пресеты»`
+      : L`Импортировать можно .vpk файлы, .zip или папку с ними`;
+    toast(hint, 'warn', 5000);
     return;
   }
   // prefer real on-disk paths (lets the importer pick up sibling _NNN parts too)
@@ -1944,7 +1946,7 @@ document.addEventListener('drop', async (e) => {
     return;
   }
   // fallback: some setups don't expose a path for dropped files — send the raw bytes
-  const files = wanted.filter((f) => !isFolder(f));
+  const files = wanted.filter((f) => !isFolderFile(f));
   if (!files.length) { toast(L`Не удалось прочитать перетащенную папку`, 'error'); return; }
   try {
     const items = await Promise.all(files.map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
@@ -1952,6 +1954,34 @@ document.addEventListener('drop', async (e) => {
   } catch {
     toast(L`Не удалось прочитать перетащенные файлы`, 'error');
   }
+}
+
+// Presets tab: shared preset files only.
+async function dropPresets(dropped) {
+  const file = dropped.find((f) => /\.d2mm$/i.test(f.name || ''));
+  if (!file) {
+    const hint = dropped.some((f) => /\.(vpk|zip)$/i.test(f.name || '') || isFolderFile(f))
+      ? L`Это мод — перетащи его во вкладку «Библиотека»`
+      : L`Сюда можно перетащить файл пресета .d2mm`;
+    toast(hint, 'warn', 5000);
+    return;
+  }
+  let p = null;
+  try { p = window.api.mods.pathForFile(file); } catch { /* no path for this drop */ }
+  if (!p) { toast(L`Не удалось прочитать файл пресета`, 'error'); return; }
+  handlePresetImport(await window.api.presets.importFile(p));
+}
+
+document.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove('dropping');
+  const dropped = [...(e.dataTransfer?.files || [])];
+  if (!dropped.length) return;
+  // each tab accepts its own kind of file, so a drop is never ambiguous
+  if (state.view === 'presets') return dropPresets(dropped);
+  if (state.view === 'library') return dropMods(dropped);
+  toast(L`Моды перетаскивай в «Библиотеку», пресеты — в «Пресеты»`, 'warn', 5000);
 });
 
 async function bulkToggle(installed, enabled) {
@@ -1984,6 +2014,102 @@ async function bulkSetEnabled(enabled) {
 
 // ===== Presets =====
 
+// Pre-flight for sharing: shows what travels as a catalog reference (free) and what has to
+// go in as bytes, so a 190 MB file is a choice and not a surprise. Returns the export
+// options, or null if cancelled.
+function shareDialog(plan) {
+  const heavy = [];
+  for (const e of plan.entries) {
+    if (e.kind === 'embedded') heavy.push(e);
+    for (const m of e.members || []) if (m.kind === 'embedded') heavy.push(m);
+  }
+  const count = (kind) => plan.entries.reduce((n, e) => n
+    + (e.kind === kind ? 1 : 0)
+    + (e.members || []).filter((m) => m.kind === kind).length, 0);
+  const refs = count('catalog');
+  const gone = count('missing');
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-box share-box">
+        <div class="share-title">${L`Поделиться пресетом «${plan.name}»`}</div>
+        <div class="share-line">
+          <span class="ms">link</span>
+          <div><b>${refs}</b> ${plural(refs, 'мод из каталога', 'мода из каталога', 'модов из каталога')}
+          <span class="share-hint">${L`уедут ссылками, почти не весят`}</span></div>
+        </div>
+        ${heavy.length ? `
+          <div class="share-line">
+            <span class="ms">inventory_2</span>
+            <div><b>${heavy.length}</b> ${plural(heavy.length, 'свой мод', 'своих мода', 'своих модов')}
+            <span class="share-hint">${L`нет в каталоге, поедут файлом целиком`}</span></div>
+          </div>
+          <div class="share-list">
+            ${heavy.map((e) => `
+              <label class="share-item">
+                <input type="checkbox" class="lib-check" data-skip="${esc(e.key)}" checked>
+                <span class="share-item-name">${esc(e.name)}</span>
+                <span class="share-item-size">${fmtMB(e.size)} ${L`МБ`}</span>
+              </label>`).join('')}
+          </div>` : ''}
+        ${gone ? `<div class="share-line muted"><span class="ms">block</span><div>${gone} ${plural(gone, 'мод не получится передать', 'мода не получится передать', 'модов не получится передать')}</div></div>` : ''}
+        <input class="input" id="shareAuthor" placeholder="${L`Твой ник (необязательно)`}" maxlength="80" style="margin-top:12px">
+        <input class="input" id="shareNote" placeholder="${L`Пара слов о сборке (необязательно)`}" maxlength="200" style="margin-top:8px">
+        <div class="share-total">${L`Размер файла:`} <b id="shareSize"></b></div>
+        <div class="confirm-actions">
+          <button class="btn" data-c="no">${L`Отмена`}</button>
+          <button class="btn btn-primary" data-c="yes"><span class="ms">save</span>${L`Сохранить файл`}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const boxes = [...overlay.querySelectorAll('[data-skip]')];
+    const paintSize = () => {
+      const bytes = heavy.reduce((s, e, i) => s + (boxes[i]?.checked ? e.size : 0), 0);
+      overlay.querySelector('#shareSize').textContent = bytes > 512 * 1024
+        ? `~${fmtMB(bytes)} ${L`МБ`}`
+        : L`несколько КБ`;
+    };
+    boxes.forEach((b) => b.addEventListener('change', paintSize));
+    paintSize();
+
+    const done = (v) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(null); });
+    overlay.querySelector('[data-c="no"]').addEventListener('click', () => done(null));
+    overlay.querySelector('[data-c="yes"]').addEventListener('click', () => done({
+      skip: boxes.filter((b) => !b.checked).map((b) => b.dataset.skip),
+      author: overlay.querySelector('#shareAuthor').value.trim(),
+      note: overlay.querySelector('#shareNote').value.trim(),
+    }));
+    const onKey = (e) => { if (e.key === 'Escape') done(null); };
+    document.addEventListener('keydown', onKey);
+  });
+}
+
+// a received preset that hasn't been installed yet
+function sharedPresetCardHtml(p) {
+  const s = p.status || { installed: 0, download: 0, embedded: 0, unavailable: [] };
+  const total = s.installed + s.download + s.embedded + s.unavailable.length;
+  const bits = [];
+  if (s.installed) bits.push(L`${s.installed} уже стоят`);
+  if (s.download) bits.push(L`${s.download} скачать из каталога`);
+  if (s.embedded) bits.push(L`${s.embedded} внутри файла`);
+  return `
+    <div class="preset-head">
+      <div class="preset-name">${esc(p.name)}</div>
+      <span class="lib-tag">${L`получен`}${p.source?.author ? ` · ${esc(p.source.author)}` : ''}</span>
+      <span style="font-size:12px;color:var(--text-muted)">${total} ${plural(total, 'мод', 'мода', 'модов')}</span>
+      <button class="btn btn-sm btn-primary" data-resolve="${p.id}"><span class="ms">download</span>${L`Установить`}</button>
+      <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
+    </div>
+    ${p.source?.note ? `<div class="preset-note">${esc(p.source.note)}</div>` : ''}
+    <div class="preset-mods">${bits.join(' · ') || L`нечего устанавливать`}</div>
+    ${s.unavailable.length ? `
+      <div class="preset-warn"><span class="ms">warning</span>${L`Не найдены ни у тебя, ни в файле:`} ${esc(s.unavailable.slice(0, 5).join(', '))}${s.unavailable.length > 5 ? '…' : ''}</div>` : ''}`;
+}
+
 async function renderPresets() {
   const presets = await window.api.presets.list();
   const { installed } = await window.api.mods.list();
@@ -1992,11 +2118,12 @@ async function renderPresets() {
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
     <div style="color:var(--text-muted);font-size:13px;margin-bottom:14px">
-      ${L`Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные.`}
+      ${L`Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.`}
     </div>
     <div class="preset-new">
       <input class="input" id="presetName" placeholder="${L`Название пресета (напр. «Анимешный», «Минимал»)`}">
       <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>${L`Сохранить текущее состояние`}</button>
+      <button class="btn" id="importPresetBtn"><span class="ms">upload_file</span>${L`Открыть .d2mm`}</button>
     </div>
     <div id="presetList">
       ${presets.length ? '' : `<div class="empty-note">${L`Пресетов пока нет`}</div>`}
@@ -2005,19 +2132,23 @@ async function renderPresets() {
 
   const list = $('#presetList');
   presets.forEach((p, i) => {
-    const names = p.modIds.map((id) => byId.get(id)?.name).filter(Boolean);
     const card = document.createElement('div');
-    card.className = 'preset-card';
+    card.className = `preset-card ${p.wanted ? 'shared' : ''}`;
     card.style.setProperty('--i', i);
-    card.innerHTML = `
-      <div class="preset-head">
-        <div class="preset-name">${esc(p.name)}</div>
-        <span style="font-size:12px;color:var(--text-muted)">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
-        <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
-        <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
-      </div>
-      <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>
-    `;
+    if (p.wanted) {
+      card.innerHTML = sharedPresetCardHtml(p);
+    } else {
+      const names = p.modIds.map((id) => byId.get(id)?.name).filter(Boolean);
+      card.innerHTML = `
+        <div class="preset-head">
+          <div class="preset-name">${esc(p.name)}</div>
+          <span style="font-size:12px;color:var(--text-muted)">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
+          <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
+          <button class="btn btn-sm" data-share="${p.id}" title="${L`Сохранить пресет файлом, чтобы отправить другому`}"><span class="ms">ios_share</span>${L`Поделиться`}</button>
+          <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
+        </div>
+        <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>`;
+    }
     list.appendChild(card);
   });
 
@@ -2028,6 +2159,7 @@ async function renderPresets() {
     toast(L`Пресет «${name}» сохранён`);
     renderPresets();
   });
+  $('#importPresetBtn').addEventListener('click', async () => handlePresetImport(await window.api.presets.importDialog()));
 
   list.querySelectorAll('[data-apply]').forEach((b) => {
     b.addEventListener('click', async () => {
@@ -2035,6 +2167,32 @@ async function renderPresets() {
       if (r.error) toast(r.error, 'error', 6000);
       else toast(L`Пресет применён`);
       refreshInstalledIndex();
+    });
+  });
+  list.querySelectorAll('[data-share]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const plan = await window.api.presets.exportPlan(b.dataset.share);
+      if (plan.error) { toast(plan.error, 'error', 6000); return; }
+      if (!plan.entries.length) { toast(L`В пресете нет модов`, 'warn'); return; }
+      const opts = await shareDialog(plan);
+      if (!opts) return;
+      const r = await window.api.presets.exportFile(b.dataset.share, opts);
+      if (r.cancelled) return;
+      if (r.error) toast(r.error, 'error', 6000);
+      else toast(L`Пресет сохранён · ${fmtMB(r.size)} МБ`);
+    });
+  });
+  list.querySelectorAll('[data-resolve]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      const r = await window.api.presets.resolve(b.dataset.resolve);
+      if (r.error) toast(r.error, 'error', 7000);
+      else {
+        toast(L`Установлено и применено: ${r.installed} ${plural(r.installed, 'мод', 'мода', 'модов')}`);
+        for (const err of (r.errors || []).slice(0, 3)) toast(err, 'warn', 7000);
+      }
+      await refreshInstalledIndex();
+      renderPresets();
     });
   });
   list.querySelectorAll('[data-pdel]').forEach((b) => {
@@ -2045,6 +2203,14 @@ async function renderPresets() {
       renderPresets();
     });
   });
+}
+
+async function handlePresetImport(r) {
+  if (!r || r.cancelled) return;
+  if (r.error) { toast(r.error, 'error', 6000); return; }
+  toast(L`Пресет «${r.preset.name}» добавлен — нажми «Установить»`);
+  if (state.view !== 'presets') switchView('presets');
+  else renderPresets();
 }
 
 // ===== Tools =====

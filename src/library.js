@@ -113,7 +113,9 @@ class Library {
 
   savePreset(name) {
     const enabledIds = this.data.installed.filter((m) => m.enabled).map((m) => m.id);
-    const existing = this.data.presets.find((p) => p.name === name);
+    // never fold today's state into a shared preset waiting to be installed — same name,
+    // completely different thing
+    const existing = this.data.presets.find((p) => p.name === name && !p.wanted);
     if (existing) {
       existing.modIds = enabledIds;
       existing.updatedAt = Date.now();
@@ -121,6 +123,28 @@ class Library {
       this.data.presets.push({ id: crypto.randomUUID(), name, modIds: enabledIds, updatedAt: Date.now() });
     }
     this.save();
+  }
+
+  // A preset that arrived as a .d2mm and hasn't been installed yet: it holds the sender's
+  // wish list (`wanted`) instead of local mod ids, plus where the file is stashed.
+  addSharedPreset({ name, note, author, wanted, sourceFile }) {
+    const preset = {
+      id: crypto.randomUUID(),
+      name,
+      modIds: [],
+      updatedAt: Date.now(),
+      wanted,
+      source: { note: note || '', author: author || '', file: sourceFile || null, importedAt: Date.now() },
+    };
+    this.data.presets.push(preset);
+    this.save();
+    return preset;
+  }
+
+  updatePreset(id, fields) {
+    const p = this.getPreset(id);
+    if (p) { Object.assign(p, fields); this.save(); }
+    return p;
   }
 
   deletePreset(presetId) {

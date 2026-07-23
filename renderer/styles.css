@@ -1063,6 +1063,34 @@ input:-webkit-autofill, input:-webkit-autofill:focus {
 .preset-name { font-weight: 700; font-size: 15px; flex: 1; font-family: var(--font-head); }
 .preset-mods { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
 
+/* a preset received from someone else, not installed yet */
+.preset-card.shared { border-color: var(--primary); background: var(--primary-dim); }
+.preset-note { font-size: 12.5px; color: var(--text); opacity: 0.85; margin-top: 8px; font-style: italic; }
+.preset-warn {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 9px; font-size: 12px; color: var(--warning);
+}
+.preset-warn .ms { font-size: 16px; }
+
+/* share dialog: what travels as a link and what as bytes */
+.share-box { width: min(520px, 92vw); text-align: left; }
+.share-title { font-family: var(--font-head); font-weight: 700; font-size: 16px; margin-bottom: 14px; }
+.share-line { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; margin-bottom: 9px; }
+.share-line .ms { font-size: 19px; color: var(--primary-soft); flex-shrink: 0; }
+.share-line.muted, .share-line.muted .ms { color: var(--text-muted); }
+.share-hint { display: block; color: var(--text-muted); font-size: 11.5px; margin-top: 1px; }
+.share-list {
+  max-height: 168px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-xs);
+  padding: 5px; margin: 4px 0 6px 29px;
+}
+.share-item { display: flex; align-items: center; gap: 9px; padding: 5px 7px; border-radius: var(--radius-xs); cursor: pointer; }
+.share-item:hover { background: var(--surface-hover); }
+.share-item-name { flex: 1; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-item-size { font-size: 11.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.share-total { font-size: 13px; color: var(--text-muted); margin-top: 14px; }
+.share-total b { color: var(--text); }
+
 /* ============ Tools / Guides ============ */
 .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
 .tool-card {
@@ -1575,7 +1603,7 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
   * { transition: none !important; animation: none !important; }
 }
 
-/* drag & drop import hint (localized via <html lang>) */
+/* drag & drop hint — each tab takes its own kind of file (localized via <html lang>) */
 body.dropping::after {
   content: 'Drop to import .vpk into your library';
   position: fixed;
@@ -1596,6 +1624,11 @@ body.dropping::after {
 html[lang="ru"] body.dropping::after {
   content: 'Отпусти, чтобы импортировать .vpk в библиотеку';
 }
+/* per-tab overrides (kept last so they win over the localized base rule) */
+body.dropping[data-drop="presets"]::after { content: 'Drop a .d2mm preset file here'; }
+body.dropping[data-drop="none"]::after { content: 'Mods go to the Library tab, presets to the Presets tab'; }
+html[lang="ru"] body.dropping[data-drop="presets"]::after { content: 'Отпусти файл пресета .d2mm'; }
+html[lang="ru"] body.dropping[data-drop="none"]::after { content: 'Моды — во вкладку «Библиотека», пресеты — во вкладку «Пресеты»'; }
 
 /* ============ Language picker (first launch) ============ */
 .lang-pick-overlay {
