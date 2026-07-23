@@ -128,6 +128,13 @@ app.whenReady().then(async () => {
     diag('legacy pak migration skipped: ' + e.message);
   }
 
+  // fold imports that predate single-file merging (pakNN_dir.vpk + pakNN_000.vpk)
+  try {
+    installer.mergeMultiPartRecords(library);
+  } catch (e) {
+    diag('multi-part merge skipped: ' + e.message);
+  }
+
   registerIpc();
   createWindow();
   diag('createWindow done');
@@ -174,7 +181,7 @@ function registerImportResults(results) {
         .filter((o) => conflictingPaths(own, installer.installedContentPaths(o)).length > 0)
         .map((o) => o.name);
     } catch { /* ignore */ }
-    imported.push({ name: rec.name, relPath: r.files[0].relPath, conflicts });
+    imported.push({ name: rec.name, relPath: r.files[0].relPath, merged: r.merged || 0, conflicts });
   }
   if (imported.length && installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
   return { imported, errors: results.filter((r) => r.error) };
@@ -361,9 +368,20 @@ function registerIpc() {
 
   ipcMain.handle('mods:importDialog', async () => {
     const res = await dialog.showOpenDialog(win, {
-      title: t('Выбери .vpk файлы модов'),
+      title: t('Выбери .vpk файлы модов или .zip с ними'),
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: t('VPK моды'), extensions: ['vpk'] }],
+      filters: [{ name: t('Моды (.vpk, .zip)'), extensions: ['vpk', 'zip'] }],
+    });
+    if (res.canceled || !res.filePaths.length) return { cancelled: true };
+    return importVpkPaths(res.filePaths);
+  });
+
+  // folder picker — Windows can't offer files and folders in one dialog, so a pack that
+  // unzipped to a whole game tree (Skinchanger) gets its own entry point
+  ipcMain.handle('mods:importFolderDialog', async () => {
+    const res = await dialog.showOpenDialog(win, {
+      title: t('Выбери папку с модами'),
+      properties: ['openDirectory'],
     });
     if (res.canceled || !res.filePaths.length) return { cancelled: true };
     return importVpkPaths(res.filePaths);
@@ -425,7 +443,10 @@ function registerIpc() {
     });
     let slots = 0;
     try { slots = installer.usedModSlots(); } catch { /* no game path */ }
-    return { installed, external, slots, slotCeil: 98 };
+    // mods that overwrite each other's files — surfaced as a warning in the library
+    let conflicts = [];
+    try { conflicts = installer.libraryConflicts(installed); } catch { /* best-effort */ }
+    return { installed, external, slots, slotCeil: 98, conflicts };
   });
 
   // ----- launch + master mods switch -----

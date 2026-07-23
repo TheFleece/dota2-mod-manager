@@ -5,13 +5,18 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, readVpkIndexFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
 const { t } = require('./i18n');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 // The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
 // Dota2PornFx cart zips is a merge-order hint for VPKMerge, not a valid install name.
 const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-attack', 'hero-items', 'optimization'];
+
+// Merging a multi-volume import into one file holds the whole mod in memory once. Well
+// above any real skin pack (a Skinchanger export is ~70 MB), but a multi-GB set is left
+// in its original volumes rather than risking the allocation.
+const MERGE_SIZE_CAP = 1200 * 1024 * 1024;
 
 const FONTS_SUBDIR = ['dota', 'panorama', 'fonts'];
 const CURSOR_SUBDIR = ['dota', 'resource', 'cursor'];
@@ -41,9 +46,24 @@ function fileUrl(categoryId, fileRef) {
 // Drop them so only genuine same-asset clashes warn.
 const STOCK_CONTENT_RE = /^(?:materials\/default\/|materials\/particle\/basic_|materials\/models\/cubemaps\/|particles\/(?:models\/)?basic_|models\/(?:dev|nomodel)\/)/;
 
-// drops stock/filler keys from a Map<path, crc> (in place)
-function dropStockPaths(paths) {
-  for (const p of paths.keys()) if (STOCK_CONTENT_RE.test(p)) paths.delete(p);
+// Whole-game tables and tool branding that packaging tools bake into EVERY export.
+// Dota 2 Skinchanger, for one, ships a full 47 MB scripts/items/items_game.txt plus the
+// localization files, its loadout stylesheets, its logo strip and a steam-id watermark in
+// every single pack it builds. Two packs for two different heroes therefore always differ
+// on items_game.txt — which made the app announce "Abaddon conflicts with Elder Titan".
+// They don't: the skins live in per-hero asset paths, and these files are interchangeable
+// copies of the same table, so whichever one the game loads first serves both mods.
+const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
+  'scripts/items/items_game(?:\\.txt)?"?$',            // the game's whole item table
+  'resource/localization/',                            // full dota_<lang>.txt copies
+  'panorama/styles/(?:hero_slot_item_picker_loadout|ui_econ_item)\\.vcss_c"?$',
+  'panorama/images/(?:ds|tg|tt|wb|yu|remove|header_credits|footer_credits)[^/]*$',
+  '(?:models/heroes|panorama)/\\d{8,}\\.vxml_c"?$',    // <steam id>.vxml_c watermark
+].join('|') + ')');
+
+// drops stock/filler and shared tool-table keys from a Map<path, crc> (in place)
+function dropSharedPaths(paths) {
+  for (const p of paths.keys()) if (STOCK_CONTENT_RE.test(p) || GLOBAL_TABLE_RE.test(p)) paths.delete(p);
   return paths;
 }
 
@@ -81,6 +101,7 @@ class Installer {
     this.getGamePath = getGamePath;
     this.getLangSuffix = getLangSuffix;
     this.onProgress = onProgress || (() => {});
+    this._pathCache = new Map(); // "<abs>|<size>|<mtime>" -> Map<path, crc>
   }
 
   langFolder() {
@@ -432,7 +453,7 @@ class Installer {
     const lower = localFile.toLowerCase();
     if (lower.endsWith('.vpk')) {
       for (const [p, crc] of listVpkPathCrcsFile(localFile)) out.set(p, crc);
-      return dropStockPaths(out);
+      return dropSharedPaths(out);
     }
     if (!lower.endsWith('.zip')) return out;
     const zip = new AdmZip(localFile);
@@ -455,7 +476,20 @@ class Installer {
         out.set((parts.length > 1 ? parts.slice(1).join('/') : rel).toLowerCase(), -1);
       }
     }
-    return dropStockPaths(out);
+    return dropSharedPaths(out);
+  }
+
+  // Path->crc index of one installed VPK, memoised on (size, mtime). Scanning the whole
+  // library for conflicts re-reads the same files on every render otherwise.
+  vpkContentPaths(abs) {
+    const st = fs.statSync(abs);
+    const key = `${abs}|${st.size}|${st.mtimeMs}`;
+    const hit = this._pathCache.get(key);
+    if (hit) return hit;
+    const map = listVpkPathCrcsFile(abs);
+    if (this._pathCache.size > 200) this._pathCache.clear();
+    this._pathCache.set(key, map);
+    return map;
   }
 
   // Game paths of an installed library record, read from disk, mapped to their VPK CRC.
@@ -467,15 +501,50 @@ class Installer {
       if (f.root !== 'lang') continue;
       if (/\.vpk$/i.test(f.relPath)) {
         if (!/_dir\.vpk$/i.test(f.relPath)) continue;
-        const abs = path.join(lang, f.relPath);
+        // a disabled mod keeps its bytes under .off/.moff — still worth comparing
+        const base = path.join(lang, f.relPath);
+        const abs = ['', '.off', MASTER_OFF].map((s) => base + s).find((p) => fs.existsSync(p));
+        if (!abs) continue;
         try {
-          if (fs.existsSync(abs)) for (const [p, crc] of listVpkPathCrcsFile(abs)) out.set(p, crc);
+          for (const [p, crc] of this.vpkContentPaths(abs)) out.set(p, crc);
         } catch { /* unreadable — ignore */ }
       } else {
         out.set(f.relPath.replace(/\\/g, '/').toLowerCase(), -1);
       }
     }
-    return dropStockPaths(out);
+    return dropSharedPaths(out);
+  }
+
+  /**
+   * Every pair of currently-enabled mods that fights over the same game files. Paths both
+   * sides provide byte-identically, engine filler and shared tool tables are already out
+   * (see dropSharedPaths), so what survives is a real "only one of these will show" clash.
+   * @param {Array<object>} records library records
+   * @returns {Array<{a:{id,name}, b:{id,name}, count:number, summary:string}>}
+   */
+  libraryConflicts(records) {
+    const live = (records || []).filter((r) => r.enabled && (r.files || []).some((f) => f.root === 'lang'));
+    const paths = [];
+    for (const rec of live) {
+      try {
+        const own = this.installedContentPaths(rec);
+        if (own.size) paths.push({ rec, own });
+      } catch { /* no game path / unreadable — skip */ }
+    }
+    const out = [];
+    for (let i = 0; i < paths.length; i++) {
+      for (let j = i + 1; j < paths.length; j++) {
+        const overlap = conflictingPaths(paths[i].own, paths[j].own);
+        if (!overlap.length) continue;
+        out.push({
+          a: { id: paths[i].rec.id, name: paths[i].rec.name },
+          b: { id: paths[j].rec.id, name: paths[j].rec.name },
+          count: overlap.length,
+          summary: analyzeVpkPaths(overlap).heroes.map(describeHero).join('; '),
+        });
+      }
+    }
+    return out.sort((x, y) => y.count - x.count);
   }
 
   // Which of the given (enabled) records overlap with the candidate download
@@ -502,12 +571,88 @@ class Installer {
 
   // ---------- import of user-provided vpk files ----------
 
-  // A VPK mod can be one self-contained "<base>_dir.vpk", or a multi-part set:
-  // "<base>_dir.vpk" (index) + "<base>_000.vpk", "<base>_001.vpk"... (data).
-  // Dota2Changer packs ship as pak01_dir.vpk + pak01_000.vpk, so importing must
-  // rename the whole set together (pakXX_dir.vpk + pakXX_000.vpk) or the game
-  // can't find the data archives.
+  // Import whatever the user pointed at: .vpk files, a .zip, or a folder to walk.
+  // Returns one result per mod: { source, name, files[], merged? } or { source, error }.
   importVpks(paths) {
+    const staged = [];
+    try {
+      const { files, errors } = this.expandImportInputs(paths || [], staged);
+      return [...errors, ...this.importVpkFiles(files)];
+    } finally {
+      for (const dir of staged) { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* noop */ } }
+    }
+  }
+
+  // Every .vpk under a dropped folder. Skinchanger packs unzip to a whole game tree
+  // (<pack>\game\Dota2SkinChanger\pak01_*.vpk), so the file we want sits a few levels in.
+  scanVpkTree(root, depth = 0) {
+    const out = [];
+    if (depth > 6) return out;
+    let names = [];
+    try { names = fs.readdirSync(root); } catch { return out; }
+    for (const f of names) {
+      const full = path.join(root, f);
+      let st;
+      try { st = fs.statSync(full); } catch { continue; }
+      if (st.isDirectory()) out.push(...this.scanVpkTree(full, depth + 1));
+      else if (/\.vpk$/i.test(f)) out.push(full);
+    }
+    return out;
+  }
+
+  /**
+   * Turn whatever the user dropped or picked into a flat list of .vpk paths: a folder is
+   * walked, a .zip is unpacked to a temp dir (keeping its layout so multi-part sets stay
+   * side by side), a plain file passes through. Temp dirs are appended to `staged` for the
+   * caller to delete once the import has read them.
+   * @returns {{ files: string[], errors: Array<{source:string, error:string}> }}
+   */
+  expandImportInputs(paths, staged) {
+    const files = [];
+    const errors = [];
+    for (const src of paths) {
+      const label = path.basename(src);
+      let st = null;
+      try { st = fs.statSync(src); } catch { /* gone or unreadable */ }
+
+      if (st && st.isDirectory()) {
+        const found = this.scanVpkTree(src);
+        if (found.length) files.push(...found);
+        else errors.push({ source: label, error: t('в папке нет .vpk файлов') });
+        continue;
+      }
+      if (/\.zip$/i.test(src)) {
+        const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-zip-'));
+        staged.push(tmp);
+        let found = 0;
+        try {
+          for (const entry of new AdmZip(src).getEntries()) {
+            if (entry.isDirectory) continue;
+            const rel = entry.entryName.replace(/\\/g, '/');
+            if (!/\.vpk$/i.test(rel) || rel.includes('..')) continue;
+            const dest = path.join(tmp, rel);
+            fs.mkdirSync(path.dirname(dest), { recursive: true });
+            fs.writeFileSync(dest, entry.getData());
+            files.push(dest);
+            found++;
+          }
+        } catch (err) {
+          errors.push({ source: label, error: String(err.message || err) });
+          continue;
+        }
+        if (!found) errors.push({ source: label, error: t('в архиве нет .vpk файлов') });
+        continue;
+      }
+      files.push(src);
+    }
+    return { files, errors };
+  }
+
+  // A VPK mod is either one self-contained "<base>_dir.vpk", or a multi-volume set:
+  // "<base>_dir.vpk" (index) + "<base>_000.vpk", "<base>_001.vpk"... (data). Skinchanger
+  // and Dota2Changer packs ship as the latter, so the volumes are grouped with their index
+  // and folded into a single file per mod on the way in.
+  importVpkFiles(paths) {
     const lang = this.langFolder();
     fs.mkdirSync(lang, { recursive: true });
     const used = this.usedPakNames();
@@ -554,13 +699,34 @@ class Installer {
         }
         const pakDir = this.allocatePak(used, false);        // pakXX_dir.vpk
         const newBase = pakDir.replace(/_dir\.vpk$/i, '');    // pakXX
+        // sibling data archives <base>_NNN.vpk that belong to this index
+        const partRe = new RegExp(`^${set.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_(\\d{3})\\.vpk$`, 'i');
+        const partFiles = fs.readdirSync(set.srcDir)
+          .map((f) => ({ f, m: f.match(partRe) }))
+          .filter((x) => x.m)
+          .sort((x, y) => x.m[1].localeCompare(y.m[1]));
+
+        // Multi-volume set (a Skinchanger pack is pak01_dir.vpk + pak01_000.vpk): fold the
+        // index and its volumes into ONE self-contained pakXX_dir.vpk. One file per mod is
+        // what the rest of the app assumes — enable/disable, export, packing and the folder
+        // sync all key off a single name, and a stray half-set left in the folder is exactly
+        // how a mod ends up half-loaded. Byte-for-byte copy stays the fallback.
+        const partsBytes = partFiles.reduce((s, x) => s + fs.statSync(path.join(set.srcDir, x.f)).size, 0);
+        if (partFiles.length && partsBytes <= MERGE_SIZE_CAP) {
+          try {
+            const archiveFor = (idx) => path.join(set.srcDir, `${set.base}_${String(idx).padStart(3, '0')}.vpk`);
+            this.writeInto(mergeVpkToSingle(dirSrc, archiveFor), path.join(lang, pakDir));
+            results.push({
+              source: `${set.base}_dir.vpk`, name: set.base, merged: partFiles.length + 1,
+              files: [{ root: 'lang', relPath: pakDir }],
+            });
+            continue;
+          } catch { /* unreadable index or missing volume — copy the set as it is */ }
+        }
+
         this.copyInto(dirSrc, path.join(lang, pakDir));
         const files = [{ root: 'lang', relPath: pakDir }];
-        // copy every sibling data archive <base>_NNN.vpk -> pakXX_NNN.vpk
-        const partRe = new RegExp(`^${set.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_(\\d{3})\\.vpk$`, 'i');
-        for (const f of fs.readdirSync(set.srcDir)) {
-          const m = f.match(partRe);
-          if (!m) continue;
+        for (const { f, m } of partFiles) {
           const partName = `${newBase}_${m[1]}.vpk`;
           this.copyInto(path.join(set.srcDir, f), path.join(lang, partName));
           files.push({ root: 'lang', relPath: partName });
@@ -577,20 +743,19 @@ class Installer {
   // content isn't recognisable — used to name imported files instead of a bare "pakNN".
   displayNameForFile(relPath) {
     try {
-      const buf = fs.readFileSync(path.join(this.langFolder(), relPath));
-      return nameFromAnalysis(analyzeVpkPaths(listVpkPaths(buf)));
+      return nameFromAnalysis(analyzeVpkPaths(listVpkPathsFile(path.join(this.langFolder(), relPath))));
     } catch { return null; }
   }
 
-  // Import dropped .vpk files given as raw bytes (used when the drop can't resolve a real
-  // on-disk path). Bytes are staged in a temp folder so the normal path-based importer
+  // Import dropped .vpk/.zip files given as raw bytes (used when the drop can't resolve a
+  // real on-disk path). Bytes are staged in a temp folder so the normal path-based importer
   // handles grouping of multi-part sets, then the temp folder is removed.
   importVpkBuffers(items) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-import-'));
     try {
       const paths = [];
       for (const it of items || []) {
-        if (!it || !/\.vpk$/i.test(it.name || '')) continue;
+        if (!it || !/\.(vpk|zip)$/i.test(it.name || '')) continue;
         const p = path.join(tmp, path.basename(it.name));
         fs.writeFileSync(p, Buffer.from(it.data));
         paths.push(p);
@@ -607,7 +772,7 @@ class Installer {
     const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
     if (!dir) return null;
     try {
-      const buf = fs.readFileSync(path.join(this.langFolder(), dir.relPath));
+      const buf = readVpkIndexFile(path.join(this.langFolder(), dir.relPath));
       const a = analyzeVpkPaths(listVpkPaths(buf));
       return { info: describeAnalysis(a), heroes: a.heroes.length, fp: fingerprintVpk(buf) };
     } catch { return null; }
@@ -755,6 +920,41 @@ class Installer {
     if (changed) library.save();
   }
 
+  // Imports made before multi-volume sets were folded on the way in still sit in the
+  // folder as pakNN_dir.vpk + pakNN_000.vpk. Fold them now so every managed mod is one
+  // file. Combined packs are left alone — their volumes are how deployPack writes them.
+  mergeMultiPartRecords(library) {
+    const lang = this.langFolder();
+    if (!fs.existsSync(lang)) return;
+    const onDisk = (relPath) => ['', '.off', MASTER_OFF]
+      .map((suf) => path.join(lang, relPath) + suf).find((p) => fs.existsSync(p));
+
+    let changed = false;
+    for (const rec of library.list()) {
+      if (rec.kind === 'pack') continue;
+      const dirRec = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+      const parts = (rec.files || []).filter((f) => f.root === 'lang' && /_\d{3}\.vpk$/i.test(f.relPath));
+      if (!dirRec || !parts.length) continue;
+      const dirAbs = onDisk(dirRec.relPath);
+      if (!dirAbs) continue;
+      try {
+        const base = dirRec.relPath.replace(/_dir\.vpk$/i, '');
+        const total = parts.reduce((s, f) => { const p = onDisk(f.relPath); return s + (p ? fs.statSync(p).size : 0); }, 0);
+        if (total > MERGE_SIZE_CAP) continue;
+        const merged = mergeVpkToSingle(dirAbs, (idx) => onDisk(`${base}_${String(idx).padStart(3, '0')}.vpk`));
+        // write beside the original and swap, so a failed write can't leave a mod truncated
+        fs.writeFileSync(dirAbs + '.merging', merged);
+        fs.renameSync(dirAbs + '.merging', dirAbs); // keeps whatever .off/.moff state it had
+        for (const f of parts) {
+          for (const suf of ['', '.off', MASTER_OFF]) fs.rmSync(path.join(lang, f.relPath) + suf, { force: true });
+        }
+        library.update(rec.id, { files: rec.files.filter((f) => !parts.includes(f)) });
+        changed = true;
+      } catch { /* missing or unreadable volume — leave the set as it is */ }
+    }
+    if (changed) this._pathCache.clear();
+  }
+
   // build a foreign VPK item, tagged and fingerprinted when it has a readable index
   vpkItem(abs, relPath, displayName, primary) {
     const item = {
@@ -763,7 +963,7 @@ class Installer {
       files: [{ root: 'lang', relPath: relPath.replace(/\.off$/i, '') }],
     };
     try {
-      const buf = fs.readFileSync(abs);
+      const buf = readVpkIndexFile(abs);
       const a = analyzeVpkPaths(listVpkPaths(buf));
       item.info = describeAnalysis(a);
       item.heroes = a.heroes.length;

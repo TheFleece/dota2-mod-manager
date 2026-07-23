@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('api', {
     checkConflicts: (payload) => ipcRenderer.invoke('mods:checkConflicts', payload),
     exportSingle: (id) => ipcRenderer.invoke('mods:exportSingle', id),
     importDialog: () => ipcRenderer.invoke('mods:importDialog'),
+    importFolderDialog: () => ipcRenderer.invoke('mods:importFolderDialog'),
     importPaths: (paths) => ipcRenderer.invoke('mods:importPaths', paths),
     importBuffers: (items) => ipcRenderer.invoke('mods:importBuffers', items),
     masterState: () => ipcRenderer.invoke('mods:masterState'),

@@ -22,8 +22,9 @@ const EN = {
   'Мод не найден': 'Mod not found',
   'Сохранить мод одним .vpk файлом': 'Save the mod as a single .vpk file',
   'VPK мод': 'VPK mod',
-  'Выбери .vpk файлы модов': 'Pick mod .vpk files',
-  'VPK моды': 'VPK mods',
+  'Выбери .vpk файлы модов или .zip с ними': 'Pick mod .vpk files, or a .zip holding them',
+  'Моды (.vpk, .zip)': 'Mods (.vpk, .zip)',
+  'Выбери папку с модами': 'Pick a folder with mods',
   'Нет _dir.vpk для разбора': 'No _dir.vpk to split',
   'В файле меньше двух героев — разбирать нечего': 'Fewer than two heroes in the file — nothing to split',
   'Совпадение с каталогом не найдено': 'No catalog match found',
@@ -47,6 +48,8 @@ const EN = {
   'У этого мода нет _dir.vpk — объединять нечего': 'This mod has no _dir.vpk — nothing to merge',
   'не .vpk файл': 'not a .vpk file',
   'нет {0}_dir.vpk рядом с data-частями': 'no {0}_dir.vpk next to the data parts',
+  'в папке нет .vpk файлов': 'no .vpk files in this folder',
+  'в архиве нет .vpk файлов': 'no .vpk files in this archive',
   'Курсор': 'Cursor',
 
   // ---- vpk.js (parse errors + content labels) ----

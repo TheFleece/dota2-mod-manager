@@ -65,6 +65,7 @@ const state = {
   libSearch: '',           // library-scoped search query
   masterOff: false,        // mods master switch state (all mods disabled at once)
   packsOpen: new Set(),    // ids of expanded pack cards
+  libConflicts: [],        // pairs of enabled mods that overwrite each other's files
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -1239,13 +1240,14 @@ function packRowHtml(rec, i, masterOff) {
   const members = rec.members || [];
   const onCount = members.filter((m) => m.enabled).length;
   const langDir = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+  const clash = conflictPartners(rec.id);
   return `
-    <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
+    <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''} ${clash.length ? 'conflict' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
       <input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать пак`}">
       <button class="pack-expand ${open ? 'open' : ''}" data-expand="${esc(rec.id)}" aria-expanded="${open}" aria-label="${L`Развернуть состав пака`}"><span class="ms">chevron_right</span></button>
       ${packThumbGridHtml(rec)}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">${L`Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}`}</span></div>
+        <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">${L`Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}`}</span>${clash.length ? ` <span class="lib-tag conflict" title="${esc(L`Меняет те же файлы, что и: ${clash.join(', ')}`)}"><span class="ms">warning</span>${L`конфликт`}</span>` : ''}</div>
         <div class="lib-meta">
           <span>${L`${onCount} из ${members.length} включено`}</span>
           <span>${langDir ? esc(langDir.relPath) : L`пусто`}</span>
@@ -1263,20 +1265,31 @@ function packRowHtml(rec, i, masterOff) {
     </div>`;
 }
 
+// names of the other enabled mods this one overwrites files of (empty = no clash)
+function conflictPartners(id) {
+  const out = [];
+  for (const c of state.libConflicts) {
+    if (c.a.id === id) out.push(c.b.name);
+    else if (c.b.id === id) out.push(c.a.name);
+  }
+  return out;
+}
+
 function normalRowHtml(rec, i, masterOff) {
   const selectable = !['fonts', 'cursors'].includes(rec.categoryId);
   const selected = state.librarySel.has(rec.id);
+  const clash = conflictPartners(rec.id);
   // own preview, else the catalog thumbnail if the file is recognised (so a matched
   // import shows an image right away, before it's even adopted)
   let prev = rec.preview ? previewUrl(rec.categoryId, rec.preview) : null;
   if (!prev && rec.match) { const cp = catalogPreviewFor(rec.match); if (cp) prev = previewUrl(rec.match[0].categoryId, cp); }
   const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
   return `
-    <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
+    <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''} ${clash.length ? 'conflict' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
       ${prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : '<div class="lib-thumb"></div>'}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${clash.length ? ` <span class="lib-tag conflict" title="${esc(L`Меняет те же файлы, что и: ${clash.join(', ')}`)}"><span class="ms">warning</span>${L`конфликт`}</span>` : ''}</div>
         <div class="lib-meta">
           <span>${esc(catName(rec.categoryId))}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
@@ -1513,6 +1526,12 @@ async function renderLibrary() {
   state.libExternal = externalAll;
   const matchedCount = installedAll.filter((r) => r.match).length + externalAll.filter((f) => f.match).length;
 
+  // mods fighting over the same game files: only one of each pair actually loads
+  state.libConflicts = res.conflicts || [];
+  const clashPairs = state.libConflicts;
+  const clashMods = new Set(clashPairs.flatMap((c) => [c.a.id, c.b.id])).size;
+  const shownPairs = clashPairs.slice(0, 3);
+
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Библиотека`}</h1></div>
     ${masterOff ? `
@@ -1525,6 +1544,17 @@ async function renderLibrary() {
         <span class="ms">library_add_check</span>
         <div class="banner-body"><b>${matchedCount}</b> ${plural(matchedCount, 'файл опознан', 'файла опознаны', 'файлов опознаны')}${L` как моды из каталога — привяжи, чтобы получить превью и управлять как обычными.`}</div>
         <button class="btn btn-sm btn-primary" id="adoptAllBtn"><span class="ms">library_add_check</span>${L`Привязать все`}</button>
+      </div>` : ''}
+    ${clashPairs.length && !masterOff ? `
+      <div class="lib-banner warn conflict-banner">
+        <span class="ms">warning</span>
+        <div class="banner-body">
+          <b>${clashMods}</b> ${plural(clashMods, 'мод конфликтует', 'мода конфликтуют', 'модов конфликтуют')}${L` — меняют одни и те же файлы игры. Загрузится только один из пары, выключи лишний.`}
+          <ul class="conflict-list">
+            ${shownPairs.map((c) => `<li>«<b>${esc(c.a.name)}</b>» ${L`и`} «<b>${esc(c.b.name)}</b>»<span class="conflict-count">${c.count} ${plural(c.count, 'общий файл', 'общих файла', 'общих файлов')}${c.summary ? ` · ${esc(c.summary)}` : ''}</span></li>`).join('')}
+            ${clashPairs.length > shownPairs.length ? `<li>${L`и ещё ${clashPairs.length - shownPairs.length}`}</li>` : ''}
+          </ul>
+        </div>
       </div>` : ''}
     ${nearLimit && !masterOff ? `
       <div class="lib-banner warn">
@@ -1541,6 +1571,7 @@ async function renderLibrary() {
       <span class="lib-stats">${installedAll.length} ${plural(installedAll.length, 'мод', 'мода', 'модов')} · ${enabledCount} ${L`вкл`} · ${slots}/${slotCeil} ${plural(slots, 'слот', 'слота', 'слотов')}</span>
       <div class="lib-toolbar-actions">
         <button class="btn btn-sm" id="importVpkBtn"><span class="ms">upload_file</span>${L`Импорт VPK`}</button>
+        <button class="btn btn-sm" id="importFolderBtn" title="${L`Импортировать все .vpk из папки — например из распакованного пака Dota 2 Skinchanger`}"><span class="ms">drive_folder_upload</span>${L`Импорт папки`}</button>
         <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>${L`Папка модов`}</button>
       </div>
     </div>
@@ -1774,6 +1805,7 @@ async function bindLibrary(external) {
   $('#enableAllBtn')?.addEventListener('click', () => bulkToggle(state.libRecords || [], true));
   $('#disableAllBtn')?.addEventListener('click', () => bulkToggle(state.libRecords || [], false));
   $('#importVpkBtn')?.addEventListener('click', async () => handleImportResult(await window.api.mods.importDialog()));
+  $('#importFolderBtn')?.addEventListener('click', async () => handleImportResult(await window.api.mods.importFolderDialog()));
   $('#openFolderBtn2')?.addEventListener('click', () => window.api.misc.openLangFolder());
 
   if (external.length) {
@@ -1855,6 +1887,12 @@ async function handleImportResult(r) {
   for (const e of r.errors || []) toast(`${e.source}: ${e.error}`, 'warn', 5000);
   const n = (r.imported || []).length;
   if (n) toast(L`Импортировано: ${n} ${plural(n, 'мод', 'мода', 'модов')}`);
+  // multi-volume packs (Skinchanger: pak01_dir.vpk + pak01_000.vpk) arrive as one file
+  const merged = (r.imported || []).filter((imp) => imp.merged > 1);
+  if (merged.length) {
+    const parts = merged.reduce((s, imp) => s + imp.merged, 0);
+    toast(L`${parts} ${plural(parts, 'файл склеен', 'файла склеены', 'файлов склеены')} в ${merged.length} ${plural(merged.length, 'мод', 'мода', 'модов')}`);
+  }
   for (const imp of r.imported || []) {
     if (imp.conflicts?.length) {
       toast(L`«${imp.name}» перекрывается с: ${imp.conflicts.slice(0, 2).join(', ')}${imp.conflicts.length > 2 ? '…' : ''}`, 'warn', 7000);
@@ -1889,21 +1927,27 @@ document.addEventListener('drop', async (e) => {
   e.preventDefault();
   dragDepth = 0;
   document.body.classList.remove('dropping');
-  const vpkFiles = [...(e.dataTransfer?.files || [])].filter((f) => /\.vpk$/i.test(f.name || ''));
-  if (!vpkFiles.length) {
-    if ((e.dataTransfer?.files || []).length) toast(L`Импортировать можно только .vpk файлы`, 'warn');
+  const dropped = [...(e.dataTransfer?.files || [])];
+  if (!dropped.length) return;
+  // A dropped folder has no extension and no type — the main process walks it for .vpk
+  // files, which is how a whole unzipped Skinchanger pack can be dropped in at once.
+  const isFolder = (f) => !f.type && !/\.[a-z0-9]+$/i.test(f.name || '');
+  const wanted = dropped.filter((f) => /\.(vpk|zip)$/i.test(f.name || '') || isFolder(f));
+  if (!wanted.length) {
+    toast(L`Импортировать можно .vpk файлы, .zip или папку с ними`, 'warn');
     return;
   }
   // prefer real on-disk paths (lets the importer pick up sibling _NNN parts too)
-  const paths = vpkFiles.map((f) => { try { return window.api.mods.pathForFile(f); } catch { return null; } })
-    .filter((p) => p && /\.vpk$/i.test(p));
-  if (paths.length === vpkFiles.length) {
+  const paths = wanted.map((f) => { try { return window.api.mods.pathForFile(f); } catch { return null; } }).filter(Boolean);
+  if (paths.length === wanted.length) {
     handleImportResult(await window.api.mods.importPaths(paths));
     return;
   }
   // fallback: some setups don't expose a path for dropped files — send the raw bytes
+  const files = wanted.filter((f) => !isFolder(f));
+  if (!files.length) { toast(L`Не удалось прочитать перетащенную папку`, 'error'); return; }
   try {
-    const items = await Promise.all(vpkFiles.map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
+    const items = await Promise.all(files.map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) })));
     handleImportResult(await window.api.mods.importBuffers(items));
   } catch {
     toast(L`Не удалось прочитать перетащенные файлы`, 'error');

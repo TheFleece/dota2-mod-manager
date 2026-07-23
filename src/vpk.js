@@ -13,6 +13,44 @@ function readCString(buf, pos) {
   return { str: buf.toString('utf-8', pos, end), next: end + 1 };
 }
 
+// A VPK tree stores "empty" as a single space, for the folder AND for the extension.
+// Only the folder case used to be handled, so an extension-less entry came out as
+// "name. " — Dota 2 Skinchanger writes a whole decoy tree of those, and every one of
+// them showed up as a bogus game path in analysis and conflict checks.
+function joinPath(folder, name, ext) {
+  const dir = folder === ' ' ? '' : folder + '/';
+  const suffix = ext === ' ' ? '' : '.' + ext;
+  return `${dir}${name}${suffix}`.toLowerCase();
+}
+
+/**
+ * Read only the header + directory tree of a *_dir.vpk off disk. A self-contained mod
+ * is tens of MB of payload sitting behind a few KB of index, and the index is all any
+ * of the listing/analysis/fingerprint helpers ever touch — so scanning a whole library
+ * never has to pull the payloads into memory.
+ * @param {string} filePath
+ * @returns {Buffer} header + tree — what every listing / analysis helper here parses
+ */
+function readVpkIndexFile(filePath) {
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    const head = Buffer.alloc(28);
+    const got = fs.readSync(fd, head, 0, 28, 0);
+    if (got < 12 || head.readUInt32LE(0) !== VPK_SIGNATURE) throw new Error(t('VPK: неверная сигнатура'));
+    const version = head.readUInt32LE(4);
+    const treeSize = head.readUInt32LE(8);
+    const headerSize = version === 2 ? 28 : 12;
+    const size = fs.fstatSync(fd).size;
+    if (got < headerSize || headerSize + treeSize > size) throw new Error(t('VPK: неверная сигнатура'));
+    const buf = Buffer.alloc(headerSize + treeSize);
+    head.copy(buf, 0, 0, headerSize);
+    fs.readSync(fd, buf, headerSize, treeSize, headerSize);
+    return buf;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
 /**
  * @param {Buffer} buf contents of a *_dir.vpk file
  * @returns {string[]} lowercased inner paths like "materials/water/water_ti10_000.vmat_c"
@@ -40,8 +78,7 @@ function listVpkPaths(buf) {
         // entry: crc(4) preloadBytes(2) archiveIndex(2) offset(4) length(4) terminator(2)
         const preloadBytes = buf.readUInt16LE(pos + 4);
         pos += 18 + preloadBytes;
-        const dir = folder.str === ' ' ? '' : folder.str + '/';
-        paths.push(`${dir}${name.str}.${ext.str}`.toLowerCase());
+        paths.push(joinPath(folder.str, name.str, ext.str));
       }
     }
   }
@@ -49,7 +86,7 @@ function listVpkPaths(buf) {
 }
 
 function listVpkPathsFile(filePath) {
-  return listVpkPaths(fs.readFileSync(filePath));
+  return listVpkPaths(readVpkIndexFile(filePath));
 }
 
 /**
@@ -81,8 +118,7 @@ function listVpkPathCrcs(buf) {
         const crc = buf.readUInt32LE(pos); // entry: crc(4) preloadBytes(2) archiveIndex(2) offset(4) length(4) terminator(2)
         const preloadBytes = buf.readUInt16LE(pos + 4);
         pos += 18 + preloadBytes;
-        const dir = folder.str === ' ' ? '' : folder.str + '/';
-        map.set(`${dir}${name.str}.${ext.str}`.toLowerCase(), crc);
+        map.set(joinPath(folder.str, name.str, ext.str), crc);
       }
     }
   }
@@ -90,7 +126,7 @@ function listVpkPathCrcs(buf) {
 }
 
 function listVpkPathCrcsFile(filePath) {
-  return listVpkPathCrcs(fs.readFileSync(filePath));
+  return listVpkPathCrcs(readVpkIndexFile(filePath));
 }
 
 // ---------- content analysis (which hero / equip slots a mod touches) ----------
@@ -243,10 +279,9 @@ function nameFromAnalysis(a) {
 const EMPTY = Buffer.alloc(0);
 const INLINE = 0x7fff; // archiveIndex meaning "data lives in the _dir file itself"
 
-// full inner path of a read entry, lowercased (folder " " means the root)
+// full inner path of a read entry, lowercased (" " means the root / no extension)
 function entryPath(en) {
-  const dir = en.folder === ' ' ? '' : en.folder + '/';
-  return `${dir}${en.name}.${en.ext}`.toLowerCase();
+  return joinPath(en.folder, en.name, en.ext);
 }
 
 // Read every entry of a _dir.vpk (following external _NNN archives) into a flat list
@@ -536,8 +571,7 @@ function listVpkEntries(buf) {
         const crc = buf.readUInt32LE(pos);
         const preloadBytes = buf.readUInt16LE(pos + 4);
         pos += 18 + preloadBytes;
-        const dir = folder.str === ' ' ? '' : folder.str + '/';
-        out.push({ path: `${dir}${name.str}.${ext.str}`.toLowerCase(), crc: crc >>> 0 });
+        out.push({ path: joinPath(folder.str, name.str, ext.str), crc: crc >>> 0 });
       }
     }
   }
@@ -546,7 +580,7 @@ function listVpkEntries(buf) {
 
 module.exports = {
   listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, listVpkEntries, mergeVpkToSingle, splitVpkByHero,
-  readVpkEntries, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
+  readVpkEntries, readVpkIndexFile, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
   fingerprintVpk, fingerprintEntries, fingerprintFiles,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
   describeHero, describeAnalysis, nameFromAnalysis,

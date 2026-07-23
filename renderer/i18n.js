@@ -26,6 +26,9 @@ window.EN_PLURAL = {
   'файлов': ['file', 'files'],
   'слотов': ['slot', 'slots'],
   'файлов опознаны': ['file recognized', 'files recognized'],
+  'модов конфликтуют': ['mod conflicts', 'mods conflict'],
+  'общих файлов': ['shared file', 'shared files'],
+  'файлов склеены': ['file merged', 'files merged'],
 };
 
 const EN = {
@@ -239,8 +242,21 @@ const EN = {
   'Импортировано: {0} {1}': 'Imported: {0} {1}',
   '«{0}» перекрывается с: {1}': '«{0}» overlaps with: {1}',
   '«{0}» перекрывается с: {1}{2}': '«{0}» overlaps with: {1}{2}',
-  'Импортировать можно только .vpk файлы': 'Only .vpk files can be imported',
+  '{0} {1} в {2} {3}': '{0} {1} into {2} {3}',
+  'Импорт папки': 'Import folder',
+  'Импортировать все .vpk из папки — например из распакованного пака Dota 2 Skinchanger':
+    'Import every .vpk in a folder — an unpacked Dota 2 Skinchanger pack, for instance',
+  'Импортировать можно .vpk файлы, .zip или папку с ними': 'You can import .vpk files, a .zip, or a folder with them',
   'Не удалось прочитать перетащенные файлы': 'Could not read the dropped files',
+  'Не удалось прочитать перетащенную папку': 'Could not read the dropped folder',
+
+  // ---------- conflicts ----------
+  'конфликт': 'conflict',
+  'Меняет те же файлы, что и: {0}': 'Changes the same files as: {0}',
+  ' — меняют одни и те же файлы игры. Загрузится только один из пары, выключи лишний.':
+    ' — they change the same game files. Only one of each pair loads, turn the other off.',
+  'и': 'and',
+  'и ещё {0}': 'and {0} more',
   'Включено': 'Enabled', 'Выключено': 'Disabled',
 
   // ---------- presets ----------
