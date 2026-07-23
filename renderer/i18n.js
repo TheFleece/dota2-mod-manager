@@ -305,8 +305,11 @@ const EN = {
   'Вставь ссылку на пресет (d2mm://preset/…)': 'Paste a preset link (d2mm://preset/…)',
   'Добавить': 'Add',
   'Ссылка скопирована': 'Link copied',
-  'Отправь эту строку — у получателя она откроется в менеджере.':
-    'Send this string — it opens in the manager on their side.',
+  'Вставь в чат — она кликабельная и откроет пресет в менеджере.':
+    'Paste it into a chat — it is clickable and opens the preset in the manager.',
+  'Прямая ссылка (чаты её не подсвечивают, но её можно вставить в «Вставить ссылку»):':
+    'Direct link (chats will not make it clickable, but it can be pasted into "Paste a link"):',
+  'Копировать прямую': 'Copy the direct one',
   'Копировать ещё раз': 'Copy again',
   'Готово': 'Done',
 

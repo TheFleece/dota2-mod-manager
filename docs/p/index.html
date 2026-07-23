@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Dota 2 Mod Manager — preset</title>
+<!--
+  Chat clients only turn http(s) into clickable links, never custom schemes, so a bare
+  d2mm:// link sits in Discord as dead text. This page is the clickable wrapper: it hands
+  the preset over to the app.
+
+  The preset code lives in the URL *fragment*. Browsers never send a fragment to the
+  server, so GitHub serves this page without ever seeing which mods anyone shares.
+-->
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #0d0d13; color: #e9e7f2;
+    font: 15px/1.65 system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  .box { width: min(520px, 90vw); padding: 34px 30px; text-align: center; }
+  .logo {
+    width: 54px; height: 54px; margin: 0 auto 18px; border-radius: 14px;
+    background: linear-gradient(140deg, #7c5cff, #b79dff);
+    display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #12101c;
+  }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p { margin: 0 0 18px; color: #a8a2c0; }
+  .btn {
+    display: inline-block; padding: 11px 22px; border-radius: 10px;
+    background: #7c5cff; color: #fff; text-decoration: none; font-weight: 600;
+    border: 0; cursor: pointer; font-size: 15px;
+  }
+  .btn:hover { background: #8f74ff; }
+  .btn.ghost { background: transparent; color: #b7aee0; border: 1px solid #322c4d; }
+  .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .code {
+    margin-top: 22px; padding: 11px 13px; border: 1px solid #262135; border-radius: 10px;
+    background: #14121d; color: #8f88ab; font-size: 11.5px; line-height: 1.5;
+    word-break: break-all; text-align: left; max-height: 96px; overflow: auto;
+  }
+  .muted { font-size: 12.5px; color: #726c8c; margin-top: 16px; }
+  .muted a { color: #a992ff; }
+  .bad { color: #ff8098; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">D2M</div>
+  <h1 id="title">Opening the preset…</h1>
+  <p id="lead">If nothing happens, use the button below.</p>
+  <div class="row">
+    <a class="btn" id="open" href="#">Open in Mod Manager</a>
+    <button class="btn ghost" id="copy" type="button">Copy link</button>
+  </div>
+  <div class="code" id="code"></div>
+  <p class="muted" id="foot">
+    Don't have the app? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Download it</a>,
+    then paste the line above into Presets → Paste a link.
+  </p>
+</div>
+<script>
+  var ru = (navigator.language || '').toLowerCase().indexOf('ru') === 0;
+  var T = ru ? {
+    title: 'Открываю пресет…',
+    lead: 'Если ничего не произошло, нажми кнопку ниже.',
+    open: 'Открыть в Mod Manager',
+    copy: 'Копировать ссылку',
+    copied: 'Скопировано',
+    foot: 'Нет приложения? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Скачай</a>, потом вставь строку выше в Пресеты → Вставить ссылку.',
+    bad: 'В ссылке нет пресета',
+    badLead: 'Похоже, ссылку обрезали при копировании. Попроси прислать её целиком.'
+  } : {
+    title: 'Opening the preset…',
+    lead: 'If nothing happens, use the button below.',
+    open: 'Open in Mod Manager',
+    copy: 'Copy link',
+    copied: 'Copied',
+    foot: "Don't have the app? <a href=\"https://github.com/TheFleece/dota2-mod-manager/releases/latest\">Download it</a>, then paste the line above into Presets → Paste a link.",
+    bad: 'No preset in this link',
+    badLead: 'It looks like the link got cut off. Ask for the whole thing.'
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var code = (location.hash || '').replace(/^#/, '');
+  $('open').textContent = T.open;
+  $('copy').textContent = T.copy;
+  $('foot').innerHTML = T.foot;
+
+  // only ever build a link out of the exact alphabet the app emits
+  if (!/^[A-Za-z0-9_-]+$/.test(code)) {
+    $('title').textContent = T.bad;
+    $('title').className = 'bad';
+    $('lead').textContent = T.badLead;
+    $('open').style.display = 'none';
+    $('copy').style.display = 'none';
+  } else {
+    var deep = 'd2mm://preset/' + code;
+    $('title').textContent = T.title;
+    $('lead').textContent = T.lead;
+    $('open').href = deep;
+    $('code').textContent = deep;
+    $('copy').onclick = function () {
+      navigator.clipboard.writeText(deep).then(function () { $('copy').textContent = T.copied; });
+    };
+    // browsers differ on whether a custom scheme may fire without a click, so try once and
+    // leave the button as the reliable path
+    try { location.href = deep; } catch (e) { /* the button still works */ }
+  }
+</script>
+</body>
+</html>

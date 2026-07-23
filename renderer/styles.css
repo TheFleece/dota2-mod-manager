@@ -1095,6 +1095,8 @@ input:-webkit-autofill, input:-webkit-autofill:focus {
   font-family: var(--font-mono, ui-monospace, monospace); font-size: 11.5px; line-height: 1.5;
   word-break: break-all;
 }
+.link-alt { margin-top: 14px; font-size: 11.5px; color: var(--text-muted); }
+.link-alt .link-out { margin-top: 6px; opacity: 0.75; }
 
 /* Discord account in Settings */
 .account-row { display: flex; align-items: center; gap: 13px; }

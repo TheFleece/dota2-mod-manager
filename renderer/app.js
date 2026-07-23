@@ -2091,8 +2091,10 @@ function shareDialog(plan) {
   });
 }
 
-// the generated link, already in the clipboard — shown so it can be re-copied or checked
-function linkDialog(link, count) {
+// The generated link, already in the clipboard. Two forms are offered because chat clients
+// only make http(s) clickable: the web one to paste into Discord, the d2mm:// one for
+// anyone who would rather hand over the raw thing.
+function linkDialog(r) {
   const overlay = document.createElement('div');
   overlay.className = 'confirm-overlay';
   overlay.innerHTML = `
@@ -2100,26 +2102,30 @@ function linkDialog(link, count) {
       <div class="share-title">${L`Ссылка скопирована`}</div>
       <div class="share-line">
         <span class="ms">link</span>
-        <div>${count} ${plural(count, 'мод из каталога', 'мода из каталога', 'модов из каталога')}
-        <span class="share-hint">${L`Отправь эту строку — у получателя она откроется в менеджере.`}</span></div>
+        <div>${r.count} ${plural(r.count, 'мод из каталога', 'мода из каталога', 'модов из каталога')}
+        <span class="share-hint">${L`Вставь в чат — она кликабельная и откроет пресет в менеджере.`}</span></div>
       </div>
-      <textarea class="input link-out" readonly rows="3">${esc(link)}</textarea>
+      <textarea class="input link-out" readonly rows="2" id="linkWeb">${esc(r.web)}</textarea>
+      <div class="link-alt">
+        <span>${L`Прямая ссылка (чаты её не подсвечивают, но её можно вставить в «Вставить ссылку»):`}</span>
+        <textarea class="input link-out" readonly rows="2" id="linkDirect">${esc(r.direct)}</textarea>
+      </div>
       <div class="confirm-actions">
-        <button class="btn" data-c="copy"><span class="ms">content_copy</span>${L`Копировать ещё раз`}</button>
+        <button class="btn" data-c="direct"><span class="ms">content_copy</span>${L`Копировать прямую`}</button>
+        <button class="btn" data-c="web"><span class="ms">content_copy</span>${L`Копировать ещё раз`}</button>
         <button class="btn btn-primary" data-c="ok">${L`Готово`}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
   const done = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
   const onKey = (e) => { if (e.key === 'Escape') done(); };
+  const copy = (text) => { navigator.clipboard.writeText(text); toast(L`Скопировано в буфер`); };
   overlay.addEventListener('click', (e) => { if (e.target === overlay) done(); });
   overlay.querySelector('[data-c="ok"]').addEventListener('click', done);
-  overlay.querySelector('[data-c="copy"]').addEventListener('click', () => {
-    navigator.clipboard.writeText(link);
-    toast(L`Скопировано в буфер`);
-  });
+  overlay.querySelector('[data-c="web"]').addEventListener('click', () => copy(r.web));
+  overlay.querySelector('[data-c="direct"]').addEventListener('click', () => copy(r.direct));
   document.addEventListener('keydown', onKey);
-  overlay.querySelector('.link-out').select();
+  overlay.querySelector('#linkWeb').select();
 }
 
 // a received preset that hasn't been installed yet
@@ -2213,8 +2219,8 @@ async function renderPresets() {
     b.addEventListener('click', async () => {
       const r = await window.api.presets.shareLink(b.dataset.link);
       if (r.error) { toast(r.error, 'warn', 7000); return; }
-      navigator.clipboard.writeText(r.link);
-      linkDialog(r.link, r.count);
+      navigator.clipboard.writeText(r.web);
+      linkDialog(r);
     });
   });
   list.querySelectorAll('[data-share]').forEach((b) => {

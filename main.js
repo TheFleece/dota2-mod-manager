@@ -1169,7 +1169,7 @@ function registerIpc() {
       if (!mods) return { error: t('В пресете есть свои моды — ссылкой не поделиться, только файлом') };
       const account = settings.get('account');
       const link = encodePresetLink({ name: preset.name, author: account && account.username, mods });
-      return { ok: true, link, count: mods.length };
+      return { ok: true, ...link, count: mods.length };
     } catch (err) {
       return { error: String(err.message || err) };
     }

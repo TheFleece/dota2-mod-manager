@@ -9,14 +9,19 @@ const zlib = require('zlib');
 const { t } = require('./i18n');
 
 const SCHEME = 'd2mm';
-const LINK_RE = new RegExp(`^(?:${SCHEME}:\\/\\/preset\\/)?([A-Za-z0-9_-]+)$`);
+// Chat clients only linkify http(s), so a bare d2mm:// link sits in Discord as dead text.
+// The web form is the clickable wrapper: a static page (docs/p/index.html, served from
+// GitHub Pages) that hands the code to the app. The code rides in the FRAGMENT, which
+// browsers never send to a server — GitHub serves the page without seeing anyone's preset.
+const WEB_BASE = 'https://thefleece.github.io/dota2-mod-manager/p/';
+const CODE_RE = /^[A-Za-z0-9_-]+$/;
 const MAX_CODE = 64 * 1024;
 const MAX_JSON = 512 * 1024;   // inflate bomb guard
 const MAX_MODS = 500;
 
 /**
  * @param {{name: string, author?: string, mods: Array<{categoryId, name, styleLabel}>}} preset
- * @returns {string} d2mm://preset/<code>
+ * @returns {{code: string, web: string, direct: string}} the clickable form and the raw one
  */
 function encodePresetLink({ name, author, mods }) {
   const payload = {
@@ -26,21 +31,27 @@ function encodePresetLink({ name, author, mods }) {
   };
   if (author) payload.a = String(author).slice(0, 80);
   const code = zlib.deflateRawSync(Buffer.from(JSON.stringify(payload), 'utf-8'), { level: 9 }).toString('base64url');
-  return `${SCHEME}://preset/${code}`;
+  return { code, web: `${WEB_BASE}#${code}`, direct: `${SCHEME}://preset/${code}` };
 }
 
-// Accepts the full link or just the code — people paste both, chat clients love to wrap
-// things in spaces, angle brackets and backticks, and Windows hands a clicked link over
-// with a trailing slash.
+// Pull the code out of whatever got pasted: the web link, the d2mm:// link, or the bare
+// code. Chat clients love to wrap things in spaces, angle brackets and backticks, and
+// Windows hands a clicked link over with a trailing slash.
+function codeFrom(input) {
+  let s = String(input || '').trim().replace(/^[<`'"]+|[>`'"]+$/g, '').trim();
+  if (s.includes('#')) s = s.slice(s.lastIndexOf('#') + 1);          // web form
+  else s = s.replace(new RegExp(`^${SCHEME}://preset/`, 'i'), '');   // direct form
+  return s.replace(/\/+$/, '').trim();
+}
+
 function decodePresetLink(input) {
-  const cleaned = String(input || '').trim().replace(/^[<`'"]+|[>`'"/]+$/g, '').trim();
-  const m = LINK_RE.exec(cleaned);
-  if (!m) throw new Error(t('Это не похоже на ссылку на пресет'));
-  if (m[1].length > MAX_CODE) throw new Error(t('Ссылка слишком длинная'));
+  const code = codeFrom(input);
+  if (!CODE_RE.test(code)) throw new Error(t('Это не похоже на ссылку на пресет'));
+  if (code.length > MAX_CODE) throw new Error(t('Ссылка слишком длинная'));
 
   let json;
   try {
-    json = zlib.inflateRawSync(Buffer.from(m[1], 'base64url'), { maxOutputLength: MAX_JSON }).toString('utf-8');
+    json = zlib.inflateRawSync(Buffer.from(code, 'base64url'), { maxOutputLength: MAX_JSON }).toString('utf-8');
   } catch {
     throw new Error(t('Ссылка повреждена'));
   }
