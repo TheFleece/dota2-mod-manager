@@ -22,11 +22,11 @@ const crypto = require('crypto');
 const { shell } = require('electron');
 const { t } = require('./i18n');
 
-// Public by design in OAuth2 (it identifies the app, it is not a secret). Fill it in from
-// the Discord developer portal: Applications -> your app -> OAuth2 -> Client ID, and add
-// REDIRECT_URI below to that app's "Redirects" list, character for character. While this
-// is empty the app simply reports that sign-in isn't configured.
-const CLIENT_ID = '';
+// Public by design in OAuth2 — it identifies the app, it is not a secret, and it ships in
+// every OAuth request anyway. The client SECRET is a different thing and is never needed
+// here: the implicit grant doesn't use one, so none exists in this repo.
+// REDIRECT_URI below must be listed verbatim under OAuth2 -> Redirects for this app.
+const CLIENT_ID = '1529828316784099429';
 
 // Discord matches redirect URIs exactly, so the port can't be random.
 const PORT = 53174;
