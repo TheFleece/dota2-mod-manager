@@ -51,10 +51,17 @@ const SORTS = [
   { key: 'name-desc', label: 'По имени Я-А' },
 ];
 
-// Chrome panels the user can resize and fold away: the title bar, the status bar and the
-// category rail. Sizes are CSS variables so the layout follows them (see "Panel grips").
-const PANEL_DEFAULTS = { topH: 48, bottomH: 50, railW: 218, topFolded: false, bottomFolded: false, railFolded: false };
+// Chrome panels the user can resize, scale and fold away: the title bar, the status bar and
+// the category rail. Everything lives in CSS variables (see "Panel grips").
+// Two independent knobs each: the grip drags its size, Ctrl + wheel over it sets its own
+// zoom. Neither follows the content scale — scaling the catalog leaves the chrome alone.
+const PANEL_DEFAULTS = {
+  topH: 48, bottomH: 50, railW: 218,
+  topZoom: 1, bottomZoom: 1, railZoom: 1,
+  topFolded: false, bottomFolded: false, railFolded: false,
+};
 const PANEL_LIMITS = { topH: [34, 88], bottomH: [36, 96], railW: [148, 400] };
+const PANEL_ZOOM_LIMITS = [0.6, 1.8];
 
 const state = {
   view: 'catalog',
@@ -121,21 +128,28 @@ function paintScale(pct) {
   if (val) val.textContent = `${pct}%`;
 }
 
+// The window zoom scales everything, chrome included. Cancelling it inside the panels keeps
+// them the size they were: the content scale is for the content.
+function applyContentZoom(factor) {
+  if (state.settings) state.settings.uiScale = factor;
+  document.documentElement.style.setProperty('--chrome-zoom', String(1 / factor));
+  paintScale(Math.round(factor * 100));
+}
+
 async function applyScalePct(pct) {
   const want = clampScale(pct);
-  if (state.settings) state.settings.uiScale = want / 100;
-  paintScale(want);
+  applyContentZoom(want / 100);
   const r = await window.api.ui.setZoom(want / 100);
   const applied = Math.round((r?.uiScale || 1) * 100);
-  if (applied !== want) { if (state.settings) state.settings.uiScale = applied / 100; paintScale(applied); }
+  if (applied !== want) applyContentZoom(applied / 100);
 }
 
 // Ctrl + wheel resizes whatever the pointer is over: each chrome panel has its own size,
 // and everywhere else means the content, which is what the UI scale governs.
 const WHEEL_ZONES = [
-  { sel: '#titlebar, #gripTop', size: 'topH', fold: 'topFolded', step: 6 },
-  { sel: '#statusbar, #gripBottom', size: 'bottomH', fold: 'bottomFolded', step: 6 },
-  { sel: '#catRail, #gripRail', size: 'railW', fold: 'railFolded', step: 14 },
+  { sel: '#titlebar, #gripTop', zoom: 'topZoom', fold: 'topFolded' },
+  { sel: '#statusbar, #gripBottom', zoom: 'bottomZoom', fold: 'bottomFolded' },
+  { sel: '#catRail, #gripRail', zoom: 'railZoom', fold: 'railFolded' },
 ];
 
 window.addEventListener('wheel', (e) => {
@@ -144,18 +158,14 @@ window.addEventListener('wheel', (e) => {
   const dir = e.deltaY < 0 ? 1 : -1;
   const zone = e.target instanceof Element ? WHEEL_ZONES.find((z) => e.target.closest(z.sel)) : null;
   if (!zone) { applyScalePct(currentScalePct() + dir * 5); return; }
-  if (state.panels[zone.fold]) foldPanel(zone.fold, false); // resizing a folded panel opens it
-  const [min, max] = PANEL_LIMITS[zone.size];
-  state.panels[zone.size] = Math.min(max, Math.max(min, state.panels[zone.size] + dir * zone.step));
+  if (state.panels[zone.fold]) foldPanel(zone.fold, false); // scaling a folded panel opens it
+  state.panels[zone.zoom] = clampPanelZoom(state.panels[zone.zoom] + dir * 0.05);
   paintPanels();
   savePanels();
 }, { passive: false });
 
-// main.js took a Ctrl +/-/0 press — keep the slider honest
-window.api.ui.onZoom((factor) => {
-  if (state.settings) state.settings.uiScale = factor;
-  paintScale(Math.round(factor * 100));
-});
+// main.js took a Ctrl +/-/0 press — keep the slider and the chrome honest
+window.api.ui.onZoom((factor) => applyContentZoom(factor));
 
 // ---------- panels ----------
 
@@ -165,9 +175,15 @@ function readPanels(saved) {
     const v = Math.round(Number(p[key]));
     p[key] = Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : PANEL_DEFAULTS[key];
   }
+  for (const key of ['topZoom', 'bottomZoom', 'railZoom']) {
+    const v = Number(p[key]);
+    p[key] = Number.isFinite(v) ? clampPanelZoom(v) : 1;
+  }
   for (const key of ['topFolded', 'bottomFolded', 'railFolded']) p[key] = !!p[key];
   return p;
 }
+
+const clampPanelZoom = (v) => Math.round(Math.min(PANEL_ZOOM_LIMITS[1], Math.max(PANEL_ZOOM_LIMITS[0], v)) * 100) / 100;
 
 function paintGripToggle(sel, icon, label) {
   const btn = $(sel);
@@ -183,6 +199,9 @@ function paintPanels() {
   root.setProperty('--tb-h', `${p.topH}px`);
   root.setProperty('--status-h', `${p.bottomH}px`);
   root.setProperty('--rail-w', `${p.railW}px`);
+  root.setProperty('--top-zoom', String(p.topZoom));
+  root.setProperty('--bottom-zoom', String(p.bottomZoom));
+  root.setProperty('--rail-zoom', String(p.railZoom));
   document.body.classList.toggle('top-folded', p.topFolded);
   document.body.classList.toggle('bottom-folded', p.bottomFolded);
   document.body.classList.toggle('rail-folded', p.railFolded);
@@ -208,7 +227,7 @@ function foldPanel(key, on) {
 }
 
 // drag the edge itself; the chevron sitting on it folds the panel instead
-function bindGrip(sel, sizeKey, foldKey, delta) {
+function bindGrip(sel, { size: sizeKey, zoom: zoomKey, fold: foldKey, delta }) {
   const el = $(sel);
   if (!el) return;
   el.addEventListener('pointerdown', (e) => {
@@ -216,13 +235,16 @@ function bindGrip(sel, sizeKey, foldKey, delta) {
     if (state.panels[foldKey]) foldPanel(foldKey, false); // dragging a folded panel opens it
     const [min, max] = PANEL_LIMITS[sizeKey];
     const start = state.panels[sizeKey];
+    // the pointer moves in content pixels; the panel is sized in its own, which the content
+    // scale no longer touches and its own zoom multiplies
+    const perPixel = (Number(state.settings?.uiScale) || 1) / state.panels[zoomKey];
     const origin = { x: e.clientX, y: e.clientY };
     el.classList.add('dragging');
     document.body.classList.add('grip-dragging');
     // the window, not the grip: the grip moves out from under the pointer as the panel
     // grows, and pointer capture is not something to depend on for that
     const move = (ev) => {
-      state.panels[sizeKey] = Math.min(max, Math.max(min, Math.round(start + delta(ev, origin))));
+      state.panels[sizeKey] = Math.min(max, Math.max(min, Math.round(start + delta(ev, origin) * perPixel)));
       paintPanels();
     };
     const stop = () => {
@@ -239,6 +261,7 @@ function bindGrip(sel, sizeKey, foldKey, delta) {
   });
   el.addEventListener('dblclick', () => {
     state.panels[sizeKey] = PANEL_DEFAULTS[sizeKey];
+    state.panels[zoomKey] = 1;
     paintPanels();
     savePanels();
   });
@@ -256,6 +279,18 @@ function bindNavScroll() {
   if (!nav) return;
   new ResizeObserver(syncNavOverflow).observe(nav);
   syncNavOverflow();
+
+  // the bar drops the wordmark when it gets cramped — measured on the bar itself, since its
+  // own zoom decides how much room it really has
+  const tb = $('#titlebar');
+  if (tb) {
+    const syncWidth = () => {
+      tb.classList.toggle('narrow', tb.clientWidth < 1000);
+      tb.classList.toggle('tiny', tb.clientWidth < 870);
+    };
+    new ResizeObserver(syncWidth).observe(tb);
+    syncWidth();
+  }
 
   nav.addEventListener('wheel', (e) => {
     if (e.ctrlKey) return; // that gesture belongs to the panel size
@@ -299,9 +334,9 @@ function bindNavScroll() {
 }
 
 function bindPanels() {
-  bindGrip('#gripTop', 'topH', 'topFolded', (ev, o) => ev.clientY - o.y);
-  bindGrip('#gripBottom', 'bottomH', 'bottomFolded', (ev, o) => o.y - ev.clientY);
-  bindGrip('#gripRail', 'railW', 'railFolded', (ev, o) => ev.clientX - o.x);
+  bindGrip('#gripTop', { size: 'topH', zoom: 'topZoom', fold: 'topFolded', delta: (ev, o) => ev.clientY - o.y });
+  bindGrip('#gripBottom', { size: 'bottomH', zoom: 'bottomZoom', fold: 'bottomFolded', delta: (ev, o) => o.y - ev.clientY });
+  bindGrip('#gripRail', { size: 'railW', zoom: 'railZoom', fold: 'railFolded', delta: (ev, o) => ev.clientX - o.x });
   $('#topToggle')?.addEventListener('click', () => foldPanel('topFolded'));
   $('#bottomToggle')?.addEventListener('click', () => foldPanel('bottomFolded'));
   $('#railToggle')?.addEventListener('click', () => foldPanel('railFolded'));
@@ -1619,6 +1654,7 @@ function packRowHtml(rec, i, masterOff) {
         <button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить пак целиком`}" ${masterOff ? 'disabled' : ''}></button>
         <button class="btn btn-sm" data-addto="${esc(rec.id)}" title="${L`Добавить моды в пак`}"><span class="ms">add</span>${L`Добавить`}</button>
         <button class="btn btn-sm" data-disband="${esc(rec.id)}" title="${L`Разобрать пак обратно на отдельные моды`}"><span class="ms">call_split</span>${L`Разобрать`}</button>
+        ${langDir ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить пак одним .vpk файлом (войдут включённые моды)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
         <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">${L`Удалить`}</button>
       </div>
     </div>
@@ -2802,7 +2838,7 @@ async function renderSettings() {
         </div>
       </div>
       <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
-        ${L`Увеличивает текст и картинки во всём приложении. То же самое делают Ctrl + и Ctrl −, а Ctrl 0 возвращает 100%.`}
+        ${L`Увеличивает текст и картинки в содержимом: каталоге, библиотеке, настройках. То же самое делают Ctrl + и Ctrl − и Ctrl + колесо, а Ctrl 0 возвращает 100%. Панели этот масштаб не трогает — у верхней, нижней и списка категорий свой: наведи на панель и покрути Ctrl + колесо, а за границу панели можно потянуть, чтобы изменить её размер.`}
       </div>
       <details class="settings-adv" ${state.gameLangOpen ? 'open' : ''} id="gameLangAdv">
         <summary>${L`Задать языки Dota по отдельности`}</summary>
@@ -3214,6 +3250,7 @@ function showLanguagePicker() {
   state.settings = cfg;
   state.favorites = new Set(Array.isArray(cfg.favorites) ? cfg.favorites : []);
   state.panels = readPanels(cfg.panels);
+  applyContentZoom(Number(cfg.uiScale) || 1); // main.js zooms the window; keep the chrome out of it
   window.I18N_LANG = cfg.uiLang === 'ru' ? 'ru' : 'en';
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();

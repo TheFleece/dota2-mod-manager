@@ -184,6 +184,8 @@ const EN = {
     'Save the mod as a single .vpk (to send to the catalog author)',
   'Сохранить курсор архивом (для отправки или на память)':
     'Save the cursor set as an archive (to pass on or to keep)',
+  'Сохранить пак одним .vpk файлом (войдут включённые моды)':
+    'Save the pack as a single .vpk (the mods that are on go in)',
   'Экспорт': 'Export',
   'Привязано: {0}': 'Adopted: {0}',
 
@@ -368,8 +370,8 @@ const EN = {
   'Мельче': 'Smaller',
   'Крупнее': 'Bigger',
   'Сбросить': 'Reset',
-  'Увеличивает текст и картинки во всём приложении. То же самое делают Ctrl + и Ctrl −, а Ctrl 0 возвращает 100%.':
-    'Scales text and images across the whole app. Ctrl + and Ctrl − do the same, Ctrl 0 puts it back to 100%.',
+  'Увеличивает текст и картинки в содержимом: каталоге, библиотеке, настройках. То же самое делают Ctrl + и Ctrl − и Ctrl + колесо, а Ctrl 0 возвращает 100%. Панели этот масштаб не трогает — у верхней, нижней и списка категорий свой: наведи на панель и покрути Ctrl + колесо, а за границу панели можно потянуть, чтобы изменить её размер.':
+    'Scales text and images in the content: the catalog, the library, the settings. Ctrl +, Ctrl − and Ctrl + wheel do the same, Ctrl 0 puts it back to 100%. It leaves the panels alone — the top bar, the bottom bar and the category list have their own: point at one and Ctrl + wheel, or drag its edge to resize it.',
   'Задать языки Dota по отдельности': 'Set Dota’s languages separately',
   'Текст': 'Text',
   'Озвучка': 'Voice',
