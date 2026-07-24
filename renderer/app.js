@@ -12,7 +12,7 @@ const CAT_RU = {
   other: 'Разное', ranks: 'Ранги', 'item-icons': 'Иконки предметов', 'versus-screens': 'Экраны Versus',
   announcers: 'Анонсеры', wards: 'Варды', pedestal: 'Пьедесталы', huds: 'HUD',
   herofx: 'Эффекты героев', pings: 'Пинги', packs: 'Паки', optimization: 'Оптимизация',
-  tormentor: 'Тормент', 'high-five': 'High Five', ancient: 'Древние', roshan: 'Рошан',
+  tormentor: 'Торментор', 'high-five': 'High Five', ancient: 'Древние', roshan: 'Рошан',
   towers: 'Башни', fonts: 'Шрифты', sites: 'Сайты', guides: 'Гайды', news: 'Новости',
   imported: 'Импортированный',
 };
@@ -130,10 +130,25 @@ async function applyScalePct(pct) {
   if (applied !== want) { if (state.settings) state.settings.uiScale = applied / 100; paintScale(applied); }
 }
 
+// Ctrl + wheel resizes whatever the pointer is over: each chrome panel has its own size,
+// and everywhere else means the content, which is what the UI scale governs.
+const WHEEL_ZONES = [
+  { sel: '#titlebar, #gripTop', size: 'topH', fold: 'topFolded', step: 6 },
+  { sel: '#statusbar, #gripBottom', size: 'bottomH', fold: 'bottomFolded', step: 6 },
+  { sel: '#catRail, #gripRail', size: 'railW', fold: 'railFolded', step: 14 },
+];
+
 window.addEventListener('wheel', (e) => {
   if (!e.ctrlKey) return;
   e.preventDefault();
-  applyScalePct(currentScalePct() + (e.deltaY < 0 ? 5 : -5));
+  const dir = e.deltaY < 0 ? 1 : -1;
+  const zone = e.target instanceof Element ? WHEEL_ZONES.find((z) => e.target.closest(z.sel)) : null;
+  if (!zone) { applyScalePct(currentScalePct() + dir * 5); return; }
+  if (state.panels[zone.fold]) foldPanel(zone.fold, false); // resizing a folded panel opens it
+  const [min, max] = PANEL_LIMITS[zone.size];
+  state.panels[zone.size] = Math.min(max, Math.max(min, state.panels[zone.size] + dir * zone.step));
+  paintPanels();
+  savePanels();
 }, { passive: false });
 
 // main.js took a Ctrl +/-/0 press — keep the slider honest
@@ -202,31 +217,85 @@ function bindGrip(sel, sizeKey, foldKey, delta) {
     const [min, max] = PANEL_LIMITS[sizeKey];
     const start = state.panels[sizeKey];
     const origin = { x: e.clientX, y: e.clientY };
-    el.setPointerCapture(e.pointerId);
     el.classList.add('dragging');
     document.body.classList.add('grip-dragging');
+    // the window, not the grip: the grip moves out from under the pointer as the panel
+    // grows, and pointer capture is not something to depend on for that
     const move = (ev) => {
       state.panels[sizeKey] = Math.min(max, Math.max(min, Math.round(start + delta(ev, origin))));
       paintPanels();
     };
     const stop = () => {
-      el.removeEventListener('pointermove', move);
-      el.removeEventListener('pointerup', stop);
-      el.removeEventListener('pointercancel', stop);
-      try { el.releasePointerCapture(e.pointerId); } catch { /* already gone */ }
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
       el.classList.remove('dragging');
       document.body.classList.remove('grip-dragging');
       savePanels();
     };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerup', stop);
-    el.addEventListener('pointercancel', stop);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
   });
   el.addEventListener('dblclick', () => {
     state.panels[sizeKey] = PANEL_DEFAULTS[sizeKey];
     paintPanels();
     savePanels();
   });
+}
+
+// The tab strip runs out of room on a small window or a high UI scale, and then it scrolls:
+// sideways with the wheel, or by grabbing and swiping it like a strip on a phone.
+function syncNavOverflow() {
+  const nav = $('#tbNav');
+  if (nav) nav.classList.toggle('scrollable', nav.scrollWidth > nav.clientWidth + 1);
+}
+
+function bindNavScroll() {
+  const nav = $('#tbNav');
+  if (!nav) return;
+  new ResizeObserver(syncNavOverflow).observe(nav);
+  syncNavOverflow();
+
+  nav.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) return; // that gesture belongs to the panel size
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (!delta || nav.scrollWidth <= nav.clientWidth) return;
+    e.preventDefault();
+    nav.scrollLeft += delta;
+  }, { passive: false });
+
+  let drag = null;
+  let swallowClick = false;
+  nav.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || nav.scrollWidth <= nav.clientWidth) return;
+    drag = { id: e.pointerId, x: e.clientX, left: nav.scrollLeft, moved: false };
+  });
+  // on the window: a swipe often runs past the strip, and it must keep scrolling anyway
+  window.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    if (!drag.moved) {
+      if (Math.abs(dx) < 4) return; // still a click, not a swipe
+      drag.moved = true;
+      nav.classList.add('dragging');
+    }
+    nav.scrollLeft = drag.left - dx;
+  });
+  const endDrag = () => {
+    if (!drag) return;
+    if (drag.moved) swallowClick = true; // a swipe must not also switch the view
+    nav.classList.remove('dragging');
+    drag = null;
+  };
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+  nav.addEventListener('click', (e) => {
+    if (!swallowClick) return;
+    swallowClick = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
 }
 
 function bindPanels() {
@@ -241,6 +310,7 @@ function bindPanels() {
     e.preventDefault();
     foldPanel('railFolded');
   });
+  bindNavScroll();
   paintPanels();
 }
 
@@ -654,6 +724,8 @@ function switchView(view) {
   $('#catRail').classList.toggle('hidden', railOff);
   $('#gripRail').classList.toggle('hidden', railOff); // nothing to resize without the rail
   document.body.classList.toggle('rail-off', railOff || !!state.panels.railFolded);
+  // a scrolled-away tab must not stay out of sight once it is the active one
+  document.querySelector('.tb-tab.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   window.api.presence.view(view); // what Discord shows the user is doing
   render();
 }
@@ -3074,6 +3146,7 @@ function applyStaticI18n() {
   document.querySelectorAll('[data-i18n-title]').forEach((el) => el.setAttribute('title', tr(el.getAttribute('data-i18n-title'))));
   document.querySelectorAll('[data-i18n-aria]').forEach((el) => el.setAttribute('aria-label', tr(el.getAttribute('data-i18n-aria'))));
   if (state.panels) paintPanels(); // grip labels depend on whether the panel is folded
+  syncNavOverflow();               // translated tab labels change how much room they need
 }
 
 // switch the app's own UI language. It used to also pick the Dota folder (English -> dota_123),

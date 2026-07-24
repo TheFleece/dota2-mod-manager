@@ -44,7 +44,7 @@ const EN = {
   'Разное': 'Other', 'Ранги': 'Ranks', 'Иконки предметов': 'Item icons', 'Экраны Versus': 'Versus screens',
   'Анонсеры': 'Announcers', 'Варды': 'Wards', 'Пьедесталы': 'Pedestals',
   'Эффекты героев': 'Hero FX', 'Пинги': 'Pings', 'Паки': 'Packs', 'Оптимизация': 'Optimization',
-  'Тормент': 'Tormentor', 'Древние': 'Ancients', 'Рошан': 'Roshan',
+  'Торментор': 'Tormentor', 'Древние': 'Ancients', 'Рошан': 'Roshan',
   'Башни': 'Towers', 'Шрифты': 'Fonts', 'Сайты': 'Sites', 'Гайды': 'Guides', 'Новости': 'News',
   'Импортированный': 'Imported',
 

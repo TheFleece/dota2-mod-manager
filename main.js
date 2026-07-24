@@ -112,6 +112,32 @@ function createWindow() {
               await new Promise((r) => setTimeout(r, 700));
             }
           }
+          if (process.env.MM_DRAG) {
+            // dev-only: press, move, release — "x1,y1,x2,y2" (drags a grip, swipes a strip)
+            const [x1, y1, x2, y2] = process.env.MM_DRAG.split(',').map(Number);
+            win.webContents.sendInputEvent({ type: 'mouseDown', x: x1, y: y1, button: 'left', clickCount: 1 });
+            for (let i = 1; i <= 12; i++) {
+              win.webContents.sendInputEvent({
+                type: 'mouseMove', button: 'left',
+                x: Math.round(x1 + ((x2 - x1) * i) / 12), y: Math.round(y1 + ((y2 - y1) * i) / 12),
+              });
+              await new Promise((r) => setTimeout(r, 30));
+            }
+            win.webContents.sendInputEvent({ type: 'mouseUp', x: x2, y: y2, button: 'left', clickCount: 1 });
+            await new Promise((r) => setTimeout(r, 500));
+          }
+          if (process.env.MM_WHEEL) {
+            // dev-only: wheel ticks at a point — "x,y,deltaY[,ctrl]", several split by ";"
+            for (const spec of process.env.MM_WHEEL.split(';')) {
+              const [x, y, dy, mod] = spec.split(',').map((v) => v.trim());
+              win.webContents.sendInputEvent({
+                type: 'mouseWheel', x: Number(x), y: Number(y),
+                deltaX: 0, deltaY: Number(dy), canScroll: true,
+                modifiers: mod === 'ctrl' ? ['control'] : [],
+              });
+              await new Promise((r) => setTimeout(r, 400));
+            }
+          }
           if (process.env.MM_SCROLL) {
             // dev-only: scroll the scrollable pane by N px before capture (long views)
             await win.webContents.executeJavaScript(`(() => {
