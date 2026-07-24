@@ -77,6 +77,16 @@ const EN = {
     'Launch Dota 2 through Steam with your launch options',
   'Моды:': 'Mods:', 'вкл': 'on', 'выкл': 'off',
 
+  // ---------- panel grips ----------
+  'Потяни, чтобы изменить высоту · двойной клик сбрасывает': 'Drag to resize · double-click to reset',
+  'Потяни, чтобы изменить ширину · двойной клик сбрасывает': 'Drag to resize · double-click to reset',
+  'Свернуть верхнюю панель': 'Fold the top bar',
+  'Развернуть верхнюю панель': 'Unfold the top bar',
+  'Скрыть нижнюю панель': 'Hide the bottom bar',
+  'Показать нижнюю панель': 'Show the bottom bar',
+  'Скрыть категории': 'Hide the categories',
+  'Показать категории': 'Show the categories',
+
   // ---------- dialogs / common ----------
   'Удалить': 'Delete', 'Отмена': 'Cancel', 'ОК': 'OK', 'Готово': 'Done',
   'Пауза': 'Pause', 'Звук': 'Sound', 'На весь экран': 'Fullscreen',
@@ -172,6 +182,8 @@ const EN = {
   'Разбить на отдельные моды по героям': 'Split into separate mods by hero',
   'Сохранить мод одним .vpk файлом (для отправки автору каталога)':
     'Save the mod as a single .vpk (to send to the catalog author)',
+  'Сохранить курсор архивом (для отправки или на память)':
+    'Save the cursor set as an archive (to pass on or to keep)',
   'Экспорт': 'Export',
   'Привязано: {0}': 'Adopted: {0}',
 

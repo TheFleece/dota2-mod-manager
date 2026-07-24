@@ -463,6 +463,24 @@ class Installer {
     }
   }
 
+  // Pack the set back into the layout the catalog ships cursors in (<Name>/cursor/<file>),
+  // so it can be handed to someone else or kept as a backup.
+  cursorZip(rec) {
+    const store = this.cursorStoreDir(rec.id);
+    const live = this.rootAbs('cursor');
+    const folder = (rec.name || 'cursor').replace(/[<>:"/\\|?*]/g, '_');
+    const zip = new AdmZip();
+    let n = 0;
+    for (const f of this.cursorFiles(rec.files)) {
+      const src = [path.join(store, f.relPath), path.join(live, f.relPath)].find((p) => fs.existsSync(p));
+      if (!src) continue;
+      zip.addFile(`${folder}/cursor/${f.relPath}`, fs.readFileSync(src));
+      n++;
+    }
+    if (!n) throw new Error(t('Файлы курсора не сохранены — переустанови мод'));
+    return zip.toBuffer();
+  }
+
   dropCursorStore(recId) {
     if (!recId) return;
     try { fs.rmSync(this.cursorStoreDir(recId), { recursive: true, force: true }); } catch { /* ignore */ }

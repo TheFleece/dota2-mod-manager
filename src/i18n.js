@@ -22,6 +22,8 @@ const EN = {
   'Мод не найден': 'Mod not found',
   'Сохранить мод одним .vpk файлом': 'Save the mod as a single .vpk file',
   'VPK мод': 'VPK mod',
+  'Сохранить курсор архивом': 'Save the cursor set as an archive',
+  'Архив курсора': 'Cursor archive',
   'Выбери .vpk файлы модов или .zip с ними': 'Pick mod .vpk files, or a .zip holding them',
   'Моды (.vpk, .zip)': 'Mods (.vpk, .zip)',
   'Выбери папку с модами': 'Pick a folder with mods',

@@ -51,6 +51,11 @@ const SORTS = [
   { key: 'name-desc', label: 'По имени Я-А' },
 ];
 
+// Chrome panels the user can resize and fold away: the title bar, the status bar and the
+// category rail. Sizes are CSS variables so the layout follows them (see "Panel grips").
+const PANEL_DEFAULTS = { topH: 48, bottomH: 50, railW: 218, topFolded: false, bottomFolded: false, railFolded: false };
+const PANEL_LIMITS = { topH: [34, 88], bottomH: [36, 96], railW: [148, 400] };
+
 const state = {
   view: 'catalog',
   catalog: null,
@@ -68,6 +73,7 @@ const state = {
   libConflicts: [],        // pairs of enabled mods that overwrite each other's files
   favorites: new Set(),    // starred catalog mods, as "<categoryId>|<name>" keys
   gameLangOpen: false,     // Settings: the per-language Dota block is unfolded
+  panels: { ...PANEL_DEFAULTS },
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -135,6 +141,108 @@ window.api.ui.onZoom((factor) => {
   if (state.settings) state.settings.uiScale = factor;
   paintScale(Math.round(factor * 100));
 });
+
+// ---------- panels ----------
+
+function readPanels(saved) {
+  const p = { ...PANEL_DEFAULTS, ...(saved || {}) };
+  for (const [key, [min, max]] of Object.entries(PANEL_LIMITS)) {
+    const v = Math.round(Number(p[key]));
+    p[key] = Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : PANEL_DEFAULTS[key];
+  }
+  for (const key of ['topFolded', 'bottomFolded', 'railFolded']) p[key] = !!p[key];
+  return p;
+}
+
+function paintGripToggle(sel, icon, label) {
+  const btn = $(sel);
+  if (!btn) return;
+  btn.querySelector('.ms').textContent = icon;
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+}
+
+function paintPanels() {
+  const p = state.panels;
+  const root = document.documentElement.style;
+  root.setProperty('--tb-h', `${p.topH}px`);
+  root.setProperty('--status-h', `${p.bottomH}px`);
+  root.setProperty('--rail-w', `${p.railW}px`);
+  document.body.classList.toggle('top-folded', p.topFolded);
+  document.body.classList.toggle('bottom-folded', p.bottomFolded);
+  document.body.classList.toggle('rail-folded', p.railFolded);
+  document.body.classList.toggle('rail-off', p.railFolded || state.view !== 'catalog');
+  paintGripToggle('#topToggle', p.topFolded ? 'expand_more' : 'expand_less',
+    p.topFolded ? L`Развернуть верхнюю панель` : L`Свернуть верхнюю панель`);
+  paintGripToggle('#bottomToggle', p.bottomFolded ? 'expand_less' : 'expand_more',
+    p.bottomFolded ? L`Показать нижнюю панель` : L`Скрыть нижнюю панель`);
+  paintGripToggle('#railToggle', p.railFolded ? 'chevron_right' : 'chevron_left',
+    p.railFolded ? L`Показать категории` : L`Скрыть категории`);
+}
+
+let panelSaveTimer = null;
+function savePanels() {
+  clearTimeout(panelSaveTimer);
+  panelSaveTimer = setTimeout(() => { window.api.settings.set('panels', state.panels); }, 250);
+}
+
+function foldPanel(key, on) {
+  state.panels[key] = on === undefined ? !state.panels[key] : !!on;
+  paintPanels();
+  savePanels();
+}
+
+// drag the edge itself; the chevron sitting on it folds the panel instead
+function bindGrip(sel, sizeKey, foldKey, delta) {
+  const el = $(sel);
+  if (!el) return;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.target.closest('.grip-toggle')) return;
+    if (state.panels[foldKey]) foldPanel(foldKey, false); // dragging a folded panel opens it
+    const [min, max] = PANEL_LIMITS[sizeKey];
+    const start = state.panels[sizeKey];
+    const origin = { x: e.clientX, y: e.clientY };
+    el.setPointerCapture(e.pointerId);
+    el.classList.add('dragging');
+    document.body.classList.add('grip-dragging');
+    const move = (ev) => {
+      state.panels[sizeKey] = Math.min(max, Math.max(min, Math.round(start + delta(ev, origin))));
+      paintPanels();
+    };
+    const stop = () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', stop);
+      el.removeEventListener('pointercancel', stop);
+      try { el.releasePointerCapture(e.pointerId); } catch { /* already gone */ }
+      el.classList.remove('dragging');
+      document.body.classList.remove('grip-dragging');
+      savePanels();
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointercancel', stop);
+  });
+  el.addEventListener('dblclick', () => {
+    state.panels[sizeKey] = PANEL_DEFAULTS[sizeKey];
+    paintPanels();
+    savePanels();
+  });
+}
+
+function bindPanels() {
+  bindGrip('#gripTop', 'topH', 'topFolded', (ev, o) => ev.clientY - o.y);
+  bindGrip('#gripBottom', 'bottomH', 'bottomFolded', (ev, o) => o.y - ev.clientY);
+  bindGrip('#gripRail', 'railW', 'railFolded', (ev, o) => ev.clientX - o.x);
+  $('#topToggle')?.addEventListener('click', () => foldPanel('topFolded'));
+  $('#bottomToggle')?.addEventListener('click', () => foldPanel('bottomFolded'));
+  $('#railToggle')?.addEventListener('click', () => foldPanel('railFolded'));
+  document.addEventListener('keydown', (e) => {
+    if (!e.ctrlKey || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'b') return;
+    e.preventDefault();
+    foldPanel('railFolded');
+  });
+  paintPanels();
+}
 
 function favButtonHtml(cat, name) {
   const on = isFav(cat, name);
@@ -542,7 +650,10 @@ document.querySelectorAll('.tb-tab').forEach((btn) => {
 function switchView(view) {
   document.querySelectorAll('.tb-tab').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
   state.view = view;
-  $('#catRail').classList.toggle('hidden', view !== 'catalog');
+  const railOff = view !== 'catalog';
+  $('#catRail').classList.toggle('hidden', railOff);
+  $('#gripRail').classList.toggle('hidden', railOff); // nothing to resize without the rail
+  document.body.classList.toggle('rail-off', railOff || !!state.panels.railFolded);
   window.api.presence.view(view); // what Discord shows the user is doing
   render();
 }
@@ -1481,7 +1592,9 @@ function normalRowHtml(rec, i, masterOff) {
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
         ${rec.heroes >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
-        ${rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath)) ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить мод одним .vpk файлом (для отправки автору каталога)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
+        ${isCursorRec(rec)
+          ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить курсор архивом (для отправки или на память)`}"><span class="ms">save</span>${L`Экспорт`}</button>`
+          : rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath)) ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить мод одним .vpk файлом (для отправки автору каталога)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
         <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">${L`Удалить`}</button>
       </div>
     </div>`;
@@ -2780,7 +2893,10 @@ async function renderSettings() {
   });
 
   // ----- UI scale -----
-  $('#scaleRange')?.addEventListener('input', (e) => applyScalePct(Number(e.target.value)));
+  // Zooming on every input event fights the drag: the slider itself moves under the pointer,
+  // which feeds the next event. Show the number while dragging, apply it on release.
+  $('#scaleRange')?.addEventListener('input', (e) => paintScale(clampScale(Number(e.target.value))));
+  $('#scaleRange')?.addEventListener('change', (e) => applyScalePct(Number(e.target.value)));
   $('#scaleDown')?.addEventListener('click', () => applyScalePct(currentScalePct() - 5));
   $('#scaleUp')?.addEventListener('click', () => applyScalePct(currentScalePct() + 5));
   $('#scaleReset')?.addEventListener('click', () => applyScalePct(100));
@@ -2957,6 +3073,7 @@ function applyStaticI18n() {
   document.querySelectorAll('[data-i18n-ph]').forEach((el) => el.setAttribute('placeholder', tr(el.getAttribute('data-i18n-ph'))));
   document.querySelectorAll('[data-i18n-title]').forEach((el) => el.setAttribute('title', tr(el.getAttribute('data-i18n-title'))));
   document.querySelectorAll('[data-i18n-aria]').forEach((el) => el.setAttribute('aria-label', tr(el.getAttribute('data-i18n-aria'))));
+  if (state.panels) paintPanels(); // grip labels depend on whether the panel is folded
 }
 
 // switch the app's own UI language. It used to also pick the Dota folder (English -> dota_123),
@@ -3023,9 +3140,11 @@ function showLanguagePicker() {
   const cfg = await window.api.settings.get();
   state.settings = cfg;
   state.favorites = new Set(Array.isArray(cfg.favorites) ? cfg.favorites : []);
+  state.panels = readPanels(cfg.panels);
   window.I18N_LANG = cfg.uiLang === 'ru' ? 'ru' : 'en';
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();
+  bindPanels();
   paintAccount();
 
   // Dota's language change moved the mods folder under us at startup — say so once

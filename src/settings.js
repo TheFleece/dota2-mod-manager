@@ -19,6 +19,8 @@ const DEFAULTS = {
   uiScale: 1,
   // catalog mods the user starred: "<categoryId>|<mod name>" keys
   favorites: [],
+  // sizes and folded state of the title bar, status bar and category rail
+  panels: null,
   // Discord identity, when signed in: { id, username, avatar }. No token is ever kept —
   // it is used once to read the name and dropped (see src/discord-auth.js).
   account: null,

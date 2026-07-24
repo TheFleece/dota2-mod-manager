@@ -920,12 +920,16 @@ function registerIpc() {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
     try {
-      const buf = installer.mergeToSingleVpk(rec);
+      // a cursor set is loose files, not a pak — it travels as the zip the catalog uses
+      const cursor = isCursorRecord(rec);
+      const buf = cursor ? installer.cursorZip(rec) : installer.mergeToSingleVpk(rec);
       const safe = rec.name.replace(/[<>:"/\\|?*]/g, '_') || 'mod';
       const res = await dialog.showSaveDialog(win, {
-        title: t('Сохранить мод одним .vpk файлом'),
-        defaultPath: `${safe}.vpk`,
-        filters: [{ name: t('VPK мод'), extensions: ['vpk'] }],
+        title: cursor ? t('Сохранить курсор архивом') : t('Сохранить мод одним .vpk файлом'),
+        defaultPath: `${safe}.${cursor ? 'zip' : 'vpk'}`,
+        filters: [cursor
+          ? { name: t('Архив курсора'), extensions: ['zip'] }
+          : { name: t('VPK мод'), extensions: ['vpk'] }],
       });
       if (res.canceled || !res.filePath) return { cancelled: true };
       fs.writeFileSync(res.filePath, buf);
