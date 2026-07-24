@@ -95,10 +95,12 @@ class Installer {
     this.toolsDir = path.join(userDataDir, 'tools');
     this.backupsDir = path.join(userDataDir, 'backups');
     this.packsDir = path.join(userDataDir, 'packs'); // per-member source VPKs of combined packs
+    this.cursorsDir = path.join(userDataDir, 'cursors'); // per-record copy of each cursor set
     fs.mkdirSync(this.downloadsDir, { recursive: true });
     fs.mkdirSync(this.toolsDir, { recursive: true });
     fs.mkdirSync(this.backupsDir, { recursive: true });
     fs.mkdirSync(this.packsDir, { recursive: true });
+    fs.mkdirSync(this.cursorsDir, { recursive: true });
     this.getGamePath = getGamePath;
     this.getLangSuffix = getLangSuffix;
     this.onProgress = onProgress || (() => {});
@@ -387,6 +389,85 @@ class Installer {
     return [{ root: 'tools', relPath: path.basename(dest) }];
   }
 
+  // ---------- cursors ----------
+
+  /*
+   * A cursor set is not a pak: it is loose files written straight over Valve's own in
+   * game\dota\resource\cursor, and every set overwrites the same names. So it cannot be
+   * switched off by renaming (nothing would be left to draw the cursor) and two sets
+   * cannot be on at once. Instead each installed set keeps its own copy here, and
+   * on/off means: write those files over the vanilla ones, or put the vanilla ones back.
+   */
+
+  cursorStoreDir(recId) {
+    return path.join(this.cursorsDir, String(recId).replace(/[^A-Za-z0-9_-]/g, ''));
+  }
+
+  cursorFiles(files) {
+    return (files || []).filter((f) => f.root === 'cursor');
+  }
+
+  // Keep a copy of the set that is live right now. Only ever call this for the record that
+  // actually owns what is on disk (the one being installed, adopted, or switched off) —
+  // otherwise the copy would be some other mod's cursor.
+  ensureCursorStore(recId, files) {
+    const own = this.cursorFiles(files);
+    if (!recId || !own.length) return false;
+    const store = this.cursorStoreDir(recId);
+    try {
+      if (fs.existsSync(store) && fs.readdirSync(store).length) return true; // already stashed
+    } catch { /* unreadable — restash */ }
+    const live = this.rootAbs('cursor');
+    let n = 0;
+    for (const f of own) {
+      const src = path.join(live, f.relPath);
+      if (!fs.existsSync(src)) continue;
+      this.copyInto(src, path.join(store, f.relPath));
+      n++;
+    }
+    return n > 0;
+  }
+
+  // write the set over the game's cursor folder (vanilla files backed up once)
+  deployCursor(recId, files) {
+    const store = this.cursorStoreDir(recId);
+    const live = this.rootAbs('cursor');
+    const backupRoot = path.join(this.backupsDir, 'cursor');
+    let n = 0;
+    for (const f of this.cursorFiles(files)) {
+      const src = path.join(store, f.relPath);
+      if (!fs.existsSync(src)) continue;
+      n++;
+      const dest = path.join(live, f.relPath);
+      // already ours (a re-deploy after a restart): backing it up now would record the mod
+      // itself as the vanilla file and there would be nothing left to switch back to
+      if (fs.existsSync(dest) && fs.readFileSync(dest).equals(fs.readFileSync(src))) continue;
+      const backup = path.join(backupRoot, f.relPath);
+      if (fs.existsSync(dest) && !fs.existsSync(backup)) this.copyInto(dest, backup);
+      this.copyInto(src, dest);
+    }
+    if (!n) throw new Error(t('Файлы курсора не сохранены — переустанови мод'));
+    return n;
+  }
+
+  // put the vanilla cursor back (or drop the file, if the set added one Valve has no copy of)
+  undeployCursor(recId, files) {
+    this.ensureCursorStore(recId, files);
+    const live = this.rootAbs('cursor');
+    const backupRoot = path.join(this.backupsDir, 'cursor');
+    for (const f of this.cursorFiles(files)) {
+      const dest = path.join(live, f.relPath);
+      const backup = path.join(backupRoot, f.relPath);
+      if (fs.existsSync(backup)) this.copyInto(backup, dest);
+      else if (fs.existsSync(dest)) fs.rmSync(dest, { force: true });
+    }
+  }
+
+  dropCursorStore(recId) {
+    if (!recId) return;
+    try { fs.rmSync(this.cursorStoreDir(recId), { recursive: true, force: true }); } catch { /* ignore */ }
+  }
+
   // ---------- enable / disable / remove ----------
 
   rootAbs(root) {
@@ -400,7 +481,14 @@ class Installer {
     }
   }
 
-  setEnabled(files, enabled) {
+  // recId is needed for cursor sets (see the cursor section above); without it a cursor
+  // record is left alone, exactly as before.
+  setEnabled(files, enabled, recId = null) {
+    if (recId && this.cursorFiles(files).length) {
+      if (enabled) this.deployCursor(recId, files);
+      else this.undeployCursor(recId, files);
+      return;
+    }
     for (const f of files) {
       if (f.root === 'tools') continue;
       if (f.root === 'fonts' || f.root === 'cursor') continue; // handled by reinstall/restore
@@ -411,7 +499,13 @@ class Installer {
     }
   }
 
-  remove(files) {
+  // opts.recId drops the record's stored cursor copy; opts.deployed=false says its files are
+  // not the ones on disk right now (it was switched off), so vanilla must not be restored
+  // over whatever cursor took its place.
+  remove(files, opts = {}) {
+    const { recId = null, deployed = true } = opts;
+    this.dropCursorStore(recId);
+    if (!deployed) files = files.filter((f) => f.root !== 'cursor');
     for (const f of files) {
       const rootAbs = this.rootAbs(f.root);
       if (f.root === 'tools') {

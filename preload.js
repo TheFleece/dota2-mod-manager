@@ -16,6 +16,10 @@ contextBridge.exposeInMainWorld('api', {
     moveLangFiles: (fromSuffix) => ipcRenderer.invoke('settings:moveLangFiles', fromSuffix),
     setGameLanguages: (langs) => ipcRenderer.invoke('settings:setGameLanguages', langs),
   },
+  ui: {
+    setZoom: (factor) => ipcRenderer.invoke('ui:setZoom', factor),
+    onZoom: (cb) => ipcRenderer.on('ui:zoom', (e, factor) => cb(factor)),
+  },
   catalog: {
     load: (force) => ipcRenderer.invoke('catalog:load', force),
   },

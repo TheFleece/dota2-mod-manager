@@ -34,6 +34,15 @@ function sendProgress(evt) {
   if (win && !win.isDestroyed()) win.webContents.send('progress', evt);
 }
 
+// UI scale, kept inside a range where the layout still holds together
+const ZOOM_MIN = 0.7;
+const ZOOM_MAX = 1.6;
+function clampZoom(v) {
+  const z = Number(v);
+  if (!Number.isFinite(z) || z <= 0) return 1;
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1360,
@@ -54,6 +63,28 @@ function createWindow() {
 
   win.on('maximize', () => win.webContents.send('win:maximized', true));
   win.on('unmaximize', () => win.webContents.send('win:maximized', false));
+
+  // window zoom = the app's own UI scale: text, images and spacing together
+  win.webContents.on('did-finish-load', () => {
+    win.webContents.setZoomFactor(clampZoom(settings.get('uiScale')));
+  });
+
+  // Ctrl +/-/0. Handled here rather than in the renderer because preventDefault() at this
+  // point also swallows Electron's built-in zoom accelerators — which would otherwise
+  // change the zoom behind our back and drift away from the saved scale.
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !input.control || input.alt) return;
+    const cur = win.webContents.getZoomFactor();
+    let z = null;
+    if (input.key === '=' || input.key === '+') z = clampZoom(cur + 0.05);
+    else if (input.key === '-' || input.key === '_') z = clampZoom(cur - 0.05);
+    else if (input.key === '0') z = 1;
+    if (z === null) return;
+    event.preventDefault();
+    settings.set('uiScale', z);
+    win.webContents.setZoomFactor(z);
+    win.webContents.send('ui:zoom', z);
+  });
 
   // dev: MM_SHOT=<path> saves a screenshot after load (used for automated UI checks)
   if (process.env.MM_SHOT) {
@@ -161,6 +192,14 @@ app.whenReady().then(async () => {
     installer.mergeMultiPartRecords(library);
   } catch (e) {
     diag('multi-part merge skipped: ' + e.message);
+  }
+
+  // put the switched-on cursor set back on disk, and stash a copy of sets installed before
+  // they could be switched off at all
+  try {
+    reconcileCursors();
+  } catch (e) {
+    diag('cursor reconcile skipped: ' + e.message);
   }
 
   registerIpc();
@@ -539,11 +578,15 @@ function importPresetLink(text) {
 function applyPreset(preset) {
   const wanted = new Set(preset.modIds);
   const errors = [];
-  for (const rec of library.list()) {
-    const shouldEnable = wanted.has(rec.id);
-    if (rec.enabled !== shouldEnable) {
+  const recs = library.list();
+  // off first, then on: two cursor sets cannot be live at once, so the outgoing one has to
+  // put the vanilla files back before the incoming one writes over them
+  for (const pass of [false, true]) {
+    for (const rec of recs) {
+      const shouldEnable = wanted.has(rec.id);
+      if (shouldEnable !== pass || rec.enabled === shouldEnable) continue;
       try {
-        installer.setEnabled(rec.files, shouldEnable);
+        installer.setEnabled(rec.files, shouldEnable, rec.id);
         library.setEnabled(rec.id, shouldEnable);
       } catch (err) {
         errors.push(`${rec.name}: ${err.message}`);
@@ -551,6 +594,71 @@ function applyPreset(preset) {
     }
   }
   return errors;
+}
+
+// ---------- cursors ----------
+
+// A cursor set is loose files in resource\cursor, not a pak that can be renamed aside, and
+// every set writes the same names — so only one can be live and switching happens by
+// copying files back and forth (see the cursor section of src/installer.js).
+
+function isCursorRecord(rec) {
+  return !!rec && (rec.files || []).some((f) => f.root === 'cursor');
+}
+
+// switch off every cursor set except one, and report which ones gave way
+function disableOtherCursors(exceptId) {
+  const off = [];
+  for (const rec of library.list()) {
+    if (rec.id === exceptId || rec.enabled === false || !isCursorRecord(rec)) continue;
+    try {
+      installer.setEnabled(rec.files, false, rec.id);
+      library.setEnabled(rec.id, false);
+      off.push(rec.name);
+    } catch { /* noop */ }
+  }
+  return off;
+}
+
+// the master switch renames paks in the language folder, which leaves cursors untouched —
+// take them off (and put them back) alongside it, so "mods off" really means vanilla
+function applyMasterToCursors(enabled) {
+  for (const rec of library.list()) {
+    if (rec.enabled === false || !isCursorRecord(rec)) continue;
+    try {
+      if (enabled) installer.deployCursor(rec.id, rec.files);
+      else installer.undeployCursor(rec.id, rec.files);
+    } catch { /* noop */ }
+  }
+}
+
+// Startup repair: the cursor folder can drift from the manifest (a game update, a Steam
+// verify, another tool), and records made before cursors could be switched off have no
+// stored copy yet. Also settles the legacy case of several sets marked on at once — only
+// the newest was ever really on disk.
+function reconcileCursors() {
+  if (!settings.get('dotaGamePath')) return;
+  const cursors = library.list().filter(isCursorRecord)
+    .sort((a, b) => (b.installedAt || 0) - (a.installedAt || 0));
+  if (!cursors.length) return;
+  let masterOff = false;
+  try { masterOff = installer.masterIsOff(); } catch { /* no language folder yet */ }
+  let liveClaimed = false;
+  for (const rec of cursors) {
+    try {
+      if (!fs.existsSync(installer.cursorStoreDir(rec.id))) {
+        const adopted = rec.enabled !== false && !liveClaimed && installer.ensureCursorStore(rec.id, rec.files);
+        if (adopted) liveClaimed = true;
+        else {
+          // nothing of this set is kept anywhere — it can only come back by reinstalling
+          if (rec.enabled !== false) library.setEnabled(rec.id, false);
+          continue;
+        }
+      }
+      if (rec.enabled === false || masterOff) installer.undeployCursor(rec.id, rec.files);
+      else installer.deployCursor(rec.id, rec.files);
+    } catch { /* best-effort */ }
+  }
 }
 
 // a library record that can go into a combined pack: a lang-folder skin/import with a
@@ -625,6 +733,14 @@ function registerIpc() {
     if (autoUpdater) autoUpdater.quitAndInstall();
   });
   ipcMain.handle('app:version', () => app.getVersion());
+
+  // ----- UI scale -----
+  ipcMain.handle('ui:setZoom', (e, factor) => {
+    const z = clampZoom(factor);
+    settings.set('uiScale', z);
+    if (win && !win.isDestroyed()) win.webContents.setZoomFactor(z);
+    return { ok: true, uiScale: z };
+  });
 
   // ----- settings -----
   ipcMain.handle('settings:get', () => {
@@ -761,17 +877,25 @@ function registerIpc() {
     try {
       const existing = library.findByKey(payload.categoryId, payload.name, payload.styleLabel);
       if (existing) return { error: t('Уже установлено'), already: true };
+      // a cursor set is written straight over the one in resource\cursor, so the set that
+      // is on has to step aside first — otherwise its files are gone with no way back
+      const replaced = payload.categoryId === 'cursors' ? disableOtherCursors(null) : [];
       const files = await installer.install({
         categoryId: payload.categoryId,
         modName: payload.name,
         fileRef: payload.fileRef,
       });
       const rec = library.add({ ...payload, files });
+      // keep the set's own copy, so it can be switched back on later without a re-download
+      if (payload.categoryId === 'cursors') { try { installer.ensureCursorStore(rec.id, files); } catch { /* noop */ } }
       // installed while the master switch is off? sweep the fresh file off too, so the
       // library state stays consistent (all mods off) until the user turns them back on.
-      if (installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
+      if (installer.masterIsOff()) {
+        try { installer.setMasterEnabled(false); } catch { /* noop */ }
+        applyMasterToCursors(false);
+      }
       sendProgress({ type: 'done', label: payload.name });
-      return { ok: true, record: rec };
+      return { ok: true, record: rec, replaced };
     } catch (err) {
       sendProgress({ type: 'error', label: payload.name, message: String(err.message || err) });
       return { error: String(err.message || err) };
@@ -913,6 +1037,7 @@ function registerIpc() {
   ipcMain.handle('mods:setMaster', (e, enabled) => {
     try {
       const r = installer.setMasterEnabled(!!enabled);
+      applyMasterToCursors(!!enabled);
       refreshPresence();
       return { ok: true, ...r };
     } catch (err) {
@@ -924,9 +1049,11 @@ function registerIpc() {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
     try {
-      installer.setEnabled(rec.files, enabled);
+      // only one cursor set can be live — the others give way
+      const replaced = enabled && isCursorRecord(rec) ? disableOtherCursors(id) : [];
+      installer.setEnabled(rec.files, enabled, rec.id);
       library.setEnabled(id, enabled);
-      return { ok: true };
+      return { ok: true, replaced };
     } catch (err) {
       return { error: String(err.message || err) };
     }
@@ -937,7 +1064,7 @@ function registerIpc() {
     if (!rec) return { error: t('Мод не найден') };
     try {
       if (rec.kind === 'pack') installer.removePackFully(rec);
-      else installer.remove(rec.files);
+      else installer.remove(rec.files, { recId: rec.id, deployed: rec.enabled !== false });
       library.removeRecord(id);
       return { ok: true };
     } catch (err) {
@@ -1061,7 +1188,9 @@ function registerIpc() {
       const matches = fingerprints.match(fingerprintFiles(files));
       if (!matches) return { error: t('Совпадение с каталогом не найдено') };
       const m = matches[0];
-      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: preview || null, files: rels.map((rp) => ({ root: 'cursor', relPath: rp })) });
+      const rec = library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: m.name, preview: preview || null, files: rels.map((rp) => ({ root: 'cursor', relPath: rp })) });
+      // the set is on disk but not ours yet — keep a copy so it can be switched off and on
+      try { installer.ensureCursorStore(rec.id, rec.files); } catch { /* noop */ }
       return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };
@@ -1368,11 +1497,14 @@ function registerIpc() {
           if (have) return have.id;
           const hit = cat.lookup(entry.categoryId, entry.name, entry.styleLabel);
           if (!hit) { errors.push(`${entry.name}: ${t('нет в каталоге')}`); return null; }
+          if (hit.categoryId === 'cursors') disableOtherCursors(null); // one cursor at a time
           const files = await installer.install({ categoryId: hit.categoryId, modName: hit.name, fileRef: hit.fileRef });
-          return library.add({
+          const rec = library.add({
             categoryId: hit.categoryId, name: hit.name, styleLabel: hit.styleLabel,
             fileRef: hit.fileRef, preview: hit.preview, files,
-          }).id;
+          });
+          if (hit.categoryId === 'cursors') { try { installer.ensureCursorStore(rec.id, files); } catch { /* noop */ } }
+          return rec.id;
         }
         if (entry.kind === 'embedded') {
           if (entry.fp && fpIndex.has(entry.fp)) return fpIndex.get(entry.fp); // already on disk

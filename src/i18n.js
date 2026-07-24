@@ -29,6 +29,7 @@ const EN = {
   'В файле меньше двух героев — разбирать нечего': 'Fewer than two heroes in the file — nothing to split',
   'Совпадение с каталогом не найдено': 'No catalog match found',
   'Папка курсора не найдена': 'Cursor folder not found',
+  'Файлы курсора не сохранены — переустанови мод': 'This cursor’s files were not kept — reinstall the mod',
   'Выбери минимум 2 мода (или пак и мод / два пака)': 'Pick at least 2 mods (or a pack and a mod / two packs)',
   'Пак ({0})': 'Pack ({0})',
   'Пак не найден': 'Pack not found',

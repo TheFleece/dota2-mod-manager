@@ -30,7 +30,7 @@
 | <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Sort by date or name; filter by tag, hero or installed state; search across the whole catalog |
 | <img src="docs/icons/pack.svg" width="20"> | **Packs** | Open a themed pack, drop the mods you don't want, save the result as your own pack |
 | <img src="docs/icons/preset.svg" width="20"> | **Presets** | Save named sets of enabled mods and switch between them in one click |
-| <img src="docs/icons/font.svg" width="20"> | **Fonts and cursors** | Installed into game files with a backup of the originals; removal restores vanilla |
+| <img src="docs/icons/font.svg" width="20"> | **Fonts and cursors** | Installed into game files with a backup of the originals; removal restores vanilla. Cursors switch on and off like any other mod, one set at a time |
 | <img src="docs/icons/tools.svg" width="20"> | **Tools** | Download and launch community utilities (Background Changer, ItemsFix, Compiler) from the app |
 | <img src="docs/icons/update.svg" width="20"> | **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
 
@@ -61,6 +61,7 @@ The app follows the same installation mechanics as the Dota2PornFx guides:
 - Terrains ship a `maps/` folder, placed next to the paks
 - Fonts go to `game/dota/panorama/fonts`, cursors to `game/dota/resource/cursor`; the app backs up originals and restores them on removal
 - Disabling a mod renames its file to `.off`; the game skips it, the file stays
+- Cursors are loose files rather than a pak, so switching one off puts the vanilla files back instead of renaming; the app keeps its own copy of every installed set in `%APPDATA%/dota2-mod-manager/cursors`
 
 Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in `manifest.json` next to it.
 

@@ -59,6 +59,10 @@ const EN = {
   'Все герои': 'All heroes', 'Все предметы': 'All items', 'Все крипы': 'All creeps',
   'Все башни': 'All towers', 'Все типы': 'All types', 'Все группы': 'All groups',
   'Все категории': 'All categories',
+  'Избранное': 'Favorites',
+  'В избранное': 'Add to favorites',
+  'Убрать из избранного': 'Remove from favorites',
+  'Здесь пусто — жми на сердечко у мода в каталоге': 'Nothing here yet — tap the heart on a mod in the catalog',
   'Превью': 'Preview', 'Источник': 'Source', 'Автор': 'Author', 'Баг': 'Bug', 'Гайд': 'Guide',
 
   // ---------- nav / chrome (index.html static) ----------
@@ -119,8 +123,8 @@ const EN = {
   'Гайд: {0}': 'Guide: {0}',
   'Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.':
     'The font is installed into the game files (game\\dota\\panorama\\fonts) — no launch option needed. Originals are backed up automatically.',
-  'Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически.':
-    'The cursor is installed into game\\dota\\resource\\cursor — no launch option needed. Originals are backed up automatically.',
+  'Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически. Включать и выключать его можно в Библиотеке, но активным может быть только один курсор: новый выключит предыдущий.':
+    'The cursor is installed into game\\dota\\resource\\cursor — no launch option needed. Originals are backed up automatically. You can switch it on and off in the Library, but only one cursor can be active: a new one turns the previous one off.',
   'Введи название пака': 'Enter a pack name',
   'В паке не осталось модов': 'No mods left in the pack',
   'Пак «{0}» сохранён — он появился в категории Паки': 'Pack «{0}» saved — it appears in the Packs category',
@@ -135,6 +139,8 @@ const EN = {
   '«{0}» и уже установленный «{1}»{2} конфликтуют — {3}. Одновременно работать не будут, победит тот, что грузится приоритетнее. Установить всё равно?':
     '«{0}» and the already-installed «{1}»{2} conflict — {3}. They won’t work at the same time; whichever loads with higher priority wins. Install anyway?',
   '{0} установлен': '{0} installed',
+  '{0} установлен — «{1}» выключен: курсор в игре может быть только один':
+    '{0} installed — «{1}» switched off: the game can only show one cursor',
   'Пак «{0}»: установлено {1}, пропущено {2}{3}': 'Pack «{0}»: {1} installed, {2} skipped{3}',
   ', ошибок {0}': ', {0} failed',
 
@@ -156,6 +162,11 @@ const EN = {
   'Выбрать мод': 'Select mod',
   'всегда активен': 'always on',
   'Включить/выключить': 'Enable/disable',
+  'Курсор в игре может быть только один — этот выключит остальные':
+    'The game can only show one cursor — this one switches the others off',
+  'Курсор заменён — «{0}» выключен': 'Cursor replaced — «{0}» switched off',
+  'Курсоры в пак не входят — они лежат не в паках, а в resource\\cursor':
+    'Cursors cannot go into a pak — they live in resource\\cursor, not in a pak file',
   'Привязать к каталогу': 'Adopt into the catalog',
   'Привязать': 'Adopt',
   'Разбить на отдельные моды по героям': 'Split into separate mods by hero',
@@ -337,15 +348,31 @@ const EN = {
   'не найден': 'not found',
   'Найти автоматически': 'Auto-detect',
   'Указать вручную': 'Set manually',
-  'Язык приложения': 'App language',
-  'Меняет только язык этого приложения. Папка модов от него больше не зависит — она следует за языком озвучки Dota.':
-    'Changes the language of this app only. The mods folder no longer depends on it — it follows Dota’s audio language.',
-  'Язык Dota': 'Dota language',
+  'Интерфейс': 'Interface',
+  'Язык': 'Language',
+  'Один переключатель на всё: язык приложения, текст в самой Dota и её озвучку (за языком озвучки следует папка модов). Dota при этом должна быть закрыта — иначе она перезапишет настройку при выходе.':
+    'One switch for all of it: the language of this app, the text inside Dota and its voices (the mods folder follows the voice language). Dota has to be closed, or it overwrites the setting on exit.',
+  'Масштаб': 'Scale',
+  'Мельче': 'Smaller',
+  'Крупнее': 'Bigger',
+  'Сбросить': 'Reset',
+  'Увеличивает текст и картинки во всём приложении. То же самое делают Ctrl + и Ctrl −, а Ctrl 0 возвращает 100%.':
+    'Scales text and images across the whole app. Ctrl + and Ctrl − do the same, Ctrl 0 puts it back to 100%.',
+  'Задать языки Dota по отдельности': 'Set Dota’s languages separately',
   'Текст': 'Text',
   'Озвучка': 'Voice',
   'Применить': 'Apply',
-  'Dota хранит эти языки отдельно, и моды подхватываются из папки языка озвучки — приложение перенесёт их туда же. Dota при этом должна быть закрыта, иначе она перезапишет настройку при выходе.':
-    'Dota keeps these two languages separately, and mods are loaded from the voice language’s folder — the app moves them there for you. Dota has to be closed, otherwise it overwrites the setting on exit.',
+  'Dota хранит эти языки отдельно: моды подхватываются из папки языка озвучки, а текст на них не влияет. Отсюда, например, английский интерфейс игры при русской озвучке.':
+    'Dota keeps these two apart: mods load from the voice language’s folder, and the text setting has no say in it. That is how you get an English game interface with Russian voices.',
+  'Переключить и текст в самой Dota на {0}? Игра должна быть закрыта.':
+    'Switch the text inside Dota to {0} as well? The game has to be closed.',
+  'Переключить и саму Dota на {0}? Текст в игре станет {1}, моды переедут в папку dota_{2}{3}. Игра должна быть закрыта, после смены её надо перезапустить.':
+    'Switch Dota itself to {0} as well? The game text becomes {1} and the mods move to the dota_{2} folder{3}. The game has to be closed, and needs a restart afterwards.',
+  ', а озвучка останется английской — пак «{0}» не скачан':
+    ', while the voices stay English because the {0} pack is not downloaded',
+  'Переключить': 'Switch',
+  'Dota переключена: текст «{0}», моды в dota_{1}. Перезапусти Dota.':
+    'Dota switched: text {0}, mods in dota_{1}. Restart Dota.',
   'Озвучка станет {0}': 'Voices will switch to {0}',
   'Озвучка останется английской: пак «{0}» не скачан': 'Voices stay English: the {0} pack is not downloaded',
   'Готово: текст «{0}», моды в dota_{1}. Перезапусти Dota.':
@@ -356,8 +383,8 @@ const EN = {
   'Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.':
     'Dota only mounts the folder of its own audio language, so made-up folders like dota_123 are no longer picked up. The -language option does nothing now — you can remove it from the Steam properties.',
   'Английский интерфейс': 'English interface',
-  ': поставь в блоке выше Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.':
-    ': set Text to English in the block above and leave Voice on the language whose folder is already in use. The two are independent, so mods keep working.',
+  ': открой «Задать языки Dota по отдельности» в блоке «Интерфейс», поставь Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.':
+    ': open “Set Dota’s languages separately” in the Interface block, set Text to English and leave Voice on the language whose folder is already in use. The two are independent, so mods keep working.',
   'Папку dota_{0} создаёт приложение': 'The dota_{0} folder is created by this app',
   ': Valve её не поставляет, и гарантии, что игра её смонтирует, нет. Если моды не появились в игре — выбери в настройках Dota другой Audio Language, например Russian.':
     ': Valve does not ship it, so there is no guarantee the game will mount it. If mods do not show up in game, pick a different Audio Language in Dota’s settings, Russian for example.',

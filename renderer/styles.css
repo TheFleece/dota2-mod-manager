@@ -1742,3 +1742,108 @@ html[lang="ru"] body.dropping[data-drop="none"]::after { content: 'Моды — 
 .lp-text small { font-size: 11.5px; color: var(--text-faint); }
 .lang-pick-btn .lp-go { color: var(--text-faint); transition: transform 0.2s var(--ease); }
 .lang-pick-btn:hover .lp-go { color: var(--primary-soft); transform: translateX(3px); }
+
+/* ============ Favorites (star on cards / in the modal) ============ */
+.fav-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(196, 181, 253, 0.28);
+  border-radius: 999px;
+  background: rgba(14, 12, 20, 0.68);
+  backdrop-filter: blur(10px);
+  color: var(--text-muted);
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease), color 0.2s, background 0.2s, border-color 0.2s;
+}
+.card:hover .fav-btn, .fav-btn:focus-visible { opacity: 1; transform: none; }
+.fav-btn:hover { color: var(--accent); background: rgba(251, 113, 133, 0.22); border-color: rgba(251, 113, 133, 0.45); }
+.fav-btn.on { opacity: 1; transform: none; color: var(--accent); border-color: rgba(251, 113, 133, 0.45); }
+.fav-btn .ms { font-size: 17px; }
+/* the icon font ships a FILL axis — a starred mod gets the solid heart */
+.fav-btn.on .ms, .rail-item.fav .ms { font-variation-settings: 'FILL' 1; }
+/* keep the tag row clear of the star */
+.card-media .media-tags { padding-right: 34px; }
+/* in the modal the star sits beside the title and is always visible */
+.modal-title-row .fav-btn {
+  position: static;
+  opacity: 1;
+  transform: none;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  backdrop-filter: none;
+  background: var(--surface);
+  border-color: var(--border);
+}
+.modal-title-row .fav-btn .ms { font-size: 19px; }
+.modal-title-row .fav-btn.on { border-color: rgba(251, 113, 133, 0.45); }
+.rail-item.fav .ms { color: var(--accent); }
+
+/* ============ UI scale control ============ */
+.scale-ctl { display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap; }
+.scale-ctl .scale-step { padding: 6px 9px; }
+.scale-ctl .scale-step .ms { font-size: 16px; }
+.scale-val {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 46px;
+  text-align: center;
+}
+#scaleRange {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  min-width: 120px;
+  max-width: 220px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  outline: none;
+}
+#scaleRange::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  box-shadow: 0 0 10px var(--primary-glow);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease);
+}
+#scaleRange::-webkit-slider-thumb:hover { transform: scale(1.18); }
+#scaleRange:focus-visible { border-color: rgba(196, 181, 253, 0.5); }
+
+/* ============ Settings: folded extras ============ */
+.settings-adv { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.settings-adv > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  transition: color 0.2s;
+}
+.settings-adv > summary::-webkit-details-marker { display: none; }
+.settings-adv > summary::before {
+  font-family: 'Material Symbols Rounded';
+  content: 'expand_more';
+  font-size: 18px;
+  transition: transform 0.22s var(--ease);
+}
+.settings-adv[open] > summary::before { transform: rotate(180deg); }
+.settings-adv > summary:hover { color: var(--primary-soft); }
+.settings-adv .settings-row:first-of-type { margin-top: 12px; }

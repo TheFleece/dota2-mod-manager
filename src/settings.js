@@ -15,6 +15,10 @@ const DEFAULTS = {
   // one-time language picker: false for fresh installs AND for users updating from a
   // version without this key, so everybody sees the picker once after this release.
   langPromptSeen: false,
+  // zoom factor of the whole window (text and images alike), 0.7 - 1.6
+  uiScale: 1,
+  // catalog mods the user starred: "<categoryId>|<mod name>" keys
+  favorites: [],
   // Discord identity, when signed in: { id, username, avatar }. No token is ever kept —
   // it is used once to read the name and dropped (see src/discord-auth.js).
   account: null,

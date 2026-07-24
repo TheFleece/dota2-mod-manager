@@ -66,10 +66,82 @@ const state = {
   masterOff: false,        // mods master switch state (all mods disabled at once)
   packsOpen: new Set(),    // ids of expanded pack cards
   libConflicts: [],        // pairs of enabled mods that overwrite each other's files
+  favorites: new Set(),    // starred catalog mods, as "<categoryId>|<name>" keys
+  gameLangOpen: false,     // Settings: the per-language Dota block is unfolded
 };
 
 const $ = (sel) => document.querySelector(sel);
 const viewRoot = $('#view-root');
+
+// ---------- favorites ----------
+
+const favKey = (cat, name) => `${cat}|${name}`;
+const isFav = (cat, name) => state.favorites.has(favKey(cat, name));
+
+async function toggleFavorite(cat, name) {
+  const key = favKey(cat, name);
+  if (state.favorites.has(key)) state.favorites.delete(key);
+  else state.favorites.add(key);
+  state.settings = await window.api.settings.set('favorites', [...state.favorites]);
+  return state.favorites.has(key);
+}
+
+// starred mods resolved back to catalog entries (a mod dropped from the catalog is skipped)
+function favoriteMods() {
+  const out = [];
+  for (const key of state.favorites) {
+    const cut = key.indexOf('|');
+    if (cut < 0) continue;
+    const mod = findModByName(key.slice(0, cut), key.slice(cut + 1));
+    if (mod) out.push(mod);
+  }
+  return out;
+}
+
+// ---------- UI scale ----------
+
+// The window's zoom factor, in percent — text, images and spacing scale together. Ctrl +/-/0
+// are handled in main.js (there they can also block Electron's own zoom accelerators);
+// Ctrl + wheel and the slider in Settings land here.
+const SCALE_MIN = 70;
+const SCALE_MAX = 160;
+const clampScale = (pct) => Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(Number(pct) / 5) * 5));
+const currentScalePct = () => Math.round((Number(state.settings?.uiScale) || 1) * 100);
+
+function paintScale(pct) {
+  const range = $('#scaleRange');
+  if (range) range.value = String(pct);
+  const val = $('#scaleVal');
+  if (val) val.textContent = `${pct}%`;
+}
+
+async function applyScalePct(pct) {
+  const want = clampScale(pct);
+  if (state.settings) state.settings.uiScale = want / 100;
+  paintScale(want);
+  const r = await window.api.ui.setZoom(want / 100);
+  const applied = Math.round((r?.uiScale || 1) * 100);
+  if (applied !== want) { if (state.settings) state.settings.uiScale = applied / 100; paintScale(applied); }
+}
+
+window.addEventListener('wheel', (e) => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  applyScalePct(currentScalePct() + (e.deltaY < 0 ? 5 : -5));
+}, { passive: false });
+
+// main.js took a Ctrl +/-/0 press — keep the slider honest
+window.api.ui.onZoom((factor) => {
+  if (state.settings) state.settings.uiScale = factor;
+  paintScale(Math.round(factor * 100));
+});
+
+function favButtonHtml(cat, name) {
+  const on = isFav(cat, name);
+  return `<button class="fav-btn ${on ? 'on' : ''}" data-fav="${esc(favKey(cat, name))}"
+    aria-pressed="${on}" title="${on ? L`Убрать из избранного` : L`В избранное`}"
+    aria-label="${on ? L`Убрать из избранного` : L`В избранное`}"><span class="ms">${on ? 'favorite' : 'favorite_border'}</span></button>`;
+}
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -588,9 +660,14 @@ function render() {
 function renderRail() {
   const rail = $('#catRail');
   const cats = new Set(visibleCategories().map((c) => c.id));
+  const favCount = favoriteMods().length;
   let html = `
     <button class="rail-item ${state.activeCategory === 'all' ? 'active' : ''}" data-cat="all">
       <span class="ms">apps</span>${L`Все категории`}
+    </button>
+    <button class="rail-item fav ${state.activeCategory === 'favorites' ? 'active' : ''}" data-cat="favorites">
+      <span class="ms">favorite</span>${L`Избранное`}
+      ${favCount ? `<span class="rail-cnt">${favCount}</span>` : ''}
     </button>`;
   for (const [label, ids] of RAIL_SECTIONS) {
     const present = ids.filter((id) => cats.has(id));
@@ -641,7 +718,31 @@ function renderCatalog() {
   const searching = state.search.trim().length > 0;
   if (searching) return renderSearchResults();
   if (state.activeCategory === 'all') return renderHome();
+  if (state.activeCategory === 'favorites') return renderFavorites();
   renderCategory(state.activeCategory);
+}
+
+// --- favorites ---
+
+function renderFavorites() {
+  const all = favoriteMods();
+  const installable = all.some(canBeInstalled);
+  const mods = applyFilters(all);
+
+  viewRoot.innerHTML = `
+    <div class="view-header">
+      <h1 class="view-title">${L`Избранное`}</h1>
+      <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}</span>
+    </div>
+    ${toolbarHtml(mods.length, { installable })}
+    <div class="grid" id="modGrid">
+      ${mods.length
+        ? mods.map((m, i) => cardHtml(m, i, true)).join('')
+        : `<div class="empty-note">${L`Здесь пусто — жми на сердечко у мода в каталоге`}</div>`}
+    </div>
+  `;
+  bindToolbar();
+  bindCards(viewRoot, mods);
 }
 
 // --- home (all categories) ---
@@ -726,9 +827,13 @@ function renderSearchResults() {
 function renderCategory(categoryId) {
   const all = categoryMods(categoryId).map((m) => ({ ...m, _cat: categoryId }));
   const tags = collectTags(all);
+  // hero dropdowns are long enough that catalog order is useless — sort them A-Z
   const groups = isGrouped(categoryId) ? collectGroups(all) : [];
+  if (categoryId === 'hero-items') groups.sort((a, b) => a.localeCompare(b));
   const heroes = categoryId === 'heroes'
-    ? (state.catalog?.constants?.HEROES_LIST || []).filter((h) => all.some((m) => heroMatches(h, m.name)))
+    ? (state.catalog?.constants?.HEROES_LIST || [])
+      .filter((h) => all.some((m) => heroMatches(h, m.name)))
+      .sort((a, b) => a.localeCompare(b))
     : [];
   const mods = applyFilters(all, categoryId);
   const installable = all.some(canBeInstalled);
@@ -849,6 +954,7 @@ function cardHtml(m, i, withCat = false) {
     <div class="card" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">
         ${mediaHtml(prev, { hoverPlay: true, fallbackIcon: catIcon(cat) })}
+        ${favButtonHtml(cat, m.name)}
         <div class="media-tags">
           ${installed ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}
           ${isPack ? `<span class="mtag">${L`Пак · ${(m.mods || []).length}`}</span>` : ''}
@@ -877,6 +983,7 @@ function cardHtml(m, i, withCat = false) {
 }
 
 function bindCards(root, modsList) {
+  root.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
   root.querySelectorAll('.card[data-key]').forEach((card) => {
     card.addEventListener('click', () => {
       const key = card.dataset.key;
@@ -903,6 +1010,26 @@ function bindCards(root, modsList) {
         openPlayer(playBtn.dataset.play, playBtn.dataset.title);
       });
     }
+  });
+}
+
+// star button on a card or in the modal: flips the star without disturbing the grid,
+// unless the Favorites view is open — there an unstarred mod has to leave the list
+function bindFavButton(btn) {
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const key = btn.dataset.fav;
+    const cut = key.indexOf('|');
+    const on = await toggleFavorite(key.slice(0, cut), key.slice(cut + 1));
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', String(on));
+    btn.querySelector('.ms').textContent = on ? 'favorite' : 'favorite_border';
+    const label = on ? L`Убрать из избранного` : L`В избранное`;
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    if (state.view !== 'catalog') return;
+    if (state.activeCategory === 'favorites') renderCatalog(); // the list itself changed
+    else renderRail();
   });
 }
 
@@ -1011,6 +1138,7 @@ function drawModal() {
     <div class="modal-body">
       <div class="modal-title-row">
         <div class="modal-title">${esc(mod.name)}</div>
+        ${favButtonHtml(categoryId, mod.name)}
       </div>
       <div class="modal-sub">
         <span>${esc(catName(categoryId))}</span>
@@ -1066,11 +1194,13 @@ function drawModal() {
           ${otherLinks.map((l) => `<button class="btn btn-sm" data-link="${links.indexOf(l)}"><span class="ms">open_in_new</span>${esc(tr(LINK_LABEL[l.type] || l.type || 'Ссылка'))}</button>`).join('')}
         </div>` : ''}
       ${categoryId === 'fonts' ? `<div class="modal-note">${L`Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.`}</div>` : ''}
-      ${categoryId === 'cursors' ? `<div class="modal-note">${L`Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически.`}</div>` : ''}
+      ${categoryId === 'cursors' ? `<div class="modal-note">${L`Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически. Включать и выключать его можно в Библиотеке, но активным может быть только один курсор: новый выключит предыдущий.`}</div>` : ''}
     </div>
   `;
 
   $('#modalCloseBtn').addEventListener('click', closeModal);
+  const favBtn = $('#modalContent .fav-btn');
+  if (favBtn) bindFavButton(favBtn);
 
   const previewPlay = $('#previewPlayBtn');
   if (previewPlay) {
@@ -1195,6 +1325,7 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   const r = await window.api.mods.install({ categoryId, name: mod.name, styleLabel, fileRef, preview });
   state.installing.delete(k);
   if (r.error && !r.already) toast(`${mod.name}: ${r.error}`, 'error', 6000);
+  else if (r.replaced?.length) toast(L`${mod.name} установлен — «${r.replaced.join(', ')}» выключен: курсор в игре может быть только один`, 'warn', 7000);
   else if (!r.error) toast(L`${mod.name} установлен`);
   await refreshInstalledIndex();
   refreshCardBadges();
@@ -1231,6 +1362,19 @@ async function installPack(pack) {
 function libMatchesSearch(rec) {
   const q = state.libSearch.trim().toLowerCase();
   return !q || rec.name.toLowerCase().includes(q) || (rec.members || []).some((m) => m.name.toLowerCase().includes(q));
+}
+
+// A cursor set is loose files over Valve's own in resource\cursor, not a pak: it can be
+// switched on and off (the app keeps its own copy and puts the vanilla files back), but
+// only one at a time, and it never goes into a combined pak.
+function isCursorRec(rec) {
+  return !!rec && (rec.files || []).some((f) => f.root === 'cursor');
+}
+
+// fonts are still install-or-remove: they are a subset of panorama\fonts with no slot of
+// their own, so there is nothing to switch
+function isFontRec(rec) {
+  return !!rec && (rec.files || []).some((f) => f.root === 'fonts');
 }
 
 function isPackableRec(rec) {
@@ -1311,7 +1455,7 @@ function conflictPartners(id) {
 }
 
 function normalRowHtml(rec, i, masterOff) {
-  const selectable = !['fonts', 'cursors'].includes(rec.categoryId);
+  const selectable = !isFontRec(rec);
   const selected = state.librarySel.has(rec.id);
   const clash = conflictPartners(rec.id);
   // own preview, else the catalog thumbnail if the file is recognised (so a matched
@@ -1332,9 +1476,9 @@ function normalRowHtml(rec, i, masterOff) {
         </div>
       </div>
       <div class="lib-actions">
-        ${['fonts', 'cursors'].includes(rec.categoryId)
+        ${isFontRec(rec)
           ? `<span style="font-size:11.5px;color:var(--text-muted)">${L`всегда активен`}</span>`
-          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${masterOff ? 'disabled' : ''}></button>`}
+          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
         ${rec.heroes >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
         ${rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath)) ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить мод одним .vpk файлом (для отправки автору каталога)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
@@ -1391,7 +1535,7 @@ async function adoptAll() {
 // top-level records the "select all" checkbox governs (visible, non-font/cursor)
 function selectableRecordIds() {
   return (state.libRecords || [])
-    .filter((r) => !['fonts', 'cursors'].includes(r.categoryId) && libMatchesSearch(r))
+    .filter((r) => !isFontRec(r) && libMatchesSearch(r))
     .map((r) => r.id);
 }
 
@@ -1685,11 +1829,16 @@ async function bindLibrary(external) {
     toast(L`Удалено`);
     reRender();
   });
-  $('#bulkCombine')?.addEventListener('click', () => combineSelection([...state.librarySel].filter((k) => {
-    if (isMemberKey(k)) return false;
-    const r = byId(k);
-    return r && (isPackableRec(r) || r.kind === 'pack');
-  })));
+  $('#bulkCombine')?.addEventListener('click', () => {
+    // a pak holds VPK content; a cursor set is loose files elsewhere in the game and stays out
+    const cursors = [...state.librarySel].filter((k) => !isMemberKey(k) && isCursorRec(byId(k)));
+    if (cursors.length) toast(L`Курсоры в пак не входят — они лежат не в паках, а в resource\\cursor`, 'warn', 6000);
+    combineSelection([...state.librarySel].filter((k) => {
+      if (isMemberKey(k)) return false;
+      const r = byId(k);
+      return r && (isPackableRec(r) || r.kind === 'pack');
+    }));
+  });
   $('#combineHintBtn')?.addEventListener('click', async () => {
     const ids = await pickModsDialog(standalonePackable(), { title: L`Выбери моды для объединения в пак`, okLabel: L`Далее` });
     if (ids) combineSelection(ids);
@@ -1753,7 +1902,9 @@ async function bindLibrary(external) {
     if (el.classList.contains('toggle') && el.dataset.id) {
       const rec = byId(el.dataset.id);
       const r = await window.api.mods.setEnabled(rec.id, !rec.enabled);
-      if (r.error) toast(r.error, 'error');
+      if (r.error) toast(r.error, 'error', 6000);
+      // a cursor that goes on takes the place of the one that was on
+      else if (r.replaced?.length) toast(L`Курсор заменён — «${r.replaced.join(', ')}» выключен`, 'warn', 6000);
       reRender();
       return;
     }
@@ -2024,7 +2175,7 @@ window.api.presets.onLink((res) => handlePresetImport(res));
 
 async function bulkToggle(installed, enabled) {
   for (const rec of installed) {
-    if (['fonts', 'cursors'].includes(rec.categoryId)) continue;
+    if (isFontRec(rec)) continue;
     if (rec.enabled !== enabled) await window.api.mods.setEnabled(rec.id, enabled);
   }
   renderLibrary();
@@ -2041,7 +2192,7 @@ async function bulkSetEnabled(enabled) {
       await window.api.packs.setMemberEnabled(packId, memberId, enabled);
     } else {
       const rec = (state.libRecords || []).find((r) => r.id === k);
-      if (!rec || ['fonts', 'cursors'].includes(rec.categoryId)) continue;
+      if (!rec || isFontRec(rec)) continue;
       if (rec.enabled !== enabled) await window.api.mods.setEnabled(k, enabled);
     }
   }
@@ -2433,6 +2584,7 @@ async function renderSettings() {
   const s = await window.api.settings.get();
   state.settings = s;
   const gl = s.gameLang || {};
+  const scalePct = Math.round((Number(s.uiScale) || 1) * 100);
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
 
@@ -2440,9 +2592,9 @@ async function renderSettings() {
     <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
 
     <div class="settings-block">
-      <h3>${L`Язык приложения`}</h3>
+      <h3>${L`Интерфейс`}</h3>
       <div class="settings-row">
-        <span class="settings-label">${L`Язык приложения`}</span>
+        <span class="settings-label">${L`Язык`}</span>
         <div class="select-wrap">
           <span class="ms">translate</span>
           <select class="input" id="uiLangSelect" style="padding-left:30px">
@@ -2452,8 +2604,49 @@ async function renderSettings() {
         </div>
       </div>
       <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
-        ${L`Меняет только язык этого приложения. Папка модов от него больше не зависит — она следует за языком озвучки Dota.`}
+        ${L`Один переключатель на всё: язык приложения, текст в самой Dota и её озвучку (за языком озвучки следует папка модов). Dota при этом должна быть закрыта — иначе она перезапишет настройку при выходе.`}
       </div>
+      <div class="settings-row" style="margin-top:14px">
+        <span class="settings-label">${L`Масштаб`}</span>
+        <div class="scale-ctl">
+          <button class="btn btn-sm scale-step" id="scaleDown" aria-label="${L`Мельче`}"><span class="ms">remove</span></button>
+          <input type="range" id="scaleRange" min="70" max="160" step="5" value="${scalePct}" aria-label="${L`Масштаб`}">
+          <span class="scale-val" id="scaleVal">${scalePct}%</span>
+          <button class="btn btn-sm scale-step" id="scaleUp" aria-label="${L`Крупнее`}"><span class="ms">add</span></button>
+          <button class="btn btn-sm" id="scaleReset">${L`Сбросить`}</button>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+        ${L`Увеличивает текст и картинки во всём приложении. То же самое делают Ctrl + и Ctrl −, а Ctrl 0 возвращает 100%.`}
+      </div>
+      <details class="settings-adv" ${state.gameLangOpen ? 'open' : ''} id="gameLangAdv">
+        <summary>${L`Задать языки Dota по отдельности`}</summary>
+        <div class="settings-row">
+          <span class="settings-label">${L`Текст`}</span>
+          <div class="select-wrap">
+            <span class="ms">translate</span>
+            <select class="input" id="gameTextLang" style="padding-left:30px">
+              ${gameLangOptions(gl.languages, gl.uiLanguage || 'english')}
+            </select>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">${L`Озвучка`}</span>
+          <div class="select-wrap">
+            <span class="ms">campaign</span>
+            <select class="input" id="gameAudioLang" style="padding-left:30px">
+              ${gameLangOptions(gl.languages, s.langSuffix)}
+            </select>
+          </div>
+        </div>
+        <div class="settings-row">
+          <button class="btn btn-sm btn-primary" id="applyGameLang">${L`Применить`}</button>
+          <span style="font-size:12.5px;color:var(--text-muted)" id="gameLangHint"></span>
+        </div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+          ${L`Dota хранит эти языки отдельно: моды подхватываются из папки языка озвучки, а текст на них не влияет. Отсюда, например, английский интерфейс игры при русской озвучке.`}
+        </div>
+      </details>
     </div>
 
     <div class="settings-block" style="animation-delay:50ms">
@@ -2477,35 +2670,6 @@ async function renderSettings() {
       <div class="settings-row">
         <button class="btn btn-sm" id="detectBtn">${L`Найти автоматически`}</button>
         <button class="btn btn-sm" id="browseBtn">${L`Указать вручную`}</button>
-      </div>
-    </div>
-
-    <div class="settings-block" style="animation-delay:90ms">
-      <h3>${L`Язык Dota`}</h3>
-      <div class="settings-row">
-        <span class="settings-label">${L`Текст`}</span>
-        <div class="select-wrap">
-          <span class="ms">translate</span>
-          <select class="input" id="gameTextLang" style="padding-left:30px">
-            ${gameLangOptions(gl.languages, gl.uiLanguage || 'english')}
-          </select>
-        </div>
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">${L`Озвучка`}</span>
-        <div class="select-wrap">
-          <span class="ms">campaign</span>
-          <select class="input" id="gameAudioLang" style="padding-left:30px">
-            ${gameLangOptions(gl.languages, s.langSuffix)}
-          </select>
-        </div>
-      </div>
-      <div class="settings-row">
-        <button class="btn btn-sm btn-primary" id="applyGameLang">${L`Применить`}</button>
-        <span style="font-size:12.5px;color:var(--text-muted)" id="gameLangHint"></span>
-      </div>
-      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
-        ${L`Dota хранит эти языки отдельно, и моды подхватываются из папки языка озвучки — приложение перенесёт их туда же. Dota при этом должна быть закрыта, иначе она перезапишет настройку при выходе.`}
       </div>
     </div>
 
@@ -2535,7 +2699,7 @@ async function renderSettings() {
         ${L`Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.`}
       </div>
       <div class="modal-note" style="margin-top:10px">
-        <b>${L`Английский интерфейс`}</b>${L`: поставь в блоке выше Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.`}
+        <b>${L`Английский интерфейс`}</b>${L`: открой «Задать языки Dota по отдельности» в блоке «Интерфейс», поставь Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.`}
       </div>
       ${gl.selfMade ? `
       <div class="modal-note warn" style="margin-top:10px">
@@ -2591,11 +2755,36 @@ async function renderSettings() {
   `;
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
 
+  // one language switch for everything: the app, Dota's text and Dota's voice. The voice
+  // part decides which dota_<lang> folder the game mounts, so it moves the mods with it —
+  // that is worth a yes/no rather than happening behind the user's back.
   $('#uiLangSelect').addEventListener('change', async (e) => {
-    await applyLanguage(e.target.value);
-    toast(e.target.value === 'ru' ? L`Язык переключён на Русский` : L`Язык переключён на English`);
+    const lang = e.target.value;
+    const want = lang === 'ru' ? 'russian' : 'english';
+    const textNow = gl.uiLanguage || null;
+    const audioNow = s.langSuffix || null;
+    await applyLanguage(lang);
+    toast(lang === 'ru' ? L`Язык переключён на Русский` : L`Язык переключён на English`);
+    if (!s.dotaPathValid || (textNow === want && audioNow === want)) { renderSettings(); return; }
+    const voiceReady = (gl.folders || []).some((f) => f.suffix === want && f.valveContent);
+    const ask = audioNow === want
+      ? L`Переключить и текст в самой Dota на ${langName(want)}? Игра должна быть закрыта.`
+      : L`Переключить и саму Dota на ${langName(want)}? Текст в игре станет ${langName(want)}, моды переедут в папку dota_${want}${voiceReady ? '' : L`, а озвучка останется английской — пак «${langName(want)}» не скачан`}. Игра должна быть закрыта, после смены её надо перезапустить.`;
+    if (!await confirmDialog(ask, { okLabel: L`Переключить`, danger: false })) { renderSettings(); return; }
+    const r = await window.api.settings.setGameLanguages({ ui: want, audio: want });
+    if (r?.error) toast(r.error, 'error', 7000);
+    else toast(L`Dota переключена: текст «${langName(want)}», моды в dota_${want}. Перезапусти Dota.`, 'ok', 8000);
     renderSettings();
+    await refreshInstalledIndex();
+    refreshSidebarStatus();
   });
+
+  // ----- UI scale -----
+  $('#scaleRange')?.addEventListener('input', (e) => applyScalePct(Number(e.target.value)));
+  $('#scaleDown')?.addEventListener('click', () => applyScalePct(currentScalePct() - 5));
+  $('#scaleUp')?.addEventListener('click', () => applyScalePct(currentScalePct() + 5));
+  $('#scaleReset')?.addEventListener('click', () => applyScalePct(100));
+  $('#gameLangAdv')?.addEventListener('toggle', (e) => { state.gameLangOpen = e.target.open; });
   $('#detectBtn').addEventListener('click', async () => {
     const found = await window.api.settings.detectDota();
     if (found) toast(L`Dota 2 найдена: ${found}`);
@@ -2833,6 +3022,7 @@ function showLanguagePicker() {
   // language: settings.json is the source of truth; reconcile the localStorage-seeded value
   const cfg = await window.api.settings.get();
   state.settings = cfg;
+  state.favorites = new Set(Array.isArray(cfg.favorites) ? cfg.favorites : []);
   window.I18N_LANG = cfg.uiLang === 'ru' ? 'ru' : 'en';
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();
