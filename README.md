@@ -44,19 +44,16 @@
 1. Download **[Dota 2 Mod Manager Setup](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe)** (direct link, always the latest version)
 2. Run it. The app installs, creates a desktop shortcut and starts
 3. It finds your Dota 2 installation on its own (you can change the path in Settings)
-4. Add the launch option shown in **Settings** to Steam (`Steam → Dota 2 → Properties → Launch Options`):
+4. That is all. No launch options, no Steam properties to edit — **Settings** shows the folder mods are installed into
 
-```
--language russian
-```
-
-Mods load from a custom language folder (`game/dota_russian`, `dota_123`), so the game needs a matching `-language` launch option. If you play in Russian, use `dota_russian` / `-language russian`: the game stays Russian and mods work. Fonts and cursors need no launch option at all.
+Mods live in the folder named after Dota's own audio language (`game/dota_russian` for Russian voices, `game/dota_english` for English), because that is the only one the game mounts. The app reads that language from the game and follows it, moving your installed mods along if it changes. You can also switch Dota's text and voice languages from **Settings** without leaving the app. The `-language` launch option stopped doing anything with Dota's July 2026 update, so you can drop it from the Steam properties; fonts and cursors go straight into the game files and never needed it.
 
 ## How it works
 
 The app follows the same installation mechanics as the Dota2PornFx guides:
 
-- VPK mods go into `steamapps/common/dota 2 beta/game/dota_<suffix>/` as `pakNN_dir.vpk`; the app assigns slots 10–99
+- Dota keeps its text and voice languages separately in `dota/cfg/boot.vcfg` and mounts the folder of the **voice** one, so that folder is where mods have to live; the app reads the setting from the game and keeps up with it
+- VPK mods go into `steamapps/common/dota 2 beta/game/dota_<voice language>/` as `pakNN_dir.vpk`; the app assigns slots 10–99
 - Priority categories (trees, river, shaders, hero fx, ranged attack, hero items, optimization) get low slots `pak02`–`pak09`, so they load before regular mods
 - Terrains ship a `maps/` folder, placed next to the paks
 - Fonts go to `game/dota/panorama/fonts`, cursors to `game/dota/resource/cursor`; the app backs up originals and restores them on removal
@@ -74,13 +71,9 @@ Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest 
 1. Скачай **[Dota 2 Mod Manager Setup](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe)** (прямая ссылка, всегда последняя версия)
 2. Запусти. Приложение установится, создаст ярлык и откроется
 3. Путь к Dota 2 находится автоматически
-4. Добавь параметр запуска из **Настроек** в Steam (`Steam → Dota 2 → Свойства → Параметры запуска`):
+4. Всё. Никаких параметров запуска и правок свойств Steam — в **Настройках** видно, в какую папку ставятся моды
 
-```
--language russian
-```
-
-Играешь на русском — используй `dota_russian` / `-language russian`: игра останется русской, моды будут работать. Шрифты и курсоры работают без параметра запуска.
+Моды живут в папке языка озвучки Dota (`game/dota_russian` при русских голосах, `game/dota_english` при английских): только эту папку игра и монтирует. Приложение читает язык из самой игры, следует за ним и переносит уже установленные моды, если он сменился. Сменить язык текста и озвучки Dota можно прямо в **Настройках**. Параметр `-language` после июльского апдейта Dota 2026 ни на что не влияет, его можно убрать из свойств Steam; шрифтам и курсорам он не был нужен никогда — они ставятся прямо в файлы игры.
 
 ## Development
 
