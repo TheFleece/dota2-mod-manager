@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('api', {
     set: (key, value) => ipcRenderer.invoke('settings:set', key, value),
     detectDota: () => ipcRenderer.invoke('settings:detectDota'),
     browseDota: () => ipcRenderer.invoke('settings:browseDota'),
+    moveLangFiles: (fromSuffix) => ipcRenderer.invoke('settings:moveLangFiles', fromSuffix),
   },
   catalog: {
     load: (force) => ipcRenderer.invoke('catalog:load', force),

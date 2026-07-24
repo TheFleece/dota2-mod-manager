@@ -2398,9 +2398,23 @@ function renderGuides() {
 
 // ===== Settings =====
 
+// folder picker for the manual mode: every dota_* folder on disk plus the language the game
+// reports, so the list always contains the one that actually works
+function langOptions(s, gl) {
+  const seen = new Set();
+  const opts = [];
+  for (const v of [gl.suffix, s.langSuffix, ...(gl.folders || []).map((f) => f.suffix)]) {
+    if (!v || seen.has(v)) continue;
+    seen.add(v);
+    opts.push(`<option value="${esc(v)}" ${s.langSuffix === v ? 'selected' : ''}>dota_${esc(v)}</option>`);
+  }
+  return opts.join('');
+}
+
 async function renderSettings() {
   const s = await window.api.settings.get();
   state.settings = s;
+  const gl = s.gameLang || {};
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
 
@@ -2420,7 +2434,7 @@ async function renderSettings() {
         </div>
       </div>
       <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
-        ${L`Меняет язык интерфейса и папку модов (English — dota_123, Русский — dota_russian). Установленные моды переезжают автоматически.`}
+        ${L`Меняет только язык этого приложения. Папка модов от него больше не зависит — она следует за языком озвучки Dota.`}
       </div>
     </div>
 
@@ -2449,31 +2463,45 @@ async function renderSettings() {
     </div>
 
     <div class="settings-block" style="animation-delay:120ms">
-      <h3>${L`Папка модов и параметры запуска`}</h3>
+      <h3>${L`Папка модов`}</h3>
+      <div class="settings-row">
+        <span class="settings-label">${L`Куда ставятся моды`}</span>
+        <span class="mono" style="flex:1">dota_${esc(s.langSuffix)}</span>
+        <span class="dot ${gl.selfMade ? 'bad' : 'ok'}"></span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">${L`Следовать языку озвучки Dota`}</span>
+        <button class="toggle ${s.langSuffixAuto === false ? '' : 'on'}" id="langAutoToggle" role="switch"
+                aria-checked="${s.langSuffixAuto !== false}" aria-label="${L`Следовать языку озвучки Dota`}"></button>
+      </div>
+      ${s.langSuffixAuto === false ? `
       <div class="settings-row">
         <span class="settings-label">${L`Языковая папка`}</span>
         <div class="select-wrap">
           <span class="ms">folder</span>
           <select class="input" id="langSelect" style="padding-left:30px">
-            ${['123', 'minify', 'russian', 'test'].map((v) => `<option value="${v}" ${s.langSuffix === v ? 'selected' : ''}>dota_${v}</option>`).join('')}
+            ${langOptions(s, gl)}
           </select>
         </div>
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">${L`Параметр запуска Steam`}</span>
-        <span class="launch-code">-language ${esc(s.langSuffix)}
-          <button class="btn btn-sm" id="copyLaunchBtn">${L`Копировать`}</button>
-        </span>
-      </div>
+      </div>` : ''}
       <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
-        ${L`Steam → Библиотека → ПКМ по Dota 2 → Свойства → Параметры запуска → вставь строку выше. Моды (кроме шрифтов и курсоров) работают только с этим параметром.`}
+        ${L`Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.`}
       </div>
       <div class="modal-note" style="margin-top:10px">
-        <b>${L`Дота на русском?`}</b>${L` Выбирай `}<code style="background:none;color:var(--primary-soft)">dota_russian</code>${L` и параметр `}<code style="background:none;color:var(--primary-soft)">-language russian</code>${L` — тогда игра останется русской. С `}<code style="background:none;color:var(--primary-soft)">-language 123</code>${L` игра переключается на английский. При смене папки установленные моды переезжают автоматически.`}
+        <b>${L`Английский интерфейс`}</b>${L`: в самой Dota — Настройки → Language: English, а Audio Language оставь тем языком, чья папка указана выше. Язык текста и язык озвучки теперь независимы, так что моды при этом работают.`}
       </div>
+      ${gl.selfMade ? `
+      <div class="modal-note warn" style="margin-top:10px">
+        <b>${L`Папку dota_${s.langSuffix} создаёт приложение`}</b>${L`: Valve её не поставляет, и гарантии, что игра её смонтирует, нет. Если моды не появились в игре — выбери в настройках Dota другой Audio Language, например Russian.`}
+      </div>` : ''}
+      ${(gl.stranded || []).map((f) => `
+      <div class="modal-note warn" style="margin-top:10px">
+        <b>${L`Папка dota_${f.suffix} больше не работает`}</b>${L`: в ней ${f.modFiles} ${plural(f.modFiles, 'мод', 'мода', 'модов')}, игра их не видит.`}
+        <button class="btn btn-sm" data-move-from="${esc(f.suffix)}" style="margin-left:8px">${L`Перенести сюда`}</button>
+      </div>`).join('')}
       ${s.minifyDetected ? `
       <div class="modal-note" style="margin-top:10px">
-        <b>${L`Обнаружен Minify`}</b>${L` (папка `}<code style="background:none;color:var(--primary-soft)">dota_minify</code>${L` рядом). Если Minify настроен на ту же языковую папку, что и менеджер, их моды будут перекрывать друг друга — используй разные папки или ставь моды через что-то одно.`}
+        <b>${L`Обнаружен Minify`}</b>${L` (папка `}<code style="background:none;color:var(--primary-soft)">dota_minify</code>${L` рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.`}
       </div>` : ''}
     </div>
 
@@ -2535,15 +2563,27 @@ async function renderSettings() {
     renderSettings();
     refreshSidebarStatus();
   });
-  $('#langSelect').addEventListener('change', async (e) => {
+  $('#langSelect')?.addEventListener('change', async (e) => {
     await window.api.settings.set('langSuffix', e.target.value);
-    toast(L`Папка модов: dota_${e.target.value}. Не забудь сменить параметр запуска!`, 'warn', 6000);
+    toast(L`Папка модов: dota_${e.target.value}`, 'warn', 6000);
     renderSettings();
     refreshSidebarStatus();
   });
-  $('#copyLaunchBtn').addEventListener('click', () => {
-    navigator.clipboard.writeText(`-language ${s.langSuffix}`);
-    toast(L`Скопировано в буфер`);
+  $('#langAutoToggle')?.addEventListener('click', async (e) => {
+    const on = !e.currentTarget.classList.contains('on');
+    await window.api.settings.set('langSuffixAuto', on);
+    renderSettings();
+    refreshSidebarStatus();
+  });
+  viewRoot.querySelectorAll('[data-move-from]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const r = await window.api.settings.moveLangFiles(btn.dataset.moveFrom);
+      if (r?.error) toast(r.error, 'error');
+      else toast(L`Перенесено файлов: ${r.moved}`, 'ok');
+      renderSettings();
+      await refreshInstalledIndex();
+      refreshSidebarStatus();
+    });
   });
   $('#presenceToggle')?.addEventListener('click', async (e) => {
     const on = !e.currentTarget.classList.contains('on');
@@ -2572,7 +2612,7 @@ async function refreshSidebarStatus() {
   const txtEl = $('#dotaStatusText');
   if (s.dotaPathValid) {
     dotEl.className = 'dot ok';
-    txtEl.textContent = L`Dota 2 подключена · dota_${s.langSuffix} · параметр: -language ${s.langSuffix}`;
+    txtEl.textContent = L`Dota 2 подключена · моды в dota_${s.langSuffix}`;
   } else {
     dotEl.className = 'dot bad';
     txtEl.textContent = L`Dota 2 не найдена — укажи путь в настройках`;
@@ -2663,16 +2703,14 @@ function applyStaticI18n() {
   document.querySelectorAll('[data-i18n-aria]').forEach((el) => el.setAttribute('aria-label', tr(el.getAttribute('data-i18n-aria'))));
 }
 
-// switch the whole app language: UI text + the Dota language folder (English -> dota_123,
-// Russian -> dota_russian). main.js migrates installed mods to the new folder automatically.
+// switch the app's own UI language. It used to also pick the Dota folder (English -> dota_123),
+// which is exactly what broke when Dota stopped mounting made-up folders — the folder now
+// follows the game's audio language and has nothing to do with the language of this app.
 async function applyLanguage(lang) {
   lang = lang === 'ru' ? 'ru' : 'en';
   window.I18N_LANG = lang;
   try { localStorage.setItem('uiLang', lang); } catch { /* ignore */ }
   await window.api.settings.set('uiLang', lang);
-  const desiredSuffix = lang === 'ru' ? 'russian' : '123';
-  const cur = await window.api.settings.get();
-  if (cur.langSuffix !== desiredSuffix) await window.api.settings.set('langSuffix', desiredSuffix);
   applyStaticI18n();
   paintMasterSwitch();
   await refreshSidebarStatus();
@@ -2695,12 +2733,12 @@ function showLanguagePicker() {
         <div class="lang-pick-opts">
           <button class="lang-pick-btn" data-lang="en">
             <span class="lp-flag">EN</span>
-            <span class="lp-text"><b>English</b><small>Game folder: dota_123</small></span>
+            <span class="lp-text"><b>English</b><small>App language only</small></span>
             <span class="ms lp-go">chevron_right</span>
           </button>
           <button class="lang-pick-btn" data-lang="ru">
             <span class="lp-flag">RU</span>
-            <span class="lp-text"><b>Русский</b><small>Папка игры: dota_russian</small></span>
+            <span class="lp-text"><b>Русский</b><small>Только язык приложения</small></span>
             <span class="ms lp-go">chevron_right</span>
           </button>
         </div>
@@ -2732,6 +2770,11 @@ function showLanguagePicker() {
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();
   paintAccount();
+
+  // Dota's language change moved the mods folder under us at startup — say so once
+  if (cfg.langMigration) {
+    toast(L`Моды перенесены в dota_${cfg.langMigration.to}: игра больше не подхватывает папку dota_${cfg.langMigration.from}`, 'warn', 9000);
+  }
 
   await refreshSidebarStatus();
   await refreshMasterSwitch();

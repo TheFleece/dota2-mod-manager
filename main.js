@@ -18,12 +18,16 @@ const { SCHEME, encodePresetLink, decodePresetLink } = require('./src/preset-lin
 const discordAuth = require('./src/discord-auth');
 const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
+const gamelang = require('./src/gamelang');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
 let win;
 let settings, catalog, installer, library, fingerprints, presence;
 let presenceView = 'catalog';
+// set when startup moved mods to the folder the game actually mounts; the renderer
+// picks it up once with settings:get and tells the user what happened
+let langMigration = null;
 
 function sendProgress(evt) {
   if (win && !win.isDestroyed()) win.webContents.send('progress', evt);
@@ -76,6 +80,15 @@ function createWindow() {
               await new Promise((r) => setTimeout(r, 700));
             }
           }
+          if (process.env.MM_SCROLL) {
+            // dev-only: scroll the scrollable pane by N px before capture (long views)
+            await win.webContents.executeJavaScript(`(() => {
+              const el = [...document.querySelectorAll('#main, *')].find((e) =>
+                e.scrollHeight > e.clientHeight + 40 && /auto|scroll/.test(getComputedStyle(e).overflowY));
+              (el || document.scrollingElement).scrollBy(0, ${Number(process.env.MM_SCROLL) || 0});
+            })()`);
+            await new Promise((r) => setTimeout(r, 600));
+          }
           if (process.env.MM_MODAL) {
             await win.webContents.executeJavaScript(`
               [...document.querySelectorAll('.card .card-name')]
@@ -125,6 +138,14 @@ app.whenReady().then(async () => {
   if (!validateGamePath(settings.get('dotaGamePath'))) {
     const found = await findDotaGamePath();
     if (found) settings.set('dotaGamePath', found);
+  }
+
+  // point the library at the folder the game mounts now — Dota's 2026-07-24 update stopped
+  // mounting made-up language folders, so installs sitting in dota_123 have to move
+  try {
+    syncLangFolder();
+  } catch (e) {
+    diag('lang folder sync skipped: ' + e.message);
   }
 
   // repair "!pakNN" files left by versions before 1.0.4 (the game ignored them)
@@ -539,6 +560,44 @@ function packableRecord(rec) {
     && (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
 }
 
+// Move installed mod files between language folders. The game's own files stay put:
+// pak01_* are Valve's voice paks and gameinfo.gi is the folder's layer definition.
+function moveLangFolder(game, fromSuffix, toSuffix) {
+  if (!game || !fromSuffix || !toSuffix || fromSuffix === toSuffix) return 0;
+  const oldDir = path.join(game, `dota_${fromSuffix}`);
+  let moved = 0;
+  try {
+    if (!fs.existsSync(oldDir)) return 0;
+    const newDir = gamelang.ensureLangFolder(game, toSuffix);
+    for (const f of fs.readdirSync(oldDir)) {
+      if (/^pak01_/i.test(f) || f.toLowerCase() === 'gameinfo.gi') continue;
+      const dst = path.join(newDir, f);
+      if (fs.existsSync(dst)) continue;
+      fs.renameSync(path.join(oldDir, f), dst);
+      moved++;
+    }
+    // a folder we no longer use and that holds nothing else goes away
+    if (!fs.readdirSync(oldDir).length) fs.rmdirSync(oldDir);
+  } catch (err) {
+    console.error('lang folder migration failed:', err);
+  }
+  return moved;
+}
+
+// Follow the folder the game actually mounts (its audio language). This is what repairs
+// installs made before 2026-07-24, when a made-up folder like dota_123 still worked.
+function syncLangFolder() {
+  const game = settings.get('dotaGamePath');
+  if (!game || !settings.get('langSuffixAuto')) return;
+  const { suffix } = gamelang.detectLangSuffix(game);
+  const current = settings.get('langSuffix');
+  if (!suffix || suffix === current) return;
+  const moved = moveLangFolder(game, current, suffix);
+  settings.set('langSuffix', suffix);
+  if (moved) langMigration = { from: current, to: suffix, moved };
+  diag(`lang folder synced: dota_${current} -> dota_${suffix} (${moved} files)`);
+}
+
 function registerIpc() {
   // ----- window controls -----
   ipcMain.handle('win:minimize', () => win.minimize());
@@ -561,11 +620,27 @@ function registerIpc() {
     const game = settings.get('dotaGamePath');
     let minifyDetected = false;
     try { minifyDetected = !!game && fs.existsSync(path.join(game, 'dota_minify')); } catch { /* ignore */ }
+    const detected = game ? gamelang.detectLangSuffix(game) : { suffix: null, source: null, uiLanguage: null };
+    const folders = gamelang.langFolders(game);
+    const active = settings.get('langSuffix');
+    const migrated = langMigration;
+    langMigration = null; // reported once
     return {
       ...settings.all(),
       dotaPathValid: validateGamePath(game),
       minifyDetected,
       discordConfigured: discordAuth.isConfigured(),
+      gameLang: {
+        ...detected,
+        folders,
+        // Valve ships no dota_english (English voice lives in dota/pak01), so that folder
+        // is one we create ourselves and cannot promise the engine will mount
+        selfMade: !folders.some((f) => f.suffix === active && f.valveContent),
+        // mods left behind in a folder the game no longer mounts
+        stranded: folders.filter((f) => f.suffix !== active && !f.official && f.modFiles > 0)
+          .map((f) => ({ suffix: f.suffix, modFiles: f.modFiles })),
+      },
+      langMigration: migrated,
     };
   });
 
@@ -574,29 +649,11 @@ function registerIpc() {
     if (key === 'uiLang') i18n.setLang(value);
     // when the language folder changes, move installed mod files over
     if (key === 'langSuffix' && value !== settings.get('langSuffix')) {
-      const game = settings.get('dotaGamePath');
-      if (game) {
-        const oldDir = path.join(game, `dota_${settings.get('langSuffix')}`);
-        const newDir = path.join(game, `dota_${value}`);
-        try {
-          if (fs.existsSync(oldDir)) {
-            fs.mkdirSync(newDir, { recursive: true });
-            for (const f of fs.readdirSync(oldDir)) {
-              // never move the game's own localization files (official lang folders)
-              if (/^pak01_/i.test(f) || f.toLowerCase() === 'gameinfo.gi') continue;
-              const src = path.join(oldDir, f);
-              const dst = path.join(newDir, f);
-              if (!fs.existsSync(dst)) fs.renameSync(src, dst);
-            }
-            // remove old folder if now empty
-            if (!fs.readdirSync(oldDir).length) fs.rmdirSync(oldDir);
-          }
-        } catch (err) {
-          console.error('lang folder migration failed:', err);
-        }
-      }
+      moveLangFolder(settings.get('dotaGamePath'), settings.get('langSuffix'), value);
     }
     settings.set(key, value);
+    // pinning a folder by hand stops the automatic follow; releasing it re-syncs now
+    if (key === 'langSuffixAuto' && value) syncLangFolder();
     // the status text is localized, so a language change has to redraw it too
     if (key === 'discordPresence' || key === 'uiLang') applyPresenceSetting();
     return settings.all();
@@ -624,6 +681,15 @@ function registerIpc() {
   ipcMain.handle('account:signOut', () => {
     settings.set('account', null);
     return { ok: true };
+  });
+
+  // rescue mods sitting in a folder the game stopped mounting (our old dota_123, or another
+  // tool's dota_minify) by moving them into the folder that is live now
+  ipcMain.handle('settings:moveLangFiles', (e, fromSuffix) => {
+    const game = settings.get('dotaGamePath');
+    if (!game) return { error: t('Путь к Dota 2 не задан') };
+    const moved = moveLangFolder(game, String(fromSuffix || ''), settings.get('langSuffix'));
+    return { moved, to: settings.get('langSuffix') };
   });
 
   ipcMain.handle('settings:detectDota', async () => {

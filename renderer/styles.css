@@ -822,6 +822,12 @@ input, select { font-family: inherit; }
   border-radius: var(--radius-xs);
   padding: 9px 13px;
 }
+/* same amber as .lib-banner.warn — something needs attention but nothing is broken */
+.modal-note.warn {
+  background: rgba(251, 191, 36, 0.11);
+  border-color: rgba(251, 191, 36, 0.32);
+}
+.modal-note.warn b { color: var(--warning); }
 
 /* ============ Library ============ */
 .lib-toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }

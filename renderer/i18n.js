@@ -309,6 +309,7 @@ const EN = {
   'Скопировано': 'Copied',
   'Войти': 'Sign in',
   'Вход нужен, чтобы подписывать свои сборки': 'Signing in puts your name on the builds you share',
+  'Выйти': 'Sign out',
   'Выйти из аккаунта': 'Sign out',
   'Выйти из аккаунта «{0}»?': 'Sign out of «{0}»?',
   'Открыл Discord в браузере — подтверди вход там': 'Discord is open in your browser — confirm the sign-in there',
@@ -337,24 +338,26 @@ const EN = {
   'Найти автоматически': 'Auto-detect',
   'Указать вручную': 'Set manually',
   'Язык приложения': 'App language',
-  'Меняет язык интерфейса и папку модов (English — dota_123, Русский — dota_russian). Установленные моды переезжают автоматически.':
-    'Changes the interface language and the mods folder (English — dota_123, Russian — dota_russian). Installed mods are moved automatically.',
-  'Папка модов и параметры запуска': 'Mods folder and launch options',
+  'Меняет только язык этого приложения. Папка модов от него больше не зависит — она следует за языком озвучки Dota.':
+    'Changes the language of this app only. The mods folder no longer depends on it — it follows Dota’s audio language.',
   'Языковая папка': 'Language folder',
-  'Параметр запуска Steam': 'Steam launch option',
-  'Копировать': 'Copy',
-  'Steam → Библиотека → ПКМ по Dota 2 → Свойства → Параметры запуска → вставь строку выше. Моды (кроме шрифтов и курсоров) работают только с этим параметром.':
-    'Steam → Library → right-click Dota 2 → Properties → Launch Options → paste the line above. Mods (except fonts and cursors) work only with this option.',
-  'Дота на русском?': 'Playing in Russian?',
-  ' Выбирай ': ' Pick ',
-  ' и параметр ': ' with the ',
-  ' — тогда игра останется русской. С ': ' option — the game stays Russian. With ',
-  ' игра переключается на английский. При смене папки установленные моды переезжают автоматически.':
-    ' the game switches to English. When the folder changes, installed mods are moved automatically.',
+  'Куда ставятся моды': 'Mods are installed to',
+  'Следовать языку озвучки Dota': 'Follow Dota’s audio language',
+  'Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.':
+    'Dota only mounts the folder of its own audio language, so made-up folders like dota_123 are no longer picked up. The -language option does nothing now — you can remove it from the Steam properties.',
+  'Английский интерфейс': 'English interface',
+  ': в самой Dota — Настройки → Language: English, а Audio Language оставь тем языком, чья папка указана выше. Язык текста и язык озвучки теперь независимы, так что моды при этом работают.':
+    ': in Dota itself — Settings → Language: English, and leave Audio Language set to the language whose folder is shown above. Text and voice languages are independent now, so mods keep working.',
+  'Папку dota_{0} создаёт приложение': 'The dota_{0} folder is created by this app',
+  ': Valve её не поставляет, и гарантии, что игра её смонтирует, нет. Если моды не появились в игре — выбери в настройках Dota другой Audio Language, например Russian.':
+    ': Valve does not ship it, so there is no guarantee the game will mount it. If mods do not show up in game, pick a different Audio Language in Dota’s settings, Russian for example.',
+  'Папка dota_{0} больше не работает': 'The dota_{0} folder no longer works',
+  ': в ней {0} {1}, игра их не видит.': ': it holds {0} {1} the game cannot see.',
+  'Перенести сюда': 'Move here',
   'Обнаружен Minify': 'Minify detected',
   ' (папка ': ' (the ',
-  ' рядом). Если Minify настроен на ту же языковую папку, что и менеджер, их моды будут перекрывать друг друга — используй разные папки или ставь моды через что-то одно.':
-    ' folder is next to it). If Minify uses the same language folder as the manager, their mods will override each other — use different folders or install mods through just one of them.',
+  ' рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.':
+    ' folder is next to it). If Minify installs mods into the same folder as the manager, their files will override each other — install mods through just one of them.',
   'Кэш загрузок': 'Download cache',
   'Размер': 'Size',
   'Очистить': 'Clear',
@@ -371,16 +374,17 @@ const EN = {
   'Dota 2 найдена: {0}': 'Dota 2 found: {0}',
   'Не нашёл автоматически — укажи вручную': 'Not found automatically — set it manually',
   'Путь сохранён': 'Path saved',
-  'Папка модов: dota_{0}. Не забудь сменить параметр запуска!':
-    'Mods folder: dota_{0}. Don’t forget to change the launch option!',
+  'Папка модов: dota_{0}': 'Mods folder: dota_{0}',
+  'Перенесено файлов: {0}': 'Moved {0} files',
+  'Моды перенесены в dota_{0}: игра больше не подхватывает папку dota_{1}':
+    'Mods moved to dota_{0}: the game no longer picks up the dota_{1} folder',
   'Скопировано в буфер': 'Copied to clipboard',
   'Кэш очищен': 'Cache cleared',
   'Язык переключён на English': 'Language switched to English',
   'Язык переключён на Русский': 'Language switched to Russian',
 
   // ---------- status bar ----------
-  'Dota 2 подключена · dota_{0} · параметр: -language {1}':
-    'Dota 2 connected · dota_{0} · option: -language {1}',
+  'Dota 2 подключена · моды в dota_{0}': 'Dota 2 connected · mods in dota_{0}',
   'Dota 2 не найдена — укажи путь в настройках': 'Dota 2 not found — set the path in Settings',
 
   // ---------- progress + updates ----------

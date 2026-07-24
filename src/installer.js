@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
 const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, readVpkIndexFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { ensureLangFolder } = require('./gamelang');
 const { t } = require('./i18n');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
@@ -108,6 +109,14 @@ class Installer {
     const game = this.getGamePath();
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     return path.join(game, `dota_${this.getLangSuffix()}`);
+  }
+
+  // Called before writing into the folder. English is the one language Valve ships no
+  // folder for, so there we also lay down the layer definition it would have had.
+  ensureLangFolder() {
+    const game = this.getGamePath();
+    if (!game) throw new Error(t('Путь к Dota 2 не задан'));
+    return ensureLangFolder(game, this.getLangSuffix());
   }
 
   // ---------- download ----------
@@ -254,7 +263,7 @@ class Installer {
     if (categoryId === 'tools') return this.installTool(local, modName);
 
     const lang = this.langFolder();
-    fs.mkdirSync(lang, { recursive: true });
+    this.ensureLangFolder();
     const used = this.usedPakNames();
     const records = [];
 
@@ -654,7 +663,7 @@ class Installer {
   // and folded into a single file per mod on the way in.
   importVpkFiles(paths) {
     const lang = this.langFolder();
-    fs.mkdirSync(lang, { recursive: true });
+    this.ensureLangFolder();
     const used = this.usedPakNames();
     const results = [];
 
@@ -745,7 +754,7 @@ class Installer {
   installVpkBuffer(buf) {
     if (!listVpkPaths(buf).length) throw new Error(t('Пустой VPK'));
     const lang = this.langFolder();
-    fs.mkdirSync(lang, { recursive: true });
+    this.ensureLangFolder();
     const pakName = this.allocatePak(this.usedPakNames(), false);
     this.writeInto(buf, path.join(lang, pakName));
     return [{ root: 'lang', relPath: pakName }];
@@ -852,7 +861,7 @@ class Installer {
   // state. With no enabled members nothing is written (files: []).
   deployPack(pack) {
     const lang = this.langFolder();
-    fs.mkdirSync(lang, { recursive: true });
+    this.ensureLangFolder();
     this.removePackDeployed(pack);
     const enabled = (pack.members || []).filter((m) => m.enabled);
     if (!enabled.length) return { files: [], conflicts: [] };
@@ -874,7 +883,7 @@ class Installer {
   // Returns { files } for a new library record; caller deletes the member from the pack.
   deployMemberAsMod(pack, member) {
     const lang = this.langFolder();
-    fs.mkdirSync(lang, { recursive: true });
+    this.ensureLangFolder();
     const buf = fs.readFileSync(this.packMemberFile(pack.id, member.id));
     const pakName = this.allocatePak(this.usedPakNames(), false);
     this.writeInto(buf, path.join(lang, pakName));
