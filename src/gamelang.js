@@ -127,6 +127,38 @@ function detectLangSuffix(gamePath) {
 }
 
 /**
+ * Set the game's two language settings. Dota reads boot.vcfg at startup, so this has to
+ * happen while the game is closed. Existing keys are patched in place and anything else in
+ * the file is left alone; a missing file gets Valve's own shape.
+ */
+function writeBootLanguages(gamePath, { ui, audio }) {
+  const file = path.join(gamePath, 'dota', 'cfg', 'boot.vcfg');
+  let text = null;
+  try { text = fs.readFileSync(file, 'utf-8'); } catch { /* first write */ }
+  if (!text || !/"boot"/i.test(text)) {
+    text = `"boot"\n{\n\t"UILanguage"\t\t"${ui}"\n\t"AudioLanguage"\t\t"${audio}"\n}\n`;
+  } else {
+    for (const [key, value] of [['UILanguage', ui], ['AudioLanguage', audio]]) {
+      const re = new RegExp(`("${key}"\\s*")[^"]*(")`, 'i');
+      if (re.test(text)) text = text.replace(re, `$1${value}$2`);
+      else text = text.replace(/\}\s*$/, `\t"${key}"\t\t"${value}"\n}\n`);
+    }
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, text);
+  return { ui, audio };
+}
+
+/** Is Valve's voice pack for this language actually on disk? If not, voices stay English. */
+function voiceInstalled(gamePath, suffix) {
+  try {
+    return fs.readdirSync(path.join(gamePath, `dota_${suffix}`)).some((f) => /^pak01_/i.test(f));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Make sure the mod folder exists. English is the one language Valve ships no folder for
  * (English voice lives in dota/pak01), so for it we create the layer ourselves, shaped
  * exactly like Valve's own — never touching a gameinfo.gi that is already there.
@@ -145,5 +177,7 @@ module.exports = {
   steamLanguage,
   langFolders,
   detectLangSuffix,
+  writeBootLanguages,
+  voiceInstalled,
   ensureLangFolder,
 };

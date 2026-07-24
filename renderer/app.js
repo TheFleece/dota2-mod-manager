@@ -2398,6 +2398,24 @@ function renderGuides() {
 
 // ===== Settings =====
 
+// Dota's own language names, keyed by the folder suffix it uses (dota_koreana etc.)
+const DOTA_LANG_NAMES = {
+  brazilian: 'Portuguese-Brazil', bulgarian: 'Bulgarian', czech: 'Czech', danish: 'Danish',
+  dutch: 'Dutch', english: 'English', finnish: 'Finnish', french: 'French', german: 'German',
+  greek: 'Greek', hungarian: 'Hungarian', indonesian: 'Indonesian', italian: 'Italian',
+  japanese: 'Japanese', koreana: 'Korean', latam: 'Spanish-Latin America', norwegian: 'Norwegian',
+  polish: 'Polish', portuguese: 'Portuguese', romanian: 'Romanian', russian: 'Russian',
+  schinese: 'Simplified Chinese', spanish: 'Spanish', swedish: 'Swedish',
+  tchinese: 'Traditional Chinese', thai: 'Thai', turkish: 'Turkish', ukrainian: 'Ukrainian',
+  vietnamese: 'Vietnamese',
+};
+const langName = (s) => DOTA_LANG_NAMES[s] || s;
+
+function gameLangOptions(list, selected) {
+  return (list || []).map((v) =>
+    `<option value="${esc(v)}" ${v === selected ? 'selected' : ''}>${esc(langName(v))} (dota_${esc(v)})</option>`).join('');
+}
+
 // folder picker for the manual mode: every dota_* folder on disk plus the language the game
 // reports, so the list always contains the one that actually works
 function langOptions(s, gl) {
@@ -2462,6 +2480,35 @@ async function renderSettings() {
       </div>
     </div>
 
+    <div class="settings-block" style="animation-delay:90ms">
+      <h3>${L`Язык Dota`}</h3>
+      <div class="settings-row">
+        <span class="settings-label">${L`Текст`}</span>
+        <div class="select-wrap">
+          <span class="ms">translate</span>
+          <select class="input" id="gameTextLang" style="padding-left:30px">
+            ${gameLangOptions(gl.languages, gl.uiLanguage || 'english')}
+          </select>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">${L`Озвучка`}</span>
+        <div class="select-wrap">
+          <span class="ms">campaign</span>
+          <select class="input" id="gameAudioLang" style="padding-left:30px">
+            ${gameLangOptions(gl.languages, s.langSuffix)}
+          </select>
+        </div>
+      </div>
+      <div class="settings-row">
+        <button class="btn btn-sm btn-primary" id="applyGameLang">${L`Применить`}</button>
+        <span style="font-size:12.5px;color:var(--text-muted)" id="gameLangHint"></span>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+        ${L`Dota хранит эти языки отдельно, и моды подхватываются из папки языка озвучки — приложение перенесёт их туда же. Dota при этом должна быть закрыта, иначе она перезапишет настройку при выходе.`}
+      </div>
+    </div>
+
     <div class="settings-block" style="animation-delay:120ms">
       <h3>${L`Папка модов`}</h3>
       <div class="settings-row">
@@ -2488,7 +2535,7 @@ async function renderSettings() {
         ${L`Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.`}
       </div>
       <div class="modal-note" style="margin-top:10px">
-        <b>${L`Английский интерфейс`}</b>${L`: в самой Dota — Настройки → Language: English, а Audio Language оставь тем языком, чья папка указана выше. Язык текста и язык озвучки теперь независимы, так что моды при этом работают.`}
+        <b>${L`Английский интерфейс`}</b>${L`: поставь в блоке выше Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.`}
       </div>
       ${gl.selfMade ? `
       <div class="modal-note warn" style="margin-top:10px">
@@ -2567,6 +2614,26 @@ async function renderSettings() {
     await window.api.settings.set('langSuffix', e.target.value);
     toast(L`Папка модов: dota_${e.target.value}`, 'warn', 6000);
     renderSettings();
+    refreshSidebarStatus();
+  });
+  // voices only change if Valve's pack for that language is actually downloaded
+  const paintGameLangHint = () => {
+    const audio = $('#gameAudioLang').value;
+    const folder = (gl.folders || []).find((f) => f.suffix === audio);
+    $('#gameLangHint').textContent = folder?.valveContent
+      ? L`Озвучка станет ${langName(audio)}`
+      : L`Озвучка останется английской: пак «${langName(audio)}» не скачан`;
+  };
+  paintGameLangHint();
+  $('#gameAudioLang').addEventListener('change', paintGameLangHint);
+  $('#applyGameLang').addEventListener('click', async () => {
+    const ui = $('#gameTextLang').value;
+    const audio = $('#gameAudioLang').value;
+    const r = await window.api.settings.setGameLanguages({ ui, audio });
+    if (r?.error) { toast(r.error, 'error', 7000); return; }
+    toast(L`Готово: текст «${langName(ui)}», моды в dota_${audio}. Перезапусти Dota.`, 'ok', 8000);
+    renderSettings();
+    await refreshInstalledIndex();
     refreshSidebarStatus();
   });
   $('#langAutoToggle')?.addEventListener('click', async (e) => {

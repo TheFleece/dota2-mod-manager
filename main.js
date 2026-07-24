@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { execFile } = require('child_process');
 
 let autoUpdater = null;
 try {
@@ -560,6 +561,16 @@ function packableRecord(rec) {
     && (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
 }
 
+// Dota reads boot.vcfg once at startup and rewrites it on exit, so language changes must be
+// made while it is closed or the game would just overwrite them.
+function dotaIsRunning() {
+  return new Promise((resolve) => {
+    execFile('tasklist', ['/FI', 'IMAGENAME eq dota2.exe', '/NH'], (err, stdout) => {
+      resolve(!err && /dota2\.exe/i.test(stdout || ''));
+    });
+  });
+}
+
 // Move installed mod files between language folders. The game's own files stay put:
 // pak01_* are Valve's voice paks and gameinfo.gi is the folder's layer definition.
 function moveLangFolder(game, fromSuffix, toSuffix) {
@@ -633,6 +644,9 @@ function registerIpc() {
       gameLang: {
         ...detected,
         folders,
+        languages: gamelang.OFFICIAL_LANGUAGES,
+        // whether the voice pack for the folder in use is actually downloaded
+        voice: !!game && gamelang.voiceInstalled(game, active),
         // Valve ships no dota_english (English voice lives in dota/pak01), so that folder
         // is one we create ourselves and cannot promise the engine will mount
         selfMade: !folders.some((f) => f.suffix === active && f.valveContent),
@@ -681,6 +695,26 @@ function registerIpc() {
   ipcMain.handle('account:signOut', () => {
     settings.set('account', null);
     return { ok: true };
+  });
+
+  // set Dota's own text/voice languages and take the mods along: the voice language decides
+  // which dota_<lang> folder the engine mounts, so it is also where mods have to live
+  ipcMain.handle('settings:setGameLanguages', async (e, { ui, audio }) => {
+    const game = settings.get('dotaGamePath');
+    if (!game) return { error: t('Путь к Dota 2 не задан') };
+    if (!gamelang.OFFICIAL_LANGUAGES.includes(ui) || !gamelang.OFFICIAL_LANGUAGES.includes(audio)) {
+      return { error: t('Dota не знает такого языка') };
+    }
+    if (await dotaIsRunning()) return { error: t('Сначала закрой Dota 2 — она перезапишет настройку при выходе') };
+    try {
+      gamelang.writeBootLanguages(game, { ui, audio });
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+    const moved = moveLangFolder(game, settings.get('langSuffix'), audio);
+    gamelang.ensureLangFolder(game, audio);
+    settings.set('langSuffix', audio);
+    return { ok: true, moved, audio, ui, voice: gamelang.voiceInstalled(game, audio) };
   });
 
   // rescue mods sitting in a folder the game stopped mounting (our old dota_123, or another

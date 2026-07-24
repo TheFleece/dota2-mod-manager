@@ -65,6 +65,9 @@ const EN = {
 
   // ---- installer.js ----
   'Путь к Dota 2 не задан': 'Dota 2 path is not set',
+  'Dota не знает такого языка': 'Dota does not know that language',
+  'Сначала закрой Dota 2 — она перезапишет настройку при выходе':
+    'Close Dota 2 first, it overwrites this setting on exit',
   'HTTP {0} — не удалось скачать {1}': 'HTTP {0} — could not download {1}',
   'Свободных слотов pakNN не осталось (10-99 заняты)': 'No free pakNN slots left (10-99 are taken)',
   'установка': 'installing',

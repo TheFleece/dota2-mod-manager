@@ -340,14 +340,24 @@ const EN = {
   'Язык приложения': 'App language',
   'Меняет только язык этого приложения. Папка модов от него больше не зависит — она следует за языком озвучки Dota.':
     'Changes the language of this app only. The mods folder no longer depends on it — it follows Dota’s audio language.',
+  'Язык Dota': 'Dota language',
+  'Текст': 'Text',
+  'Озвучка': 'Voice',
+  'Применить': 'Apply',
+  'Dota хранит эти языки отдельно, и моды подхватываются из папки языка озвучки — приложение перенесёт их туда же. Dota при этом должна быть закрыта, иначе она перезапишет настройку при выходе.':
+    'Dota keeps these two languages separately, and mods are loaded from the voice language’s folder — the app moves them there for you. Dota has to be closed, otherwise it overwrites the setting on exit.',
+  'Озвучка станет {0}': 'Voices will switch to {0}',
+  'Озвучка останется английской: пак «{0}» не скачан': 'Voices stay English: the {0} pack is not downloaded',
+  'Готово: текст «{0}», моды в dota_{1}. Перезапусти Dota.':
+    'Done: text {0}, mods in dota_{1}. Restart Dota.',
   'Языковая папка': 'Language folder',
   'Куда ставятся моды': 'Mods are installed to',
   'Следовать языку озвучки Dota': 'Follow Dota’s audio language',
   'Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.':
     'Dota only mounts the folder of its own audio language, so made-up folders like dota_123 are no longer picked up. The -language option does nothing now — you can remove it from the Steam properties.',
   'Английский интерфейс': 'English interface',
-  ': в самой Dota — Настройки → Language: English, а Audio Language оставь тем языком, чья папка указана выше. Язык текста и язык озвучки теперь независимы, так что моды при этом работают.':
-    ': in Dota itself — Settings → Language: English, and leave Audio Language set to the language whose folder is shown above. Text and voice languages are independent now, so mods keep working.',
+  ': поставь в блоке выше Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.':
+    ': set Text to English in the block above and leave Voice on the language whose folder is already in use. The two are independent, so mods keep working.',
   'Папку dota_{0} создаёт приложение': 'The dota_{0} folder is created by this app',
   ': Valve её не поставляет, и гарантии, что игра её смонтирует, нет. Если моды не появились в игре — выбери в настройках Dota другой Audio Language, например Russian.':
     ': Valve does not ship it, so there is no guarantee the game will mount it. If mods do not show up in game, pick a different Audio Language in Dota’s settings, Russian for example.',

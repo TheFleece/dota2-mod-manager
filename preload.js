@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('api', {
     detectDota: () => ipcRenderer.invoke('settings:detectDota'),
     browseDota: () => ipcRenderer.invoke('settings:browseDota'),
     moveLangFiles: (fromSuffix) => ipcRenderer.invoke('settings:moveLangFiles', fromSuffix),
+    setGameLanguages: (langs) => ipcRenderer.invoke('settings:setGameLanguages', langs),
   },
   catalog: {
     load: (force) => ipcRenderer.invoke('catalog:load', force),
