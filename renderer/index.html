@@ -30,7 +30,6 @@
         <button class="tb-tab active" data-view="catalog" data-i18n="Каталог">Catalog</button>
         <button class="tb-tab" data-view="library" data-i18n="Библиотека">Library<span class="tb-badge" id="libCount"></span></button>
         <button class="tb-tab" data-view="presets" data-i18n="Пресеты">Presets</button>
-        <button class="tb-tab" data-view="cosmetics" data-i18n="Косметика">Cosmetics</button>
         <button class="tb-tab" data-view="tools" data-i18n="Инструменты">Tools</button>
         <button class="tb-tab" data-view="guides" data-i18n="Гайды">Guides</button>
         <button class="tb-tab" data-view="settings" data-i18n="Настройки">Settings</button>
@@ -85,6 +84,11 @@
       <span class="dot" id="dotaStatusDot"></span>
       <span id="dotaStatusText">Looking for Dota 2…</span>
       <div class="sb-right">
+        <button class="mods-switch safe-switch on" id="safeModeBtn" role="switch" aria-checked="true" title="Safe mode: patch-only mods (effects, cosmetics) are hidden and inactive. Turn it off to enable them — the app will register its folder in the game files." data-i18n-title="Безопасный режим: моды из патча (эффекты, косметика) скрыты и не работают. Выключи, чтобы их включить — приложение впишет свою папку в файлы игры.">
+          <span class="ms safe-switch-icon">shield</span>
+          <span class="mods-switch-txt"><span data-i18n="Безопасно:">Safe:</span> <b id="safeModeState">on</b></span>
+          <span class="mods-switch-track"><span class="mods-switch-thumb"></span></span>
+        </button>
         <button class="status-link" id="openModsFolderBtn" data-i18n="Открыть папку модов">Open mods folder</button>
         <button class="mods-switch on" id="modsMasterBtn" role="switch" aria-checked="true" title="Turn all mods on/off at once (to launch the vanilla game)" data-i18n-title="Включить/выключить все моды сразу (для запуска ванильной игры)">
           <span class="mods-switch-txt"><span data-i18n="Моды:">Mods:</span> <b id="modsMasterState">on</b></span>

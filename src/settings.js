@@ -26,17 +26,19 @@ const DEFAULTS = {
   account: null,
   // show "Playing Dota 2 Mod Manager" in Discord while the app is open
   discordPresence: true,
-  // Item-schema support. The engine reads scripts/items/items_game.txt through the MOD
-  // path only (game/dota), so mods that change it - skinchanger-style sets with their own
-  // ambient effects, free weather/terrain - do nothing from a language folder. Turning
-  // this on registers game/dota_mods ahead of the game's content, which means editing
-  // gameinfo_branchspecific.gi and re-signing it in dota.signatures. Off until the user
-  // agrees to that once; originals are backed up and the switch reverts them.
+  // Item-schema support ("safe mode" off, in the status bar). The engine reads
+  // scripts/items/items_game.txt through the MOD path only (game/dota), so mods that
+  // change it - skinchanger-style sets with their own ambient effects, free cosmetics -
+  // do nothing from a language folder. Turning this on registers game/dota_mods ahead of
+  // the game's content, which means editing gameinfo_branchspecific.gi and re-signing it
+  // in dota.signatures. Off (safe) until the user agrees to that once; originals are
+  // backed up and the switch reverts them.
   schemaPatch: false,
-  // free cosmetics taken from the game's own schema: { weather: "10706", terrain: "590" }
+  // deprecated: cosmetic picks used to live here as { slot: itemId }; migrated once into
+  // library records (categoryId 'cosmetic') by schemaService.migrateCosmeticSettings so
+  // they can be toggled/deleted/shared like any other mod. Kept only so an old settings
+  // file has something to migrate from.
   cosmetics: {},
-  // starred looks in the cosmetics picker, as "<slot>:<item id>"
-  cosmeticFavorites: [],
   // items_game.txt build the deployed schema was made from, to spot a game update
   schemaStamp: null,
 };

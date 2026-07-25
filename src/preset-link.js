@@ -19,15 +19,21 @@ const MAX_CODE = 64 * 1024;
 const MAX_JSON = 512 * 1024;   // inflate bomb guard
 const MAX_MODS = 500;
 
+// Cosmetic entries are tagged with this sentinel as their first array slot so a single
+// compact `m` array can carry both kinds — no real categoryId is ever "$cos".
+const COSMETIC_TAG = '$cos';
+
 /**
- * @param {{name: string, author?: string, mods: Array<{categoryId, name, styleLabel}>}} preset
+ * @param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId}>}} preset
  * @returns {{code: string, web: string, direct: string}} the clickable form and the raw one
  */
 function encodePresetLink({ name, author, mods }) {
   const payload = {
     v: 1,
     n: String(name || '').slice(0, 120),
-    m: mods.map((m) => (m.styleLabel ? [m.categoryId, m.name, m.styleLabel] : [m.categoryId, m.name])),
+    m: mods.map((m) => (m.kind === 'cosmetic'
+      ? [COSMETIC_TAG, m.slot, m.itemId, m.name]
+      : (m.styleLabel ? [m.categoryId, m.name, m.styleLabel] : [m.categoryId, m.name]))),
   };
   if (author) payload.a = String(author).slice(0, 80);
   const code = zlib.deflateRawSync(Buffer.from(JSON.stringify(payload), 'utf-8'), { level: 9 }).toString('base64url');
@@ -62,13 +68,16 @@ function decodePresetLink(input) {
 
   const mods = raw.m
     .filter((e) => Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'string')
-    .map((e) => ({
-      kind: 'catalog',
-      categoryId: e[0].slice(0, 60),
-      name: e[1].slice(0, 300),
-      styleLabel: typeof e[2] === 'string' ? e[2].slice(0, 300) : null,
-      fp: null,
-    }));
+    .map((e) => (e[0] === COSMETIC_TAG
+      ? { kind: 'cosmetic', slot: e[1].slice(0, 60), itemId: String(e[2] ?? '').slice(0, 20), name: String(e[3] ?? '').slice(0, 300) }
+      : {
+        kind: 'catalog',
+        categoryId: e[0].slice(0, 60),
+        name: e[1].slice(0, 300),
+        styleLabel: typeof e[2] === 'string' ? e[2].slice(0, 300) : null,
+        fp: null,
+      }))
+    .filter((e) => e.kind !== 'cosmetic' || (e.slot && e.itemId));
   return {
     name: (typeof raw.n === 'string' && raw.n.slice(0, 120)) || t('Пресет'),
     author: (typeof raw.a === 'string' && raw.a.slice(0, 80)) || '',

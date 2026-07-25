@@ -32,6 +32,33 @@ const CAT_ICON = {
   sites: 'language', tools: 'build', news: 'newspaper',
 };
 
+// Free cosmetics: each is a slot in the game's own item schema (see src/schema.js), read
+// live from the installed game — so a slot Valve adds later just shows up. This only maps
+// the ones we know a nice label/icon for; an unknown one still works, titled from its id.
+const COSMETIC_SLOTS = {
+  weather: { label: 'Погода', icon: 'rainy' },
+  terrain: { label: 'Ландшафт', icon: 'terrain' },
+  hud_skin: { label: 'Интерфейс игры', icon: 'dashboard' },
+  loading_screen: { label: 'Экран загрузки', icon: 'image' },
+  versus_screen: { label: 'Экран противостояния', icon: 'compare_arrows' },
+  courier: { label: 'Курьер', icon: 'pets' },
+  ward: { label: 'Варды', icon: 'visibility' },
+  radiantcreeps: { label: 'Крипы Света', icon: 'groups' },
+  direcreeps: { label: 'Крипы Тьмы', icon: 'groups' },
+  radiantsiegecreeps: { label: 'Осадные Света', icon: 'shield' },
+  diresiegecreeps: { label: 'Осадные Тьмы', icon: 'shield' },
+  radianttowers: { label: 'Башни Света', icon: 'castle' },
+  diretowers: { label: 'Башни Тьмы', icon: 'castle' },
+  music: { label: 'Музыка', icon: 'music_note' },
+  announcer: { label: 'Комментатор', icon: 'campaign' },
+  mega_kills: { label: 'Мега-килл', icon: 'record_voice_over' },
+  streak_effect: { label: 'Серия убийств', icon: 'local_fire_department' },
+};
+const COSMETIC_PREFIX = 'cosmetic:';
+function cosmeticMeta(slot) {
+  return COSMETIC_SLOTS[slot] || { label: slot.replace(/_/g, ' '), icon: 'auto_awesome' };
+}
+
 // rail sections: [label, [categoryIds]]
 const RAIL_SECTIONS = [
   ['Герои', ['heroes', 'hero-items', 'herofx', 'hero-sounds']],
@@ -66,6 +93,8 @@ const PANEL_ZOOM_LIMITS = [0.6, 1.8];
 const state = {
   view: 'catalog',
   catalog: null,
+  cosmeticSlots: null,     // free-cosmetics slots from the game's own schema (safe mode off)
+  patchState: null,        // src/patcher.js + schema-service state: patched/signed/conflicts/foreign
   settings: null,
   activeCategory: 'all',
   search: '',
@@ -615,6 +644,22 @@ async function refreshInstalledIndex() {
   applyInstalled(installed);
 }
 
+// Every cosmetic slot the game's schema exposes, with its options and current pick. Not
+// folded into refreshInstalledIndex(): the option lists run to a couple hundred KB and
+// most of the app's actions (toggling a regular mod, searching the catalog) never need
+// them, so this is fetched only where a cosmetic pick could actually have changed.
+async function refreshCosmeticSlots() {
+  const { slots } = await window.api.cosmetics.slots();
+  state.cosmeticSlots = slots || [];
+}
+
+// Small, and only fetched where it's actually shown: the safe-mode switch's warning dot
+// and the Library's schema-conflict banner (see paintSafeModeSwitch / renderLibrary).
+async function refreshPatchState() {
+  state.patchState = await window.api.patch.state();
+  paintSafeModeSwitch();
+}
+
 // ---------- catalog data helpers ----------
 
 // user-created packs live in localStorage
@@ -673,10 +718,14 @@ function buildModIndex() {
 
 function catName(id) {
   if (id === 'all') return tr('Все категории');
+  if (id.startsWith(COSMETIC_PREFIX)) return tr(cosmeticMeta(id.slice(COSMETIC_PREFIX.length)).label);
   return tr(CAT_RU[id]) || state.catalog?.constants?.translations?.[id] || id;
 }
 
-function catIcon(id) { return CAT_ICON[id] || 'extension'; }
+function catIcon(id) {
+  if (id.startsWith(COSMETIC_PREFIX)) return cosmeticMeta(id.slice(COSMETIC_PREFIX.length)).icon;
+  return CAT_ICON[id] || 'extension';
+}
 
 function installTarget(mod) {
   const f = mod.file;
@@ -856,6 +905,52 @@ $('#modsMasterBtn')?.addEventListener('click', async () => {
   if (state.view === 'library') renderLibrary();
 });
 
+// ---------- safe mode (item-schema patch) ----------
+//
+// Off (safe, default) leaves the game untouched; on registers game/dota_mods in
+// gameinfo_branchspecific.gi and re-signs it in dota.signatures, which is what lets Dota
+// read the item-schema effects mods carry and the free cosmetics catalog. See src/patcher.js.
+
+function paintSafeModeSwitch() {
+  const btn = $('#safeModeBtn');
+  if (!btn) return;
+  const safe = !state.settings?.schemaPatch;
+  btn.classList.toggle('on', safe);
+  btn.setAttribute('aria-checked', String(safe));
+  $('#safeModeState').textContent = safe ? L`вкл` : L`выкл`;
+  btn.querySelector('.safe-switch-icon').textContent = safe ? 'shield' : 'shield_moon';
+  // something needs attention: the patch fell off, the schema is stale, two mods want the
+  // same item, or another patcher is already in gameinfo — a dot, checked only when unsafe
+  const st = state.patchState;
+  const trouble = !safe && st && (st.stale || !st.patched || !st.signed || (st.conflicts || []).length || st.foreign);
+  btn.classList.toggle('trouble', !!trouble);
+}
+
+$('#safeModeBtn')?.addEventListener('click', async () => {
+  const btn = $('#safeModeBtn');
+  const turningUnsafe = !state.settings?.schemaPatch === true; // currently safe -> about to turn it off
+  if (turningUnsafe) {
+    const ok = await confirmDialog(
+      L`Приложение впишет свою папку в gameinfo_branchspecific.gi и пересчитает подпись этого файла в dota.signatures — так Dota сможет читать эффекты модов и бесплатную косметику. Оригиналы сохраняются, обратное переключение возвращает их byte-в-byte.`,
+      { okLabel: L`Выключить`, danger: false }
+    );
+    if (!ok) return;
+  }
+  btn.disabled = true;
+  const r = await window.api.patch.setEnabled(turningUnsafe);
+  btn.disabled = false;
+  if (r.error) { toast(r.error, 'error'); return; }
+  state.settings = { ...state.settings, schemaPatch: turningUnsafe };
+  toast(turningUnsafe ? L`Безопасный режим выключен — эффекты и косметика доступны` : L`Безопасный режим включён, файлы игры восстановлены`);
+  await Promise.all([refreshCosmeticSlots(), refreshPatchState()]);
+  if (state.view === 'catalog') {
+    // the cosmetics rail section just appeared or disappeared — bail out of a category
+    // that no longer exists rather than show a dead one
+    if (!turningUnsafe && state.activeCategory.startsWith(COSMETIC_PREFIX)) state.activeCategory = 'all';
+    renderCatalog();
+  }
+});
+
 // global search
 let searchTimer = null;
 $('#globalSearch').addEventListener('input', (e) => {
@@ -881,7 +976,6 @@ function render() {
     case 'catalog': return renderCatalog();
     case 'library': return renderLibrary();
     case 'presets': return renderPresets();
-    case 'cosmetics': return renderCosmetics();
     case 'tools': return renderTools();
     case 'guides': return renderGuides();
     case 'settings': return renderSettings();
@@ -911,6 +1005,20 @@ function renderRail() {
         <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
           <span class="ms">${catIcon(id)}</span>${esc(catName(id))}
           <span class="rail-cnt">${categoryMods(id).length}</span>
+        </button>`;
+    }
+  }
+  // Free cosmetics only work once safe mode is off (the patch is what lets the game read
+  // them at all) — showing the section without that would just be a list of dead buttons.
+  const cos = state.settings?.schemaPatch ? (state.cosmeticSlots || []) : [];
+  if (cos.length) {
+    html += `<div class="rail-section">${L`Косметика`}</div>`;
+    for (const s of cos) {
+      const id = COSMETIC_PREFIX + s.slot;
+      html += `
+        <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
+          <span class="ms">${catIcon(id)}</span>${esc(catName(id))}
+          ${s.picked ? '<span class="rail-dot"></span>' : ''}
         </button>`;
     }
   }
@@ -952,6 +1060,7 @@ function renderCatalog() {
   if (searching) return renderSearchResults();
   if (state.activeCategory === 'all') return renderHome();
   if (state.activeCategory === 'favorites') return renderFavorites();
+  if (state.activeCategory.startsWith(COSMETIC_PREFIX)) return renderCosmeticCategory(state.activeCategory.slice(COSMETIC_PREFIX.length));
   renderCategory(state.activeCategory);
 }
 
@@ -1610,6 +1719,12 @@ function isFontRec(rec) {
   return !!rec && (rec.files || []).some((f) => f.root === 'fonts');
 }
 
+// a cosmetic pick: no files of its own (it's a splice into the item schema), so it toggles
+// and deletes through the same IPC as any mod but never exports or gets bulk-selected
+function isCosmeticRec(rec) {
+  return !!rec && rec.categoryId === 'cosmetic';
+}
+
 function isPackableRec(rec) {
   return !!rec && rec.kind !== 'pack' && !['fonts', 'cursors'].includes(rec.categoryId)
     && (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
@@ -1698,22 +1813,27 @@ function schemaTagHtml(rec) {
 }
 
 function normalRowHtml(rec, i, masterOff) {
-  const selectable = !isFontRec(rec);
+  const cosmetic = isCosmeticRec(rec);
+  const selectable = !isFontRec(rec) && !cosmetic;
   const selected = state.librarySel.has(rec.id);
   const clash = conflictPartners(rec.id);
   // own preview, else the catalog thumbnail if the file is recognised (so a matched
-  // import shows an image right away, before it's even adopted)
+  // import shows an image right away, before it's even adopted); a cosmetic pick's
+  // picture is fetched lazily by the same loader the catalog cards use
   let prev = rec.preview ? previewUrl(rec.categoryId, rec.preview) : null;
   if (!prev && rec.match) { const cp = catalogPreviewFor(rec.match); if (cp) prev = previewUrl(rec.match[0].categoryId, cp); }
   const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
+  const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
   return `
     <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''} ${clash.length ? 'conflict' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
-      ${prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : '<div class="lib-thumb"></div>'}
+      ${cosmetic
+        ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms" style="font-size:20px;color:var(--text-faint)">${cosmeticMeta(rec.slot).icon}</span></div>`
+        : prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : '<div class="lib-thumb"></div>'}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${clash.length ? ` <span class="lib-tag conflict" title="${esc(L`Меняет те же файлы, что и: ${clash.join(', ')}`)}"><span class="ms">warning</span>${L`конфликт`}</span>` : ''}${schemaTagHtml(rec)}</div>
         <div class="lib-meta">
-          <span>${esc(catName(rec.categoryId))}</span>
+          <span>${esc(catLabel)}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
           <span>${new Date(rec.installedAt).toLocaleDateString(window.i18nLocale())}</span>
         </div>
@@ -1721,7 +1841,7 @@ function normalRowHtml(rec, i, masterOff) {
       <div class="lib-actions">
         ${isFontRec(rec)
           ? `<span style="font-size:11.5px;color:var(--text-muted)">${L`всегда активен`}</span>`
-          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
+          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : cosmetic ? `title="${L`На один слот — только одна активная косметика`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
         ${rec.heroes >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
         ${isCursorRec(rec)
@@ -1780,7 +1900,7 @@ async function adoptAll() {
 // top-level records the "select all" checkbox governs (visible, non-font/cursor)
 function selectableRecordIds() {
   return (state.libRecords || [])
-    .filter((r) => !isFontRec(r) && libMatchesSearch(r))
+    .filter((r) => !isFontRec(r) && !isCosmeticRec(r) && libMatchesSearch(r))
     .map((r) => r.id);
 }
 
@@ -1837,15 +1957,30 @@ function libraryListHtml(masterOff) {
   if (!all.length) return `<div class="empty-note">${L`Пока ничего не установлено — загляни в Каталог`}</div>`;
   const installed = all.filter(libMatchesSearch);
   if (!installed.length) return `<div class="empty-note">${L`Ничего не найдено по запросу`}</div>`;
-  return installed.map((rec, i) => rec.kind === 'pack' ? packRowHtml(rec, i, masterOff) : normalRowHtml(rec, i, masterOff)).join('');
+  const row = (rec, i) => (rec.kind === 'pack' ? packRowHtml(rec, i, masterOff) : normalRowHtml(rec, i, masterOff));
+  // cosmetics are mods too, but listed after everything else so the "your own mods" list
+  // above stays exactly what it always was
+  const mods = installed.filter((r) => !isCosmeticRec(r));
+  const cosmetics = installed.filter(isCosmeticRec);
+  let html = mods.map(row).join('');
+  if (cosmetics.length) {
+    html += `<div class="lib-section-title"><span class="ms">auto_awesome</span>${L`Косметика`}</div>`;
+    html += cosmetics.map((rec, i) => normalRowHtml(rec, i, masterOff)).join('');
+  }
+  return html;
 }
 
+let libCosIconWatcher = null;
 function paintLibraryList() {
   const libList = $('#libList');
   if (!libList) return;
   libList.innerHTML = libraryListHtml(state.masterOff);
   syncSelectAll();
   updateBulkBar();
+  // cosmetic rows' pictures, same lazy loader as the catalog grid
+  paintCosmeticIcons(libList);
+  if (libCosIconWatcher) libCosIconWatcher.disconnect();
+  libCosIconWatcher = watchCosmeticIcons(libList, null);
 }
 
 // modal picker: choose standalone packable mods (returns array of ids, or null)
@@ -1934,6 +2069,7 @@ async function renderLibrary() {
   try { const ms = await window.api.mods.masterState(); state.masterOff = !!ms.off; } catch { state.masterOff = false; }
   paintMasterSwitch();
   const masterOff = state.masterOff;
+  await refreshPatchState(); // schema conflicts / foreign-patcher banner below
 
   // drop selection for records (and members whose pack) that no longer exist
   const valid = new Set(installedAll.map((r) => r.id));
@@ -1985,6 +2121,18 @@ async function renderLibrary() {
         <span class="ms">warning</span>
         <div class="banner-body">${L`Занято`} <b>${slots}</b>${L` из ${slotCeil} слотов. Игра не грузит больше ~99 отдельных паков — объедини моды в один, чтобы уместить больше.`}</div>
         <button class="btn btn-sm btn-primary" id="combineHintBtn"><span class="ms">merge</span>${L`Объединить`}</button>
+      </div>` : ''}
+    ${(state.patchState?.conflicts || []).length ? `
+      <div class="lib-banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body">
+          <b>${L`Моды спорят за один предмет`}</b>: ${state.patchState.conflicts.slice(0, 3).map((c) => `«${esc(c.mods.join('» / «'))}»`).join(', ')}${state.patchState.conflicts.length > 3 ? ` ${L`и ещё ${state.patchState.conflicts.length - 3}`}` : ''}${L`. В таблицу попадёт правка того мода, что установлен последним — выключи лишний.`}
+        </div>
+      </div>` : ''}
+    ${state.patchState?.foreign ? `
+      <div class="lib-banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body"><b>${L`В gameinfo уже прописан другой патчер`}</b>: <code>${esc(state.patchState.foreign)}</code>${L`. Два патчера в одном файле уживаются плохо — включай наш только если тем не пользуешься.`}</div>
       </div>` : ''}
     <div class="lib-toolbar">
       <div class="lib-search">
@@ -2671,111 +2819,8 @@ async function handlePresetImport(r) {
 
 // ===== Tools =====
 
-// ===== Cosmetics: free looks taken from the game's own item schema =====
-
-// Labels and icons for the slots the game exposes. The list of slots itself is read from
-// the installed game, so one Valve adds later still shows up — just under its raw name.
-const COSMETIC_SLOTS = {
-  weather: { label: 'Погода', icon: 'rainy', group: 'match' },
-  terrain: { label: 'Ландшафт', icon: 'terrain', group: 'match' },
-  hud_skin: { label: 'Интерфейс игры', icon: 'dashboard', group: 'match' },
-  loading_screen: { label: 'Экран загрузки', icon: 'image', group: 'match' },
-  versus_screen: { label: 'Экран противостояния', icon: 'compare_arrows', group: 'match' },
-  courier: { label: 'Курьер', icon: 'pets', group: 'units' },
-  ward: { label: 'Варды', icon: 'visibility', group: 'units' },
-  radiantcreeps: { label: 'Крипы Света', icon: 'groups', group: 'units' },
-  direcreeps: { label: 'Крипы Тьмы', icon: 'groups', group: 'units' },
-  radiantsiegecreeps: { label: 'Осадные Света', icon: 'shield', group: 'units' },
-  diresiegecreeps: { label: 'Осадные Тьмы', icon: 'shield', group: 'units' },
-  radianttowers: { label: 'Башни Света', icon: 'castle', group: 'units' },
-  diretowers: { label: 'Башни Тьмы', icon: 'castle', group: 'units' },
-  music: { label: 'Музыка', icon: 'music_note', group: 'sound' },
-  announcer: { label: 'Комментатор', icon: 'campaign', group: 'sound' },
-  mega_kills: { label: 'Мега-килл', icon: 'record_voice_over', group: 'sound' },
-  streak_effect: { label: 'Серия убийств', icon: 'local_fire_department', group: 'fx' },
-};
-const COSMETIC_GROUPS = [
-  ['match', 'Матч'],
-  ['units', 'Существа и постройки'],
-  ['sound', 'Звук'],
-  ['fx', 'Эффекты'],
-  ['other', 'Прочее'],
-];
-
-function cosmeticMeta(slot) {
-  return COSMETIC_SLOTS[slot] || { label: slot.replace(/_/g, ' '), icon: 'category', group: 'other' };
-}
-
-// One honest status card, shown both here and in settings: what the patch is, whether it is
-// on, and what it costs. It is the only place in the app that edits files of the game.
-function patchCardHtml(st) {
-  const live = st.enabled && st.patched && st.signed;
-  const picked = Object.values(st.cosmetics || {}).filter(Boolean).length;
-  let status;
-  if (!st.enabled) status = L`Выключено. Моды со своими эффектами встают частично, косметика недоступна.`;
-  else if (!st.patched || !st.signed) status = L`Включено, но патч слетел — почини кнопкой ниже или перезапусти приложение.`;
-  else if (st.stale) status = L`Dota обновилась: схему нужно пересобрать.`;
-  else if (!st.deployed) status = L`Правок пока нет: поставь мод со своими эффектами или выбери косметику.`;
-  else status = L`Работает: ${st.mods} ${plural(st.mods, 'мод', 'мода', 'модов')}, ${picked} ${plural(picked, 'косметика', 'косметики', 'косметик')}.`;
-
-  return `
-    <div class="patch-card ${live ? 'on' : ''} ${st.enabled && (!st.patched || !st.signed || st.stale) ? 'warn' : ''}">
-      <span class="ms patch-icon">${live ? 'shield_lock' : 'shield'}</span>
-      <div class="patch-main">
-        <div class="patch-title">${L`Правки схемы предметов`}</div>
-        <div class="patch-status">${status}</div>
-      </div>
-      <div class="patch-actions">
-        ${st.enabled ? `<button class="btn btn-sm" id="patchRebuild">${L`Пересобрать`}</button>` : ''}
-        <button class="mods-switch ${live ? 'on' : ''}" id="patchSwitch" role="switch" aria-checked="${live}"
-                aria-label="${L`Правки схемы предметов`}">
-          <span class="mods-switch-txt"><b>${st.enabled ? L`вкл` : L`выкл`}</b></span>
-          <span class="mods-switch-track"><span class="mods-switch-thumb"></span></span>
-        </button>
-      </div>
-    </div>
-    ${(st.conflicts || []).length ? `
-    <div class="modal-note warn" style="margin-top:10px">
-      <b>${L`Моды спорят за один предмет`}</b>${L`: `}${st.conflicts.slice(0, 3).map((c) => `${esc(c.mods.join(' / '))} — ${esc(c.name || c.id)}`).join('; ')}${st.conflicts.length > 3 ? ' …' : ''}${L`. В таблицу попадёт правка того мода, что установлен последним — выключи лишний.`}
-    </div>` : ''}
-    ${st.foreign ? `
-    <div class="modal-note warn" style="margin-top:10px">
-      <b>${L`В gameinfo уже прописан другой патчер`}</b>${L`: папка `}<code style="background:none;color:var(--primary-soft)">${esc(st.foreign)}</code>${L`. Два патчера в одном файле уживаются плохо — включай наш только если тем не пользуешься.`}
-    </div>` : ''}
-    <div class="patch-note">
-      ${L`Dota читает таблицу предметов (items_game.txt) только из своей папки game/dota, поэтому мод из языковой папки её не перекроет: скин встанет, а его эффекты, иконки и бесплатная косметика — нет. Чтобы это работало, приложение прописывает свою папку `}<code style="background:none;color:var(--primary-soft)">game/${esc(st.folder || 'dota_mods')}</code>${L` в gameinfo_branchspecific.gi и пересчитывает подпись этого файла в dota.signatures. Оба оригинала сохраняются, выключатель возвращает их байт-в-байт. Таблица всегда собирается из твоей текущей игры, поэтому после обновления Dota она не устаревает — приложение пересоберёт её само.`}
-    </div>`;
-}
-
-// Wire the switch and the rebuild button of a patch card rendered into `root`.
-function bindPatchCard(root, after) {
-  root.querySelector('#patchSwitch')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    const turningOn = btn.getAttribute('aria-checked') !== 'true';
-    if (turningOn) {
-      const ok = await confirmDialog(
-        L`Приложение изменит два файла Dota: пропишет свою папку в gameinfo_branchspecific.gi и пересчитает подпись этого файла в dota.signatures. Оригиналы сохранятся, выключатель вернёт их обратно. Правки нужны, чтобы работали эффекты модов и бесплатная косметика.`,
-        { okLabel: L`Включить`, danger: false }
-      );
-      if (!ok) return;
-    }
-    btn.disabled = true;
-    const r = await window.api.patch.setEnabled(turningOn);
-    btn.disabled = false;
-    if (r.error) { toast(r.error, 'error'); return; }
-    toast(turningOn ? L`Правки включены` : L`Правки сняты, файлы игры восстановлены`);
-    after();
-  });
-  root.querySelector('#patchRebuild')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    const r = await window.api.patch.refreshSchema();
-    btn.disabled = false;
-    if (r.error) { toast(r.error, 'error'); return; }
-    toast(r.deployed ? L`Схема собрана заново` : L`Собирать нечего — правок нет`);
-    after();
-  });
-}
+// ===== Cosmetics: free looks taken from the game's own item schema, browsed as a catalog
+// category like any other (see COSMETIC_SLOTS / cosmeticMeta near the top of the file) =====
 
 // Item pictures come from the main process as data URIs (src/icons.js). A slot can hold two
 // thousand items, so only what is actually on screen is ever asked for: an observer collects
@@ -2794,9 +2839,9 @@ async function loadCosmeticIcons(names, onEach) {
 
 // Fill every tile whose picture is already known.
 function paintCosmeticIcons(root) {
-  for (const el of root.querySelectorAll('.cos-item-img[data-name], .cos-pick-img[data-name]')) {
+  for (const el of root.querySelectorAll('.card-thumb[data-name], .lib-thumb[data-name]')) {
     const src = cosIconCache.get(el.dataset.name);
-    if (src && !el.querySelector('img')) el.innerHTML = `<img src="${esc(src)}" alt="">`;
+    if (src && !el.querySelector('img')) el.innerHTML = `<img src="${esc(src)}" alt="" loading="lazy">`;
   }
 }
 
@@ -2824,195 +2869,101 @@ function watchCosmeticIcons(root, scroller) {
     }
     if (queue.size && !timer) timer = setTimeout(flush, 80);
   }, { root: scroller || null, rootMargin: '200px' });
-  for (const el of root.querySelectorAll('.cos-item-img[data-name], .cos-pick-img[data-name]')) io.observe(el);
+  for (const el of root.querySelectorAll('.card-thumb[data-name], .lib-thumb[data-name]')) io.observe(el);
   return io;
 }
 
-function cosFavKey(slot, id) { return `${slot}:${id}`; }
-
-async function toggleCosmeticFav(slot, id) {
-  const list = new Set(state.settings?.cosmeticFavorites || []);
-  const key = cosFavKey(slot, id);
-  if (list.has(key)) list.delete(key); else list.add(key);
-  state.settings = await window.api.settings.set('cosmeticFavorites', [...list]);
-  return list.has(key);
+// One card per look, styled exactly like a catalog mod card (same .card/.grid classes):
+// a picture, a favourite star, and an "Установлен" badge on whichever one is live.
+function cosmeticCardHtml(slot, o, i, pickedId) {
+  const cat = COSMETIC_PREFIX + slot;
+  const icon = cosIconCache.get(o.name);
+  const picked = o.id === pickedId;
+  return `
+    <div class="card" data-cos-id="${esc(o.id)}" style="--i:${Math.min(i, 28)}">
+      <div class="card-media">
+        <span class="card-thumb" data-name="${esc(o.name)}">${icon
+          ? `<img src="${esc(icon)}" alt="" loading="lazy">`
+          : `<div class="noimg"><span class="ms" style="font-size:32px">${cosmeticMeta(slot).icon}</span></div>`}</span>
+        ${favButtonHtml(cat, o.name)}
+        ${picked ? `<div class="media-tags"><span class="mtag ok">${L`Установлен`}</span></div>` : ''}
+      </div>
+      <div class="card-body"><div class="card-name">${esc(o.name)}</div></div>
+    </div>`;
 }
 
-/**
- * Pick one look for a slot. A dropdown cannot carry 2000 loading screens, so this is the
- * catalog in miniature: search, favourites first, pictures, and the current pick marked.
- * @returns {Promise<string|null|undefined>} item id, null for "as in game", undefined = cancelled
- */
-function cosmeticPicker(slot, meta, data) {
-  return new Promise((resolve) => {
-    const favs = new Set(state.settings?.cosmeticFavorites || []);
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-overlay';
-    overlay.innerHTML = `
-      <div class="cos-pick">
-        <div class="cos-pick-head">
-          <span class="ms">${meta.icon}</span>
-          <span class="cos-pick-title">${esc(tr(meta.label))}</span>
-          <div class="tb-search cos-pick-search">
-            <span class="ms">search</span>
-            <input type="text" id="cosSearch" placeholder="${L`Поиск…`}" autocomplete="off">
-          </div>
-          <button class="btn btn-sm" data-c="close" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
-        </div>
-        <div class="cos-pick-grid" id="cosGrid"></div>
-        <div class="cos-pick-foot">
-          <span class="cos-pick-count" id="cosCount"></span>
-          <button class="btn btn-sm" data-c="default">${L`Как в игре`}</button>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
+async function renderCosmeticCategory(slot) {
+  const meta = cosmeticMeta(slot);
+  viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`;
+  if (!state.cosmeticSlots) await refreshCosmeticSlots();
+  if (state.activeCategory !== COSMETIC_PREFIX + slot) return; // moved on while reading
 
-    const grid = overlay.querySelector('#cosGrid');
-    const countEl = overlay.querySelector('#cosCount');
-    const search = overlay.querySelector('#cosSearch');
-    let shown = [];
-    let io = null;
+  const data = (state.cosmeticSlots || []).find((s) => s.slot === slot);
+  if (!data) {
+    viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`;
+    return;
+  }
 
-    const sorted = () => {
-      const q = search.value.trim().toLowerCase();
-      const list = q ? data.options.filter((o) => o.name.toLowerCase().includes(q)) : data.options.slice();
-      // favourites first, then the current pick, then the schema's own order
-      return list.sort((a, b) => {
-        const fa = favs.has(cosFavKey(slot, a.id)) ? 0 : 1;
-        const fb = favs.has(cosFavKey(slot, b.id)) ? 0 : 1;
-        if (fa !== fb) return fa - fb;
-        if (a.id === data.picked) return -1;
-        if (b.id === data.picked) return 1;
-        return a.name.localeCompare(b.name);
-      });
-    };
+  let query = '';
+  let favOnly = false;
+  let io = null;
 
-    const paint = () => {
-      shown = sorted().slice(0, 300); // enough to scroll through; search narrows the rest
-      countEl.textContent = shown.length < data.options.length
-        ? L`${shown.length} из ${data.options.length}`
-        : L`${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}`;
-      grid.innerHTML = shown.map((o) => {
-        const fav = favs.has(cosFavKey(slot, o.id));
-        const icon = cosIconCache.get(o.name);
-        return `
-          <button class="cos-item ${o.id === data.picked ? 'picked' : ''}" data-id="${esc(o.id)}" title="${esc(o.name)}">
-            <span class="cos-item-img" data-name="${esc(o.name)}">${icon ? `<img src="${icon}" alt="" loading="lazy">` : `<span class="ms">${meta.icon}</span>`}</span>
-            <span class="cos-item-name">${esc(o.name)}</span>
-            <span class="cos-item-fav ${fav ? 'on' : ''}" data-fav="${esc(o.id)}" role="button" tabindex="0"
-                  aria-label="${L`В избранное`}"><span class="ms">${fav ? 'star' : 'star_border'}</span></span>
-          </button>`;
-      }).join('') || `<div class="empty-note">${L`Ничего не нашлось`}</div>`;
+  const filtered = () => {
+    const q = query.trim().toLowerCase();
+    let list = q ? data.options.filter((o) => o.name.toLowerCase().includes(q)) : data.options;
+    if (favOnly) list = list.filter((o) => isFav(COSMETIC_PREFIX + slot, o.name));
+    return list;
+  };
 
-      paintCosmeticIcons(grid);
-      if (io) io.disconnect();
-      io = watchCosmeticIcons(grid, grid);
-    };
-
-    const done = (v) => {
-      if (io) io.disconnect();
-      overlay.remove();
-      document.removeEventListener('keydown', onKey);
-      resolve(v);
-    };
-    grid.addEventListener('click', async (e) => {
-      const star = e.target.closest('[data-fav]');
-      if (star) {
-        e.stopPropagation();
-        await toggleCosmeticFav(slot, star.dataset.fav);
-        favs.clear();
-        for (const k of state.settings.cosmeticFavorites || []) favs.add(k);
-        paint();
-        return;
-      }
-      const card = e.target.closest('.cos-item');
-      if (card) done(card.dataset.id);
+  const paintGrid = () => {
+    const list = filtered();
+    const shown = list.slice(0, 400); // search narrows the rest; nobody scrolls past this
+    $('#cosCount').textContent = `${list.length} ${plural(list.length, 'результат', 'результата', 'результатов')}`;
+    const grid = $('#cosGrid');
+    grid.innerHTML = shown.length
+      ? shown.map((o, i) => cosmeticCardHtml(slot, o, i, data.picked)).join('')
+      : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
+    grid.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
+    grid.querySelectorAll('.card[data-cos-id]').forEach((card) => {
+      card.addEventListener('click', () => pick(card.dataset.cosId));
     });
-    let timer = null;
-    search.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(paint, 120); });
-    overlay.querySelector('[data-c="close"]').addEventListener('click', () => done(undefined));
-    overlay.querySelector('[data-c="default"]').addEventListener('click', () => done(null));
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(undefined); });
-    const onKey = (e) => { if (e.key === 'Escape') done(undefined); };
-    document.addEventListener('keydown', onKey);
-    paint();
-    search.focus();
-  });
-}
+    paintCosmeticIcons(grid);
+    if (io) io.disconnect();
+    io = watchCosmeticIcons(grid, null);
+  };
 
-async function renderCosmetics() {
-  viewRoot.innerHTML = `
-    <div class="view-header"><h1 class="view-title">${L`Косметика`}</h1></div>
-    <div class="empty-note">${L`Читаем схему игры…`}</div>`;
-
-  const [st, data] = await Promise.all([window.api.patch.state(), window.api.cosmetics.slots()]);
-  if (state.view !== 'cosmetics') return; // the user moved on while we were reading
-  const slots = data.slots || [];
-  const off = !st.enabled || !st.patched;
-
-  const groups = COSMETIC_GROUPS.map(([key, label]) => {
-    const mine = slots.filter((s) => cosmeticMeta(s.slot).group === key);
-    if (!mine.length) return '';
-    return `
-      <div class="cos-group">
-        <h3 class="cos-group-title">${esc(tr(label))}</h3>
-        <div class="cos-grid">
-          ${mine.map((s) => {
-            const meta = cosmeticMeta(s.slot);
-            const picked = s.options.find((o) => o.id === s.picked);
-            return `
-            <div class="cos-card ${picked ? 'picked' : ''}" data-slot="${esc(s.slot)}">
-              <div class="cos-head">
-                <span class="ms">${meta.icon}</span>
-                <span class="cos-label">${esc(tr(meta.label))}</span>
-                <span class="cos-count">${s.options.length}</span>
-              </div>
-              <button class="cos-pick-btn" data-open="${esc(s.slot)}" ${off ? 'disabled' : ''}>
-                <span class="cos-pick-img" data-name="${picked ? esc(picked.name) : ''}"><span class="ms">${meta.icon}</span></span>
-                <span class="cos-pick-name">${picked ? esc(picked.name) : L`Как в игре`}</span>
-                <span class="ms cos-pick-caret">chevron_right</span>
-              </button>
-              ${picked ? `<button class="btn btn-sm cos-clear" data-clear="${esc(s.slot)}">${L`Вернуть как в игре`}</button>` : ''}
-            </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-  }).join('');
+  const pick = async (itemId) => {
+    const already = itemId === data.picked;
+    const o = data.options.find((x) => x.id === itemId);
+    const r = already
+      ? (data.recordId ? await window.api.mods.remove(data.recordId) : { ok: true })
+      : await window.api.cosmetics.pick(slot, itemId, o ? o.name : itemId);
+    if (r.error) { toast(r.error, 'error'); return; }
+    toast(already ? L`Вернули как в игре` : L`Выбрано: ${o ? o.name : itemId}`);
+    await Promise.all([refreshCosmeticSlots(), refreshInstalledIndex()]);
+    if (state.activeCategory === COSMETIC_PREFIX + slot) renderCosmeticCategory(slot);
+  };
 
   viewRoot.innerHTML = `
     <div class="view-header">
-      <h1 class="view-title">${L`Косметика`}</h1>
-      <div class="view-sub">${L`Погода, ландшафт, курьеры, варды и остальное — из схемы твоей игры, без покупки. Список берётся из установленной Dota, так что новые вещи Valve появляются здесь сами.`}</div>
+      <h1 class="view-title">${esc(tr(meta.label))}</h1>
+      <span class="view-sub">${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>
     </div>
-    ${patchCardHtml(st)}
-    ${data.error ? `<div class="modal-note warn" style="margin-top:12px">${esc(data.error)}</div>` : ''}
-    ${slots.length ? groups : `<div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`}`;
+    <div class="toolbar">
+      <div class="tb-search cat-search"><span class="ms">search</span><input type="text" id="cosSearch" placeholder="${L`Поиск…`}" autocomplete="off"></div>
+      <div class="sep"></div>
+      <button class="fchip" id="cosFavChip"><span class="ms">favorite</span>${L`Избранное`}</button>
+      <span class="count" id="cosCount"></span>
+    </div>
+    <div class="grid" id="cosGrid"></div>`;
 
-  bindPatchCard(viewRoot, renderCosmetics);
-
-  const apply = async (slot, id, label) => {
-    const r = await window.api.cosmetics.set(slot, id);
-    if (r.error) { toast(r.error, 'error'); return; }
-    toast(id ? L`Выбрано: ${label}` : L`Вернули как в игре`);
-    renderCosmetics();
-  };
-  viewRoot.querySelectorAll('[data-open]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const s = slots.find((x) => x.slot === btn.dataset.open);
-      if (!s) return;
-      const chosen = await cosmeticPicker(s.slot, cosmeticMeta(s.slot), s);
-      if (chosen === undefined) return; // closed without choosing
-      const name = (s.options.find((o) => o.id === chosen) || {}).name || '';
-      await apply(s.slot, chosen, name);
-    });
+  $('#cosSearch').addEventListener('input', (e) => { query = e.target.value; paintGrid(); });
+  $('#cosFavChip').addEventListener('click', (e) => {
+    favOnly = !favOnly;
+    e.currentTarget.classList.toggle('active', favOnly);
+    paintGrid();
   });
-  viewRoot.querySelectorAll('[data-clear]').forEach((btn) => {
-    btn.addEventListener('click', () => apply(btn.dataset.clear, null, ''));
-  });
-
-  // pictures for what is already picked
-  paintCosmeticIcons(viewRoot);
-  watchCosmeticIcons(viewRoot, null);
+  paintGrid();
 }
 
 async function renderTools() {
@@ -3177,7 +3128,6 @@ async function renderSettings() {
   const pz = state.panels;
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
-  const patchState = await window.api.patch.state();
 
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
@@ -3322,11 +3272,6 @@ async function renderSettings() {
       <div class="modal-note" style="margin-top:10px">
         <b>${L`Обнаружен Minify`}</b>${L` (папка `}<code style="background:none;color:var(--primary-soft)">dota_minify</code>${L` рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.`}
       </div>` : ''}
-    </div>
-
-    <div class="settings-block" style="animation-delay:170ms">
-      <h3>${L`Схема предметов`}</h3>
-      ${patchCardHtml(patchState)}
     </div>
 
     <div class="settings-block" style="animation-delay:180ms">
@@ -3494,7 +3439,6 @@ async function renderSettings() {
     e.currentTarget.setAttribute('aria-checked', String(on));
     state.settings = await window.api.settings.set('discordPresence', on);
   });
-  bindPatchCard(viewRoot, renderSettings);
   $('#clearCacheBtn').addEventListener('click', async () => {
     await window.api.misc.clearCache();
     toast(L`Кэш очищен`);
@@ -3688,7 +3632,9 @@ function showLanguagePicker() {
 
   await refreshSidebarStatus();
   await refreshMasterSwitch();
+  await refreshPatchState();
   await refreshInstalledIndex();
+  await refreshCosmeticSlots();
   await loadCatalog();
 
   // first launch, or first launch after this release — let the user pick a language

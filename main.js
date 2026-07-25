@@ -235,6 +235,13 @@ app.whenReady().then(async () => {
   } catch (e) {
     diag('schema migrate skipped: ' + e.message);
   }
+  // cosmetic picks used to live in settings.json; move them into library records so they
+  // can be toggled, deleted and shared like any other mod
+  try {
+    schemaService.migrateCosmeticSettings();
+  } catch (e) {
+    diag('cosmetic migrate skipped: ' + e.message);
+  }
 
   // a Dota update overwrites the patched gameinfo and moves the item table: put both
   // back before the user gets a chance to launch the game with a half-applied setup
@@ -378,6 +385,12 @@ function importVpkBuffers(items) {
 // copy: src/schema-service.js lifts the blocks they changed and splices them into the game's
 // CURRENT table. Everything below is a thin call into that service.
 
+// Whether toggling/removing this record can change what belongs in the built schema: a mod
+// with lifted item blocks, or a cosmetic pick (which IS a schema edit, not a file).
+function touchesSchema(rec) {
+  return rec.categoryId === 'cosmetic' || (Array.isArray(rec.schema) && rec.schema.length > 0);
+}
+
 // after any deploy, if the master switch is off, sweep freshly written files off too
 function afterDeployMaster() {
   try { if (installer.masterIsOff()) installer.setMasterEnabled(false); } catch { /* noop */ }
@@ -475,6 +488,11 @@ async function catalogIndex() {
 // the receiver, otherwise as its own bytes. `loadData` is deferred so building the plan
 // (which only needs sizes) doesn't merge tens of MB per mod.
 function shareEntryFor(rec, cat) {
+  // a cosmetic pick is a slot + an id from the receiver's OWN game schema — both players'
+  // games carry the same Valve items, so there is nothing to fetch or embed at all
+  if (rec.categoryId === 'cosmetic') {
+    return { kind: 'cosmetic', name: rec.name, slot: rec.slot, itemId: rec.itemId, size: 0 };
+  }
   const hit = rec.categoryId !== 'imported' && cat.lookup(rec.categoryId, rec.name, rec.styleLabel);
   if (hit) {
     return {
@@ -534,7 +552,10 @@ async function presetShareEntries(preset) {
 // strips the deferred loaders so the plan can cross the IPC boundary; `key` is what the
 // renderer sends back to leave an oversized mod out of the file
 function planShape(entries) {
-  const plain = (e, key) => ({ key, kind: e.kind, name: e.name, size: e.size || 0, info: e.info || '', reason: e.reason || '' });
+  const plain = (e, key) => ({
+    key, kind: e.kind, name: e.name, size: e.size || 0, info: e.info || '', reason: e.reason || '',
+    ...(e.kind === 'cosmetic' ? { slot: e.slot } : {}),
+  });
   return entries.map((e, i) => (e.kind === 'pack'
     ? { ...plain(e, String(i)), members: e.members.map((m, j) => plain(m, `${i}.${j}`)) }
     : plain(e, String(i))));
@@ -554,14 +575,20 @@ function installedFpIndex() {
 // The mods of a preset flattened for a link, or null if even one of them can't be named —
 // a link carries identities only, so a single import makes the whole preset file-only.
 // A pack flattens to its members: packing is a local storage choice, not part of the build.
+// A cosmetic pick travels too — slot + item id is a few bytes, and needs no catalog lookup
+// at all (both players' games carry the same Valve schema).
 function presetLinkMods(preset, cat) {
   const out = [];
   for (const id of preset.modIds || []) {
     const rec = library.find(id);
     if (!rec) continue;
+    if (rec.categoryId === 'cosmetic') {
+      out.push({ kind: 'cosmetic', slot: rec.slot, itemId: rec.itemId, name: rec.name });
+      continue;
+    }
     for (const it of (rec.kind === 'pack' ? rec.members || [] : [rec])) {
       if (it.categoryId === 'imported' || !cat.lookup(it.categoryId, it.name, it.styleLabel)) return null;
-      out.push({ categoryId: it.categoryId, name: it.name, styleLabel: it.styleLabel || null });
+      out.push({ kind: 'catalog', categoryId: it.categoryId, name: it.name, styleLabel: it.styleLabel || null });
     }
   }
   return out.length ? out : null;
@@ -579,6 +606,11 @@ async function sharedPresetStatus(preset, cat) {
     } else if (e.kind === 'embedded') {
       if (e.fp && fpIndex.has(e.fp)) out.installed++;
       else out.embedded++;
+    } else if (e.kind === 'cosmetic') {
+      // free either way — nothing to fetch, just an instant pick from the local game schema
+      const have = library.list().find((r) => r.categoryId === 'cosmetic' && r.slot === e.slot && r.itemId === e.itemId);
+      if (have && have.enabled !== false) out.installed++;
+      else out.download++;
     } else {
       out.unavailable.push(e.name);
     }
@@ -653,6 +685,7 @@ function applyPreset(preset) {
   const wanted = new Set(preset.modIds);
   const errors = [];
   const recs = library.list();
+  let schemaTouched = false;
   // off first, then on: two cursor sets cannot be live at once, so the outgoing one has to
   // put the vanilla files back before the incoming one writes over them
   for (const pass of [false, true]) {
@@ -662,11 +695,13 @@ function applyPreset(preset) {
       try {
         installer.setEnabled(rec.files, shouldEnable, rec.id);
         library.setEnabled(rec.id, shouldEnable);
+        if (touchesSchema(rec)) schemaTouched = true;
       } catch (err) {
         errors.push(`${rec.name}: ${err.message}`);
       }
     }
   }
+  if (schemaTouched) schemaService.refresh();
   return errors;
 }
 
@@ -690,6 +725,19 @@ function disableOtherCursors(exceptId) {
       library.setEnabled(rec.id, false);
       off.push(rec.name);
     } catch { /* noop */ }
+  }
+  return off;
+}
+
+// a slot (weather, courier, ...) only ever has one active look — same rule as cursors,
+// just without files to rename: the sibling only needs its enabled flag flipped
+function disableOtherCosmetics(rec) {
+  const off = [];
+  for (const other of library.list()) {
+    if (other.id === rec.id || other.enabled === false) continue;
+    if (other.categoryId !== 'cosmetic' || other.slot !== rec.slot) continue;
+    library.setEnabled(other.id, false);
+    off.push(other.name);
   }
   return off;
 }
@@ -1145,8 +1193,6 @@ function registerIpc() {
 
   // Free cosmetics are generated from the installed game's own schema, so a weather or
   // courier Valve ships later appears in the list without an app update.
-  ipcMain.handle('cosmetics:options', (e, slot) => schemaService.cosmetics(slot));
-
   ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
 
   // One picture per request, so opening a slot with 2000 items costs only what is on screen.
@@ -1157,7 +1203,16 @@ function registerIpc() {
     return out;
   });
 
-  ipcMain.handle('cosmetics:set', (e, slot, donorId) => schemaService.setCosmetic(slot, donorId));
+  // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
+  // handle it (see touchesSchema above), this is only for the initial choice.
+  ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName) => {
+    try {
+      const rec = schemaService.pickCosmetic(slot, itemId, itemName);
+      return { ok: true, record: rec };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
 
   ipcMain.handle('mods:masterState', () => {
     try { return { off: installer.masterIsOff() }; } catch { return { off: false }; }
@@ -1178,11 +1233,13 @@ function registerIpc() {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
     try {
-      // only one cursor set can be live — the others give way
-      const replaced = enabled && isCursorRecord(rec) ? disableOtherCursors(id) : [];
+      // only one cursor set — and only one look per cosmetic slot — can be live at a time
+      const replaced = enabled && isCursorRecord(rec) ? disableOtherCursors(id)
+        : enabled && rec.categoryId === 'cosmetic' ? disableOtherCosmetics(rec)
+          : [];
       installer.setEnabled(rec.files, enabled, rec.id);
       library.setEnabled(id, enabled);
-      if (Array.isArray(rec.schema) && rec.schema.length) schemaService.refresh();
+      if (touchesSchema(rec)) schemaService.refresh();
       return { ok: true, replaced };
     } catch (err) {
       return { error: String(err.message || err) };
@@ -1196,7 +1253,7 @@ function registerIpc() {
       if (rec.kind === 'pack') installer.removePackFully(rec);
       else installer.remove(rec.files, { recId: rec.id, deployed: rec.enabled !== false });
       library.removeRecord(id);
-      if (Array.isArray(rec.schema) && rec.schema.length) schemaService.refresh();
+      if (touchesSchema(rec)) schemaService.refresh();
       return { ok: true };
     } catch (err) {
       return { error: String(err.message || err) };
@@ -1646,6 +1703,10 @@ function registerIpc() {
           });
           if (entry.fp) fpIndex.set(entry.fp, rec.id);
           return rec.id;
+        }
+        if (entry.kind === 'cosmetic') {
+          const rec = schemaService.pickCosmetic(entry.slot, entry.itemId, entry.name);
+          return rec ? rec.id : null;
         }
         errors.push(`${entry.name}: ${entry.reason || t('нет в файле')}`);
         return null;

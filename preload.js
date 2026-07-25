@@ -55,8 +55,7 @@ contextBridge.exposeInMainWorld('api', {
   cosmetics: {
     slots: () => ipcRenderer.invoke('cosmetics:slots'),
     icons: (names) => ipcRenderer.invoke('cosmetics:icons', names),
-    options: (slot) => ipcRenderer.invoke('cosmetics:options', slot),
-    set: (slot, donorId) => ipcRenderer.invoke('cosmetics:set', slot, donorId),
+    pick: (slot, itemId, itemName) => ipcRenderer.invoke('cosmetics:pick', slot, itemId, itemName),
   },
   game: {
     launch: () => ipcRenderer.invoke('game:launch'),

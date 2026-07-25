@@ -36,21 +36,23 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     return text;
   }
 
-  // Enabled mods' lifted item blocks + the free cosmetics the user picked.
+  // Enabled mods' lifted item blocks + the free cosmetics the user picked. A cosmetic pick
+  // is a library record like any other (categoryId 'cosmetic', slot + itemId of its own),
+  // so toggling, deleting and sharing it in a preset all go through the normal machinery.
   function patches(vanillaText) {
     const out = [];
     for (const rec of library.list()) {
-      if (rec.enabled === false || !Array.isArray(rec.schema)) continue;
+      if (rec.enabled === false) continue;
+      if (rec.categoryId === 'cosmetic') {
+        try {
+          const target = schema.baseItemFor(vanillaText, rec.slot);
+          if (!target) continue;
+          out.push({ id: target.id, block: schema.baseItemPatch(vanillaText, target.id, rec.itemId), source: rec.name });
+        } catch { /* a donor Valve removed simply drops out of the build */ }
+        continue;
+      }
+      if (!Array.isArray(rec.schema)) continue;
       for (const d of rec.schema) out.push({ id: d.id, block: d.block, source: rec.name });
-    }
-    const picks = settings.get('cosmetics') || {};
-    for (const [slot, donorId] of Object.entries(picks)) {
-      if (!donorId) continue;
-      try {
-        const target = schema.baseItemFor(vanillaText, slot);
-        if (!target) continue;
-        out.push({ id: target.id, block: schema.baseItemPatch(vanillaText, target.id, donorId), source: `cosmetic:${slot}` });
-      } catch { /* a donor Valve removed simply drops out of the build */ }
     }
     return out;
   }
@@ -234,7 +236,7 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
       deployed: false,
       stale: false,
       mods: library.list().filter((r) => r.enabled !== false && Array.isArray(r.schema) && r.schema.length).length,
-      cosmetics: settings.get('cosmetics') || {},
+      cosmeticsPicked: library.list().filter((r) => r.categoryId === 'cosmetic' && r.enabled !== false).length,
       conflicts: conflicts(),
     };
     if (!game) return out;
@@ -248,21 +250,10 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     return out;
   }
 
-  // Pickable looks for a slot, straight out of the installed game's schema.
-  function cosmetics(slot) {
-    const game = gamePath();
-    if (!game) return { options: [] };
-    try {
-      const text = vanilla();
-      const base = schema.baseItemFor(text, slot);
-      return {
-        options: schema.cosmeticOptions(text, slot),
-        base: base ? base.id : null,
-        picked: (settings.get('cosmetics') || {})[slot] || null,
-      };
-    } catch (err) {
-      return { options: [], error: String(err.message || err) };
-    }
+  // The live cosmetic record for a slot, if any — at most one is ever enabled at a time
+  // (see pickCosmetic), the same rule the app already applies to cursor sets.
+  function cosmeticRecordFor(slot) {
+    return library.list().find((r) => r.categoryId === 'cosmetic' && r.slot === slot && r.enabled !== false) || null;
   }
 
   /**
@@ -275,7 +266,6 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     if (!game) return { slots: [] };
     try {
       const text = vanilla();
-      const picks = settings.get('cosmetics') || {};
       const bases = schema.listItems(text).filter((i) => i.baseitem);
       const seen = new Set();
       const slots = [];
@@ -285,7 +275,8 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
         seen.add(slot);
         const options = schema.cosmeticOptions(text, slot);
         if (!options.length) continue;
-        slots.push({ slot, base: base.id, picked: picks[slot] || null, options });
+        const rec = cosmeticRecordFor(slot);
+        slots.push({ slot, base: base.id, picked: rec ? rec.itemId : null, recordId: rec ? rec.id : null, options });
       }
       return { slots };
     } catch (err) {
@@ -293,15 +284,51 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     }
   }
 
-  function setCosmetic(slot, donorId) {
-    const picks = { ...(settings.get('cosmetics') || {}) };
-    if (donorId) picks[slot] = String(donorId);
-    else delete picks[slot];
-    settings.set('cosmetics', picks);
-    return { ok: true, ...refresh() };
+  /**
+   * Pick a look for a slot. Switching to a genuinely new item disables whatever was live for
+   * that slot (never deletes it: a preset saved earlier may still point at that record,
+   * exactly like disabling a regular mod doesn't erase it) and creates a fresh record — or
+   * reactivates a dormant one for that same item, so flipping back and forth between two
+   * looks doesn't spawn a new row each time. Returns the now-live record.
+   */
+  function pickCosmetic(slot, itemId, itemName) {
+    const id = String(itemId);
+    const name = itemName || id;
+    const live = cosmeticRecordFor(slot);
+    if (live && live.itemId === id) return live; // already this
+
+    if (live) library.setEnabled(live.id, false);
+    const dormant = library.list().find((r) => r.categoryId === 'cosmetic' && r.slot === slot && r.itemId === id);
+    const rec = dormant
+      ? library.update(dormant.id, { name, enabled: true })
+      : library.add({ name, categoryId: 'cosmetic', styleLabel: null, fileRef: null, preview: null, files: [] });
+    if (!dormant) library.update(rec.id, { slot, itemId: id });
+    refresh();
+    return library.find(rec.id);
   }
 
-  return { backupDir, patches, refresh, heal, setEnabled, harvest, split, migrate, state, cosmetics, cosmeticSlots, setCosmetic };
+  // One-time move of picks that used to live in settings.json into library records, from
+  // before cosmetics could be toggled/deleted/shared like any other mod.
+  function migrateCosmeticSettings() {
+    const picks = settings.get('cosmetics');
+    if (!picks || !Object.keys(picks).length) return;
+    const game = gamePath();
+    if (!game) return;
+    try {
+      const text = vanilla();
+      for (const [slot, itemId] of Object.entries(picks)) {
+        if (!itemId || cosmeticRecordFor(slot)) continue;
+        const opt = schema.cosmeticOptions(text, slot).find((o) => o.id === String(itemId));
+        pickCosmetic(slot, itemId, opt ? opt.name : slot);
+      }
+    } catch { /* the game path may not be ready yet; nothing lost, just retried next start */ }
+    settings.set('cosmetics', {});
+  }
+
+  return {
+    backupDir, patches, refresh, heal, setEnabled, harvest, split, migrate, state,
+    cosmeticSlots, pickCosmetic, migrateCosmeticSettings,
+  };
 }
 
 module.exports = { createSchemaService };

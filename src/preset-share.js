@@ -45,6 +45,13 @@ function normalizeEntry(raw, { allowPack = true } = {}) {
       size: Number.isFinite(raw.size) ? raw.size : 0, fp: str(raw.fp, 64) || null, info: str(raw.info),
     };
   }
+  // a free cosmetic pick: slot + item id from the sender's game schema, no bytes at all
+  if (raw.kind === 'cosmetic') {
+    const slot = str(raw.slot, 60);
+    const itemId = str(raw.itemId, 20);
+    if (!slot || !itemId) return null;
+    return { kind: 'cosmetic', name, slot, itemId };
+  }
   if (raw.kind === 'pack' && allowPack) {
     const members = (Array.isArray(raw.members) ? raw.members : [])
       .map((m) => normalizeEntry(m, { allowPack: false }))

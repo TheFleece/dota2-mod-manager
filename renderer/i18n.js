@@ -69,58 +69,40 @@ const EN = {
 
   // ---------- nav / chrome (index.html static) ----------
   'Каталог': 'Catalog', 'Библиотека': 'Library', 'Пресеты': 'Presets',
-  'Инструменты': 'Tools', 'Настройки': 'Settings', 'Косметика': 'Cosmetics',
+  'Инструменты': 'Tools', 'Настройки': 'Settings',
 
-  // ---------- item schema: patch card, cosmetics picker, library tag ----------
-  'Правки схемы предметов': 'Item schema changes',
-  'Схема предметов': 'Item schema',
-  'Выключено. Моды со своими эффектами встают частично, косметика недоступна.':
-    'Off. Mods with their own effects install only partly, and cosmetics are unavailable.',
-  'Включено, но патч слетел — почини кнопкой ниже или перезапусти приложение.':
-    'On, but the patch is gone: repair it with the button below, or restart the app.',
-  'Dota обновилась: схему нужно пересобрать.': 'Dota updated: the schema needs rebuilding.',
-  'Правок пока нет: поставь мод со своими эффектами или выбери косметику.':
-    'Nothing to apply yet: install a mod with its own effects, or pick a cosmetic.',
-  'Работает: {0} {1}, {2} {3}.': 'Live: {0} {1}, {2} {3}.',
-  'Пересобрать': 'Rebuild',
+  // ---------- safe mode (status bar switch) ----------
+  'Безопасно:': 'Safe:',
+  'Безопасный режим: моды из патча (эффекты, косметика) скрыты и не работают. Выключи, чтобы их включить — приложение впишет свою папку в файлы игры.':
+    'Safe mode: patch-only mods (effects, cosmetics) are hidden and inactive. Turn it off to enable them — the app will register its folder in the game files.',
+  'Приложение впишет свою папку в gameinfo_branchspecific.gi и пересчитает подпись этого файла в dota.signatures — так Dota сможет читать эффекты модов и бесплатную косметику. Оригиналы сохраняются, обратное переключение возвращает их byte-в-byte.':
+    'The app will register its folder in gameinfo_branchspecific.gi and recompute that file\'s signature in dota.signatures — that lets Dota read mod effects and free cosmetics. Originals are backed up; switching back restores them byte for byte.',
+  'Безопасный режим выключен — эффекты и косметика доступны': 'Safe mode off — effects and cosmetics are available',
+  'Безопасный режим включён, файлы игры восстановлены': 'Safe mode on, game files restored',
+
+  // ---------- item schema: catalog cards, library tag, conflict banners ----------
   'Моды спорят за один предмет': 'Mods disagree about the same item',
   '. В таблицу попадёт правка того мода, что установлен последним — выключи лишний.':
     '. The table takes the change from whichever mod was installed last: turn the other one off.',
   'В gameinfo уже прописан другой патчер': 'gameinfo already lists another patcher',
-  ': папка ': ': the folder ',
   '. Два патчера в одном файле уживаются плохо — включай наш только если тем не пользуешься.':
     '. Two patchers in one file get along badly: turn ours on only if you no longer use that one.',
-  'Dota читает таблицу предметов (items_game.txt) только из своей папки game/dota, поэтому мод из языковой папки её не перекроет: скин встанет, а его эффекты, иконки и бесплатная косметика — нет. Чтобы это работало, приложение прописывает свою папку ':
-    'Dota reads the item table (items_game.txt) only from its own game/dota folder, so a mod in a language folder cannot override it: the skin installs, its effects, icons and the free cosmetics do not. To make those work, the app registers its own folder ',
-  ' в gameinfo_branchspecific.gi и пересчитывает подпись этого файла в dota.signatures. Оба оригинала сохраняются, выключатель возвращает их байт-в-байт. Таблица всегда собирается из твоей текущей игры, поэтому после обновления Dota она не устаревает — приложение пересоберёт её само.':
-    ' in gameinfo_branchspecific.gi and recomputes that file\'s signature in dota.signatures. Both originals are backed up and the switch restores them byte for byte. The table is always built from your current game, so a Dota update cannot leave it stale: the app rebuilds it on its own.',
-  'Приложение изменит два файла Dota: пропишет свою папку в gameinfo_branchspecific.gi и пересчитает подпись этого файла в dota.signatures. Оригиналы сохранятся, выключатель вернёт их обратно. Правки нужны, чтобы работали эффекты модов и бесплатная косметика.':
-    'The app will change two Dota files: it registers its folder in gameinfo_branchspecific.gi and recomputes that file\'s signature in dota.signatures. The originals are kept, and the switch puts them back. These changes are what make mod effects and free cosmetics work.',
-  'Включить': 'Turn on',
-  'Правки включены': 'Schema changes are on',
-  'Правки сняты, файлы игры восстановлены': 'Changes removed, game files restored',
-  'Схема собрана заново': 'Schema rebuilt',
-  'Собирать нечего — правок нет': 'Nothing to build: there are no changes',
   'Читаем схему игры…': 'Reading the game schema…',
-  'Погода, ландшафт, курьеры, варды и остальное — из схемы твоей игры, без покупки. Список берётся из установленной Dota, так что новые вещи Valve появляются здесь сами.':
-    'Weather, terrain, couriers, wards and the rest, taken from your game\'s own schema. The list is read from the installed Dota, so new Valve items show up here by themselves.',
   'Схема игры не прочиталась — проверь путь к Dota 2 в настройках.':
     'Could not read the game schema: check the Dota 2 path in settings.',
-  'Как в игре': 'Game default',
-  'Вернуть как в игре': 'Back to game default',
   'Поиск…': 'Search…',
-  'В избранное': 'Add to favourites',
-  'Ничего не нашлось': 'Nothing found',
-  '{0} из {1}': '{0} of {1}',
+  'Ничего не найдено — сбрось фильтры': 'Nothing found — clear the filters',
   'Выбрано: {0}': 'Picked: {0}',
   'Вернули как в игре': 'Back to the game default',
+  'На один слот — только одна активная косметика': 'One slot, one active look at a time',
   'эффекты': 'effects',
   'нужны правки': 'needs the patch',
   'Мод меняет схему предметов: его эффекты и иконки собраны в общую таблицу':
     'This mod changes the item schema: its effects and icons are built into the shared table',
   'Мод меняет схему предметов. Без правок схемы встанет только модель — эффекты и иконки работать не будут.':
     'This mod changes the item schema. Without the patch only the model installs: effects and icons will not work.',
-  // cosmetic slots
+  'Косметика': 'Cosmetics',
+  // cosmetic slot labels
   'Погода': 'Weather', 'Ландшафт': 'Terrain', 'Интерфейс игры': 'Game HUD',
   'Экран загрузки': 'Loading screen', 'Экран противостояния': 'Versus screen',
   'Курьер': 'Courier', 'Варды': 'Wards', 'Крипы Света': 'Radiant creeps',
@@ -128,8 +110,6 @@ const EN = {
   'Осадные Тьмы': 'Dire siege creeps', 'Башни Света': 'Radiant towers',
   'Башни Тьмы': 'Dire towers', 'Музыка': 'Music', 'Комментатор': 'Announcer',
   'Серия убийств': 'Kill streak',
-  'Матч': 'Match', 'Существа и постройки': 'Units and buildings', 'Звук': 'Sound',
-  'Эффекты': 'Effects', 'Прочее': 'Other',
   'Поиск модов…': 'Search mods…', 'Очистить': 'Clear', 'Свернуть': 'Minimize',
   'Развернуть': 'Maximize', 'Закрыть': 'Close', 'Поиск Dota 2…': 'Looking for Dota 2…',
   'Открыть папку модов': 'Open mods folder', 'Играть': 'Play',
