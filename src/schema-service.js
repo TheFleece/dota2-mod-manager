@@ -165,18 +165,25 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     return out;
   }
 
-  // Two mods changing the same item block: only one of them can be in the built table
-  // (the one installed later), so the library has to say so instead of quietly dropping one.
+  // Two mods changing the same item block DIFFERENTLY: only one of them can be in the built
+  // table (the one installed later), so the library has to say so instead of quietly
+  // dropping the other. Identical blocks are not a conflict at all - Skinchanger bundles
+  // the whole cart into every export, so two of its packs routinely carry the same block.
   function conflicts() {
+    const flat = (s) => s.replace(/\s+/g, ' ').trim();
     const byId = new Map();
     for (const rec of library.list()) {
       if (rec.enabled === false || !Array.isArray(rec.schema)) continue;
       for (const d of rec.schema) {
-        if (!byId.has(d.id)) byId.set(d.id, { id: d.id, name: d.name, mods: [] });
-        byId.get(d.id).mods.push(rec.name);
+        if (!byId.has(d.id)) byId.set(d.id, { id: d.id, name: d.name, mods: [], texts: new Set() });
+        const entry = byId.get(d.id);
+        entry.mods.push(rec.name);
+        entry.texts.add(flat(d.block));
       }
     }
-    return [...byId.values()].filter((c) => c.mods.length > 1);
+    return [...byId.values()]
+      .filter((c) => c.texts.size > 1)
+      .map(({ id, name, mods }) => ({ id, name, mods }));
   }
 
   function state() {

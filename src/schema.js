@@ -340,9 +340,14 @@ function mergeSchema(baseText, patches) {
   const seen = new Map();
   const edits = [];
 
+  // Same block from two sources is not a conflict: Skinchanger bakes the whole cart into
+  // every export, so its packs routinely carry a byte-identical copy of each other's blocks.
+  const flat = (s) => s.replace(/\s+/g, ' ').trim();
   for (const p of patches) {
     const prev = seen.get(String(p.id));
-    if (prev) conflicts.push({ id: String(p.id), a: prev.source || '', b: p.source || '' });
+    if (prev && flat(prev.block) !== flat(p.block)) {
+      conflicts.push({ id: String(p.id), a: prev.source || '', b: p.source || '' });
+    }
     seen.set(String(p.id), p);
   }
   const section = itemsSection(baseText);

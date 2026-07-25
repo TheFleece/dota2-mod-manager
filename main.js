@@ -1110,9 +1110,10 @@ function registerIpc() {
 
   // The one moment the app touches files of the game install: gated on an explicit yes,
   // reversible from the same switch, and every original is backed up in userData first.
-  ipcMain.handle('patch:setEnabled', (e, enabled) => {
+  ipcMain.handle('patch:setEnabled', async (e, enabled) => {
     if (!settings.get('dotaGamePath')) return { error: t('Путь к Dota 2 не задан') };
-    if (dotaIsRunning()) return { error: t('Закрой Dota 2 перед изменением файлов игры') };
+    // the game holds gameinfo open while it runs, so writing it would fail half-way
+    if (await dotaIsRunning()) return { error: t('Закрой Dota 2 перед изменением файлов игры') };
     try {
       return schemaService.setEnabled(!!enabled);
     } catch (err) {
