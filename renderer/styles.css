@@ -1839,7 +1839,7 @@ html[lang="ru"] body.dropping[data-drop="none"]::after { content: 'Моды — 
   min-width: 46px;
   text-align: center;
 }
-#scaleRange {
+.scale-range {
   -webkit-appearance: none;
   appearance: none;
   flex: 1;
@@ -1851,7 +1851,7 @@ html[lang="ru"] body.dropping[data-drop="none"]::after { content: 'Моды — 
   border: 1px solid var(--border);
   outline: none;
 }
-#scaleRange::-webkit-slider-thumb {
+.scale-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 15px;
   height: 15px;
@@ -1861,8 +1861,8 @@ html[lang="ru"] body.dropping[data-drop="none"]::after { content: 'Моды — 
   cursor: pointer;
   transition: transform 0.15s var(--ease);
 }
-#scaleRange::-webkit-slider-thumb:hover { transform: scale(1.18); }
-#scaleRange:focus-visible { border-color: rgba(196, 181, 253, 0.5); }
+.scale-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
+.scale-range:focus-visible { border-color: rgba(196, 181, 253, 0.5); }
 
 /* ============ Settings: folded extras ============ */
 .settings-adv { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }

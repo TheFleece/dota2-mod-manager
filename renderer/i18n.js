@@ -367,11 +367,18 @@ const EN = {
   'Один переключатель на всё: язык приложения, текст в самой Dota и её озвучку (за языком озвучки следует папка модов). Dota при этом должна быть закрыта — иначе она перезапишет настройку при выходе.':
     'One switch for all of it: the language of this app, the text inside Dota and its voices (the mods folder follows the voice language). Dota has to be closed, or it overwrites the setting on exit.',
   'Масштаб': 'Scale',
+  'Масштаб всего': 'Scale of everything',
+  'Масштаб по частям': 'Scale part by part',
+  'Содержимое': 'Content',
+  'Верхняя панель': 'Top bar',
+  'Нижняя панель': 'Bottom bar',
+  'Список категорий': 'Category list',
   'Мельче': 'Smaller',
   'Крупнее': 'Bigger',
   'Сбросить': 'Reset',
-  'Увеличивает текст и картинки в содержимом: каталоге, библиотеке, настройках. То же самое делают Ctrl + и Ctrl − и Ctrl + колесо, а Ctrl 0 возвращает 100%. Панели этот масштаб не трогает — у верхней, нижней и списка категорий свой: наведи на панель и покрути Ctrl + колесо, а за границу панели можно потянуть, чтобы изменить её размер.':
-    'Scales text and images in the content: the catalog, the library, the settings. Ctrl +, Ctrl − and Ctrl + wheel do the same, Ctrl 0 puts it back to 100%. It leaves the panels alone — the top bar, the bottom bar and the category list have their own: point at one and Ctrl + wheel, or drag its edge to resize it.',
+  'Сбросить всё': 'Reset all',
+  'Двигает содержимое и панели сразу. Ниже каждый масштаб можно задать по отдельности. Те же клавиши: Ctrl + и Ctrl − меняют содержимое, Ctrl + колесо над панелью — эту панель, Ctrl 0 возвращает 100%. За границу панели можно потянуть, чтобы изменить её размер.':
+    'Moves the content and the panels together. Below, each one can be set on its own. The same from the keyboard: Ctrl + and Ctrl − scale the content, Ctrl + wheel over a panel scales that panel, Ctrl 0 puts everything back to 100%. Drag a panel’s edge to resize it.',
   'Задать языки Dota по отдельности': 'Set Dota’s languages separately',
   'Текст': 'Text',
   'Озвучка': 'Voice',

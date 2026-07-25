@@ -80,6 +80,7 @@ const state = {
   libConflicts: [],        // pairs of enabled mods that overwrite each other's files
   favorites: new Set(),    // starred catalog mods, as "<categoryId>|<name>" keys
   gameLangOpen: false,     // Settings: the per-language Dota block is unfolded
+  scaleOpen: false,        // Settings: the per-part scale block is unfolded
   panels: { ...PANEL_DEFAULTS },
 };
 
@@ -123,11 +124,24 @@ const SCALE_MAX = 160;
 const clampScale = (pct) => Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(Number(pct) / 5) * 5));
 const currentScalePct = () => Math.round((Number(state.settings?.uiScale) || 1) * 100);
 
-function paintScale(pct) {
-  const range = $('#scaleRange');
+// keep a slider and its readout in step with the value that is actually in force
+function paintScaleRow(id, pct) {
+  const range = $(`#${id}`);
   if (range) range.value = String(pct);
-  const val = $('#scaleVal');
+  const val = $(`#${id}Val`);
   if (val) val.textContent = `${pct}%`;
+}
+
+// the content scale doubles as the "everything" number in Settings
+function paintScale(pct) {
+  paintScaleRow('zoomContent', pct);
+  paintScaleRow('masterRange', pct);
+}
+
+function paintPanelScales() {
+  paintScaleRow('zoomTop', Math.round(state.panels.topZoom * 100));
+  paintScaleRow('zoomRail', Math.round(state.panels.railZoom * 100));
+  paintScaleRow('zoomBottom', Math.round(state.panels.bottomZoom * 100));
 }
 
 function applyContentZoom(factor) {
@@ -205,6 +219,7 @@ function paintPanels() {
   document.body.classList.toggle('bottom-folded', p.bottomFolded);
   document.body.classList.toggle('rail-folded', p.railFolded);
   document.body.classList.toggle('rail-off', p.railFolded || state.view !== 'catalog');
+  paintPanelScales();
   paintGripToggle('#topToggle', p.topFolded ? 'expand_more' : 'expand_less',
     p.topFolded ? L`Развернуть верхнюю панель` : L`Свернуть верхнюю панель`);
   paintGripToggle('#bottomToggle', p.bottomFolded ? 'expand_less' : 'expand_more',
@@ -2805,6 +2820,7 @@ async function renderSettings() {
   state.settings = s;
   const gl = s.gameLang || {};
   const scalePct = Math.round((Number(s.uiScale) || 1) * 100);
+  const pz = state.panels;
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
 
@@ -2827,18 +2843,35 @@ async function renderSettings() {
         ${L`Один переключатель на всё: язык приложения, текст в самой Dota и её озвучку (за языком озвучки следует папка модов). Dota при этом должна быть закрыта — иначе она перезапишет настройку при выходе.`}
       </div>
       <div class="settings-row" style="margin-top:14px">
-        <span class="settings-label">${L`Масштаб`}</span>
+        <span class="settings-label">${L`Масштаб всего`}</span>
         <div class="scale-ctl">
-          <button class="btn btn-sm scale-step" id="scaleDown" aria-label="${L`Мельче`}"><span class="ms">remove</span></button>
-          <input type="range" id="scaleRange" min="70" max="160" step="5" value="${scalePct}" aria-label="${L`Масштаб`}">
-          <span class="scale-val" id="scaleVal">${scalePct}%</span>
-          <button class="btn btn-sm scale-step" id="scaleUp" aria-label="${L`Крупнее`}"><span class="ms">add</span></button>
-          <button class="btn btn-sm" id="scaleReset">${L`Сбросить`}</button>
+          <button class="btn btn-sm scale-step" id="masterDown" aria-label="${L`Мельче`}"><span class="ms">remove</span></button>
+          <input type="range" class="scale-range" id="masterRange" min="70" max="160" step="5" value="${scalePct}" aria-label="${L`Масштаб всего`}">
+          <span class="scale-val" id="masterRangeVal">${scalePct}%</span>
+          <button class="btn btn-sm scale-step" id="masterUp" aria-label="${L`Крупнее`}"><span class="ms">add</span></button>
+          <button class="btn btn-sm" id="masterReset">${L`Сбросить всё`}</button>
         </div>
       </div>
       <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
-        ${L`Увеличивает текст и картинки в содержимом: каталоге, библиотеке, настройках. То же самое делают Ctrl + и Ctrl − и Ctrl + колесо, а Ctrl 0 возвращает 100%. Панели этот масштаб не трогает — у верхней, нижней и списка категорий свой: наведи на панель и покрути Ctrl + колесо, а за границу панели можно потянуть, чтобы изменить её размер.`}
+        ${L`Двигает содержимое и панели сразу. Ниже каждый масштаб можно задать по отдельности. Те же клавиши: Ctrl + и Ctrl − меняют содержимое, Ctrl + колесо над панелью — эту панель, Ctrl 0 возвращает 100%. За границу панели можно потянуть, чтобы изменить её размер.`}
       </div>
+      <details class="settings-adv" ${state.scaleOpen ? 'open' : ''} id="scaleAdv">
+        <summary>${L`Масштаб по частям`}</summary>
+        ${[
+          { id: 'Content', label: L`Содержимое`, icon: 'grid_view', value: scalePct, min: 70, max: 160 },
+          { id: 'Top', label: L`Верхняя панель`, icon: 'toolbar', value: Math.round(pz.topZoom * 100), min: 60, max: 180 },
+          { id: 'Rail', label: L`Список категорий`, icon: 'view_sidebar', value: Math.round(pz.railZoom * 100), min: 60, max: 180 },
+          { id: 'Bottom', label: L`Нижняя панель`, icon: 'bottom_panel_open', value: Math.round(pz.bottomZoom * 100), min: 60, max: 180 },
+        ].map((row) => `
+        <div class="settings-row">
+          <span class="settings-label"><span class="ms" style="font-size:16px;vertical-align:-3px;margin-right:6px;color:var(--text-faint)">${row.icon}</span>${row.label}</span>
+          <div class="scale-ctl">
+            <input type="range" class="scale-range" id="zoom${row.id}" min="${row.min}" max="${row.max}" step="5" value="${row.value}" aria-label="${esc(row.label)}">
+            <span class="scale-val" id="zoom${row.id}Val">${row.value}%</span>
+            <button class="btn btn-sm" data-zoom-reset="${row.id}">${L`Сбросить`}</button>
+          </div>
+        </div>`).join('')}
+      </details>
       <details class="settings-adv" ${state.gameLangOpen ? 'open' : ''} id="gameLangAdv">
         <summary>${L`Задать языки Dota по отдельности`}</summary>
         <div class="settings-row">
@@ -2999,14 +3032,45 @@ async function renderSettings() {
     refreshSidebarStatus();
   });
 
-  // ----- UI scale -----
-  // Zooming on every input event fights the drag: the slider itself moves under the pointer,
-  // which feeds the next event. Show the number while dragging, apply it on release.
-  $('#scaleRange')?.addEventListener('input', (e) => paintScale(clampScale(Number(e.target.value))));
-  $('#scaleRange')?.addEventListener('change', (e) => applyScalePct(Number(e.target.value)));
-  $('#scaleDown')?.addEventListener('click', () => applyScalePct(currentScalePct() - 5));
-  $('#scaleUp')?.addEventListener('click', () => applyScalePct(currentScalePct() + 5));
-  $('#scaleReset')?.addEventListener('click', () => applyScalePct(100));
+  // ----- scale: everything at once, or each part on its own -----
+  // Scaling the content on every input event fights the drag: the slider moves under the
+  // pointer, which feeds the next event. So the content shows its number while dragging and
+  // applies on release. A panel is not under the pointer, so those apply live.
+  const setEverything = (pct) => {
+    const v = clampScale(pct);
+    for (const key of ['topZoom', 'bottomZoom', 'railZoom']) state.panels[key] = clampPanelZoom(v / 100);
+    paintPanels();
+    savePanels();
+    applyScalePct(v);
+  };
+  $('#masterRange')?.addEventListener('input', (e) => {
+    const v = clampScale(Number(e.target.value));
+    paintScale(v); // the number only, until the pointer is released
+  });
+  $('#masterRange')?.addEventListener('change', (e) => setEverything(Number(e.target.value)));
+  $('#masterDown')?.addEventListener('click', () => setEverything(currentScalePct() - 5));
+  $('#masterUp')?.addEventListener('click', () => setEverything(currentScalePct() + 5));
+  $('#masterReset')?.addEventListener('click', () => setEverything(100));
+
+  $('#zoomContent')?.addEventListener('input', (e) => paintScale(clampScale(Number(e.target.value))));
+  $('#zoomContent')?.addEventListener('change', (e) => applyScalePct(Number(e.target.value)));
+  for (const [id, key] of [['Top', 'topZoom'], ['Rail', 'railZoom'], ['Bottom', 'bottomZoom']]) {
+    $(`#zoom${id}`)?.addEventListener('input', (e) => {
+      state.panels[key] = clampPanelZoom(Number(e.target.value) / 100);
+      paintPanels();
+      savePanels();
+    });
+  }
+  viewRoot.querySelectorAll('[data-zoom-reset]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.zoomReset;
+      if (id === 'Content') { applyScalePct(100); return; }
+      state.panels[{ Top: 'topZoom', Rail: 'railZoom', Bottom: 'bottomZoom' }[id]] = 1;
+      paintPanels();
+      savePanels();
+    });
+  });
+  $('#scaleAdv')?.addEventListener('toggle', (e) => { state.scaleOpen = e.target.open; });
   $('#gameLangAdv')?.addEventListener('toggle', (e) => { state.gameLangOpen = e.target.open; });
   $('#detectBtn').addEventListener('click', async () => {
     const found = await window.api.settings.detectDota();
