@@ -64,17 +64,12 @@ function createWindow() {
   win.on('maximize', () => win.webContents.send('win:maximized', true));
   win.on('unmaximize', () => win.webContents.send('win:maximized', false));
 
-  // window zoom = the app's own UI scale: text, images and spacing together
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.setZoomFactor(clampZoom(settings.get('uiScale')));
-  });
-
-  // Ctrl +/-/0. Handled here rather than in the renderer because preventDefault() at this
-  // point also swallows Electron's built-in zoom accelerators — which would otherwise
-  // change the zoom behind our back and drift away from the saved scale.
+  // Ctrl +/-/0 scale the content. Handled here rather than in the renderer because
+  // preventDefault() at this point also swallows Electron's built-in zoom accelerators —
+  // those zoom the whole window, panels included, which is exactly what we don't want.
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown' || !input.control || input.alt) return;
-    const cur = win.webContents.getZoomFactor();
+    const cur = clampZoom(settings.get('uiScale'));
     let z = null;
     if (input.key === '=' || input.key === '+') z = clampZoom(cur + 0.05);
     else if (input.key === '-' || input.key === '_') z = clampZoom(cur - 0.05);
@@ -82,8 +77,7 @@ function createWindow() {
     if (z === null) return;
     event.preventDefault();
     settings.set('uiScale', z);
-    win.webContents.setZoomFactor(z);
-    win.webContents.send('ui:zoom', z);
+    win.webContents.send('ui:zoom', z); // the renderer owns the scale itself
   });
 
   // dev: MM_SHOT=<path> saves a screenshot after load (used for automated UI checks)
@@ -760,11 +754,10 @@ function registerIpc() {
   });
   ipcMain.handle('app:version', () => app.getVersion());
 
-  // ----- UI scale -----
+  // ----- UI scale ----- (the renderer applies it; this only remembers it)
   ipcMain.handle('ui:setZoom', (e, factor) => {
     const z = clampZoom(factor);
     settings.set('uiScale', z);
-    if (win && !win.isDestroyed()) win.webContents.setZoomFactor(z);
     return { ok: true, uiScale: z };
   });
 

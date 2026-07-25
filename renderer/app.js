@@ -113,9 +113,11 @@ function favoriteMods() {
 
 // ---------- UI scale ----------
 
-// The window's zoom factor, in percent — text, images and spacing scale together. Ctrl +/-/0
-// are handled in main.js (there they can also block Electron's own zoom accelerators);
-// Ctrl + wheel and the slider in Settings land here.
+// Scale of the content — the catalog, the library, the settings — in percent. It is CSS zoom
+// on the content itself, deliberately not a window zoom: the panels have their own scale, and
+// a window zoom lands a frame after the CSS does, which made the whole layout shudder while
+// the wheel was turning. Ctrl +/-/0 come from main.js (there they also block Electron's own
+// zoom accelerators); Ctrl + wheel and the slider in Settings land here.
 const SCALE_MIN = 70;
 const SCALE_MAX = 160;
 const clampScale = (pct) => Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(Number(pct) / 5) * 5));
@@ -128,20 +130,17 @@ function paintScale(pct) {
   if (val) val.textContent = `${pct}%`;
 }
 
-// The window zoom scales everything, chrome included. Cancelling it inside the panels keeps
-// them the size they were: the content scale is for the content.
 function applyContentZoom(factor) {
   if (state.settings) state.settings.uiScale = factor;
-  document.documentElement.style.setProperty('--chrome-zoom', String(1 / factor));
+  document.documentElement.style.setProperty('--content-zoom', String(factor));
   paintScale(Math.round(factor * 100));
 }
 
-async function applyScalePct(pct) {
+// paints first, saves after: the wheel can outrun the IPC and must not wait for it
+function applyScalePct(pct) {
   const want = clampScale(pct);
   applyContentZoom(want / 100);
-  const r = await window.api.ui.setZoom(want / 100);
-  const applied = Math.round((r?.uiScale || 1) * 100);
-  if (applied !== want) applyContentZoom(applied / 100);
+  window.api.ui.setZoom(want / 100);
 }
 
 // Ctrl + wheel resizes whatever the pointer is over: each chrome panel has its own size,
@@ -235,9 +234,9 @@ function bindGrip(sel, { size: sizeKey, zoom: zoomKey, fold: foldKey, delta }) {
     if (state.panels[foldKey]) foldPanel(foldKey, false); // dragging a folded panel opens it
     const [min, max] = PANEL_LIMITS[sizeKey];
     const start = state.panels[sizeKey];
-    // the pointer moves in content pixels; the panel is sized in its own, which the content
-    // scale no longer touches and its own zoom multiplies
-    const perPixel = (Number(state.settings?.uiScale) || 1) / state.panels[zoomKey];
+    // the pointer moves in viewport pixels, the panel is sized in its own, which its zoom
+    // multiplies — so a 1px drag is 1/zoom of the panel's own
+    const perPixel = 1 / state.panels[zoomKey];
     const origin = { x: e.clientX, y: e.clientY };
     el.classList.add('dragging');
     document.body.classList.add('grip-dragging');
@@ -3250,7 +3249,7 @@ function showLanguagePicker() {
   state.settings = cfg;
   state.favorites = new Set(Array.isArray(cfg.favorites) ? cfg.favorites : []);
   state.panels = readPanels(cfg.panels);
-  applyContentZoom(Number(cfg.uiScale) || 1); // main.js zooms the window; keep the chrome out of it
+  applyContentZoom(Number(cfg.uiScale) || 1);
   window.I18N_LANG = cfg.uiLang === 'ru' ? 'ru' : 'en';
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();
