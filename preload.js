@@ -46,6 +46,16 @@ contextBridge.exposeInMainWorld('api', {
     adoptFont: (name, preview) => ipcRenderer.invoke('mods:adoptFont', name, preview),
     pathForFile: (file) => webUtils.getPathForFile(file),
   },
+  // item schema: the search-path patch, the built schema, and the free cosmetics it enables
+  patch: {
+    state: () => ipcRenderer.invoke('patch:state'),
+    setEnabled: (on) => ipcRenderer.invoke('patch:setEnabled', on),
+    refreshSchema: () => ipcRenderer.invoke('schema:refresh'),
+  },
+  cosmetics: {
+    options: (slot) => ipcRenderer.invoke('cosmetics:options', slot),
+    set: (slot, donorId) => ipcRenderer.invoke('cosmetics:set', slot, donorId),
+  },
   game: {
     launch: () => ipcRenderer.invoke('game:launch'),
   },

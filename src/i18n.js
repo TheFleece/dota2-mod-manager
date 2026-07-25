@@ -68,6 +68,25 @@ const EN = {
 
   // ---- installer.js ----
   'Путь к Dota 2 не задан': 'Dota 2 path is not set',
+  // ---- item schema / search-path patch ----
+  'Закрой Dota 2 перед изменением файлов игры': 'Close Dota 2 before changing game files',
+  'Не найден {0}': '{0} not found',
+  'items_game.txt не найден в pak01 игры': 'items_game.txt is not in the game\'s pak01',
+  'items_game: незакрытая кавычка': 'items_game: unterminated quote',
+  'items_game: не найдено открытие блока': 'items_game: no opening brace',
+  'items_game: незакрытый блок': 'items_game: unterminated block',
+  'items_game: лишняя закрывающая скобка': 'items_game: stray closing brace',
+  'items_game: секция items не найдена': 'items_game: no "items" section',
+  'items_game: предмет {0} не найден': 'items_game: item {0} not found',
+  'items_game: у предмета {0} нет блока visuals': 'items_game: item {0} has no visuals block',
+  'items_game: подозрительно мало предметов ({0})': 'items_game: suspiciously few items ({0})',
+  'items_game: предметов меньше, чем в игре ({0} < {1})': 'items_game: fewer items than the game has ({0} < {1})',
+  'gameinfo.gi: блок SearchPaths не найден': 'gameinfo.gi: no SearchPaths block',
+  'gameinfo.gi: блок SearchPaths не закрыт': 'gameinfo.gi: SearchPaths block is not closed',
+  'gameinfo.gi: не найдены строки Game/Mod dota': 'gameinfo.gi: no "Game dota" / "Mod dota" lines',
+  'gameinfo_branchspecific.gi: блок FileSystem не найден': 'gameinfo_branchspecific.gi: no FileSystem block',
+  'gameinfo_branchspecific.gi: блок FileSystem не закрыт': 'gameinfo_branchspecific.gi: FileSystem block is not closed',
+  'Резервная копия gameinfo уже пропатчена - удалите её и восстановите файл игры': 'The gameinfo backup is already patched: delete it and restore the game file',
   'Dota не знает такого языка': 'Dota does not know that language',
   'Сначала закрой Dota 2 — она перезапишет настройку при выходе':
     'Close Dota 2 first, it overwrites this setting on exit',

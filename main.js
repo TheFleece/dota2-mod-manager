@@ -19,12 +19,13 @@ const { SCHEME, encodePresetLink, decodePresetLink } = require('./src/preset-lin
 const discordAuth = require('./src/discord-auth');
 const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
+const { createSchemaService } = require('./src/schema-service');
 const gamelang = require('./src/gamelang');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
 let win;
-let settings, catalog, installer, library, fingerprints, presence;
+let settings, catalog, installer, library, fingerprints, presence, schemaService;
 let presenceView = 'catalog';
 // set when startup moved mods to the folder the game actually mounts; the renderer
 // picks it up once with settings:get and tells the user what happened
@@ -185,6 +186,7 @@ app.whenReady().then(async () => {
     onProgress: sendProgress,
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
+  schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });
 
   // auto-detect dota on first run
   if (!validateGamePath(settings.get('dotaGamePath'))) {
@@ -220,6 +222,16 @@ app.whenReady().then(async () => {
     reconcileCursors();
   } catch (e) {
     diag('cursor reconcile skipped: ' + e.message);
+  }
+
+  // a Dota update overwrites the patched gameinfo and moves the item table: put both
+  // back before the user gets a chance to launch the game with a half-applied setup
+  try {
+    const healed = schemaService.heal();
+    if (healed.healed && healed.healed.length) diag('schema healed: ' + healed.healed.join(','));
+    if (healed.error) diag('schema heal failed: ' + healed.error);
+  } catch (e) {
+    diag('schema heal skipped: ' + e.message);
   }
 
   registerIpc();
@@ -288,6 +300,7 @@ if (!app.requestSingleInstanceLock()) {
 // register installer.importVpks/importVpkBuffers results into the library
 function registerImportResults(results) {
   const imported = [];
+  let needSchema = false;
   for (const r of results) {
     if (r.error) continue;
     // name the import by its content (a hero / set / kind) instead of the bare pak slot
@@ -297,6 +310,10 @@ function registerImportResults(results) {
       name: contentName, categoryId: 'imported', styleLabel: null,
       fileRef: r.source, preview: null, files: r.files,
     });
+    // skinchanger-style packs carry the whole item table and the localization files:
+    // keep the item blocks they changed, drop the tables (see installer.harvestSchema)
+    const harvest = schemaService.harvest(rec);
+    if (harvest && harvest.deltas) needSchema = true;
     // best-effort warning: does the new file overlap other enabled mods?
     let conflicts = [];
     try {
@@ -310,7 +327,8 @@ function registerImportResults(results) {
     imported.push({ name: rec.name, relPath: r.files[0].relPath, merged: r.merged || 0, conflicts });
   }
   if (imported.length && installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
-  return { imported, errors: results.filter((r) => r.error) };
+  if (needSchema) schemaService.refresh();
+  return { imported, errors: results.filter((r) => r.error), schema: needSchema };
 }
 
 // copy user .vpk files into the lang folder and register them in the library
@@ -324,6 +342,12 @@ function importVpkBuffers(items) {
   try { return registerImportResults(installer.importVpkBuffers(Array.isArray(items) ? items : [])); }
   catch (err) { return { error: String(err.message || err) }; }
 }
+
+// ---------- item schema (game/dota_mods) ----------
+// The engine reads scripts/items/items_game.txt through the MOD path - the game's own dota
+// folder - so nothing in a language folder can override it. Mods therefore never ship their
+// copy: src/schema-service.js lifts the blocks they changed and splices them into the game's
+// CURRENT table. Everything below is a thin call into that service.
 
 // after any deploy, if the master switch is off, sweep freshly written files off too
 function afterDeployMaster() {
@@ -905,6 +929,9 @@ function registerIpc() {
         fileRef: payload.fileRef,
       });
       const rec = library.add({ ...payload, files });
+      // lift any item-schema changes out of the mod and rebuild the schema pak
+      const harvest = schemaService.harvest(rec);
+      if (harvest && harvest.deltas) schemaService.refresh();
       // keep the set's own copy, so it can be switched back on later without a re-download
       if (payload.categoryId === 'cursors') { try { installer.ensureCursorStore(rec.id, files); } catch { /* noop */ } }
       // installed while the master switch is off? sweep the fresh file off too, so the
@@ -1049,9 +1076,36 @@ function registerIpc() {
   // Launch Dota via Steam so the user's own launch options apply (-novid, -fps max,
   // -language russian … differ per user). rungameid mirrors clicking Play in Steam.
   ipcMain.handle('game:launch', () => {
+    // a Dota update wipes the search-path patch and moves the item table underneath our
+    // build: the launch button is the last chance to notice before the game starts
+    schemaService.heal();
     shell.openExternal('steam://rungameid/570');
     return { ok: true };
   });
+
+  // ---------- item schema / search-path patch ----------
+
+  ipcMain.handle('patch:state', () => schemaService.state());
+
+  // The one moment the app touches files of the game install: gated on an explicit yes,
+  // reversible from the same switch, and every original is backed up in userData first.
+  ipcMain.handle('patch:setEnabled', (e, enabled) => {
+    if (!settings.get('dotaGamePath')) return { error: t('Путь к Dota 2 не задан') };
+    if (dotaIsRunning()) return { error: t('Закрой Dota 2 перед изменением файлов игры') };
+    try {
+      return schemaService.setEnabled(!!enabled);
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('schema:refresh', () => schemaService.refresh());
+
+  // Free cosmetics are generated from the installed game's own schema, so a weather or
+  // courier Valve ships later appears in the list without an app update.
+  ipcMain.handle('cosmetics:options', (e, slot) => schemaService.cosmetics(slot));
+
+  ipcMain.handle('cosmetics:set', (e, slot, donorId) => schemaService.setCosmetic(slot, donorId));
 
   ipcMain.handle('mods:masterState', () => {
     try { return { off: installer.masterIsOff() }; } catch { return { off: false }; }
@@ -1076,6 +1130,7 @@ function registerIpc() {
       const replaced = enabled && isCursorRecord(rec) ? disableOtherCursors(id) : [];
       installer.setEnabled(rec.files, enabled, rec.id);
       library.setEnabled(id, enabled);
+      if (Array.isArray(rec.schema) && rec.schema.length) schemaService.refresh();
       return { ok: true, replaced };
     } catch (err) {
       return { error: String(err.message || err) };
@@ -1089,6 +1144,7 @@ function registerIpc() {
       if (rec.kind === 'pack') installer.removePackFully(rec);
       else installer.remove(rec.files, { recId: rec.id, deployed: rec.enabled !== false });
       library.removeRecord(id);
+      if (Array.isArray(rec.schema) && rec.schema.length) schemaService.refresh();
       return { ok: true };
     } catch (err) {
       return { error: String(err.message || err) };

@@ -26,6 +26,17 @@ const DEFAULTS = {
   account: null,
   // show "Playing Dota 2 Mod Manager" in Discord while the app is open
   discordPresence: true,
+  // Item-schema support. The engine reads scripts/items/items_game.txt through the MOD
+  // path only (game/dota), so mods that change it - skinchanger-style sets with their own
+  // ambient effects, free weather/terrain - do nothing from a language folder. Turning
+  // this on registers game/dota_mods ahead of the game's content, which means editing
+  // gameinfo_branchspecific.gi and re-signing it in dota.signatures. Off until the user
+  // agrees to that once; originals are backed up and the switch reverts them.
+  schemaPatch: false,
+  // free cosmetics taken from the game's own schema: { weather: "10706", terrain: "590" }
+  cosmetics: {},
+  // items_game.txt build the deployed schema was made from, to spot a game update
+  schemaStamp: null,
 };
 
 class Settings {

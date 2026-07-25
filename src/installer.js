@@ -5,7 +5,8 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, readVpkIndexFile, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { extractDeltas } = require('./schema');
 const { ensureLangFolder } = require('./gamelang');
 const { t } = require('./i18n');
 
@@ -897,6 +898,65 @@ class Installer {
     } finally {
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* noop */ }
     }
+  }
+
+  /**
+   * Take the whole-game tables out of a freshly installed mod and keep what they meant.
+   *
+   * Skinchanger-style packs ship a full copy of scripts/items/items_game.txt and of the
+   * localization files - tens of MB of stale game data per mod. The schema copy is dead
+   * weight in a language folder (the engine reads that file through the MOD path only),
+   * and the localization copy is worse than dead: it outranks the game's own and rolls
+   * text back to whenever the pack was built. So: lift the item blocks the mod actually
+   * changed, then repack the VPK without any of those tables.
+   *
+   * @param {Array<{root: string, relPath: string}>} records  install records, edited in place
+   * @param {string} vanillaText  the game's current items_game.txt
+   * @returns {{ deltas: Array<{id, name, block}>, stripped: string[] }}
+   */
+  harvestSchema(records, vanillaText) {
+    const lang = this.langFolder();
+    const deltas = [];
+    const stripped = [];
+    for (const rec of records) {
+      if (rec.root !== 'lang' || !/_dir\.vpk$/i.test(rec.relPath)) continue;
+      const abs = path.join(lang, rec.relPath);
+      if (!fs.existsSync(abs)) continue;
+      let paths;
+      try { paths = listVpkPathsFile(abs); } catch { continue; }
+      if (!paths.some((p) => GLOBAL_TABLE_RE.test(p))) continue;
+
+      const base = rec.relPath.replace(/_dir\.vpk$/i, '');
+      const partRe = new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i');
+      const parts = fs.readdirSync(lang).filter((f) => partRe.test(f));
+      const total = [abs, ...parts.map((f) => path.join(lang, f))].reduce((n, f) => n + fs.statSync(f).size, 0);
+      if (total > MERGE_SIZE_CAP) continue; // repacking holds the mod in memory once
+
+      let entries;
+      try { entries = readVpkEntries(fs.readFileSync(abs), abs); } catch { continue; }
+      const schemaEntry = entries
+        .filter((e) => /(^|\/)items_game\.txt"?$/.test(entryPath(e)))
+        .sort((a, b) => b.data.length - a.data.length)[0];
+      if (schemaEntry && schemaEntry.data.length > 4096 && vanillaText) {
+        try {
+          for (const d of extractDeltas(schemaEntry.data.toString('latin1'), paths, vanillaText)) deltas.push(d);
+        } catch { /* a mangled table is not worth failing the install over */ }
+      }
+
+      const keep = entries.filter((e) => !GLOBAL_TABLE_RE.test(entryPath(e)));
+      if (keep.length === entries.length) continue;
+      fs.writeFileSync(abs, buildVpk(keep));
+      for (const f of parts) fs.rmSync(path.join(lang, f), { force: true });
+      stripped.push(rec.relPath);
+    }
+    // volume files are folded into the single-file rebuild above
+    for (let i = records.length - 1; i >= 0; i--) {
+      const r = records[i];
+      if (r.root === 'lang' && /_\d{3}\.vpk$/i.test(r.relPath) && !fs.existsSync(path.join(lang, r.relPath))) {
+        records.splice(i, 1);
+      }
+    }
+    return { deltas, stripped };
   }
 
   // What a stored library record (or a foreign vpk) actually changes — hero(es) and
