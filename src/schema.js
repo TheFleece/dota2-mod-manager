@@ -163,6 +163,13 @@ function listItems(text) {
   return out;
 }
 
+// The table is read as latin1 so every splice stays byte-exact, which leaves names with
+// non-ASCII characters (curly quotes, accents) as raw UTF-8 bytes. Anything shown to a
+// person goes back through UTF-8 first.
+function toUtf8(s) {
+  return /[\x80-\xff]/.test(s) ? Buffer.from(s, 'latin1').toString('utf8') : s;
+}
+
 // Which slot an item belongs to. Wearables say it outright; the whole-match cosmetics
 // (weather, terrain, HUD...) leave item_slot out and only name their prefab.
 function slotOf(item) {
@@ -186,7 +193,7 @@ function baseItemFor(text, slot) {
 function cosmeticOptions(text, slot) {
   return listItems(text)
     .filter((i) => slotOf(i) === slot && !i.baseitem && i.hasVisuals && i.name)
-    .map((i) => ({ id: i.id, name: i.name }))
+    .map((i) => ({ id: i.id, name: toUtf8(i.name) }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -310,9 +317,35 @@ function extractDeltas(modText, vpkPaths, baseText) {
   return deltas;
 }
 
+// Remove every "<key> { … }" sub-block from a KV fragment, with the whitespace in front
+// of it, so the result still reads like the file it came from.
+function stripKeyBlocks(text, key) {
+  let out = text;
+  for (;;) {
+    const at = out.indexOf(`"${key}"`);
+    if (at === -1) return out;
+    const open = out.indexOf('{', at);
+    if (open === -1) return out;
+    let depth = 0;
+    let end = -1;
+    for (let i = open; i < out.length; i++) {
+      if (out[i] === '{') depth++;
+      else if (out[i] === '}') { depth--; if (!depth) { end = i + 1; break; } }
+    }
+    if (end === -1) return out;
+    let start = at;
+    while (start > 0 && /[ \t\r\n]/.test(out[start - 1])) start--;
+    out = out.slice(0, start) + out.slice(end);
+  }
+}
+
 /**
  * Free cosmetics: copy the visuals of a real item onto a "base item" everyone owns
  * (555 Default Weather, 590 Default Terrain, ...). Returns the block to splice in.
+ *
+ * Styles come along with the visuals, but a paid item locks its extra styles behind
+ * "unlock { price, item_def }" - on a base item that only produces a "style locked"
+ * button, so those gates come off.
  */
 function baseItemPatch(baseText, targetId, sourceId) {
   const target = findItem(baseText, targetId);
@@ -325,6 +358,7 @@ function baseItemPatch(baseText, targetId, sourceId) {
     if (c.isBlock && c.key.toLowerCase() === 'visuals') visuals = baseText.slice(c.start, c.end);
   });
   if (!visuals) throw new Error(t('items_game: у предмета {0} нет блока visuals', sourceId));
+  visuals = stripKeyBlocks(visuals, 'unlock');
 
   // Drop any visuals the base item already has, then append the donor's.
   let stripped = target.text;

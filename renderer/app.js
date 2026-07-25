@@ -2777,6 +2777,169 @@ function bindPatchCard(root, after) {
   });
 }
 
+// Item pictures come from the main process as data URIs (src/icons.js). A slot can hold two
+// thousand items, so only what is actually on screen is ever asked for: an observer collects
+// the tiles that scroll into view and fetches them in small batches.
+const cosIconCache = new Map();
+
+async function loadCosmeticIcons(names, onEach) {
+  const want = [...new Set(names)].filter((n) => n && !cosIconCache.has(n));
+  for (let i = 0; i < want.length; i += 24) {
+    const chunk = want.slice(i, i + 24);
+    const got = await window.api.cosmetics.icons(chunk);
+    for (const n of chunk) cosIconCache.set(n, got[n] || null);
+    onEach(chunk);
+  }
+}
+
+// Fill every tile whose picture is already known.
+function paintCosmeticIcons(root) {
+  for (const el of root.querySelectorAll('.cos-item-img[data-name], .cos-pick-img[data-name]')) {
+    const src = cosIconCache.get(el.dataset.name);
+    if (src && !el.querySelector('img')) el.innerHTML = `<img src="${esc(src)}" alt="">`;
+  }
+}
+
+/**
+ * Watch a scrolling container and fetch pictures for tiles as they appear.
+ * @returns {IntersectionObserver} caller disconnects it when the view goes away
+ */
+function watchCosmeticIcons(root, scroller) {
+  let queue = new Set();
+  let timer = null;
+  const flush = async () => {
+    timer = null;
+    const names = [...queue];
+    queue = new Set();
+    if (!names.length) return;
+    await loadCosmeticIcons(names, () => paintCosmeticIcons(root));
+  };
+  const io = new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      if (!en.isIntersecting) continue;
+      const name = en.target.dataset.name;
+      io.unobserve(en.target);
+      if (name && !cosIconCache.has(name)) queue.add(name);
+      else if (name) paintCosmeticIcons(root);
+    }
+    if (queue.size && !timer) timer = setTimeout(flush, 80);
+  }, { root: scroller || null, rootMargin: '200px' });
+  for (const el of root.querySelectorAll('.cos-item-img[data-name], .cos-pick-img[data-name]')) io.observe(el);
+  return io;
+}
+
+function cosFavKey(slot, id) { return `${slot}:${id}`; }
+
+async function toggleCosmeticFav(slot, id) {
+  const list = new Set(state.settings?.cosmeticFavorites || []);
+  const key = cosFavKey(slot, id);
+  if (list.has(key)) list.delete(key); else list.add(key);
+  state.settings = await window.api.settings.set('cosmeticFavorites', [...list]);
+  return list.has(key);
+}
+
+/**
+ * Pick one look for a slot. A dropdown cannot carry 2000 loading screens, so this is the
+ * catalog in miniature: search, favourites first, pictures, and the current pick marked.
+ * @returns {Promise<string|null|undefined>} item id, null for "as in game", undefined = cancelled
+ */
+function cosmeticPicker(slot, meta, data) {
+  return new Promise((resolve) => {
+    const favs = new Set(state.settings?.cosmeticFavorites || []);
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="cos-pick">
+        <div class="cos-pick-head">
+          <span class="ms">${meta.icon}</span>
+          <span class="cos-pick-title">${esc(tr(meta.label))}</span>
+          <div class="tb-search cos-pick-search">
+            <span class="ms">search</span>
+            <input type="text" id="cosSearch" placeholder="${L`Поиск…`}" autocomplete="off">
+          </div>
+          <button class="btn btn-sm" data-c="close" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
+        </div>
+        <div class="cos-pick-grid" id="cosGrid"></div>
+        <div class="cos-pick-foot">
+          <span class="cos-pick-count" id="cosCount"></span>
+          <button class="btn btn-sm" data-c="default">${L`Как в игре`}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const grid = overlay.querySelector('#cosGrid');
+    const countEl = overlay.querySelector('#cosCount');
+    const search = overlay.querySelector('#cosSearch');
+    let shown = [];
+    let io = null;
+
+    const sorted = () => {
+      const q = search.value.trim().toLowerCase();
+      const list = q ? data.options.filter((o) => o.name.toLowerCase().includes(q)) : data.options.slice();
+      // favourites first, then the current pick, then the schema's own order
+      return list.sort((a, b) => {
+        const fa = favs.has(cosFavKey(slot, a.id)) ? 0 : 1;
+        const fb = favs.has(cosFavKey(slot, b.id)) ? 0 : 1;
+        if (fa !== fb) return fa - fb;
+        if (a.id === data.picked) return -1;
+        if (b.id === data.picked) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    };
+
+    const paint = () => {
+      shown = sorted().slice(0, 300); // enough to scroll through; search narrows the rest
+      countEl.textContent = shown.length < data.options.length
+        ? L`${shown.length} из ${data.options.length}`
+        : L`${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}`;
+      grid.innerHTML = shown.map((o) => {
+        const fav = favs.has(cosFavKey(slot, o.id));
+        const icon = cosIconCache.get(o.name);
+        return `
+          <button class="cos-item ${o.id === data.picked ? 'picked' : ''}" data-id="${esc(o.id)}" title="${esc(o.name)}">
+            <span class="cos-item-img" data-name="${esc(o.name)}">${icon ? `<img src="${icon}" alt="" loading="lazy">` : `<span class="ms">${meta.icon}</span>`}</span>
+            <span class="cos-item-name">${esc(o.name)}</span>
+            <span class="cos-item-fav ${fav ? 'on' : ''}" data-fav="${esc(o.id)}" role="button" tabindex="0"
+                  aria-label="${L`В избранное`}"><span class="ms">${fav ? 'star' : 'star_border'}</span></span>
+          </button>`;
+      }).join('') || `<div class="empty-note">${L`Ничего не нашлось`}</div>`;
+
+      paintCosmeticIcons(grid);
+      if (io) io.disconnect();
+      io = watchCosmeticIcons(grid, grid);
+    };
+
+    const done = (v) => {
+      if (io) io.disconnect();
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      resolve(v);
+    };
+    grid.addEventListener('click', async (e) => {
+      const star = e.target.closest('[data-fav]');
+      if (star) {
+        e.stopPropagation();
+        await toggleCosmeticFav(slot, star.dataset.fav);
+        favs.clear();
+        for (const k of state.settings.cosmeticFavorites || []) favs.add(k);
+        paint();
+        return;
+      }
+      const card = e.target.closest('.cos-item');
+      if (card) done(card.dataset.id);
+    });
+    let timer = null;
+    search.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(paint, 120); });
+    overlay.querySelector('[data-c="close"]').addEventListener('click', () => done(undefined));
+    overlay.querySelector('[data-c="default"]').addEventListener('click', () => done(null));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(undefined); });
+    const onKey = (e) => { if (e.key === 'Escape') done(undefined); };
+    document.addEventListener('keydown', onKey);
+    paint();
+    search.focus();
+  });
+}
+
 async function renderCosmetics() {
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Косметика`}</h1></div>
@@ -2804,13 +2967,12 @@ async function renderCosmetics() {
                 <span class="cos-label">${esc(tr(meta.label))}</span>
                 <span class="cos-count">${s.options.length}</span>
               </div>
-              <div class="select-wrap">
-                <select class="input cos-select" data-slot="${esc(s.slot)}" ${off ? 'disabled' : ''}
-                        aria-label="${esc(tr(meta.label))}">
-                  <option value="">${L`Как в игре`}</option>
-                  ${s.options.map((o) => `<option value="${esc(o.id)}" ${o.id === s.picked ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}
-                </select>
-              </div>
+              <button class="cos-pick-btn" data-open="${esc(s.slot)}" ${off ? 'disabled' : ''}>
+                <span class="cos-pick-img" data-name="${picked ? esc(picked.name) : ''}"><span class="ms">${meta.icon}</span></span>
+                <span class="cos-pick-name">${picked ? esc(picked.name) : L`Как в игре`}</span>
+                <span class="ms cos-pick-caret">chevron_right</span>
+              </button>
+              ${picked ? `<button class="btn btn-sm cos-clear" data-clear="${esc(s.slot)}">${L`Вернуть как в игре`}</button>` : ''}
             </div>`;
           }).join('')}
         </div>
@@ -2827,18 +2989,30 @@ async function renderCosmetics() {
     ${slots.length ? groups : `<div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`}`;
 
   bindPatchCard(viewRoot, renderCosmetics);
-  viewRoot.querySelectorAll('.cos-select').forEach((sel) => {
-    sel.addEventListener('change', async () => {
-      const card = sel.closest('.cos-card');
-      sel.disabled = true;
-      const r = await window.api.cosmetics.set(sel.dataset.slot, sel.value || null);
-      sel.disabled = false;
-      if (r.error) { toast(r.error, 'error'); return; }
-      card.classList.toggle('picked', !!sel.value);
-      const name = sel.options[sel.selectedIndex]?.textContent || '';
-      toast(sel.value ? L`Выбрано: ${name}` : L`Вернули как в игре`);
+
+  const apply = async (slot, id, label) => {
+    const r = await window.api.cosmetics.set(slot, id);
+    if (r.error) { toast(r.error, 'error'); return; }
+    toast(id ? L`Выбрано: ${label}` : L`Вернули как в игре`);
+    renderCosmetics();
+  };
+  viewRoot.querySelectorAll('[data-open]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const s = slots.find((x) => x.slot === btn.dataset.open);
+      if (!s) return;
+      const chosen = await cosmeticPicker(s.slot, cosmeticMeta(s.slot), s);
+      if (chosen === undefined) return; // closed without choosing
+      const name = (s.options.find((o) => o.id === chosen) || {}).name || '';
+      await apply(s.slot, chosen, name);
     });
   });
+  viewRoot.querySelectorAll('[data-clear]').forEach((btn) => {
+    btn.addEventListener('click', () => apply(btn.dataset.clear, null, ''));
+  });
+
+  // pictures for what is already picked
+  paintCosmeticIcons(viewRoot);
+  watchCosmeticIcons(viewRoot, null);
 }
 
 async function renderTools() {

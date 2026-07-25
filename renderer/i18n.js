@@ -33,6 +33,7 @@ window.EN_PLURAL = {
   'общих файлов': ['shared file', 'shared files'],
   'файлов склеены': ['file merged', 'files merged'],
   'косметик': ['cosmetic', 'cosmetics'],
+  'вариантов': ['option', 'options'],
 };
 
 const EN = {
@@ -106,6 +107,11 @@ const EN = {
   'Схема игры не прочиталась — проверь путь к Dota 2 в настройках.':
     'Could not read the game schema: check the Dota 2 path in settings.',
   'Как в игре': 'Game default',
+  'Вернуть как в игре': 'Back to game default',
+  'Поиск…': 'Search…',
+  'В избранное': 'Add to favourites',
+  'Ничего не нашлось': 'Nothing found',
+  '{0} из {1}': '{0} of {1}',
   'Выбрано: {0}': 'Picked: {0}',
   'Вернули как в игре': 'Back to the game default',
   'эффекты': 'effects',

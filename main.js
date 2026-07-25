@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -20,12 +20,13 @@ const discordAuth = require('./src/discord-auth');
 const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const { createSchemaService } = require('./src/schema-service');
+const { Icons } = require('./src/icons');
 const gamelang = require('./src/gamelang');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
 let win;
-let settings, catalog, installer, library, fingerprints, presence, schemaService;
+let settings, catalog, installer, library, fingerprints, presence, schemaService, icons;
 let presenceView = 'catalog';
 // set when startup moved mods to the folder the game actually mounts; the renderer
 // picks it up once with settings:get and tells the user what happened
@@ -187,6 +188,8 @@ app.whenReady().then(async () => {
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
   schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });
+  // pictures for the cosmetics picker come through Electron's network stack (see src/icons.js)
+  icons = new Icons(userData, net.fetch);
 
   // auto-detect dota on first run
   if (!validateGamePath(settings.get('dotaGamePath'))) {
@@ -1145,6 +1148,14 @@ function registerIpc() {
   ipcMain.handle('cosmetics:options', (e, slot) => schemaService.cosmetics(slot));
 
   ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
+
+  // One picture per request, so opening a slot with 2000 items costs only what is on screen.
+  ipcMain.handle('cosmetics:icons', async (e, names) => {
+    const out = {};
+    const list = (Array.isArray(names) ? names : []).slice(0, 60);
+    await Promise.all(list.map(async (n) => { out[n] = await icons.get(n); }));
+    return out;
+  });
 
   ipcMain.handle('cosmetics:set', (e, slot, donorId) => schemaService.setCosmetic(slot, donorId));
 

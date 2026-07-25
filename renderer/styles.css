@@ -2028,5 +2028,109 @@ body.grip-dragging { user-select: none; }
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
-.cos-select { width: 100%; }
-.cos-select:disabled { opacity: 0.45; cursor: not-allowed; }
+/* the card's own button: current pick with its picture */
+.cos-pick-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--bg-elev);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.cos-pick-btn:hover { border-color: var(--border-strong); background: var(--surface-hover); }
+.cos-pick-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cos-pick-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.cos-pick-img {
+  width: 42px; height: 30px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 7px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+.cos-pick-img img { width: 100%; height: 100%; object-fit: cover; }
+.cos-pick-img .ms { font-size: 17px; color: var(--text-faint); }
+.cos-pick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cos-pick-caret { font-size: 18px; color: var(--text-faint); }
+.cos-clear { margin-top: 8px; width: 100%; }
+
+/* the picker itself: the catalog in miniature */
+.cos-pick {
+  width: min(1000px, 92vw);
+  max-height: calc(86vh / var(--content-zoom));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.cos-pick-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.cos-pick-head > .ms { font-size: 20px; color: var(--primary-soft); }
+.cos-pick-title { font-size: 15px; font-weight: 600; }
+.cos-pick-search { margin-left: auto; width: 260px; }
+.cos-pick-search input { border: none; background: none; color: var(--text); font: inherit; font-size: 13px; width: 100%; outline: none; }
+.cos-pick-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+.cos-item {
+  position: relative;
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease), background 0.2s var(--ease);
+}
+.cos-item:hover { border-color: var(--border-strong); background: var(--surface-hover); transform: translateY(-2px); }
+.cos-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cos-item.picked { border-color: var(--primary); background: var(--primary-dim); }
+.cos-item-img {
+  height: 86px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+.cos-item-img img { width: 100%; height: 100%; object-fit: contain; }
+.cos-item-img .ms { font-size: 26px; color: var(--text-faint); }
+.cos-item-name { font-size: 12.5px; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cos-item-fav {
+  position: absolute; top: 6px; right: 6px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(10, 8, 16, 0.6);
+  color: var(--text-faint);
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.cos-item-fav:hover { background: rgba(10, 8, 16, 0.85); color: var(--text); }
+.cos-item-fav.on { color: var(--warning); }
+.cos-item-fav .ms { font-size: 16px; }
+.cos-pick-foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px;
+  border-top: 1px solid var(--border);
+}
+.cos-pick-count { font-size: 12.5px; color: var(--text-muted); flex: 1; font-variant-numeric: tabular-nums; }

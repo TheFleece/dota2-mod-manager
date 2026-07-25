@@ -35,6 +35,8 @@ const DEFAULTS = {
   schemaPatch: false,
   // free cosmetics taken from the game's own schema: { weather: "10706", terrain: "590" }
   cosmetics: {},
+  // starred looks in the cosmetics picker, as "<slot>:<item id>"
+  cosmeticFavorites: [],
   // items_game.txt build the deployed schema was made from, to spot a game update
   schemaStamp: null,
 };
