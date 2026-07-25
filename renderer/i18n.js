@@ -34,6 +34,7 @@ window.EN_PLURAL = {
   'файлов склеены': ['file merged', 'files merged'],
   'косметик': ['cosmetic', 'cosmetics'],
   'вариантов': ['option', 'options'],
+  'видов': ['look', 'looks'],
 };
 
 const EN = {
@@ -102,6 +103,18 @@ const EN = {
   'Мод меняет схему предметов. Без правок схемы встанет только модель — эффекты и иконки работать не будут.':
     'This mod changes the item schema. Without the patch only the model installs: effects and icons will not work.',
   'Косметика': 'Cosmetics',
+  'Моды': 'Mods',
+  'бесплатная косметика': 'free cosmetic',
+  'Выбрать всю косметику': 'Select every look',
+  'Вернуть все слоты к тому, что даёт игра': 'Put every slot back to what the game gives',
+  'Косметика выключена — слоты снова как в игре': 'Cosmetics off — the slots are the game’s own again',
+  'Этот вид сейчас стоит в слоте «{0}». Убрать — вернуть то, что даёт игра; включить обратно можно в Библиотеке.':
+    'This look is what the «{0}» slot wears now. Removing it puts the game’s own back; you can switch it on again from the Library.',
+  'На один слот — только одна активная косметика: этот вид заменит «{0}». Прошлый выбор останется в Библиотеке выключенным.':
+    'One slot, one active look: this one replaces «{0}». The previous pick stays in the Library, switched off.',
+  'Косметика подставляется в схему предметов игры — файлы модов она не трогает, и её видно только тебе.':
+    'A look is spliced into the game’s item schema — it touches no mod files, and only you can see it.',
+  '…и ещё {0} — уточни запрос': '…and {0} more — narrow the search',
   // cosmetic slot labels
   'Погода': 'Weather', 'Ландшафт': 'Terrain', 'Интерфейс игры': 'Game HUD',
   'Экран загрузки': 'Loading screen', 'Экран противостояния': 'Versus screen',

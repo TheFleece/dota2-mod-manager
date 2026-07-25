@@ -98,8 +98,11 @@ const state = {
   settings: null,
   activeCategory: 'all',
   search: '',
+  cosSearch: '',           // search inside one cosmetic slot (its list can run to thousands)
+  cosFavOnly: false,       // that slot's "Избранное" chip
   filters: { sort: 'default', tags: new Set(), installedOnly: false, group: '', hero: '' },
   installedIndex: new Map(),
+  cosmeticPicks: new Map(), // slot -> live library record for it (rebuilt from mods:list)
   installing: new Set(),
   modIndex: new Map(),
   librarySel: new Set(),   // ids of library records ticked for bulk actions
@@ -633,10 +636,20 @@ function matchLabel(matches) {
 // refresh the catalog "installed" lookup + the library tab counter from a list
 function applyInstalled(installed) {
   state.installedIndex.clear();
+  state.cosmeticPicks.clear();
   for (const rec of installed) {
     state.installedIndex.set(keyOf(rec.categoryId, rec.name, rec.styleLabel), rec);
+    // What is live in a cosmetic slot is read from the records themselves, not from the
+    // slot list: the option lists only change when the game does, while a pick can be
+    // deleted or switched off from the Library at any moment.
+    if (rec.categoryId === 'cosmetic' && rec.slot && rec.enabled !== false) state.cosmeticPicks.set(rec.slot, rec);
   }
   $('#libCount').textContent = installed.length || '';
+}
+
+// the record that currently dresses a cosmetic slot, if any
+function pickedIn(slot) {
+  return state.cosmeticPicks.get(slot) || null;
 }
 
 async function refreshInstalledIndex() {
@@ -651,6 +664,57 @@ async function refreshInstalledIndex() {
 async function refreshCosmeticSlots() {
   const { slots } = await window.api.cosmetics.slots();
   state.cosmeticSlots = slots || [];
+}
+
+// Cosmetics only work with the schema patch on, so with safe mode they are not offered
+// anywhere — the rail, the favourites, the search all ask here first.
+function cosmeticSlotList() {
+  return state.settings?.schemaPatch ? (state.cosmeticSlots || []) : [];
+}
+
+function slotData(slot) {
+  return cosmeticSlotList().find((s) => s.slot === slot) || null;
+}
+
+// one look, by the id the schema gave it or by its name (favourites are stored by name)
+function findCosmetic(slot, idOrName) {
+  const data = slotData(slot);
+  if (!data) return null;
+  return data.options.find((o) => o.id === idOrName) || data.options.find((o) => o.name === idOrName) || null;
+}
+
+// starred looks resolved back to slot + option (one Valve dropped is simply skipped)
+function favoriteCosmetics() {
+  const out = [];
+  for (const key of state.favorites) {
+    if (!key.startsWith(COSMETIC_PREFIX)) continue;
+    const cut = key.indexOf('|');
+    if (cut < 0) continue;
+    const slot = key.slice(COSMETIC_PREFIX.length, cut);
+    const o = findCosmetic(slot, key.slice(cut + 1));
+    if (o) out.push({ slot, o });
+  }
+  return out;
+}
+
+// every look whose name matches, across all slots — the global search reaches these too
+function searchCosmetics(q) {
+  const out = [];
+  for (const s of cosmeticSlotList()) {
+    for (const o of s.options) {
+      if (o.name.toLowerCase().includes(q)) out.push({ slot: s.slot, o });
+    }
+  }
+  return out;
+}
+
+// the catalog sort/"installed only" filters, applied to a [{slot, o}] list
+function filterCosmetics(list) {
+  const f = state.filters;
+  let out = f.installedOnly ? list.filter(({ slot, o }) => pickedIn(slot)?.itemId === o.id) : list;
+  if (f.sort === 'name') out = [...out].sort((a, b) => a.o.name.localeCompare(b.o.name));
+  else if (f.sort === 'name-desc') out = [...out].sort((a, b) => b.o.name.localeCompare(a.o.name));
+  return out;
 }
 
 // Small, and only fetched where it's actually shown: the safe-mode switch's warning dot
@@ -987,7 +1051,7 @@ function render() {
 function renderRail() {
   const rail = $('#catRail');
   const cats = new Set(visibleCategories().map((c) => c.id));
-  const favCount = favoriteMods().length;
+  const favCount = favoriteMods().length + favoriteCosmetics().length;
   let html = `
     <button class="rail-item ${state.activeCategory === 'all' ? 'active' : ''}" data-cat="all">
       <span class="ms">apps</span>${L`Все категории`}
@@ -1010,7 +1074,7 @@ function renderRail() {
   }
   // Free cosmetics only work once safe mode is off (the patch is what lets the game read
   // them at all) — showing the section without that would just be a list of dead buttons.
-  const cos = state.settings?.schemaPatch ? (state.cosmeticSlots || []) : [];
+  const cos = cosmeticSlotList();
   if (cos.length) {
     html += `<div class="rail-section">${L`Косметика`}</div>`;
     for (const s of cos) {
@@ -1018,7 +1082,8 @@ function renderRail() {
       html += `
         <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
           <span class="ms">${catIcon(id)}</span>${esc(catName(id))}
-          ${s.picked ? '<span class="rail-dot"></span>' : ''}
+          <span class="rail-cnt">${s.options.length}</span>
+          ${pickedIn(s.slot) ? '<span class="rail-dot"></span>' : ''}
         </button>`;
     }
   }
@@ -1027,6 +1092,8 @@ function renderRail() {
     b.addEventListener('click', () => {
       state.activeCategory = b.dataset.cat;
       state.filters = { sort: 'default', tags: new Set(), installedOnly: false, group: '', hero: '' };
+      state.cosSearch = '';
+      state.cosFavOnly = false;
       if (state.search) {
         state.search = '';
         $('#globalSearch').value = '';
@@ -1068,23 +1135,35 @@ function renderCatalog() {
 
 function renderFavorites() {
   const all = favoriteMods();
-  const installable = all.some(canBeInstalled);
   const mods = applyFilters(all);
+  // starred looks live in the same list, kept in their own section: they install a slot of
+  // the game's own schema rather than a file, so mixing them into the mod grid would lie
+  const cosAll = favoriteCosmetics();
+  const cos = filterCosmetics(cosAll);
+  const installable = all.some(canBeInstalled) || cosAll.length > 0;
+  const empty = !all.length && !cosAll.length;
 
   viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Избранное`}</h1>
-      <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}</span>
+      <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}${cosAll.length ? ` · ${cosAll.length} ${plural(cosAll.length, 'косметика', 'косметики', 'косметик')}` : ''}</span>
     </div>
-    ${toolbarHtml(mods.length, { installable })}
-    <div class="grid" id="modGrid">
-      ${mods.length
-        ? mods.map((m, i) => cardHtml(m, i, true)).join('')
-        : `<div class="empty-note">${L`Здесь пусто — жми на сердечко у мода в каталоге`}</div>`}
-    </div>
+    ${empty ? '' : toolbarHtml(mods.length + cos.length, { installable })}
+    ${empty ? `<div class="empty-note">${L`Здесь пусто — жми на сердечко у мода в каталоге`}</div>` : ''}
+    ${all.length ? `
+      ${cosAll.length ? `<div class="section-h"><span class="ms">extension</span>${L`Моды`}</div>` : ''}
+      <div class="grid" id="modGrid">
+        ${mods.length ? mods.map((m, i) => cardHtml(m, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
+      </div>` : ''}
+    ${cosAll.length ? `
+      <div class="section-h" style="margin-top:26px"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
+      <div class="grid" id="cosGrid">
+        ${cos.length ? cos.map(({ slot, o }, i) => cosmeticCardHtml(slot, o, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
+      </div>` : ''}
   `;
-  bindToolbar();
-  bindCards(viewRoot, mods);
+  if (!empty) bindToolbar();
+  bindCards($('#modGrid'), mods);
+  bindCosmeticCards($('#cosGrid'));
 }
 
 // --- home (all categories) ---
@@ -1139,6 +1218,10 @@ function renderHome() {
 
 // --- search results ---
 
+// how many looks a search shows before it just says how many more there are: a query like
+// "loading" matches a couple of thousand of them
+const COS_SEARCH_LIMIT = 120;
+
 function renderSearchResults() {
   const q = state.search.trim().toLowerCase();
   const cats = visibleCategories();
@@ -1148,20 +1231,33 @@ function renderSearchResults() {
       if (m.name && m.name.toLowerCase().includes(q)) mods.push({ ...m, _cat: c.id });
     }
   }
-  const installable = mods.some(canBeInstalled);
+  // the search reaches the free cosmetics too, in their own section below the mods
+  const cosAll = searchCosmetics(q);
+  // whether the "Установленные" chip makes sense at all — decided before filtering, or
+  // the chip would vanish once it filtered everything out and could never be undone
+  const installable = mods.some(canBeInstalled) || cosAll.length > 0;
   mods = applyFilters(mods);
+  const cos = filterCosmetics(cosAll);
+  const shownCos = cos.slice(0, COS_SEARCH_LIMIT);
 
   viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Поиск:`} <span class="accent">${esc(state.search.trim())}</span></h1>
+      <span class="view-sub">${mods.length} ${plural(mods.length, 'мод', 'мода', 'модов')}${cos.length ? ` · ${cos.length} ${plural(cos.length, 'косметика', 'косметики', 'косметик')}` : ''}</span>
     </div>
-    ${toolbarHtml(mods.length, { tags: [], groups: [], installable })}
-    <div class="grid" id="modGrid">
-      ${mods.length ? mods.map((m, i) => cardHtml(m, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено`}</div>`}
-    </div>
+    ${toolbarHtml(mods.length + cos.length, { tags: [], groups: [], installable })}
+    ${!mods.length && !cos.length ? `<div class="empty-note">${L`Ничего не найдено`}</div>` : ''}
+    ${mods.length ? `
+      ${cos.length ? `<div class="section-h"><span class="ms">extension</span>${L`Моды`}</div>` : ''}
+      <div class="grid" id="modGrid">${mods.map((m, i) => cardHtml(m, i, true)).join('')}</div>` : ''}
+    ${cos.length ? `
+      <div class="section-h" style="margin-top:26px"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
+      <div class="grid" id="cosGrid">${shownCos.map(({ slot, o }, i) => cosmeticCardHtml(slot, o, i, true)).join('')}</div>
+      ${cos.length > shownCos.length ? `<div class="search-more">${L`…и ещё ${cos.length - shownCos.length} — уточни запрос`}</div>` : ''}` : ''}
   `;
   bindToolbar();
-  bindCards(viewRoot, mods);
+  bindCards($('#modGrid'), mods);
+  bindCosmeticCards($('#cosGrid'));
 }
 
 // --- single category ---
@@ -1325,6 +1421,7 @@ function cardHtml(m, i, withCat = false) {
 }
 
 function bindCards(root, modsList) {
+  if (!root) return;
   root.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
   root.querySelectorAll('.card[data-key]').forEach((card) => {
     card.addEventListener('click', () => {
@@ -1370,7 +1467,8 @@ function bindFavButton(btn) {
     btn.title = label;
     btn.setAttribute('aria-label', label);
     if (state.view !== 'catalog') return;
-    if (state.activeCategory === 'favorites') renderCatalog(); // the list itself changed
+    // in a list that IS the favourites, the card has to leave it
+    if (state.activeCategory === 'favorites' || (state.cosFavOnly && state.activeCategory.startsWith(COSMETIC_PREFIX))) renderCatalog();
     else renderRail();
   });
 }
@@ -1405,6 +1503,7 @@ function refreshCardBadges() {
 let modalState = null;
 
 function openModModal(categoryId, mod) {
+  cosModalState = null; // the two share one overlay
   modalState = { categoryId, mod, styleIdx: 0 };
   drawModal();
   $('#modalOverlay').classList.remove('hidden');
@@ -1414,6 +1513,7 @@ function closeModal() {
   $('#modalOverlay').classList.add('hidden');
   $('#modalContent').innerHTML = '';
   modalState = null;
+  cosModalState = null;
 }
 
 $('#modalOverlay').addEventListener('click', (e) => {
@@ -1814,7 +1914,7 @@ function schemaTagHtml(rec) {
 
 function normalRowHtml(rec, i, masterOff) {
   const cosmetic = isCosmeticRec(rec);
-  const selectable = !isFontRec(rec) && !cosmetic;
+  const selectable = !isFontRec(rec);
   const selected = state.librarySel.has(rec.id);
   const clash = conflictPartners(rec.id);
   // own preview, else the catalog thumbnail if the file is recognised (so a matched
@@ -1897,10 +1997,17 @@ async function adoptAll() {
   renderLibrary();
 }
 
-// top-level records the "select all" checkbox governs (visible, non-font/cursor)
+// The two lists have a "select all" each, so ticking every mod never drags a dozen
+// cosmetic picks along with it (and the other way round).
 function selectableRecordIds() {
   return (state.libRecords || [])
     .filter((r) => !isFontRec(r) && !isCosmeticRec(r) && libMatchesSearch(r))
+    .map((r) => r.id);
+}
+
+function selectableCosmeticIds() {
+  return (state.libRecords || [])
+    .filter((r) => isCosmeticRec(r) && libMatchesSearch(r))
     .map((r) => r.id);
 }
 
@@ -1918,13 +2025,16 @@ function catalogPreviewFor(match) {
   return mod.preview || (mod.styles && mod.styles[0] && mod.styles[0].preview) || null;
 }
 
-function syncSelectAll() {
-  const cb = $('#selAll');
+function paintSelectAll(cb, ids) {
   if (!cb) return;
-  const ids = selectableRecordIds();
   const sel = ids.filter((id) => state.librarySel.has(id)).length;
   cb.checked = ids.length > 0 && sel === ids.length;
   cb.indeterminate = sel > 0 && sel < ids.length;
+}
+
+function syncSelectAll() {
+  paintSelectAll($('#selAll'), selectableRecordIds());
+  paintSelectAll($('#selAllCos'), selectableCosmeticIds());
 }
 
 function updateBulkBar() {
@@ -1959,12 +2069,18 @@ function libraryListHtml(masterOff) {
   if (!installed.length) return `<div class="empty-note">${L`Ничего не найдено по запросу`}</div>`;
   const row = (rec, i) => (rec.kind === 'pack' ? packRowHtml(rec, i, masterOff) : normalRowHtml(rec, i, masterOff));
   // cosmetics are mods too, but listed after everything else so the "your own mods" list
-  // above stays exactly what it always was
+  // above stays exactly what it always was — with a select-all and a bulk switch of its own
   const mods = installed.filter((r) => !isCosmeticRec(r));
   const cosmetics = installed.filter(isCosmeticRec);
   let html = mods.map(row).join('');
   if (cosmetics.length) {
-    html += `<div class="lib-section-title"><span class="ms">auto_awesome</span>${L`Косметика`}</div>`;
+    const on = cosmetics.filter((r) => r.enabled !== false).length;
+    html += `
+      <div class="lib-section-head">
+        <label class="lib-selectall" title="${L`Выбрать всю косметику`}"><input type="checkbox" class="lib-check" id="selAllCos"><span class="ms">auto_awesome</span>${L`Косметика`}</label>
+        <span class="lib-section-cnt">${cosmetics.length} ${plural(cosmetics.length, 'вид', 'вида', 'видов')} · ${on} ${L`вкл`}</span>
+        <button class="btn btn-ghost btn-xs" id="disableAllCos" ${masterOff || !on ? 'disabled' : ''} title="${L`Вернуть все слоты к тому, что даёт игра`}">${L`Выключить все`}</button>
+      </div>`;
     html += cosmetics.map((rec, i) => normalRowHtml(rec, i, masterOff)).join('');
   }
   return html;
@@ -2147,7 +2263,7 @@ async function renderLibrary() {
         <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>${L`Папка модов`}</button>
       </div>
     </div>
-    ${installedAll.length ? `
+    ${installedAll.some((r) => !isCosmeticRec(r)) ? `
       <div class="lib-listhead">
         <label class="lib-selectall" title="${L`Выбрать всё`}"><input type="checkbox" class="lib-check" id="selAll">${L`Выбрать всё`}</label>
         <span class="lib-listhead-hint">${L`Отметь моды галочками — объединить в пак или массово управлять`}</span>
@@ -2269,6 +2385,14 @@ async function bindLibrary(external) {
   // ----- checkbox selection (delegated; repaint-free to keep scroll) -----
   const libList = $('#libList');
   libList?.addEventListener('change', (e) => {
+    // the cosmetics section head is repainted with the list, so it is handled here too
+    if (e.target.id === 'selAllCos') {
+      const ids = selectableCosmeticIds();
+      if (e.target.checked) ids.forEach((id) => state.librarySel.add(id));
+      else ids.forEach((id) => state.librarySel.delete(id));
+      paintLibraryList();
+      return;
+    }
     const cb = e.target.closest('.lib-check[data-check]');
     if (!cb) return;
     const key = cb.dataset.check;
@@ -2280,6 +2404,14 @@ async function bindLibrary(external) {
 
   // ----- row / pack / member actions (delegated) -----
   libList?.addEventListener('click', async (e) => {
+    if (e.target.closest('#disableAllCos')) {
+      const cos = (state.libRecords || []).filter((r) => isCosmeticRec(r) && r.enabled !== false);
+      if (!cos.length) return;
+      for (const rec of cos) await window.api.mods.setEnabled(rec.id, false);
+      toast(L`Косметика выключена — слоты снова как в игре`);
+      reRender();
+      return;
+    }
     const el = e.target.closest('[data-expand],[data-id],[data-mtoggle],[data-mremove],[data-addto],[data-disband],[data-del],[data-export],[data-adopt],[data-split]');
     if (!el) return;
 
@@ -2569,6 +2701,9 @@ window.api.presets.onLink((res) => handlePresetImport(res));
 async function bulkToggle(installed, enabled) {
   for (const rec of installed) {
     if (isFontRec(rec)) continue;
+    // cosmetics answer to their own section head: only one look per slot can be live, so
+    // "enable all" over them would just be a race the last one wins
+    if (isCosmeticRec(rec)) continue;
     if (rec.enabled !== enabled) await window.api.mods.setEnabled(rec.id, enabled);
   }
   renderLibrary();
@@ -2875,21 +3010,133 @@ function watchCosmeticIcons(root, scroller) {
 
 // One card per look, styled exactly like a catalog mod card (same .card/.grid classes):
 // a picture, a favourite star, and an "Установлен" badge on whichever one is live.
-function cosmeticCardHtml(slot, o, i, pickedId) {
+function cosmeticCardHtml(slot, o, i, withCat = false) {
   const cat = COSMETIC_PREFIX + slot;
   const icon = cosIconCache.get(o.name);
-  const picked = o.id === pickedId;
+  const picked = pickedIn(slot)?.itemId === o.id;
   return `
-    <div class="card" data-cos-id="${esc(o.id)}" style="--i:${Math.min(i, 28)}">
+    <div class="card" data-cos="${esc(slot)}" data-cos-id="${esc(o.id)}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">
         <span class="card-thumb" data-name="${esc(o.name)}">${icon
           ? `<img src="${esc(icon)}" alt="" loading="lazy">`
-          : `<div class="noimg"><span class="ms" style="font-size:32px">${cosmeticMeta(slot).icon}</span></div>`}</span>
+          : `<div class="noimg"><span class="ms">${cosmeticMeta(slot).icon}</span></div>`}</span>
         ${favButtonHtml(cat, o.name)}
-        ${picked ? `<div class="media-tags"><span class="mtag ok">${L`Установлен`}</span></div>` : ''}
+        <div class="media-tags">${picked ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}</div>
       </div>
-      <div class="card-body"><div class="card-name">${esc(o.name)}</div></div>
+      <div class="card-body">
+        <div class="card-name">${esc(o.name)}</div>
+        ${withCat ? `<div class="card-meta"><span>${esc(catName(cat))}</span></div>` : ''}
+      </div>
     </div>`;
+}
+
+// Cosmetic cards behave like mod cards: a click opens the look, it does not install it.
+function bindCosmeticCards(root) {
+  if (!root) return;
+  root.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
+  root.querySelectorAll('.card[data-cos]').forEach((card) => {
+    card.addEventListener('click', () => openCosmeticModal(card.dataset.cos, card.dataset.cosId));
+  });
+  paintCosmeticIcons(root);
+  return watchCosmeticIcons(root, null);
+}
+
+// toggle the "Установлен" badge on visible cosmetic cards in place — same idea as
+// refreshCardBadges() for mods, so a pick never costs the grid its scroll position
+function refreshCosmeticBadges() {
+  viewRoot.querySelectorAll('.card[data-cos]').forEach((card) => {
+    const picked = pickedIn(card.dataset.cos)?.itemId === card.dataset.cosId;
+    const badge = card.querySelector('.mtag.ok');
+    if (picked && !badge) {
+      card.querySelector('.media-tags')?.insertAdjacentHTML('afterbegin', `<span class="mtag ok">${L`Установлен`}</span>`);
+    } else if (!picked && badge) {
+      badge.remove();
+    }
+  });
+}
+
+// ---------- cosmetic modal (the mod modal's twin, same markup and classes) ----------
+
+let cosModalState = null;
+
+function openCosmeticModal(slot, itemId) {
+  const o = findCosmetic(slot, itemId);
+  if (!o) return;
+  modalState = null;
+  cosModalState = { slot, o };
+  drawCosmeticModal();
+  $('#modalOverlay').classList.remove('hidden');
+  // the picture may not have been fetched yet if the card was never scrolled into view
+  if (!cosIconCache.has(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
+}
+
+function drawCosmeticModal() {
+  const { slot, o } = cosModalState;
+  const meta = cosmeticMeta(slot);
+  const data = slotData(slot);
+  const live = pickedIn(slot);
+  const isLive = live?.itemId === o.id;
+  const icon = cosIconCache.get(o.name);
+  const busy = state.installing.has(COSMETIC_PREFIX + slot + '|' + o.id);
+
+  $('#modalContent').innerHTML = `
+    <div class="modal-media cos">
+      ${icon
+        ? `<img src="${esc(icon)}" alt="">`
+        : `<div class="noimg"><span class="ms">${meta.icon}</span></div>`}
+      <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-title-row">
+        <div class="modal-title">${esc(o.name)}</div>
+        ${favButtonHtml(COSMETIC_PREFIX + slot, o.name)}
+      </div>
+      <div class="modal-sub">
+        <span>${esc(tr(meta.label))}</span>
+        <span>· ${L`бесплатная косметика`}</span>
+        ${data ? `<span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>` : ''}
+      </div>
+      <div class="modal-actions">
+        ${isLive
+          ? `<button class="btn btn-danger" id="cosRemoveBtn"><span class="ms">delete</span>${L`Убрать`}</button>`
+          : `<button class="btn btn-primary" id="cosPickBtn" ${busy ? 'disabled' : ''}><span class="ms">download</span>${busy ? L`Установка…` : L`Установить`}</button>`}
+      </div>
+      <div class="modal-note">
+        ${isLive
+          ? L`Этот вид сейчас стоит в слоте «${tr(meta.label)}». Убрать — вернуть то, что даёт игра; включить обратно можно в Библиотеке.`
+          : live
+            ? L`На один слот — только одна активная косметика: этот вид заменит «${live.name}». Прошлый выбор останется в Библиотеке выключенным.`
+            : L`Косметика подставляется в схему предметов игры — файлы модов она не трогает, и её видно только тебе.`}
+      </div>
+    </div>`;
+
+  $('#modalCloseBtn').addEventListener('click', closeModal);
+  const favBtn = $('#modalContent .fav-btn');
+  if (favBtn) bindFavButton(favBtn);
+  $('#cosPickBtn')?.addEventListener('click', () => pickCosmetic(slot, o, false));
+  $('#cosRemoveBtn')?.addEventListener('click', () => pickCosmetic(slot, o, true));
+}
+
+/**
+ * Put a look on (or take the live one off) and repaint whatever is on screen.
+ * @param {boolean} remove  true = back to what the game gives
+ */
+async function pickCosmetic(slot, o, remove) {
+  const k = COSMETIC_PREFIX + slot + '|' + o.id;
+  if (state.installing.has(k)) return;
+  const live = pickedIn(slot);
+  state.installing.add(k);
+  if (cosModalState) drawCosmeticModal();
+  const r = remove
+    ? (live ? await window.api.mods.remove(live.id) : { ok: true })
+    : await window.api.cosmetics.pick(slot, o.id, o.name);
+  state.installing.delete(k);
+  if (r.error) { toast(r.error, 'error'); if (cosModalState) drawCosmeticModal(); return; }
+  toast(remove ? L`Вернули как в игре` : L`Выбрано: ${o.name}`);
+  await refreshInstalledIndex();
+  refreshCosmeticBadges();
+  if (state.view === 'catalog') renderRail(); // the slot's "picked" dot
+  if (cosModalState) drawCosmeticModal();
 }
 
 async function renderCosmeticCategory(slot) {
@@ -2904,15 +3151,15 @@ async function renderCosmeticCategory(slot) {
     return;
   }
 
-  let query = '';
-  let favOnly = false;
+  const f = state.filters;
   let io = null;
 
   const filtered = () => {
-    const q = query.trim().toLowerCase();
-    let list = q ? data.options.filter((o) => o.name.toLowerCase().includes(q)) : data.options;
-    if (favOnly) list = list.filter((o) => isFav(COSMETIC_PREFIX + slot, o.name));
-    return list;
+    const q = state.cosSearch.trim().toLowerCase();
+    let list = data.options.map((o) => ({ slot, o }));
+    if (q) list = list.filter(({ o }) => o.name.toLowerCase().includes(q));
+    if (state.cosFavOnly) list = list.filter(({ o }) => isFav(COSMETIC_PREFIX + slot, o.name));
+    return filterCosmetics(list);
   };
 
   const paintGrid = () => {
@@ -2921,27 +3168,10 @@ async function renderCosmeticCategory(slot) {
     $('#cosCount').textContent = `${list.length} ${plural(list.length, 'результат', 'результата', 'результатов')}`;
     const grid = $('#cosGrid');
     grid.innerHTML = shown.length
-      ? shown.map((o, i) => cosmeticCardHtml(slot, o, i, data.picked)).join('')
+      ? shown.map(({ o }, i) => cosmeticCardHtml(slot, o, i)).join('')
       : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
-    grid.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
-    grid.querySelectorAll('.card[data-cos-id]').forEach((card) => {
-      card.addEventListener('click', () => pick(card.dataset.cosId));
-    });
-    paintCosmeticIcons(grid);
     if (io) io.disconnect();
-    io = watchCosmeticIcons(grid, null);
-  };
-
-  const pick = async (itemId) => {
-    const already = itemId === data.picked;
-    const o = data.options.find((x) => x.id === itemId);
-    const r = already
-      ? (data.recordId ? await window.api.mods.remove(data.recordId) : { ok: true })
-      : await window.api.cosmetics.pick(slot, itemId, o ? o.name : itemId);
-    if (r.error) { toast(r.error, 'error'); return; }
-    toast(already ? L`Вернули как в игре` : L`Выбрано: ${o ? o.name : itemId}`);
-    await Promise.all([refreshCosmeticSlots(), refreshInstalledIndex()]);
-    if (state.activeCategory === COSMETIC_PREFIX + slot) renderCosmeticCategory(slot);
+    io = bindCosmeticCards(grid);
   };
 
   viewRoot.innerHTML = `
@@ -2950,17 +3180,30 @@ async function renderCosmeticCategory(slot) {
       <span class="view-sub">${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>
     </div>
     <div class="toolbar">
-      <div class="tb-search cat-search"><span class="ms">search</span><input type="text" id="cosSearch" placeholder="${L`Поиск…`}" autocomplete="off"></div>
+      <div class="select-wrap">
+        <span class="ms">sort</span>
+        <select id="cosSort">
+          ${SORTS.filter((s) => s.key !== 'date').map((s) => `<option value="${s.key}" ${f.sort === s.key ? 'selected' : ''}>${esc(tr(s.label))}</option>`).join('')}
+        </select>
+      </div>
+      <div class="tb-search cat-search"><span class="ms">search</span><input type="text" id="cosSearch" placeholder="${L`Поиск…`}" value="${esc(state.cosSearch)}" autocomplete="off"></div>
       <div class="sep"></div>
-      <button class="fchip" id="cosFavChip"><span class="ms">favorite</span>${L`Избранное`}</button>
+      <button class="fchip ${f.installedOnly ? 'active' : ''}" id="cosInstalledChip"><span class="ms">check_circle</span>${L`Установленные`}</button>
+      <button class="fchip ${state.cosFavOnly ? 'active' : ''}" id="cosFavChip"><span class="ms">favorite</span>${L`Избранное`}</button>
       <span class="count" id="cosCount"></span>
     </div>
     <div class="grid" id="cosGrid"></div>`;
 
-  $('#cosSearch').addEventListener('input', (e) => { query = e.target.value; paintGrid(); });
+  $('#cosSort').addEventListener('change', (e) => { f.sort = e.target.value; paintGrid(); });
+  $('#cosSearch').addEventListener('input', (e) => { state.cosSearch = e.target.value; paintGrid(); });
+  $('#cosInstalledChip').addEventListener('click', (e) => {
+    f.installedOnly = !f.installedOnly;
+    e.currentTarget.classList.toggle('active', f.installedOnly);
+    paintGrid();
+  });
   $('#cosFavChip').addEventListener('click', (e) => {
-    favOnly = !favOnly;
-    e.currentTarget.classList.toggle('active', favOnly);
+    state.cosFavOnly = !state.cosFavOnly;
+    e.currentTarget.classList.toggle('active', state.cosFavOnly);
     paintGrid();
   });
   paintGrid();

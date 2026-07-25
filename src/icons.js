@@ -17,6 +17,9 @@ const WIKI = 'https://dota2.fandom.com/wiki/Special:FilePath/';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const MAX_BYTES = 512 * 1024;
 const MISS_TTL = 7 * 24 * 3600 * 1000; // retry a missing picture next week, not next second
+// How many pictures are fetched at once. The wiki starts refusing a burst of a hundred,
+// and a refusal used to be remembered as "no such picture" for a week.
+const CONCURRENCY = 6;
 
 // The wiki serves WebP to a browser and PNG to anything else; both render in the app.
 function sniff(buf) {
@@ -37,7 +40,9 @@ class Icons {
     this.fetch = fetchImpl || globalThis.fetch;
     this.dir = path.join(userDataDir, 'icons');
     fs.mkdirSync(this.dir, { recursive: true });
-    this.missFile = path.join(this.dir, 'misses.json');
+    // v2: the old file also holds names that failed for a reason that was never the wiki's
+    // (a refused burst), so it is not carried over
+    this.missFile = path.join(this.dir, 'misses.v2.json');
     this.misses = new Map();
     this.inflight = new Map();
     try {
@@ -45,9 +50,22 @@ class Icons {
     } catch { /* no misses recorded yet */ }
   }
 
-  // Wiki file name for a cosmetic: "Weather Rain" -> Cosmetic_icon_Weather_Rain.png
-  static fileName(name) {
-    return 'Cosmetic_icon_' + String(name).trim().replace(/\s+/g, '_') + '.png';
+  /**
+   * Wiki file names to try for a cosmetic: "Weather Rain" -> Cosmetic_icon_Weather_Rain.png.
+   * The schema's own name is right about nine times out of ten; the rest differ by
+   * punctuation the wiki spells its own way, so a couple of spellings follow before the
+   * picture counts as missing. "Mega-Kills: Axe" is filed as both Mega-Kills_Axe and
+   * Mega-Kills-_Axe, and the game's typographic apostrophe is a plain one there.
+   * @returns {string[]}
+   */
+  static fileNames(name) {
+    const clean = String(name).replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
+    const out = [];
+    for (const form of [clean, clean.replace(/:/g, ''), clean.replace(/:/g, '-'), String(name).trim()]) {
+      const file = 'Cosmetic_icon_' + form.replace(/\s+/g, '_') + '.png';
+      if (form && !out.includes(file)) out.push(file);
+    }
+    return out;
   }
 
   cachePath(name) {
@@ -77,18 +95,34 @@ class Icons {
     if (this.inflight.has(name)) return this.inflight.get(name);
 
     const job = (async () => {
+      // Only a 404 means the wiki really has no such picture. A refused or dropped request
+      // says nothing about the name, so it must not be remembered as a miss for a week —
+      // that is how a slot ends up permanently half-empty after one bad burst.
+      let answered = true;
       try {
-        const res = await this.fetch(WIKI + encodeURIComponent(Icons.fileName(name)), { headers: { 'User-Agent': UA } });
-        if (!res.ok) throw new Error(String(res.status));
-        const buf = Buffer.from(await res.arrayBuffer());
-        const mime = buf.length && buf.length <= MAX_BYTES ? sniff(buf) : null;
-        if (!mime) throw new Error('not an image');
-        fs.writeFileSync(file, buf);
-        this.misses.delete(name);
-        return `data:${mime};base64,` + buf.toString('base64');
+        for (const wikiName of Icons.fileNames(name)) {
+          let res;
+          try {
+            res = await this.fetch(WIKI + encodeURIComponent(wikiName), { headers: { 'User-Agent': UA } });
+          } catch {
+            answered = false;
+            continue;
+          }
+          if (res.status === 404) continue;
+          if (!res.ok) { answered = false; continue; }
+          const buf = Buffer.from(await res.arrayBuffer());
+          const mime = buf.length && buf.length <= MAX_BYTES ? sniff(buf) : null;
+          if (!mime) continue;
+          fs.writeFileSync(file, buf);
+          this.misses.delete(name);
+          return `data:${mime};base64,` + buf.toString('base64');
+        }
+        if (answered) {
+          this.misses.set(name, Date.now());
+          this.saveMisses();
+        }
+        return null;
       } catch {
-        this.misses.set(name, Date.now());
-        this.saveMisses();
         return null;
       } finally {
         this.inflight.delete(name);
@@ -96,6 +130,24 @@ class Icons {
     })();
     this.inflight.set(name, job);
     return job;
+  }
+
+  /**
+   * Pictures for a batch of names, a few requests at a time.
+   * @returns {Promise<Record<string, string|null>>}
+   */
+  async getMany(names) {
+    const list = [...new Set((Array.isArray(names) ? names : []).filter(Boolean))];
+    const out = {};
+    let next = 0;
+    const worker = async () => {
+      while (next < list.length) {
+        const name = list[next++];
+        out[name] = await this.get(name);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, worker));
+    return out;
   }
 
   size() {

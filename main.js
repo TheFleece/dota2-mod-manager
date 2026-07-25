@@ -101,6 +101,16 @@ function createWindow() {
               `document.querySelector('.rail-item[data-cat="${process.env.MM_CAT}"]')?.click()`);
             await new Promise((r) => setTimeout(r, 2500));
           }
+          if (process.env.MM_SEARCH) {
+            // dev-only: type into the title-bar search (its handler is debounced)
+            await win.webContents.executeJavaScript(`(() => {
+              const el = document.getElementById('globalSearch');
+              if (!el) return;
+              el.value = ${JSON.stringify(process.env.MM_SEARCH)};
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+            })()`);
+            await new Promise((r) => setTimeout(r, 2500));
+          }
           if (process.env.MM_CLICK) {
             // dev-only: click a comma-separated list of CSS selectors before capture
             for (const sel of process.env.MM_CLICK.split('||')) {
@@ -1196,12 +1206,8 @@ function registerIpc() {
   ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
 
   // One picture per request, so opening a slot with 2000 items costs only what is on screen.
-  ipcMain.handle('cosmetics:icons', async (e, names) => {
-    const out = {};
-    const list = (Array.isArray(names) ? names : []).slice(0, 60);
-    await Promise.all(list.map(async (n) => { out[n] = await icons.get(n); }));
-    return out;
-  });
+  ipcMain.handle('cosmetics:icons', (e, names) =>
+    icons.getMany((Array.isArray(names) ? names : []).slice(0, 60)));
 
   // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
   // handle it (see touchesSchema above), this is only for the initial choice.
