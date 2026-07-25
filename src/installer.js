@@ -20,6 +20,10 @@ const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-atta
 // in its original volumes rather than risking the allocation.
 const MERGE_SIZE_CAP = 1200 * 1024 * 1024;
 
+// Above this a resource/localization file is the game's whole table rather than a mod's own
+// few lines: Dota's own dota_english.txt is ~4 MB, a deliberate edit is a few KB.
+const LOC_COPY_MIN = 256 * 1024;
+
 const FONTS_SUBDIR = ['dota', 'panorama', 'fonts'];
 const CURSOR_SUBDIR = ['dota', 'resource', 'cursor'];
 
@@ -943,7 +947,15 @@ class Installer {
         } catch { /* a mangled table is not worth failing the install over */ }
       }
 
-      const keep = entries.filter((e) => !GLOBAL_TABLE_RE.test(entryPath(e)));
+      // A localization file the size of the game's own is a stale copy of it; a small one
+      // is a deliberate edit (a mod renaming an item), and that we keep.
+      const drop = (e) => {
+        const p = entryPath(e);
+        if (!GLOBAL_TABLE_RE.test(p)) return false;
+        if (/^resource\/localization\//.test(p) && e.data.length < LOC_COPY_MIN) return false;
+        return true;
+      };
+      const keep = entries.filter((e) => !drop(e));
       if (keep.length === entries.length) continue;
       fs.writeFileSync(abs, buildVpk(keep));
       for (const f of parts) fs.rmSync(path.join(lang, f), { force: true });
@@ -957,6 +969,18 @@ class Installer {
       }
     }
     return { deltas, stripped };
+  }
+
+  // Bytes a record occupies in the language folder (its pak plus any data volumes).
+  installedSize(rec) {
+    const lang = this.langFolder();
+    let total = 0;
+    for (const f of rec.files || []) {
+      if (f.root !== 'lang') continue;
+      const abs = path.join(lang, f.relPath);
+      try { total += fs.statSync(abs).size; } catch { /* removed by hand */ }
+    }
+    return total;
   }
 
   // What a stored library record (or a foreign vpk) actually changes — hero(es) and

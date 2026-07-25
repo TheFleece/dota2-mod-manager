@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('api', {
     refreshSchema: () => ipcRenderer.invoke('schema:refresh'),
   },
   cosmetics: {
+    slots: () => ipcRenderer.invoke('cosmetics:slots'),
     options: (slot) => ipcRenderer.invoke('cosmetics:options', slot),
     set: (slot, donorId) => ipcRenderer.invoke('cosmetics:set', slot, donorId),
   },

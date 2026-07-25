@@ -204,7 +204,8 @@ input, select { font-family: inherit; }
   color: var(--text-muted);
   font-size: 13.5px;
   font-weight: 600;
-  padding: 0 13px;
+  /* seven tabs have to fit the default window before the strip starts scrolling */
+  padding: 0 11px;
   height: 100%;
   display: inline-flex;
   align-items: center;
@@ -244,9 +245,10 @@ input, select { font-family: inherit; }
   border: 1px solid var(--border);
   border-radius: 999px;
   height: 32px;
-  width: 250px;
+  width: 210px;
   min-width: 42px;
-  flex-shrink: 1;
+  /* yields space before the tab strip does, so all tabs fit the default window */
+  flex-shrink: 2;
   padding: 0 12px;
   gap: 7px;
   transition: border-color 0.25s var(--ease), background 0.25s var(--ease), width 0.3s var(--ease), box-shadow 0.25s var(--ease);
@@ -919,6 +921,18 @@ input, select { font-family: inherit; }
   border-color: rgba(251, 191, 36, 0.4);
 }
 .lib-tag.conflict .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
+/* mod carries item-schema changes: live (effects assembled) vs waiting for the patch */
+.lib-tag.schema {
+  color: var(--primary-soft);
+  background: var(--primary-dim);
+  border-color: rgba(139, 111, 240, 0.45);
+}
+.lib-tag.schema.off {
+  color: var(--warning);
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.lib-tag.schema .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
 .lib-row.conflict { border-color: rgba(251, 191, 36, 0.3); }
 .lib-meta { font-size: 11.5px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; }
 .lib-actions { display: flex; align-items: center; gap: 8px; }
@@ -1959,3 +1973,60 @@ body.grip-dragging { user-select: none; }
 .toast,
 .progress-info,
 .progress-track { zoom: var(--content-zoom); }
+
+/* ============ Item schema: patch card + cosmetics picker ============ */
+
+.patch-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  max-width: 780px;
+}
+.patch-card.on { border-color: rgba(139, 111, 240, 0.45); background: var(--primary-dim); }
+.patch-card.warn { border-color: rgba(251, 191, 36, 0.45); }
+.patch-icon { font-size: 24px; color: var(--text-faint); flex-shrink: 0; }
+.patch-card.on .patch-icon { color: var(--primary-soft); }
+.patch-card.warn .patch-icon { color: var(--warning); }
+.patch-main { flex: 1; min-width: 0; }
+.patch-title { font-size: 14px; font-weight: 600; }
+.patch-status { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+.patch-card.warn .patch-status { color: var(--warning); }
+.patch-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.patch-note {
+  max-width: 780px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.cos-group { max-width: 1100px; margin-top: 22px; }
+.cos-group-title { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 10px; }
+.cos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+.cos-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  animation: cardIn 0.35s var(--ease) both;
+}
+.cos-card.picked { border-color: rgba(139, 111, 240, 0.45); background: var(--primary-dim); }
+.cos-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.cos-head .ms { font-size: 18px; color: var(--text-faint); }
+.cos-card.picked .cos-head .ms { color: var(--primary-soft); }
+.cos-label { font-size: 13.5px; font-weight: 600; flex: 1; min-width: 0; }
+.cos-count {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.cos-select { width: 100%; }
+.cos-select:disabled { opacity: 0.45; cursor: not-allowed; }

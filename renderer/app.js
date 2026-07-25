@@ -881,6 +881,7 @@ function render() {
     case 'catalog': return renderCatalog();
     case 'library': return renderLibrary();
     case 'presets': return renderPresets();
+    case 'cosmetics': return renderCosmetics();
     case 'tools': return renderTools();
     case 'guides': return renderGuides();
     case 'settings': return renderSettings();
@@ -1687,6 +1688,15 @@ function conflictPartners(id) {
   return out;
 }
 
+// Mods that carry item-schema changes: their model installs like any other, but the
+// effects and icons only exist once the schema patch is on. Say which of the two it is.
+function schemaTagHtml(rec) {
+  if (!rec.schemaCount) return '';
+  return rec.schemaLive
+    ? ` <span class="lib-tag schema" title="${esc(L`Мод меняет схему предметов: его эффекты и иконки собраны в общую таблицу`)}"><span class="ms">auto_awesome</span>${L`эффекты`}</span>`
+    : ` <span class="lib-tag schema off" title="${esc(L`Мод меняет схему предметов. Без правок схемы встанет только модель — эффекты и иконки работать не будут.`)}"><span class="ms">error</span>${L`нужны правки`}</span>`;
+}
+
 function normalRowHtml(rec, i, masterOff) {
   const selectable = !isFontRec(rec);
   const selected = state.librarySel.has(rec.id);
@@ -1701,7 +1711,7 @@ function normalRowHtml(rec, i, masterOff) {
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
       ${prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : '<div class="lib-thumb"></div>'}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${clash.length ? ` <span class="lib-tag conflict" title="${esc(L`Меняет те же файлы, что и: ${clash.join(', ')}`)}"><span class="ms">warning</span>${L`конфликт`}</span>` : ''}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${clash.length ? ` <span class="lib-tag conflict" title="${esc(L`Меняет те же файлы, что и: ${clash.join(', ')}`)}"><span class="ms">warning</span>${L`конфликт`}</span>` : ''}${schemaTagHtml(rec)}</div>
         <div class="lib-meta">
           <span>${esc(catName(rec.categoryId))}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
@@ -2661,6 +2671,176 @@ async function handlePresetImport(r) {
 
 // ===== Tools =====
 
+// ===== Cosmetics: free looks taken from the game's own item schema =====
+
+// Labels and icons for the slots the game exposes. The list of slots itself is read from
+// the installed game, so one Valve adds later still shows up — just under its raw name.
+const COSMETIC_SLOTS = {
+  weather: { label: 'Погода', icon: 'rainy', group: 'match' },
+  terrain: { label: 'Ландшафт', icon: 'terrain', group: 'match' },
+  hud_skin: { label: 'Интерфейс игры', icon: 'dashboard', group: 'match' },
+  loading_screen: { label: 'Экран загрузки', icon: 'image', group: 'match' },
+  versus_screen: { label: 'Экран противостояния', icon: 'compare_arrows', group: 'match' },
+  courier: { label: 'Курьер', icon: 'pets', group: 'units' },
+  ward: { label: 'Варды', icon: 'visibility', group: 'units' },
+  radiantcreeps: { label: 'Крипы Света', icon: 'groups', group: 'units' },
+  direcreeps: { label: 'Крипы Тьмы', icon: 'groups', group: 'units' },
+  radiantsiegecreeps: { label: 'Осадные Света', icon: 'shield', group: 'units' },
+  diresiegecreeps: { label: 'Осадные Тьмы', icon: 'shield', group: 'units' },
+  radianttowers: { label: 'Башни Света', icon: 'castle', group: 'units' },
+  diretowers: { label: 'Башни Тьмы', icon: 'castle', group: 'units' },
+  music: { label: 'Музыка', icon: 'music_note', group: 'sound' },
+  announcer: { label: 'Комментатор', icon: 'campaign', group: 'sound' },
+  mega_kills: { label: 'Мега-килл', icon: 'record_voice_over', group: 'sound' },
+  streak_effect: { label: 'Серия убийств', icon: 'local_fire_department', group: 'fx' },
+};
+const COSMETIC_GROUPS = [
+  ['match', 'Матч'],
+  ['units', 'Существа и постройки'],
+  ['sound', 'Звук'],
+  ['fx', 'Эффекты'],
+  ['other', 'Прочее'],
+];
+
+function cosmeticMeta(slot) {
+  return COSMETIC_SLOTS[slot] || { label: slot.replace(/_/g, ' '), icon: 'category', group: 'other' };
+}
+
+// One honest status card, shown both here and in settings: what the patch is, whether it is
+// on, and what it costs. It is the only place in the app that edits files of the game.
+function patchCardHtml(st) {
+  const live = st.enabled && st.patched && st.signed;
+  const picked = Object.values(st.cosmetics || {}).filter(Boolean).length;
+  let status;
+  if (!st.enabled) status = L`Выключено. Моды со своими эффектами встают частично, косметика недоступна.`;
+  else if (!st.patched || !st.signed) status = L`Включено, но патч слетел — почини кнопкой ниже или перезапусти приложение.`;
+  else if (st.stale) status = L`Dota обновилась: схему нужно пересобрать.`;
+  else if (!st.deployed) status = L`Правок пока нет: поставь мод со своими эффектами или выбери косметику.`;
+  else status = L`Работает: ${st.mods} ${plural(st.mods, 'мод', 'мода', 'модов')}, ${picked} ${plural(picked, 'косметика', 'косметики', 'косметик')}.`;
+
+  return `
+    <div class="patch-card ${live ? 'on' : ''} ${st.enabled && (!st.patched || !st.signed || st.stale) ? 'warn' : ''}">
+      <span class="ms patch-icon">${live ? 'shield_lock' : 'shield'}</span>
+      <div class="patch-main">
+        <div class="patch-title">${L`Правки схемы предметов`}</div>
+        <div class="patch-status">${status}</div>
+      </div>
+      <div class="patch-actions">
+        ${st.enabled ? `<button class="btn btn-sm" id="patchRebuild">${L`Пересобрать`}</button>` : ''}
+        <button class="mods-switch ${live ? 'on' : ''}" id="patchSwitch" role="switch" aria-checked="${live}"
+                aria-label="${L`Правки схемы предметов`}">
+          <span class="mods-switch-txt"><b>${st.enabled ? L`вкл` : L`выкл`}</b></span>
+          <span class="mods-switch-track"><span class="mods-switch-thumb"></span></span>
+        </button>
+      </div>
+    </div>
+    ${(st.conflicts || []).length ? `
+    <div class="modal-note warn" style="margin-top:10px">
+      <b>${L`Моды спорят за один предмет`}</b>${L`: `}${st.conflicts.slice(0, 3).map((c) => `${esc(c.mods.join(' / '))} — ${esc(c.name || c.id)}`).join('; ')}${st.conflicts.length > 3 ? ' …' : ''}${L`. В таблицу попадёт правка того мода, что установлен последним — выключи лишний.`}
+    </div>` : ''}
+    ${st.foreign ? `
+    <div class="modal-note warn" style="margin-top:10px">
+      <b>${L`В gameinfo уже прописан другой патчер`}</b>${L`: папка `}<code style="background:none;color:var(--primary-soft)">${esc(st.foreign)}</code>${L`. Два патчера в одном файле уживаются плохо — включай наш только если тем не пользуешься.`}
+    </div>` : ''}
+    <div class="patch-note">
+      ${L`Dota читает таблицу предметов (items_game.txt) только из своей папки game/dota, поэтому мод из языковой папки её не перекроет: скин встанет, а его эффекты, иконки и бесплатная косметика — нет. Чтобы это работало, приложение прописывает свою папку `}<code style="background:none;color:var(--primary-soft)">game/${esc(st.folder || 'dota_mods')}</code>${L` в gameinfo_branchspecific.gi и пересчитывает подпись этого файла в dota.signatures. Оба оригинала сохраняются, выключатель возвращает их байт-в-байт. Таблица всегда собирается из твоей текущей игры, поэтому после обновления Dota она не устаревает — приложение пересоберёт её само.`}
+    </div>`;
+}
+
+// Wire the switch and the rebuild button of a patch card rendered into `root`.
+function bindPatchCard(root, after) {
+  root.querySelector('#patchSwitch')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const turningOn = btn.getAttribute('aria-checked') !== 'true';
+    if (turningOn) {
+      const ok = await confirmDialog(
+        L`Приложение изменит два файла Dota: пропишет свою папку в gameinfo_branchspecific.gi и пересчитает подпись этого файла в dota.signatures. Оригиналы сохранятся, выключатель вернёт их обратно. Правки нужны, чтобы работали эффекты модов и бесплатная косметика.`,
+        { okLabel: L`Включить`, danger: false }
+      );
+      if (!ok) return;
+    }
+    btn.disabled = true;
+    const r = await window.api.patch.setEnabled(turningOn);
+    btn.disabled = false;
+    if (r.error) { toast(r.error, 'error'); return; }
+    toast(turningOn ? L`Правки включены` : L`Правки сняты, файлы игры восстановлены`);
+    after();
+  });
+  root.querySelector('#patchRebuild')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const r = await window.api.patch.refreshSchema();
+    btn.disabled = false;
+    if (r.error) { toast(r.error, 'error'); return; }
+    toast(r.deployed ? L`Схема собрана заново` : L`Собирать нечего — правок нет`);
+    after();
+  });
+}
+
+async function renderCosmetics() {
+  viewRoot.innerHTML = `
+    <div class="view-header"><h1 class="view-title">${L`Косметика`}</h1></div>
+    <div class="empty-note">${L`Читаем схему игры…`}</div>`;
+
+  const [st, data] = await Promise.all([window.api.patch.state(), window.api.cosmetics.slots()]);
+  if (state.view !== 'cosmetics') return; // the user moved on while we were reading
+  const slots = data.slots || [];
+  const off = !st.enabled || !st.patched;
+
+  const groups = COSMETIC_GROUPS.map(([key, label]) => {
+    const mine = slots.filter((s) => cosmeticMeta(s.slot).group === key);
+    if (!mine.length) return '';
+    return `
+      <div class="cos-group">
+        <h3 class="cos-group-title">${esc(tr(label))}</h3>
+        <div class="cos-grid">
+          ${mine.map((s) => {
+            const meta = cosmeticMeta(s.slot);
+            const picked = s.options.find((o) => o.id === s.picked);
+            return `
+            <div class="cos-card ${picked ? 'picked' : ''}" data-slot="${esc(s.slot)}">
+              <div class="cos-head">
+                <span class="ms">${meta.icon}</span>
+                <span class="cos-label">${esc(tr(meta.label))}</span>
+                <span class="cos-count">${s.options.length}</span>
+              </div>
+              <div class="select-wrap">
+                <select class="input cos-select" data-slot="${esc(s.slot)}" ${off ? 'disabled' : ''}
+                        aria-label="${esc(tr(meta.label))}">
+                  <option value="">${L`Как в игре`}</option>
+                  ${s.options.map((o) => `<option value="${esc(o.id)}" ${o.id === s.picked ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}
+                </select>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  viewRoot.innerHTML = `
+    <div class="view-header">
+      <h1 class="view-title">${L`Косметика`}</h1>
+      <div class="view-sub">${L`Погода, ландшафт, курьеры, варды и остальное — из схемы твоей игры, без покупки. Список берётся из установленной Dota, так что новые вещи Valve появляются здесь сами.`}</div>
+    </div>
+    ${patchCardHtml(st)}
+    ${data.error ? `<div class="modal-note warn" style="margin-top:12px">${esc(data.error)}</div>` : ''}
+    ${slots.length ? groups : `<div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`}`;
+
+  bindPatchCard(viewRoot, renderCosmetics);
+  viewRoot.querySelectorAll('.cos-select').forEach((sel) => {
+    sel.addEventListener('change', async () => {
+      const card = sel.closest('.cos-card');
+      sel.disabled = true;
+      const r = await window.api.cosmetics.set(sel.dataset.slot, sel.value || null);
+      sel.disabled = false;
+      if (r.error) { toast(r.error, 'error'); return; }
+      card.classList.toggle('picked', !!sel.value);
+      const name = sel.options[sel.selectedIndex]?.textContent || '';
+      toast(sel.value ? L`Выбрано: ${name}` : L`Вернули как в игре`);
+    });
+  });
+}
+
 async function renderTools() {
   const tools = state.catalog?.mods?.modsData?.tools || [];
   const { installed } = await window.api.mods.list();
@@ -2823,6 +3003,7 @@ async function renderSettings() {
   const pz = state.panels;
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
+  const patchState = await window.api.patch.state();
 
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
@@ -2967,6 +3148,11 @@ async function renderSettings() {
       <div class="modal-note" style="margin-top:10px">
         <b>${L`Обнаружен Minify`}</b>${L` (папка `}<code style="background:none;color:var(--primary-soft)">dota_minify</code>${L` рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.`}
       </div>` : ''}
+    </div>
+
+    <div class="settings-block" style="animation-delay:170ms">
+      <h3>${L`Схема предметов`}</h3>
+      ${patchCardHtml(patchState)}
     </div>
 
     <div class="settings-block" style="animation-delay:180ms">
@@ -3134,6 +3320,7 @@ async function renderSettings() {
     e.currentTarget.setAttribute('aria-checked', String(on));
     state.settings = await window.api.settings.set('discordPresence', on);
   });
+  bindPatchCard(viewRoot, renderSettings);
   $('#clearCacheBtn').addEventListener('click', async () => {
     await window.api.misc.clearCache();
     toast(L`Кэш очищен`);

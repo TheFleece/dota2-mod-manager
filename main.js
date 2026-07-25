@@ -224,6 +224,15 @@ app.whenReady().then(async () => {
     diag('cursor reconcile skipped: ' + e.message);
   }
 
+  // one-time sweep of mods installed before the schema engine existed: they still carry a
+  // stale item table and a stale localization copy inside their VPK
+  try {
+    const m = schemaService.migrate();
+    if (m.changed) diag(`schema migrate: ${m.changed}/${m.scanned} mods cleaned, ${m.deltas} blocks, ~${m.freedMB} MB freed`);
+  } catch (e) {
+    diag('schema migrate skipped: ' + e.message);
+  }
+
   // a Dota update overwrites the patched gameinfo and moves the item table: put both
   // back before the user gets a chance to launch the game with a half-applied setup
   try {
@@ -369,6 +378,7 @@ const PRESENCE_VIEWS = {
   catalog: 'Смотрит каталог модов',
   library: 'В своей библиотеке',
   presets: 'Собирает пресет',
+  cosmetics: 'Выбирает косметику',
   tools: 'В инструментах',
   guides: 'Читает гайды',
   settings: 'В настройках',
@@ -1049,7 +1059,9 @@ function registerIpc() {
       if (rec.categoryId !== 'imported') return rec;
       try {
         const a = installer.analyzeRecord(rec) || {};
-        const matches = a.fp ? fingerprints.match(a.fp) : null;
+        // fpOriginal: the file was repacked to drop the whole-game tables it shipped, so
+        // match on what it hashed to before that, or a recognised mod becomes unknown
+        const matches = fingerprints.match(rec.fpOriginal || a.fp);
         // one-time: give bare "pakNN" imports a real name — the catalog name if the file
         // is recognised, otherwise the content (hero / set / kind)
         if (/^!?pak\d+$/i.test(rec.name)) {
@@ -1068,7 +1080,16 @@ function registerIpc() {
     // the renderer re-lists after every install, toggle, preset and bulk action, so this is
     // the one place that keeps the Discord status honest without hooking a dozen handlers
     refreshPresence();
-    return { installed, external, slots, slotCeil: 98, conflicts };
+    // The lifted item blocks are only ever needed in the main process; the renderer just
+    // shows that a mod has them, and whether the patch that makes them work is on. Copies,
+    // never the stored records — dropping the field off those would erase it on save.
+    const schemaOn = schemaService.state().enabled;
+    const listed = installed.map((rec) => {
+      if (!Array.isArray(rec.schema)) return rec;
+      const { schema, ...rest } = rec;
+      return { ...rest, schemaCount: schema.length, schemaLive: schemaOn };
+    });
+    return { installed: listed, external, slots, slotCeil: 98, conflicts };
   });
 
   // ----- launch + master mods switch -----
@@ -1104,6 +1125,8 @@ function registerIpc() {
   // Free cosmetics are generated from the installed game's own schema, so a weather or
   // courier Valve ships later appears in the list without an app update.
   ipcMain.handle('cosmetics:options', (e, slot) => schemaService.cosmetics(slot));
+
+  ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
 
   ipcMain.handle('cosmetics:set', (e, slot, donorId) => schemaService.setCosmetic(slot, donorId));
 

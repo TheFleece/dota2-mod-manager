@@ -181,12 +181,13 @@ function baseItemFor(text, slot) {
 /**
  * What can be put on that base item, read straight out of the installed game: anything Valve
  * adds to the schema later shows up on its own, without an app update.
- * @returns {Array<{id, name, itemName, image}>}
+ * @returns {Array<{id, name}>}  name is the schema's own English name, sorted A-Z
  */
 function cosmeticOptions(text, slot) {
   return listItems(text)
     .filter((i) => slotOf(i) === slot && !i.baseitem && i.hasVisuals && i.name)
-    .map((i) => ({ id: i.id, name: i.name, itemName: i.itemName, image: i.image }));
+    .map((i) => ({ id: i.id, name: i.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // ---------- reading the game's own schema ----------

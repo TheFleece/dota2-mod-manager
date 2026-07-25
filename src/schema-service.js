@@ -22,6 +22,20 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
   const backupDir = path.join(userDataDir, 'backups', 'patch');
   const gamePath = () => settings.get('dotaGamePath');
 
+  // The game's table is 50 MB and walking its 25k items costs ~300 ms, while the picker
+  // asks about a dozen slots in a row. Hold on to the text until the game itself changes:
+  // the stamp is a stat() of the paks, so noticing an update stays cheap.
+  let cache = { stamp: null, text: null };
+  function vanilla() {
+    const game = gamePath();
+    let stamp = null;
+    try { stamp = schema.gameSchemaStamp(game); } catch { /* fall through to a fresh read */ }
+    if (stamp && cache.stamp === stamp) return cache.text;
+    const text = schema.readGameSchema(game).text;
+    cache = { stamp, text };
+    return text;
+  }
+
   // Enabled mods' lifted item blocks + the free cosmetics the user picked.
   function patches(vanillaText) {
     const out = [];
@@ -109,14 +123,60 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     const game = gamePath();
     if (!game || !rec || !Array.isArray(rec.files)) return null;
     try {
-      const vanilla = schema.readGameSchema(game).text;
-      const { deltas, stripped } = installer.harvestSchema(rec.files, vanilla);
+      // Repacking changes the file, and with it the fingerprint the catalog is matched by.
+      // Keep the original so a recognised mod does not turn into an unknown one.
+      let fpBefore = null;
+      try { fpBefore = (installer.analyzeRecord(rec) || {}).fp || null; } catch { /* not a vpk record */ }
+      const { deltas, stripped } = installer.harvestSchema(rec.files, vanilla());
       if (!deltas.length && !stripped.length) return null;
       const fields = { files: rec.files };
       if (deltas.length) fields.schema = deltas;
+      if (stripped.length && fpBefore) fields.fpOriginal = fpBefore;
       library.update(rec.id, fields);
       return { deltas: deltas.length, stripped: stripped.length };
     } catch { return null; }
+  }
+
+  /**
+   * Mods installed before this existed still carry the whole-game tables inside their VPK:
+   * a stale item schema (dead weight) and a stale localization copy (which outranks the
+   * game's own and rolls UI text back to whenever the mod was built). Sweep them once.
+   * @returns {{ scanned: number, changed: number, deltas: number, freedMB: number }}
+   */
+  function migrate() {
+    const game = gamePath();
+    const out = { scanned: 0, changed: 0, deltas: 0, freedMB: 0 };
+    if (!game) return out;
+    for (const rec of library.list()) {
+      if (rec.kind === 'pack' || Array.isArray(rec.schema) || rec.schemaChecked) continue;
+      if (!Array.isArray(rec.files) || !rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath))) continue;
+      out.scanned++;
+      let before = 0;
+      try { before = installer.installedSize(rec); } catch { /* size is only for the log line */ }
+      const res = harvest(rec);
+      // remember that this record was looked at, so a clean mod is not re-scanned every start
+      if (!res) { library.update(rec.id, { schemaChecked: true }); continue; }
+      out.changed++;
+      out.deltas += res.deltas;
+      try { out.freedMB += Math.max(0, before - installer.installedSize(rec)) / 1048576; } catch { /* noop */ }
+      library.update(rec.id, { schemaChecked: true });
+    }
+    out.freedMB = Math.round(out.freedMB);
+    return out;
+  }
+
+  // Two mods changing the same item block: only one of them can be in the built table
+  // (the one installed later), so the library has to say so instead of quietly dropping one.
+  function conflicts() {
+    const byId = new Map();
+    for (const rec of library.list()) {
+      if (rec.enabled === false || !Array.isArray(rec.schema)) continue;
+      for (const d of rec.schema) {
+        if (!byId.has(d.id)) byId.set(d.id, { id: d.id, name: d.name, mods: [] });
+        byId.get(d.id).mods.push(rec.name);
+      }
+    }
+    return [...byId.values()].filter((c) => c.mods.length > 1);
   }
 
   function state() {
@@ -131,6 +191,7 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
       stale: false,
       mods: library.list().filter((r) => r.enabled !== false && Array.isArray(r.schema) && r.schema.length).length,
       cosmetics: settings.get('cosmetics') || {},
+      conflicts: conflicts(),
     };
     if (!game) return out;
     try {
@@ -148,7 +209,7 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     const game = gamePath();
     if (!game) return { options: [] };
     try {
-      const text = schema.readGameSchema(game).text;
+      const text = vanilla();
       const base = schema.baseItemFor(text, slot);
       return {
         options: schema.cosmeticOptions(text, slot),
@@ -160,6 +221,34 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     }
   }
 
+  /**
+   * Every slot that has both a free "base item" and something to put on it, in one call.
+   * The list comes from the installed game, so a slot Valve adds later appears by itself.
+   * @returns {{ slots: Array<{slot, base, picked, options}> }}
+   */
+  function cosmeticSlots() {
+    const game = gamePath();
+    if (!game) return { slots: [] };
+    try {
+      const text = vanilla();
+      const picks = settings.get('cosmetics') || {};
+      const bases = schema.listItems(text).filter((i) => i.baseitem);
+      const seen = new Set();
+      const slots = [];
+      for (const base of bases) {
+        const slot = base.slot || base.prefab || '';
+        if (!slot || seen.has(slot)) continue;
+        seen.add(slot);
+        const options = schema.cosmeticOptions(text, slot);
+        if (!options.length) continue;
+        slots.push({ slot, base: base.id, picked: picks[slot] || null, options });
+      }
+      return { slots };
+    } catch (err) {
+      return { slots: [], error: String(err.message || err) };
+    }
+  }
+
   function setCosmetic(slot, donorId) {
     const picks = { ...(settings.get('cosmetics') || {}) };
     if (donorId) picks[slot] = String(donorId);
@@ -168,7 +257,7 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     return { ok: true, ...refresh() };
   }
 
-  return { backupDir, patches, refresh, heal, setEnabled, harvest, state, cosmetics, setCosmetic };
+  return { backupDir, patches, refresh, heal, setEnabled, harvest, migrate, state, cosmetics, cosmeticSlots, setCosmetic };
 }
 
 module.exports = { createSchemaService };
