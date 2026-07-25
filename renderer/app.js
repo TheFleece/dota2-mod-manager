@@ -136,6 +136,7 @@ async function toggleFavorite(cat, name) {
 function favoriteMods() {
   const out = [];
   for (const key of state.favorites) {
+    if (key.startsWith(COSMETIC_PREFIX)) continue; // a look, not a mod — see favoriteCosmetics()
     const cut = key.indexOf('|');
     if (cut < 0) continue;
     const mod = findModByName(key.slice(0, cut), key.slice(cut + 1));
