@@ -1006,7 +1006,7 @@ class Installer {
     return parts.map((part) => {
       const pakName = this.allocatePak(used, false);
       this.writeInto(part.buf, path.join(lang, pakName));
-      return { hero: part.name, name: part.name, files: [{ root: 'lang', relPath: pakName }] };
+      return { hero: part.name, name: part.name, paths: part.paths, files: [{ root: 'lang', relPath: pakName }] };
     });
   }
 

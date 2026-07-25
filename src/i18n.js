@@ -86,7 +86,6 @@ const EN = {
   'gameinfo.gi: не найдены строки Game/Mod dota': 'gameinfo.gi: no "Game dota" / "Mod dota" lines',
   'gameinfo_branchspecific.gi: блок FileSystem не найден': 'gameinfo_branchspecific.gi: no FileSystem block',
   'gameinfo_branchspecific.gi: блок FileSystem не закрыт': 'gameinfo_branchspecific.gi: FileSystem block is not closed',
-  'Резервная копия gameinfo уже пропатчена - удалите её и восстановите файл игры': 'The gameinfo backup is already patched: delete it and restore the game file',
   'Dota не знает такого языка': 'Dota does not know that language',
   'Сначала закрой Dota 2 — она перезапишет настройку при выходе':
     'Close Dota 2 first, it overwrites this setting on exit',

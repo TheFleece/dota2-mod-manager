@@ -118,6 +118,49 @@ function patchedBranch(branchText, block) {
 }
 
 /**
+ * Undo our own insertion in a gameinfo file, byte for byte. patchedBranch() adds exactly
+ * "\t\t" + <SearchPaths block> + "\r\n\t" before the FileSystem closing brace, so cutting
+ * that range gives back the file the game shipped.
+ *
+ * Used wherever a patched file could be mistaken for an original: a backup taken while the
+ * patch was already applied would otherwise be useless, and telling the user to go repair
+ * game files by hand is not an answer the app is allowed to give.
+ */
+function stripPatch(text) {
+  let out = text;
+  for (let guard = 0; guard < 8 && out.includes(MARKER); guard++) {
+    const mark = out.indexOf(MARKER);
+    const kw = out.lastIndexOf('SearchPaths', mark);
+    if (kw === -1) break;
+    const open = out.indexOf('{', kw);
+    if (open === -1) break;
+    let depth = 0;
+    let end = -1;
+    for (let i = open; i < out.length; i++) {
+      if (out[i] === '{') depth++;
+      else if (out[i] === '}') { depth--; if (!depth) { end = i + 1; break; } }
+    }
+    if (end === -1) break;
+    const start = out.startsWith('\t\t', kw - 2) ? kw - 2 : kw;
+    if (out.startsWith('\r\n\t', end)) end += 3;
+    else if (out.startsWith('\n\t', end)) end += 2;
+    out = out.slice(0, start) + out.slice(end);
+  }
+  return out;
+}
+
+// Same for the signature list: our line is appended after the DIGEST line, so anything of
+// ours past that point comes off and the file the game shipped is left behind.
+function stripSignatures(text) {
+  const lines = text.split(/\r?\n/);
+  const digest = lines.findIndex((l) => l.startsWith('DIGEST:'));
+  if (digest === -1) return text;
+  const kept = lines.filter((l, i) => i <= digest || !l.startsWith(SIG_PREFIX + '~'));
+  while (kept.length && !kept[kept.length - 1].trim()) kept.pop();
+  return kept.join('\r\n') + '\r\n';
+}
+
+/**
  * What the install looks like right now.
  * @returns {{ patched: boolean, signed: boolean, folder: string|null, foreign: string|null }}
  */
@@ -140,10 +183,16 @@ function state(gamePath, folder) {
   return out;
 }
 
-function backupOnce(file, backupDir) {
+// Store the pristine file. If the only copy we can reach is already patched (a backup lost
+// between runs, a second tool, a crash mid-write), our own edit is undone first so what
+// lands in the backup is still what the game shipped.
+function backupOnce(file, backupDir, clean) {
   fs.mkdirSync(backupDir, { recursive: true });
   const dest = path.join(backupDir, path.basename(file) + '.orig');
-  if (!fs.existsSync(dest)) fs.copyFileSync(file, dest);
+  if (!fs.existsSync(dest)) {
+    const raw = fs.readFileSync(file, 'latin1');
+    fs.writeFileSync(dest, Buffer.from(clean(raw), 'latin1'));
+  }
   return dest;
 }
 
@@ -177,21 +226,20 @@ function apply({ gamePath, folder, backupDir }) {
   for (const f of [p.gameinfo, p.branch, p.signatures]) {
     if (!fs.existsSync(f)) throw new Error(t('Не найден {0}', f));
   }
-  backupOnce(p.branch, backupDir);
-  backupOnce(p.signatures, backupDir);
+  backupOnce(p.branch, backupDir, stripPatch);
+  backupOnce(p.signatures, backupDir, stripSignatures);
 
-  // Always start from the pristine copies so patches never stack.
-  const branchOrig = fs.readFileSync(path.join(backupDir, path.basename(p.branch) + '.orig'), 'latin1');
-  const sigOrig = fs.readFileSync(path.join(backupDir, path.basename(p.signatures) + '.orig'), 'latin1');
-  if (branchOrig.includes(MARKER)) throw new Error(t('Резервная копия gameinfo уже пропатчена - удалите её и восстановите файл игры'));
+  // Always start from the pristine copies so patches never stack. A backup that somehow
+  // carries our edit is cleaned rather than refused - the user has nothing to fix by hand.
+  const branchOrig = stripPatch(fs.readFileSync(path.join(backupDir, path.basename(p.branch) + '.orig'), 'latin1'));
+  const sigOrig = stripSignatures(fs.readFileSync(path.join(backupDir, path.basename(p.signatures) + '.orig'), 'latin1'));
 
   const block = withModFolder(searchPathsBlock(fs.readFileSync(p.gameinfo, 'latin1')), folder);
   const branchBuf = Buffer.from(patchedBranch(branchOrig, block), 'latin1');
   writeAtomic(p.branch, branchBuf);
 
   const line = signatureLine(branchBuf);
-  const kept = sigOrig.split(/\r?\n/).filter((l) => !l.startsWith(SIG_PREFIX + '~') || sigOrig.indexOf(l) < sigOrig.indexOf('DIGEST:'));
-  writeAtomic(p.signatures, Buffer.from(kept.join('\r\n').replace(/\s+$/, '') + '\r\n' + line + '\r\n', 'latin1'));
+  writeAtomic(p.signatures, Buffer.from(sigOrig.replace(/\s+$/, '') + '\r\n' + line + '\r\n', 'latin1'));
 
   fs.mkdirSync(path.join(gamePath, folder), { recursive: true });
   return state(gamePath, folder);
@@ -200,9 +248,11 @@ function apply({ gamePath, folder, backupDir }) {
 // Put the originals back and drop the folder if it is empty.
 function revert({ gamePath, folder, backupDir }) {
   const p = paths(gamePath);
-  for (const f of [p.branch, p.signatures]) {
+  for (const [f, clean] of [[p.branch, stripPatch], [p.signatures, stripSignatures]]) {
     const src = path.join(backupDir, path.basename(f) + '.orig');
-    if (fs.existsSync(src)) writeAtomic(f, fs.readFileSync(src));
+    if (!fs.existsSync(src)) continue;
+    // a backup that carries our edit still restores a clean file
+    writeAtomic(f, Buffer.from(clean(fs.readFileSync(src, 'latin1')), 'latin1'));
   }
   if (folder) {
     const dir = path.join(gamePath, folder);
@@ -220,6 +270,8 @@ module.exports = {
   searchPathsBlock,
   withModFolder,
   patchedBranch,
+  stripPatch,
+  stripSignatures,
   state,
   apply,
   revert,

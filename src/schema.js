@@ -249,8 +249,15 @@ function reindent(block, indent) {
   return out.trimStart();
 }
 
-// Asset paths a mod ships, in the form items_game refers to them: lowercase, no _c.
-function ownedAssetNeedles(vpkPaths) {
+/**
+ * Asset paths a mod ships, in the form items_game refers to them: lowercase, no _c.
+ * @param {string[]} vpkPaths
+ * @param {{ roots?: boolean }} [opts]  roots: also match Skinchanger's numeric content
+ *   root as a whole. Right for "did this mod change that block", wrong when splitting a
+ *   pack per hero — there the root is shared by every hero in it.
+ */
+function ownedAssetNeedles(vpkPaths, opts = {}) {
+  const withRoots = opts.roots !== false;
   const out = new Set();
   for (const p of vpkPaths) {
     const clean = p.toLowerCase().replace(/"+$/, '').replace(/_c$/, '');
@@ -259,9 +266,16 @@ function ownedAssetNeedles(vpkPaths) {
     if (/^(scripts\/|resource\/|panorama\/styles\/|materials\/default\/)/.test(clean)) continue;
     out.add(clean);
     const root = clean.split('/')[0];
-    if (/^\d{3,}$/.test(root)) out.add(root + '/'); // Skinchanger's numeric content root
+    if (withRoots && /^\d{3,}$/.test(root)) out.add(root + '/');
   }
   return [...out];
+}
+
+// Does an item block talk about any of these files? Used when a multi-hero pack is split:
+// each part keeps only the blocks that belong to its own assets.
+function blockUsesAssets(blockText, vpkPaths) {
+  const hay = blockText.toLowerCase();
+  return ownedAssetNeedles(vpkPaths, { roots: false }).some((n) => hay.includes(n));
 }
 
 /**
@@ -470,6 +484,7 @@ module.exports = {
   itemFields,
   extractDeltas,
   ownedAssetNeedles,
+  blockUsesAssets,
   baseItemPatch,
   mergeSchema,
   validateSchema,

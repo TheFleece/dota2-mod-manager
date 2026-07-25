@@ -323,6 +323,23 @@ function registerImportResults(results) {
     // keep the item blocks they changed, drop the tables (see installer.harvestSchema)
     const harvest = schemaService.harvest(rec);
     if (harvest && harvest.deltas) needSchema = true;
+    // …and they can hold several heroes at once. One mod per hero, each with its own files
+    // and its own item blocks, so they can be turned on and off separately.
+    let parts = null;
+    try {
+      const fresh = library.find(rec.id) || rec;
+      const heroes = (installer.analyzeRecord(fresh) || {}).heroes || 0;
+      // a curated collection of a dozen heroes would eat a dozen pak slots, so only the
+      // small exports split by themselves - bigger ones keep the manual "Split" button
+      if (heroes >= 2 && heroes <= 4) parts = schemaService.split(fresh);
+    } catch { /* a pack that will not split stays one mod */ }
+    if (parts && parts.length) {
+      for (const p of parts) {
+        imported.push({ name: p.name, relPath: p.files[0].relPath, merged: 0, conflicts: [], fromSplit: rec.name });
+        if (Array.isArray(p.schema) && p.schema.length) needSchema = true;
+      }
+      continue;
+    }
     // best-effort warning: does the new file overlap other enabled mods?
     let conflicts = [];
     try {
@@ -1205,15 +1222,13 @@ function registerIpc() {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
     try {
-      const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
-      if (!dir) return { error: t('Нет _dir.vpk для разбора') };
-      const parts = installer.splitVpkFile(dir.relPath);
-      if (!parts.length) return { error: t('В файле меньше двух героев — разбирать нечего') };
-      for (const p of parts) {
-        library.add({ name: p.name, categoryId: 'imported', styleLabel: null, fileRef: rec.name, preview: null, files: p.files });
+      if (!rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath))) {
+        return { error: t('Нет _dir.vpk для разбора') };
       }
-      installer.remove(rec.files);
-      library.removeRecord(id);
+      // the service splits the files AND hands each part the item blocks that belong to it
+      const parts = schemaService.split(rec);
+      if (!parts || !parts.length) return { error: t('В файле меньше двух героев — разбирать нечего') };
+      if (parts.some((p) => Array.isArray(p.schema) && p.schema.length)) schemaService.refresh();
       return { ok: true, count: parts.length, names: parts.map((p) => p.name) };
     } catch (err) {
       return { error: String(err.message || err) };

@@ -246,6 +246,17 @@ function slotFromModelStem(hero, stem) {
 
 const HERO_MODEL_RE = /^models\/heroes\/([a-z0-9_]+)\/(.+)$/;
 const HERO_PARTICLE_RE = /^particles\/units\/heroes\/hero_([a-z0-9_]+)\//;
+// Dota 2 Skinchanger writes its own content root named after the cart: "8213/heroes/<hero>/"
+// and "8213/particles/<hero>/". Those two are as canonical as Valve's own layout, unlike the
+// free-form folders authors put under materials/ — so they count, and only under a numeric
+// root, where the name after it can only be a hero.
+const CART_MODEL_RE = /^\d{3,}\/heroes\/([a-z0-9_]+)\/(.+)$/;
+const CART_PARTICLE_RE = /^\d{3,}\/particles\/([a-z0-9_]+)\//;
+// folder names that sit where a hero name would but are not one
+const NON_HERO_FOLDER = new Set([
+  'misc', 'common', 'shared', 'econ', 'items', 'generic', 'ui', 'props',
+  'weather', 'ambient', 'effects', 'base', 'default', 'error', 'test',
+]);
 
 /**
  * Classify what a mod's inner path list actually changes.
@@ -259,7 +270,7 @@ function analyzeVpkPaths(paths) {
     return heroes.get(id);
   };
   for (const p of paths) {
-    let m = HERO_MODEL_RE.exec(p);
+    let m = HERO_MODEL_RE.exec(p) || CART_MODEL_RE.exec(p);
     if (m) {
       const h = hero(m[1]);
       if (/\.vmdl_c$/.test(p)) {
@@ -270,8 +281,8 @@ function analyzeVpkPaths(paths) {
       }
       continue;
     }
-    m = HERO_PARTICLE_RE.exec(p);
-    if (m) hero(m[1]);
+    m = HERO_PARTICLE_RE.exec(p) || CART_PARTICLE_RE.exec(p);
+    if (m && !NON_HERO_FOLDER.has(m[1])) hero(m[1]);
   }
   // authors sometimes use both the canonical folder (nerubian_assassin) and a custom
   // alias (nyx_assassin) for the same hero — merge entries that resolve to one name.
@@ -577,9 +588,16 @@ function splitVpkByHero(dirPath, archivePathFor) {
   const heroes = analyzeVpkPaths(paths).heroes;
   if (heroes.length < 2) return [];
   const ids = heroes.map((h) => h.id);
+  // Canonical layouts first. Then any folder named after a hero we already found in this
+  // pack: Skinchanger writes its own content root ("8213/particles/morphling/…"), and
+  // without this those files would be copied into every part instead of just that hero's.
   const ownerOf = (p) => ids.find((id) =>
     p.includes(`/heroes/${id}/`) || p.startsWith(`heroes/${id}/`) ||
-    p.includes(`/hero_${id}/`) || p.startsWith(`hero_${id}/`)) || null;
+    p.includes(`/hero_${id}/`) || p.startsWith(`hero_${id}/`))
+    || ids.find((id) => p.includes(`/${id}/`) || p.startsWith(`${id}/`))
+    // ability icons and the like are named after their hero rather than filed under it
+    || ids.find((id) => (p.split('/').pop() || '').startsWith(`${id}_`))
+    || null;
 
   const buckets = new Map(ids.map((id) => [id, []]));
   const shared = [];
@@ -587,7 +605,17 @@ function splitVpkByHero(dirPath, archivePathFor) {
     const owner = ownerOf(paths[i]);
     if (owner) buckets.get(owner).push(en); else shared.push(en);
   });
-  return heroes.map((h) => ({ id: h.id, name: h.name, buf: buildVpk([...buckets.get(h.id), ...shared]) }));
+  return heroes.map((h) => {
+    const own = buckets.get(h.id);
+    return {
+      id: h.id,
+      name: h.name,
+      buf: buildVpk([...own, ...shared]),
+      // what this part actually owns — the caller hands each part the item-schema blocks
+      // that talk about its own files
+      paths: own.map(entryPath),
+    };
+  });
 }
 
 // Content fingerprint of a mod: sha1 over its sorted (path:crc) index. Independent of

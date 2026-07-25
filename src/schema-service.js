@@ -138,6 +138,43 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
   }
 
   /**
+   * A Skinchanger export can hold several heroes at once - its packer bundles whatever was
+   * in the cart, so a "Grimstroke" pack may also carry Morphling's files and the item block
+   * that goes with them. Split such a record into one mod per hero and hand each part the
+   * blocks that talk about its own files.
+   * @returns {Array<object>|null} the new records, or null when there was nothing to split
+   */
+  function split(rec) {
+    const dir = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+    if (!dir) return null;
+    let parts;
+    try { parts = installer.splitVpkFile(dir.relPath); } catch { return null; }
+    if (!parts.length) return null;
+
+    const blocks = Array.isArray(rec.schema) ? rec.schema : [];
+    const added = [];
+    for (const part of parts) {
+      const mine = blocks.filter((b) => schema.blockUsesAssets(b.block, part.paths || []));
+      const created = library.add({
+        name: part.name,
+        categoryId: 'imported',
+        styleLabel: null,
+        fileRef: rec.fileRef || rec.name,
+        preview: null,
+        files: part.files,
+      });
+      const fields = { schemaChecked: true };
+      if (mine.length) fields.schema = mine;
+      if (rec.fpOriginal) fields.fpOriginal = rec.fpOriginal;
+      library.update(created.id, fields);
+      added.push({ ...created, ...fields });
+    }
+    installer.remove(rec.files);
+    library.removeRecord(rec.id);
+    return added;
+  }
+
+  /**
    * Mods installed before this existed still carry the whole-game tables inside their VPK:
    * a stale item schema (dead weight) and a stale localization copy (which outranks the
    * game's own and rolls UI text back to whenever the mod was built). Sweep them once.
@@ -264,7 +301,7 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     return { ok: true, ...refresh() };
   }
 
-  return { backupDir, patches, refresh, heal, setEnabled, harvest, migrate, state, cosmetics, cosmeticSlots, setCosmetic };
+  return { backupDir, patches, refresh, heal, setEnabled, harvest, split, migrate, state, cosmetics, cosmeticSlots, setCosmetic };
 }
 
 module.exports = { createSchemaService };
