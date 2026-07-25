@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('api', {
     list: () => ipcRenderer.invoke('mods:list'),
     setEnabled: (id, enabled) => ipcRenderer.invoke('mods:setEnabled', id, enabled),
     remove: (id) => ipcRenderer.invoke('mods:remove', id),
+    raise: (id) => ipcRenderer.invoke('mods:raise', id),
     externalSetEnabled: (fileName, enabled) => ipcRenderer.invoke('mods:externalSetEnabled', fileName, enabled),
     externalRemove: (fileName) => ipcRenderer.invoke('mods:externalRemove', fileName),
     checkConflicts: (payload) => ipcRenderer.invoke('mods:checkConflicts', payload),

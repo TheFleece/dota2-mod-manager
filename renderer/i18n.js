@@ -27,6 +27,7 @@ window.EN_PLURAL = {
   'слотов': ['slot', 'slots'],
   'файлов опознаны': ['file recognized', 'files recognized'],
   'модов конфликтуют': ['mod conflicts', 'mods conflict'],
+  'модов делят': ['mod shares', 'mods share'],
   'модов из каталога': ['mod from the catalog', 'mods from the catalog'],
   'своих модов': ['mod of your own', 'mods of your own'],
   'модов не получится передать': ['mod cannot be shared', 'mods cannot be shared'],
@@ -199,10 +200,10 @@ const EN = {
 
   // ---------- install / conflicts ----------
   ' (и ещё {0})': ' (and {0} more)',
-  'оба меняют {0}': 'both change {0}',
-  'перекрываются {0} {1}': 'overlap on {0} {1}',
-  '«{0}» и уже установленный «{1}»{2} конфликтуют — {3}. Одновременно работать не будут, победит тот, что грузится приоритетнее. Установить всё равно?':
-    '«{0}» and the already-installed «{1}»{2} conflict — {3}. They won’t work at the same time; whichever loads with higher priority wins. Install anyway?',
+  'оба дают {0}': 'both supply {0}',
+  'общих файлов: {0}': 'shared files: {0}',
+  '«{0}» и уже установленный «{1}»{2} дают одни и те же файлы — {3}. Оба останутся включёнными: «{4}» встанет сверху, в игре будет его версия этих файлов. Поменять порядок можно в Библиотеке.':
+    '«{0}» and the already-installed «{1}»{2} supply the same files — {3}. Both stay on: «{4}» goes on top, so its version of those files is what the game shows. You can change the order in the Library.',
   '{0} установлен': '{0} installed',
   '{0} установлен — «{1}» выключен: курсор в игре может быть только один':
     '{0} installed — «{1}» switched off: the game can only show one cursor',
@@ -332,11 +333,22 @@ const EN = {
   'Не удалось прочитать перетащенные файлы': 'Could not read the dropped files',
   'Не удалось прочитать перетащенную папку': 'Could not read the dropped folder',
 
-  // ---------- conflicts ----------
-  'конфликт': 'conflict',
-  'Меняет те же файлы, что и: {0}': 'Changes the same files as: {0}',
-  ' — меняют одни и те же файлы игры. Загрузится только один из пары, выключи лишний.':
-    ' — they change the same game files. Only one of each pair loads, turn the other off.',
+  // ---------- overlapping mods (load order) ----------
+  'общие файлы': 'shared files',
+  'сверху': 'on top',
+  'перекрыт': 'covered',
+  'Наверх': 'Move up',
+  'Эти файлы берутся из «{0}» — он грузится раньше. «Наверх» поменяет их местами.':
+    'Those files come from «{0}» — it loads first. "Move up" swaps the two.',
+  'Общие файлы берутся отсюда, поверх «{0}»': 'The shared files come from here, over «{0}»',
+  'Общие файлы с «{0}» — порядок решает игра': 'Files shared with «{0}» — the game decides the order',
+  'Загружать раньше «{0}» — общие файлы будут браться из этого мода':
+    'Load before «{0}» — the shared files will come from this mod',
+  '«{0}» теперь сверху — общие файлы берутся из него': '«{0}» is on top now — the shared files come from it',
+  ' файлы игры с другими — это нормально: работает тот, что сверху, остальные копии этих файлов игра не читает. Так предмет из каталога надевается поверх сета на героя. Кнопка «Наверх» меняет, кто сверху.':
+    ' game files with others — which is fine: the one on top supplies them and the game never reads the other copies. That is how an item from the catalog is worn over a hero set. The "Move up" button changes who is on top.',
+  '«<b>{0}</b>» поверх «<b>{1}</b>»': '«<b>{0}</b>» over «<b>{1}</b>»',
+  '«<b>{0}</b>» и «<b>{1}</b>» — порядок решает игра': '«<b>{0}</b>» and «<b>{1}</b>» — the game decides the order',
   'и': 'and',
   'и ещё {0}': 'and {0} more',
   'Включено': 'Enabled', 'Выключено': 'Disabled',

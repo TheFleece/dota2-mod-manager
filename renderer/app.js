@@ -1745,14 +1745,18 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   state.installing.add(k);
   if (modalState) drawModal();
   const chk = await window.api.mods.checkConflicts({ categoryId, name: mod.name, fileRef });
-  if (chk.conflicts?.length) {
+  // Overlapping another mod is not a dead end: both stay on, and the one that loads first
+  // supplies the files they share. A fresh install is what the user is looking at right
+  // now, so it goes on top — that is what makes "these arms over that set" one click.
+  const overlaps = chk.conflicts?.length > 0;
+  if (overlaps) {
     const c = chk.conflicts[0];
     const rest = chk.conflicts.length > 1 ? L` (и ещё ${chk.conflicts.length - 1})` : '';
     const what = c.summary
-      ? L`оба меняют ${c.summary}`
-      : L`перекрываются ${c.count} ${plural(c.count, 'файл', 'файла', 'файлов')}`;
+      ? L`оба дают ${c.summary}`
+      : L`общих файлов: ${c.count}`;
     const proceed = await confirmDialog(
-      L`«${mod.name}» и уже установленный «${c.name}»${rest} конфликтуют — ${what}. Одновременно работать не будут, победит тот, что грузится приоритетнее. Установить всё равно?`,
+      L`«${mod.name}» и уже установленный «${c.name}»${rest} дают одни и те же файлы — ${what}. Оба останутся включёнными: «${mod.name}» встанет сверху, в игре будет его версия этих файлов. Поменять порядок можно в Библиотеке.`,
       { okLabel: L`Установить`, danger: false }
     );
     if (!proceed) {
@@ -1766,6 +1770,9 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
     }
   }
   const r = await window.api.mods.install({ categoryId, name: mod.name, styleLabel, fileRef, preview });
+  // hand the fresh mod the top of the stack it just joined (a no-op when it is there
+  // already, which it usually is — item categories install into the priority slots)
+  if (r.ok && overlaps && r.record) await window.api.mods.raise(r.record.id);
   state.installing.delete(k);
   if (r.error && !r.already) toast(`${mod.name}: ${r.error}`, 'error', 6000);
   else if (r.replaced?.length) toast(L`${mod.name} установлен — «${r.replaced.join(', ')}» выключен: курсор в игре может быть только один`, 'warn', 7000);
@@ -1868,14 +1875,14 @@ function packRowHtml(rec, i, masterOff) {
   const members = rec.members || [];
   const onCount = members.filter((m) => m.enabled).length;
   const langDir = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
-  const clash = conflictPartners(rec.id);
+  const ov = overlapPartners(rec.id);
   return `
-    <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''} ${clash.length ? 'conflict' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
+    <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''} ${ov.even.length ? 'conflict' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
       <input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать пак`}">
       <button class="pack-expand ${open ? 'open' : ''}" data-expand="${esc(rec.id)}" aria-expanded="${open}" aria-label="${L`Развернуть состав пака`}"><span class="ms">chevron_right</span></button>
       ${packThumbGridHtml(rec)}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">${L`Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}`}</span>${clash.length ? ` <span class="lib-tag conflict" title="${esc(L`Меняет те же файлы, что и: ${clash.join(', ')}`)}"><span class="ms">warning</span>${L`конфликт`}</span>` : ''}</div>
+        <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">${L`Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}`}</span>${overlapTagHtml(ov)}</div>
         <div class="lib-meta">
           <span>${L`${onCount} из ${members.length} включено`}</span>
           <span>${langDir ? esc(langDir.relPath) : L`пусто`}</span>
@@ -1883,6 +1890,7 @@ function packRowHtml(rec, i, masterOff) {
       </div>
       <div class="lib-actions">
         <button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить пак целиком`}" ${masterOff ? 'disabled' : ''}></button>
+        ${raiseBtnHtml(rec, ov)}
         <button class="btn btn-sm" data-addto="${esc(rec.id)}" title="${L`Добавить моды в пак`}"><span class="ms">add</span>${L`Добавить`}</button>
         <button class="btn btn-sm" data-disband="${esc(rec.id)}" title="${L`Разобрать пак обратно на отдельные моды`}"><span class="ms">call_split</span>${L`Разобрать`}</button>
         ${langDir ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить пак одним .vpk файлом (войдут включённые моды)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
@@ -1894,14 +1902,39 @@ function packRowHtml(rec, i, masterOff) {
     </div>`;
 }
 
-// names of the other enabled mods this one overwrites files of (empty = no clash)
-function conflictPartners(id) {
-  const out = [];
+// Mods this one shares game files with, split by who actually supplies them. The game
+// mounts the lower pak number first and that copy wins, so an overlap is a stack, not a
+// fight: `over` are the mods this one covers, `under` are the ones covering it.
+function overlapPartners(id) {
+  const over = [], under = [], even = [];
   for (const c of state.libConflicts) {
-    if (c.a.id === id) out.push(c.b.name);
-    else if (c.b.id === id) out.push(c.a.name);
+    const mine = c.a.id === id ? c.b : c.b.id === id ? c.a : null;
+    if (!mine) continue;
+    if (!c.winner) even.push(mine.name);
+    else if (c.winner === id) over.push(mine.name);
+    else under.push(mine.name);
   }
-  return out;
+  return { over, under, even };
+}
+
+// the row's stacking tag: covered by someone / covering someone / order left to the game
+function overlapTagHtml(ov) {
+  if (ov.under.length) {
+    return ` <span class="lib-tag under" title="${esc(L`Эти файлы берутся из «${ov.under.join('», «')}» — он грузится раньше. «Наверх» поменяет их местами.`)}"><span class="ms">layers</span>${L`перекрыт`}</span>`;
+  }
+  if (ov.over.length) {
+    return ` <span class="lib-tag over" title="${esc(L`Общие файлы берутся отсюда, поверх «${ov.over.join('», «')}»`)}"><span class="ms">layers</span>${L`сверху`}</span>`;
+  }
+  if (ov.even.length) {
+    return ` <span class="lib-tag conflict" title="${esc(L`Общие файлы с «${ov.even.join('», «')}» — порядок решает игра`)}"><span class="ms">warning</span>${L`общие файлы`}</span>`;
+  }
+  return '';
+}
+
+// "raise" button — only where it changes something: the mod is currently covered
+function raiseBtnHtml(rec, ov) {
+  if (!ov.under.length) return '';
+  return `<button class="btn btn-sm" data-raise="${esc(rec.id)}" title="${esc(L`Загружать раньше «${ov.under.join('», «')}» — общие файлы будут браться из этого мода`)}"><span class="ms">vertical_align_top</span>${L`Наверх`}</button>`;
 }
 
 // Mods that carry item-schema changes: their model installs like any other, but the
@@ -1917,7 +1950,7 @@ function normalRowHtml(rec, i, masterOff) {
   const cosmetic = isCosmeticRec(rec);
   const selectable = !isFontRec(rec);
   const selected = state.librarySel.has(rec.id);
-  const clash = conflictPartners(rec.id);
+  const ov = overlapPartners(rec.id);
   // own preview, else the catalog thumbnail if the file is recognised (so a matched
   // import shows an image right away, before it's even adopted); a cosmetic pick's
   // picture is fetched lazily by the same loader the catalog cards use
@@ -1926,13 +1959,13 @@ function normalRowHtml(rec, i, masterOff) {
   const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
   const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
   return `
-    <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''} ${clash.length ? 'conflict' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
+    <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''} ${ov.even.length ? 'conflict' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
       ${cosmetic
         ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms" style="font-size:20px;color:var(--text-faint)">${cosmeticMeta(rec.slot).icon}</span></div>`
         : prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : '<div class="lib-thumb"></div>'}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${clash.length ? ` <span class="lib-tag conflict" title="${esc(L`Меняет те же файлы, что и: ${clash.join(', ')}`)}"><span class="ms">warning</span>${L`конфликт`}</span>` : ''}${schemaTagHtml(rec)}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${overlapTagHtml(ov)}${schemaTagHtml(rec)}</div>
         <div class="lib-meta">
           <span>${esc(catLabel)}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
@@ -1943,6 +1976,7 @@ function normalRowHtml(rec, i, masterOff) {
         ${isFontRec(rec)
           ? `<span style="font-size:11.5px;color:var(--text-muted)">${L`всегда активен`}</span>`
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : cosmetic ? `title="${L`На один слот — только одна активная косметика`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
+        ${raiseBtnHtml(rec, ov)}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
         ${rec.heroes >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
         ${isCursorRec(rec)
@@ -2223,12 +2257,18 @@ async function renderLibrary() {
         <button class="btn btn-sm btn-primary" id="adoptAllBtn"><span class="ms">library_add_check</span>${L`Привязать все`}</button>
       </div>` : ''}
     ${clashPairs.length && !masterOff ? `
-      <div class="lib-banner warn conflict-banner">
-        <span class="ms">warning</span>
+      <div class="lib-banner info conflict-banner">
+        <span class="ms">layers</span>
         <div class="banner-body">
-          <b>${clashMods}</b> ${plural(clashMods, 'мод конфликтует', 'мода конфликтуют', 'модов конфликтуют')}${L` — меняют одни и те же файлы игры. Загрузится только один из пары, выключи лишний.`}
+          <b>${clashMods}</b> ${plural(clashMods, 'мод делит', 'мода делят', 'модов делят')}${L` файлы игры с другими — это нормально: работает тот, что сверху, остальные копии этих файлов игра не читает. Так предмет из каталога надевается поверх сета на героя. Кнопка «Наверх» меняет, кто сверху.`}
           <ul class="conflict-list">
-            ${shownPairs.map((c) => `<li>«<b>${esc(c.a.name)}</b>» ${L`и`} «<b>${esc(c.b.name)}</b>»<span class="conflict-count">${c.count} ${plural(c.count, 'общий файл', 'общих файла', 'общих файлов')}${c.summary ? ` · ${esc(c.summary)}` : ''}</span></li>`).join('')}
+            ${shownPairs.map((c) => {
+              const top = c.winner === c.b.id ? c.b : c.a;
+              const under = c.winner === c.b.id ? c.a : c.b;
+              return `<li>${c.winner
+                ? L`«<b>${esc(top.name)}</b>» поверх «<b>${esc(under.name)}</b>»`
+                : L`«<b>${esc(c.a.name)}</b>» и «<b>${esc(c.b.name)}</b>» — порядок решает игра`}<span class="conflict-count">${c.count} ${plural(c.count, 'общий файл', 'общих файла', 'общих файлов')}${c.summary ? ` · ${esc(c.summary)}` : ''}</span></li>`;
+            }).join('')}
             ${clashPairs.length > shownPairs.length ? `<li>${L`и ещё ${clashPairs.length - shownPairs.length}`}</li>` : ''}
           </ul>
         </div>
@@ -2413,8 +2453,18 @@ async function bindLibrary(external) {
       reRender();
       return;
     }
-    const el = e.target.closest('[data-expand],[data-id],[data-mtoggle],[data-mremove],[data-addto],[data-disband],[data-del],[data-export],[data-adopt],[data-split]');
+    const el = e.target.closest('[data-expand],[data-id],[data-mtoggle],[data-mremove],[data-addto],[data-disband],[data-del],[data-export],[data-adopt],[data-split],[data-raise]');
     if (!el) return;
+
+    if (el.dataset.raise) {
+      const rec = byId(el.dataset.raise);
+      el.disabled = true;
+      const r = await window.api.mods.raise(el.dataset.raise);
+      if (r.error) toast(r.error, 'error', 6000);
+      else toast(L`«${rec.name}» теперь сверху — общие файлы берутся из него`, 'ok', 5000);
+      reRender();
+      return;
+    }
 
     if (el.dataset.expand !== undefined && el.dataset.expand) {
       const id = el.dataset.expand;

@@ -242,6 +242,125 @@ class Installer {
     throw new Error(t('Свободных слотов pakNN не осталось (10-99 заняты)'));
   }
 
+  /**
+   * Map the .vpk files of an archive onto slots of ours: one slot per volume set - a
+   * "<base>_dir.vpk" index plus its "<base>_NNN.vpk" data archives - so a set stays whole
+   * and no foreign name reaches the game folder. It has to be a plan made up front rather
+   * than a rename per file, because the volumes only work under the index's own name.
+   *
+   * This is what the "!pakNN" prefix in Dota2PornFx cart archives runs into: it is a merge
+   * hint for VPKMerge, and a file called "!pak51_000.vpk" is one the game never mounts.
+   * @param {string[]} relPaths  .vpk paths inside the archive
+   * @returns {Map<string, string>} archive path -> file name in the language folder
+   */
+  planPakNames(relPaths, used, priority) {
+    const groups = new Map(); // "<folder>|<base>" -> [{ rel, part }]
+    for (const rel of relPaths) {
+      const name = rel.split('/').pop();
+      const folder = rel.slice(0, rel.length - name.length).toLowerCase();
+      const mDir = name.match(/^(.*)_dir\.vpk$/i);
+      const mPart = name.match(/^(.*)_(\d{3})\.vpk$/i);
+      const base = (mDir && mDir[1]) || (mPart && mPart[1]) || name.replace(/\.vpk$/i, '');
+      const key = `${folder}|${base.toLowerCase()}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ rel, part: mDir ? null : (mPart && mPart[2]) || null });
+    }
+    const plan = new Map();
+    for (const items of groups.values()) {
+      const slot = this.allocatePak(used, priority).replace(/_dir\.vpk$/i, '');
+      for (const it of items) plan.set(it.rel, it.part ? `${slot}_${it.part}.vpk` : `${slot}_dir.vpk`);
+    }
+    return plan;
+  }
+
+  // ---------- load order ----------
+  //
+  // The game mounts pakNN_dir.vpk in numeric order and the FIRST copy of a file wins, so a
+  // mod's pak number is its priority: a smaller number sits on top. That is what makes
+  // "put these arms over that hero set" a real thing rather than a conflict - both mods
+  // load, and the one on top supplies the files they share.
+
+  // The slot a record occupies ("pak07"), or null for mods that live outside a numbered
+  // pak (terrain maps, fonts, cursors).
+  slotBase(rec) {
+    const dir = (rec.files || []).find((f) => f.root === 'lang' && /^pak\d+_dir\.vpk$/i.test(f.relPath));
+    return dir ? dir.relPath.replace(/_dir\.vpk$/i, '').toLowerCase() : null;
+  }
+
+  slotNumber(rec) {
+    const base = this.slotBase(rec);
+    return base ? Number(base.slice(3)) : null;
+  }
+
+  // highest free slot strictly below `n`, so climbing over one mod does not eat the whole
+  // low range that the priority categories want
+  freeSlotBelow(n, used) {
+    for (let i = n - 1; i >= 2; i--) {
+      const base = `pak${String(i).padStart(2, '0')}`;
+      if (!used.has(`${base}_dir.vpk`)) return base;
+    }
+    return null;
+  }
+
+  /**
+   * Rename every pak file of a record to another slot, keeping .off/.moff state and the
+   * volume numbering of a multi-volume pack.
+   * @returns {Array<object>} the record's new files array (caller stores it)
+   */
+  moveToSlot(rec, newBase) {
+    const lang = this.langFolder();
+    const oldBase = this.slotBase(rec);
+    if (!oldBase) throw new Error(t('У мода нет слота pakNN'));
+    const mine = new RegExp(`^${oldBase}(_dir|_\\d{3})\\.vpk$`, 'i');
+    return (rec.files || []).map((f) => {
+      if (f.root !== 'lang' || !mine.test(f.relPath)) return f;
+      const next = newBase + f.relPath.slice(oldBase.length);
+      for (const suf of ['', '.off', MASTER_OFF]) {
+        const from = path.join(lang, f.relPath + suf);
+        if (fs.existsSync(from)) fs.renameSync(from, path.join(lang, next + suf));
+      }
+      return { ...f, relPath: next };
+    });
+  }
+
+  /**
+   * Put `rec` on top of the records it shares files with: take a free slot below them when
+   * there is one, otherwise trade places with whoever is on top now. pak00 is the parking
+   * spot for the trade - the game never mounts it, so a crash mid-swap leaves a file that
+   * is merely inactive, not one that fights for the same name.
+   * @param {object} rec        the record to raise
+   * @param {Array<object>} partners  records it overlaps with
+   * @returns {{ moved: Array<{ id: string, files: Array<object> }> }} records to save
+   */
+  raiseAbove(rec, partners) {
+    const mine = this.slotNumber(rec);
+    if (mine == null) throw new Error(t('У мода нет слота pakNN'));
+    const above = partners
+      .map((p) => ({ rec: p, n: this.slotNumber(p) }))
+      .filter((p) => p.n != null && p.n <= mine)
+      .sort((a, b) => a.n - b.n);
+    if (!above.length) return { moved: [] }; // already on top of every partner
+
+    const used = this.usedPakNames();
+    const free = this.freeSlotBelow(above[0].n, used);
+    if (free) return { moved: [{ id: rec.id, files: this.moveToSlot(rec, free) }] };
+
+    // no free slot above them: swap with the one currently on top
+    const top = above[0].rec;
+    const topBase = this.slotBase(top);
+    const myBase = this.slotBase(rec);
+    const parked = this.moveToSlot(rec, 'pak00');
+    try {
+      const movedTop = this.moveToSlot(top, myBase);
+      const movedMine = this.moveToSlot({ ...rec, files: parked }, topBase);
+      return { moved: [{ id: rec.id, files: movedMine }, { id: top.id, files: movedTop }] };
+    } catch (err) {
+      // put ours back where it was rather than leave it parked in a slot nothing mounts
+      try { this.moveToSlot({ ...rec, files: parked }, myBase); } catch { /* nothing else to try */ }
+      throw err;
+    }
+  }
+
   // ---------- helpers ----------
 
   copyInto(src, destAbs) {
@@ -290,26 +409,37 @@ class Installer {
     }
 
     const zip = new AdmZip(local);
-    for (const entry of zip.getEntries()) {
-      if (entry.isDirectory) continue;
+    const kept = zip.getEntries().filter((entry) => {
+      if (entry.isDirectory) return false;
+      const lower = entry.entryName.replace(/\\/g, '/').toLowerCase();
+      const baseName = lower.split('/').pop();
+      return !!baseName && !lower.includes('!guide')
+        && !/(^|\/)(guide\.txt|install\.bat|uninstall\.bat|readme[^/]*)$/i.test(lower);
+    });
+    // slots for the archive's VPKs, decided before a byte is written (see planPakNames).
+    // A "maps/..." payload is not a pak: terrains and the mods that come with them replace
+    // the map file itself, which only works from maps\dota.vpk (same rule modContentPaths
+    // reads by), so those keep their path.
+    const isMapsPath = (l) => /(^|\/)maps\//.test(l);
+    const pakPlan = this.planPakNames(
+      kept.map((e) => e.entryName.replace(/\\/g, '/'))
+        .filter((rel) => /\.vpk$/i.test(rel) && !isMapsPath(rel.toLowerCase())),
+      used, isPriority
+    );
+
+    for (const entry of kept) {
       const rel = entry.entryName.replace(/\\/g, '/');
       const lower = rel.toLowerCase();
-      const baseName = rel.split('/').pop();
-      if (!baseName || lower.includes('!guide') || /(^|\/)(guide\.txt|install\.bat|uninstall\.bat|readme[^/]*)$/i.test(lower)) {
-        continue;
-      }
 
-      if (categoryId === 'terrains' && lower.includes('maps/')) {
+      if (isMapsPath(lower)) {
         // keep maps/... structure inside the language folder
         const parts = rel.split('/');
         const mapsIdx = parts.findIndex((p) => p.toLowerCase() === 'maps');
         const relPath = parts.slice(mapsIdx).join('/');
         this.writeInto(entry.getData(), path.join(lang, relPath));
         records.push({ root: 'lang', relPath });
-      } else if (lower.endsWith('_dir.vpk') || lower.endsWith('.vpk')) {
-        const pakName = lower.endsWith('_dir.vpk')
-          ? this.allocatePak(used, isPriority)
-          : baseName; // secondary pak parts (pakNN_000.vpk) keep names
+      } else if (pakPlan.has(rel)) {
+        const pakName = pakPlan.get(rel);
         this.writeInto(entry.getData(), path.join(lang, pakName));
         records.push({ root: 'lang', relPath: pakName });
       } else {
@@ -642,11 +772,16 @@ class Installer {
   }
 
   /**
-   * Every pair of currently-enabled mods that fights over the same game files. Paths both
+   * Every pair of currently-enabled mods that supplies the same game files. Paths both
    * sides provide byte-identically, engine filler and shared tool tables are already out
-   * (see dropSharedPaths), so what survives is a real "only one of these will show" clash.
+   * (see dropSharedPaths), so what survives is a real overlap - one of the two supplies
+   * those files and the other's copy is shadowed.
+   *
+   * Which one is decided by the slot: the smaller pak number mounts first and wins (see
+   * "load order" above). `winner` is that record's id, or null when neither lives in a
+   * numbered pak and the engine's own order settles it.
    * @param {Array<object>} records library records
-   * @returns {Array<{a:{id,name}, b:{id,name}, count:number, summary:string}>}
+   * @returns {Array<{a:{id,name}, b:{id,name}, count:number, summary:string, winner:string|null}>}
    */
   libraryConflicts(records) {
     const live = (records || []).filter((r) => r.enabled && (r.files || []).some((f) => f.root === 'lang'));
@@ -654,7 +789,7 @@ class Installer {
     for (const rec of live) {
       try {
         const own = this.installedContentPaths(rec);
-        if (own.size) paths.push({ rec, own });
+        if (own.size) paths.push({ rec, own, slot: this.slotNumber(rec) });
       } catch { /* no game path / unreadable — skip */ }
     }
     const out = [];
@@ -662,11 +797,15 @@ class Installer {
       for (let j = i + 1; j < paths.length; j++) {
         const overlap = conflictingPaths(paths[i].own, paths[j].own);
         if (!overlap.length) continue;
+        const [x, y] = [paths[i], paths[j]];
+        const winner = x.slot == null || y.slot == null || x.slot === y.slot ? null
+          : (x.slot < y.slot ? x.rec.id : y.rec.id);
         out.push({
-          a: { id: paths[i].rec.id, name: paths[i].rec.name },
-          b: { id: paths[j].rec.id, name: paths[j].rec.name },
+          a: { id: x.rec.id, name: x.rec.name },
+          b: { id: y.rec.id, name: y.rec.name },
           count: overlap.length,
           summary: analyzeVpkPaths(overlap).heroes.map(describeHero).join('; '),
+          winner,
         });
       }
     }

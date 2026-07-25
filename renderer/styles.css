@@ -927,6 +927,15 @@ input, select { font-family: inherit; }
   border-color: rgba(251, 191, 36, 0.4);
 }
 .lib-tag.conflict .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
+/* Sharing files with another mod is a stack, not a fault: the one on top supplies them.
+   Calm colours — green for the mod that wins, muted for the one it covers. */
+.lib-tag.over {
+  color: var(--success);
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.34);
+}
+.lib-tag.under { color: var(--text-muted); background: var(--bg-elev); }
+.lib-tag.over .ms, .lib-tag.under .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
 /* mod carries item-schema changes: live (effects assembled) vs waiting for the patch */
 .lib-tag.schema {
   color: var(--primary-soft);

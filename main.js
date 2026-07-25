@@ -1266,6 +1266,29 @@ function registerIpc() {
     }
   });
 
+  // Put a mod on top of the ones it shares files with. Both keep loading — the game reads
+  // the lower pak number first and that copy wins — so this is how a separate item mod is
+  // worn over a hero set instead of one of the two having to be switched off.
+  ipcMain.handle('mods:raise', (e, id) => {
+    const rec = library.find(id);
+    if (!rec) return { error: t('Мод не найден') };
+    try {
+      const all = library.list();
+      const partnerIds = new Set();
+      for (const c of installer.libraryConflicts(all)) {
+        if (c.a.id === id) partnerIds.add(c.b.id);
+        else if (c.b.id === id) partnerIds.add(c.a.id);
+      }
+      const partners = all.filter((r) => partnerIds.has(r.id));
+      if (!partners.length) return { ok: true, moved: 0 };
+      const { moved } = installer.raiseAbove(rec, partners);
+      for (const m of moved) library.update(m.id, { files: m.files });
+      return { ok: true, moved: moved.length, names: partners.map((p) => p.name) };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
   ipcMain.handle('mods:externalSetEnabled', (e, fileName, enabled) => {
     try {
       const lang = installer.langFolder();

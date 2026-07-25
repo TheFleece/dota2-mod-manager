@@ -35,6 +35,28 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      # electron-builder publishes the release with an empty body, so the page said nothing
+      # about what changed. The section CHANGELOG.md carries for this tag becomes the
+      # release notes, and the Discord post repeats them.
+      - name: Take the release notes from CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          awk -v v="${TAG#v}" '
+            $0 ~ "^## " v "([^0-9.]|$)" { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > notes.md
+          if [ -s notes.md ]; then
+            gh release edit "$TAG" --repo "$REPO" --notes-file notes.md
+          else
+            echo "::warning::CHANGELOG.md has no section for $TAG — the release page stays empty"
+          fi
+
       - name: Send Discord notification
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -46,16 +68,20 @@ jobs:
           URL=$(gh release view "$TAG" --repo "$REPO" --json url -q '.url' 2>/dev/null)
           [ -z "$NAME" ] && NAME="$TAG"
           [ -z "$URL" ] && URL="https://github.com/$REPO/releases/tag/$TAG"
+          # Discord caps an embed description at 4096 characters
+          NOTES=$(head -c 3200 notes.md 2>/dev/null)
+          [ -z "$NOTES" ] && NOTES="A new release has been published!"
           PAYLOAD=$(jq -n \
             --arg name "$NAME" \
             --arg url "$URL" \
+            --arg notes "$NOTES" \
             '{
               "content": "**Mod Manager Updated!**",
               "embeds": [
                 {
                   "title": $name,
                   "url": $url,
-                  "description": "A new release has been published!\n\n[**Open Release Page**](\($url))",
+                  "description": "\($notes)\n\n[**Open Release Page**](\($url))",
                   "color": 8585067
                 }
               ],
