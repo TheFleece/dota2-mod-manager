@@ -2,7 +2,21 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
-## 1.13.1
+## 1.14.0
+
+### A support report, one file instead of a round of screenshots
+
+Settings has an **Export report** button now. It writes a single .zip: Dota's path and
+language settings, the app's own settings, the installed mods, the patch state, a listing of
+the mod folder's files, and the app's recent log. Send that instead of a screenshot and a
+copy of your settings.json.
+
+- The app now keeps a small log of its own on disk outside of testing too, so a crash you
+  can't explain still leaves something to look at.
+- Your Discord name is the only personal detail in the report, if you're signed in - no id,
+  no picture, and the sign-in token was never saved to begin with.
+
+### Fixes
 
 - The three HUDs 1.13.0 said the wiki had no picture for now have one: Liquipedia keeps
   pictures for a few dozen looks Fandom never got, `Battle Pass 2022 HUD` among them, and
