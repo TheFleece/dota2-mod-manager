@@ -1944,7 +1944,7 @@ function packThumbGridHtml(rec) {
 function memberRowHtml(rec, m, masterOff) {
   const key = memberKey(rec.id, m.id);
   const sel = state.librarySel.has(key);
-  const thumb = thumbHtml('member-thumb', recPreviewUrl(m));
+  const thumb = libThumbHtml(m, 'member-thumb');
   return `
     <div class="member-row ${m.enabled ? '' : 'disabled'} ${sel ? 'selected' : ''}">
       <input type="checkbox" class="lib-check" data-check="${esc(key)}" ${sel ? 'checked' : ''} aria-label="${L`Выбрать мод в паке`}">
@@ -2042,9 +2042,9 @@ function normalRowHtml(rec, i, masterOff) {
   const selectable = !isFontRec(rec);
   const selected = state.librarySel.has(rec.id);
   const ov = overlapPartners(rec.id);
-  // own preview, else the catalog's for the same mod (see recPreviewUrl); a cosmetic pick's
-  // picture is fetched lazily by the same loader the catalog cards use
-  const prev = recPreviewUrl(rec);
+  // own preview, else the catalog's for the same mod, else a recognised hero's own portrait
+  // (see libThumbHtml); a cosmetic pick's picture is fetched lazily by the same loader the
+  // catalog cards use
   const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
   const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
   return `
@@ -2052,7 +2052,7 @@ function normalRowHtml(rec, i, masterOff) {
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
       ${cosmetic
         ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms" style="font-size:20px;color:var(--text-faint)">${cosmeticMeta(rec.slot).icon}</span></div>`
-        : thumbHtml('lib-thumb', prev)}
+        : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${overlapTagHtml(ov)}${schemaTagHtml(rec)}</div>
         <div class="lib-meta">
@@ -2165,6 +2165,29 @@ function thumbHtml(cls, url) {
   if (!url) return `<div class="${cls}"></div>`;
   if (isVideo(url)) return `<video class="${cls}" src="${esc(url)}" muted playsinline preload="metadata"></video>`;
   return `<img class="${cls}" src="${esc(url)}" loading="lazy" alt="">`;
+}
+
+// An imported mod recognised as skinning exactly one hero (see installer.analyzeRecord),
+// otherwise showing no picture at all - a stand-in worth showing, unlike a font, a cursor
+// set, or a bundle of several heroes at once, where one hero's face would just be wrong.
+function heroFallbackKey(rec) {
+  if (rec.categoryId !== 'imported' || !Array.isArray(rec.heroNames) || rec.heroNames.length !== 1) return null;
+  return 'hero:' + rec.heroNames[0];
+}
+
+// thumbHtml, with the hero-portrait fallback layered on for a record with no picture of its
+// own or the catalog's: fetched and cached the same lazy way a cosmetic's picture is (see
+// watchCosmeticIcons) - the surrounding list's own observer picks up the data-name for free.
+function libThumbHtml(rec, cls) {
+  const url = recPreviewUrl(rec);
+  if (url) return thumbHtml(cls, url);
+  const key = heroFallbackKey(rec);
+  if (!key) return `<div class="${cls}"></div>`;
+  if (cosIconCache.has(key)) {
+    const cached = cosIconCache.get(key);
+    return cached ? `<img class="${cls}" src="${esc(cached)}" loading="lazy" alt="">` : `<div class="${cls}"></div>`;
+  }
+  return `<div class="${cls}" data-name="${esc(key)}"><span class="ms" style="font-size:18px;color:var(--text-faint)">person</span></div>`;
 }
 
 // catalog thumbnail for a fingerprint match, resolved from the loaded catalog index

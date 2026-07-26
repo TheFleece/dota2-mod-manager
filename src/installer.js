@@ -1130,7 +1130,13 @@ class Installer {
     try {
       const buf = readVpkIndexFile(path.join(this.langFolder(), dir.relPath));
       const a = analyzeVpkPaths(listVpkPaths(buf));
-      return { info: describeAnalysis(a), heroes: a.heroes.length, fp: fingerprintVpk(buf) };
+      return {
+        info: describeAnalysis(a), heroes: a.heroes.length,
+        // which hero(es) the content is for, by display name - lets the renderer show a
+        // hero's own portrait as a stand-in for an import with no picture of its own
+        heroNames: a.heroes.map((h) => h.name),
+        fp: fingerprintVpk(buf),
+      };
     } catch { return null; }
   }
 

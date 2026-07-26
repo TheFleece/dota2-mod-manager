@@ -68,6 +68,16 @@ function editDistance(a, b) {
   return prev[b.length];
 }
 
+// A "Loading Screen" / "Versus Screen" cosmetic is routinely undocumented on its own, even
+// when the outfit it belongs to has a picture: the wiki draws the line at the outfit, not
+// every slot it fills. Stripped of the suffix, the name is worth one more try against the
+// same two wikis - the outfit's own icon is still a recognisable stand-in for its own screen.
+const SCREEN_SUFFIX = /\s*-?\s*(?:Loading[ ]?Screen|Versus[ ]?Screen|LS)$/i;
+function stripScreenSuffix(name) {
+  const base = String(name).replace(SCREEN_SUFFIX, '').trim();
+  return base && base !== String(name).trim() ? base : null;
+}
+
 /**
  * Which of a list of "File:..." / "Cosmetic_icon_....png" titles is this item's picture,
  * shared by both wikis' listings. A title counts only when it is the same name give or take
@@ -112,9 +122,9 @@ class Icons {
     this.fetch = fetchImpl || globalThis.fetch;
     this.dir = path.join(userDataDir, 'icons');
     fs.mkdirSync(this.dir, { recursive: true });
-    // v4: the older files hold names that missed because the app never tried Liquipedia,
-    // so they are not carried over - see searchFileName
-    this.missFile = path.join(this.dir, 'misses.v4.json');
+    // v5: the older files hold names that missed because the app hadn't yet tried a
+    // suffix-stripped retry (see stripScreenSuffix), so they are not carried over
+    this.missFile = path.join(this.dir, 'misses.v5.json');
     this.misses = new Map();
     this.inflight = new Map();
     this.liqGate = rateGate(LIQ_MIN_GAP_MS);
@@ -222,15 +232,10 @@ class Icons {
   }
 
   /**
-   * Which file a wiki keeps this item's picture under, when it is not the name the game
-   * uses - "Aghanim's Labryinth 2021 HUD" is the schema's own typo, and some HUDs carry a
-   * "Skin" the wiki leaves off. Fandom is tried first; Liquipedia only for names it has
-   * nothing at all for (a handful - old Battle Passes, some Mega-Kills).
+   * One pass over both wikis (prefix listing, then full-text search) for one exact name.
    * @returns {Promise<{wiki: 'fandom', file: string}|{wiki: 'liquipedia', url: string}|null|undefined>}
-   *   null = no wiki has this picture · undefined = one of them never answered, so nothing
-   *   here counts as a real "no" and it is worth asking again later
    */
-  async searchFileName(name) {
+  async searchOneName(name) {
     const pick = titlePicker(name);
     let silent = false;
 
@@ -255,11 +260,57 @@ class Icons {
   }
 
   /**
-   * @returns {Promise<string|null>} data URI, or null when the wiki has no such picture
+   * Which file a wiki keeps this item's picture under, when it is not the name the game
+   * uses - "Aghanim's Labryinth 2021 HUD" is the schema's own typo, and some HUDs carry a
+   * "Skin" the wiki leaves off. Fandom is tried first; Liquipedia only for names it has
+   * nothing at all for (a handful - old Battle Passes, some Mega-Kills). A "Loading Screen" /
+   * "Versus Screen" name that comes up with nothing anywhere gets one more pass under its
+   * outfit's own name (see stripScreenSuffix) - not the exact picture, but the same look.
+   * @returns {Promise<{wiki: 'fandom', file: string}|{wiki: 'liquipedia', url: string}|null|undefined>}
+   *   null = no wiki has this picture · undefined = one of them never answered, so nothing
+   *   here counts as a real "no" and it is worth asking again later
    */
-  async get(name) {
-    if (!name) return null;
-    const file = this.cachePath(name);
+  async searchFileName(name) {
+    const own = await this.searchOneName(name);
+    if (own !== null) return own; // a hit, or a network hiccup worth retrying later - either way, done
+
+    const base = stripScreenSuffix(name);
+    return base ? this.searchOneName(base) : null;
+  }
+
+  fetchBytes(url, ua, gate) {
+    const call = async () => {
+      let res;
+      try {
+        res = await this.fetch(url, { headers: { 'User-Agent': ua } });
+      } catch {
+        return undefined; // dropped request: says nothing about whether the file exists
+      }
+      if (res.status === 404) return null; // the one answer that means "no such picture"
+      if (!res.ok) return undefined;
+      const buf = Buffer.from(await res.arrayBuffer());
+      const mime = buf.length && buf.length <= MAX_BYTES ? sniff(buf) : null;
+      return mime ? { buf, mime } : undefined; // an unreadable body isn't a "no" either
+    };
+    return gate ? gate(call) : call();
+  }
+
+  fetchFandomFile(fileName) { return this.fetchBytes(WIKI + encodeURIComponent(fileName), UA); }
+  fetchLiquipediaFile(url) { return this.fetchBytes(url, LIQ_UA, this.liqGate); }
+
+  /**
+   * Disk cache + in-flight de-dup + miss bookkeeping, shared by every picture this class
+   * fetches regardless of where it comes from. `resolve()` does the actual lookup and
+   * returns `{buf, mime}` on a hit, `null` for a confirmed "no such picture", or `undefined`
+   * when nothing answered either way (network hiccup) - which must never be remembered as a
+   * miss, or a bad burst turns into a permanently half-empty picker.
+   * @param {string} key   cache/miss-list key - namespaced by caller so a cosmetic named
+   *   the same as a hero can never collide with that hero's own portrait
+   * @param {() => Promise<{buf:Buffer,mime:string}|null|undefined>} resolve
+   * @returns {Promise<string|null>} data URI, or null when there is no such picture
+   */
+  async cached(key, resolve) {
+    const file = this.cachePath(key);
     try {
       if (fs.existsSync(file)) {
         const buf = fs.readFileSync(file);
@@ -268,69 +319,84 @@ class Icons {
       }
     } catch { /* unreadable cache entry: refetch */ }
 
-    const missedAt = this.misses.get(name);
+    const missedAt = this.misses.get(key);
     if (missedAt && Date.now() - missedAt < MISS_TTL) return null;
-    if (this.inflight.has(name)) return this.inflight.get(name);
+    if (this.inflight.has(key)) return this.inflight.get(key);
 
     const job = (async () => {
-      // Only a 404 means the wiki really has no such picture. A refused or dropped request
-      // says nothing about the name, so it must not be remembered as a miss for a week —
-      // that is how a slot ends up permanently half-empty after one bad burst.
-      let answered = true;
-      const fetchBytes = async (url, ua, gate) => {
-        const call = async () => {
-          let res;
-          try {
-            res = await this.fetch(url, { headers: { 'User-Agent': ua } });
-          } catch {
-            answered = false;
-            return null;
-          }
-          if (res.status === 404) return null;
-          if (!res.ok) { answered = false; return null; }
-          const buf = Buffer.from(await res.arrayBuffer());
-          const mime = buf.length && buf.length <= MAX_BYTES ? sniff(buf) : null;
-          return mime ? { buf, mime } : null;
-        };
-        return gate ? gate(call) : call();
-      };
-      const fetchFandomFile = (fileName) => fetchBytes(WIKI + encodeURIComponent(fileName), UA);
-      const fetchLiquipediaFile = (url) => fetchBytes(url, LIQ_UA, this.liqGate);
-
       try {
-        let hit = null;
-        for (const wikiName of Icons.fileNames(name)) {
-          hit = await fetchFandomFile(wikiName);
-          if (hit) break;
-        }
-        if (!hit) {
-          const found = await this.searchFileName(name);
-          if (found === undefined) answered = false;
-          else if (found?.wiki === 'fandom') hit = await fetchFandomFile(found.file);
-          else if (found?.wiki === 'liquipedia') hit = await fetchLiquipediaFile(found.url);
-        }
+        const hit = await resolve();
         if (hit) {
           fs.writeFileSync(file, hit.buf);
-          this.misses.delete(name);
+          this.misses.delete(key);
           return `data:${hit.mime};base64,` + hit.buf.toString('base64');
         }
-        if (answered) {
-          this.misses.set(name, Date.now());
+        if (hit === null) {
+          this.misses.set(key, Date.now());
           this.saveMisses();
         }
         return null;
       } catch {
         return null;
       } finally {
-        this.inflight.delete(name);
+        this.inflight.delete(key);
       }
     })();
-    this.inflight.set(name, job);
+    this.inflight.set(key, job);
     return job;
   }
 
   /**
-   * Pictures for a batch of names, a few requests at a time.
+   * @returns {Promise<string|null>} data URI, or null when the wiki has no such picture
+   */
+  async get(name) {
+    if (!name) return null;
+    return this.cached(name, async () => {
+      for (const wikiName of Icons.fileNames(name)) {
+        const hit = await this.fetchFandomFile(wikiName);
+        if (hit) return hit;
+      }
+      const found = await this.searchFileName(name);
+      if (found === undefined) return undefined;
+      if (found === null) return null;
+      return found.wiki === 'fandom' ? this.fetchFandomFile(found.file) : this.fetchLiquipediaFile(found.url);
+    });
+  }
+
+  /**
+   * Wiki file names for a hero's own default portrait - not a cosmetic look, the hero
+   * itself. Unlike a cosmetic's, this naming is exact (every hero has exactly one page,
+   * named after the hero), so there is no search fallback to fall through to.
+   * @returns {string[]}
+   */
+  static heroFileNames(heroName) {
+    const clean = String(heroName).replace(/\s+/g, '_');
+    return [`${clean}_icon.png`, `${clean}_minimap_icon.png`];
+  }
+
+  /**
+   * A hero's own portrait, for an imported mod the app recognises as skinning exactly one
+   * hero (see src/vpk.js analyzeVpkPaths): a stand-in so an "Elder Titan" import shows Elder
+   * Titan's own picture instead of an empty box in the Library.
+   * @returns {Promise<string|null>}
+   */
+  async getHero(heroName) {
+    if (!heroName) return null;
+    return this.cached('hero:' + heroName, async () => {
+      let answered = true;
+      for (const fileName of Icons.heroFileNames(heroName)) {
+        const hit = await this.fetchFandomFile(fileName);
+        if (hit) return hit;
+        if (hit === undefined) answered = false;
+      }
+      return answered ? null : undefined;
+    });
+  }
+
+  /**
+   * Pictures for a batch of names, a few requests at a time. A name prefixed "hero:" asks
+   * for that hero's own portrait (see getHero) instead of a cosmetic look - the same batch
+   * call and the same on-screen loader cover both, so the renderer needs only one pipeline.
    * @returns {Promise<Record<string, string|null>>}
    */
   async getMany(names) {
@@ -340,7 +406,7 @@ class Icons {
     const worker = async () => {
       while (next < list.length) {
         const name = list[next++];
-        out[name] = await this.get(name);
+        out[name] = name.startsWith('hero:') ? await this.getHero(name.slice(5)) : await this.get(name);
       }
     };
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, worker));
