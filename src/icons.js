@@ -5,13 +5,16 @@
 // item's own (and its search finds the rest), so that is where they come from - fetched in
 // the main process and handed to the renderer as data URIs, the same way the Discord avatar
 // is handled: no third-party host in the page's CSP, and nothing about the user leaves with
-// the request.
+// the request. A few dozen looks that Fandom never got a picture for at all (old Battle
+// Passes, some Mega-Kills) are asked of Liquipedia instead, which mirrors the same file
+// naming on its own image host.
 //
 // Everything is cached on disk, misses included: 2000 loading screens must not turn into
 // 2000 requests every time the picker opens.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const pkg = require('../package.json');
 
 const WIKI = 'https://dota2.fandom.com/wiki/Special:FilePath/';
 const API = 'https://dota2.fandom.com/api.php';
@@ -22,6 +25,26 @@ const MISS_TTL = 7 * 24 * 3600 * 1000; // retry a missing picture next week, not
 // How many pictures are fetched at once. The wiki starts refusing a burst of a hundred,
 // and a refusal used to be remembered as "no such picture" for a week.
 const CONCURRENCY = 6;
+
+// Liquipedia's own image host, tried once Fandom has come up with nothing at all. Its terms
+// require a project-identifying agent (a browser UA gets treated as abuse there, the exact
+// opposite of Fandom) and cap every request at one per two seconds - a limit worth respecting
+// on its own merits, and this path is rare enough (a handful of names, ever, per install -
+// see MISS_TTL) that the wait never shows up as a slower picker.
+const LIQ_API = 'https://liquipedia.net/commons/api.php';
+const LIQ_UA = `Dota2ModManager/${pkg.version} (+${pkg.homepage})`;
+const LIQ_MIN_GAP_MS = 2100;
+
+// Runs queued jobs one at a time, each starting no sooner than minGapMs after the previous
+// one finished. A job's own outcome is independent of the pacing that follows it.
+function rateGate(minGapMs) {
+  let queue = Promise.resolve();
+  return (fn) => {
+    const result = queue.then(fn, fn);
+    queue = result.catch(() => {}).then(() => new Promise((r) => setTimeout(r, minGapMs)));
+    return result;
+  };
+}
 
 // Names compared without spacing, punctuation or case: the wiki and the game write those
 // their own ways, and none of it changes which item is meant. Nor does the trailing "Skin"
@@ -45,6 +68,31 @@ function editDistance(a, b) {
   return prev[b.length];
 }
 
+/**
+ * Which of a list of "File:..." / "Cosmetic_icon_....png" titles is this item's picture,
+ * shared by both wikis' listings. A title counts only when it is the same name give or take
+ * a typo: a loose match would put a stranger's picture on the card, which is worse than an
+ * empty tile, so an extra word ("… Bundle") or a different number is enough to rule it out.
+ * @returns {(titles: string[]) => string|null}
+ */
+function titlePicker(name) {
+  const want = plain(name);
+  return (titles) => {
+    let best = null;
+    for (const rawTitle of titles) {
+      const title = rawTitle.replace(/^File:/i, '');
+      const m = /^Cosmetic[ _]icon[ _](.+)\.(?:png|jpe?g|webp)$/i.exec(title);
+      if (!m || numbering(m[1]) !== numbering(name)) continue;
+      const got = plain(m[1]);
+      // a typo swaps or replaces letters, it does not add or drop words: same length only,
+      // which is what keeps "Alliance HUD Bundle" away from "Alliance HUD"
+      const d = got === want ? 0 : got.length === want.length ? editDistance(got, want) : Infinity;
+      if (d <= 2 && (!best || d < best.d)) best = { d, file: title.replace(/ /g, '_') };
+    }
+    return best ? best.file : null;
+  };
+}
+
 // The wiki serves WebP to a browser and PNG to anything else; both render in the app.
 function sniff(buf) {
   const hex = buf.slice(0, 4).toString('hex');
@@ -64,11 +112,12 @@ class Icons {
     this.fetch = fetchImpl || globalThis.fetch;
     this.dir = path.join(userDataDir, 'icons');
     fs.mkdirSync(this.dir, { recursive: true });
-    // v3: the older files hold names that only missed because the app looked for them under
-    // the game's spelling and gave up there (see searchFileName), so they are not carried over
-    this.missFile = path.join(this.dir, 'misses.v3.json');
+    // v4: the older files hold names that missed because the app never tried Liquipedia,
+    // so they are not carried over - see searchFileName
+    this.missFile = path.join(this.dir, 'misses.v4.json');
     this.misses = new Map();
     this.inflight = new Map();
+    this.liqGate = rateGate(LIQ_MIN_GAP_MS);
     try {
       for (const [k, at] of Object.entries(JSON.parse(fs.readFileSync(this.missFile, 'utf8')))) this.misses.set(k, at);
     } catch { /* no misses recorded yet */ }
@@ -104,68 +153,104 @@ class Icons {
    * @returns {Promise<object|undefined>} parsed answer, or undefined when the wiki did not
    *   answer at all (which is never a "no such file")
    */
-  async ask(params) {
-    try {
-      const res = await this.fetch(`${API}?${new URLSearchParams({ format: 'json', ...params })}`,
-        { headers: { 'User-Agent': UA } });
+  async askWiki(api, ua, params, gate) {
+    const call = async () => {
+      const res = await this.fetch(`${api}?${new URLSearchParams({ format: 'json', ...params })}`,
+        { headers: { 'User-Agent': ua } });
       if (!res.ok) return undefined;
-      return await res.json();
+      return res.json();
+    };
+    try {
+      return await (gate ? gate(call) : call());
     } catch {
       return undefined;
     }
   }
 
+  askFandom(params) { return this.askWiki(API, UA, params); }
+  askLiquipedia(params) { return this.askWiki(LIQ_API, LIQ_UA, params, this.liqGate); }
+
   /**
    * Files whose name starts with the item's first word or two. Exact and always answered,
    * unlike the search, which returns nothing at all for half of these names.
    */
-  async filesByPrefix(name) {
+  static prefixOf(name) {
     const words = String(name).replace(/[^\w\s'.-]/g, '').split(/\s+/).filter(Boolean);
-    if (!words.length) return [];
-    const head = words.slice(0, words[0].length < 5 ? 2 : 1).join('_');
-    const json = await this.ask({ action: 'query', list: 'allimages', aiprefix: `Cosmetic_icon_${head}`, ailimit: '100' });
+    return words.length ? words.slice(0, words[0].length < 5 ? 2 : 1).join('_') : null;
+  }
+
+  async filesByPrefix(name) {
+    const head = Icons.prefixOf(name);
+    if (!head) return [];
+    const json = await this.askFandom({ action: 'query', list: 'allimages', aiprefix: `Cosmetic_icon_${head}`, ailimit: '100' });
     return json && (json.query?.allimages || []).map((i) => String(i.name));
   }
 
   /** The wiki's own full-text search, for names whose first word is spelled its own way. */
   async filesBySearch(name) {
-    const json = await this.ask({ action: 'query', list: 'search', srnamespace: '6', srlimit: '10', srsearch: `Cosmetic icon ${name}` });
-    return json && (json.query?.search || []).map((s) => String(s.title).replace(/^File:/i, ''));
+    const json = await this.askFandom({ action: 'query', list: 'search', srnamespace: '6', srlimit: '10', srsearch: `Cosmetic icon ${name}` });
+    return json && (json.query?.search || []).map((s) => String(s.title));
+  }
+
+  // Liquipedia keeps every wiki's uploads on one shared image host ("commons"), same
+  // listing shape as Fandom's - only the endpoint, the agent and the pacing differ.
+  async liqFilesByPrefix(name) {
+    const head = Icons.prefixOf(name);
+    if (!head) return [];
+    const json = await this.askLiquipedia({ action: 'query', list: 'allimages', aiprefix: `Cosmetic_icon_${head}`, ailimit: '100' });
+    return json && (json.query?.allimages || []).map((i) => String(i.name));
+  }
+
+  async liqFilesBySearch(name) {
+    const json = await this.askLiquipedia({ action: 'query', list: 'search', srnamespace: '6', srlimit: '10', srsearch: `Cosmetic icon ${name}` });
+    return json && (json.query?.search || []).map((s) => String(s.title));
   }
 
   /**
-   * Which file the wiki keeps this item under, when it is not the name the game uses -
-   * "Aghanim's Labryinth 2021 HUD" is the schema's own typo, and some HUDs carry a "Skin"
-   * the wiki leaves off. A title counts only when it is the same name give or take a typo:
-   * a loose match would put a stranger's picture on the card, which is worse than an empty
-   * tile, so an extra word ("… Bundle") or a different number is enough to rule it out.
-   * @returns {Promise<string|null|undefined>} file name · null = no such picture ·
-   *   undefined = the wiki never answered, so it said nothing either way
+   * The raw image URL for a file name Liquipedia is known to have. Its terms rule out
+   * automated fetches of rendered wiki pages, so the URL is asked for through the API
+   * (imageinfo) rather than guessed at from the file name.
+   * @returns {Promise<string|null|undefined>}
+   */
+  async liqResolveUrl(fileName) {
+    const json = await this.askLiquipedia({
+      action: 'query', titles: `File:${fileName.replace(/_/g, ' ')}`, prop: 'imageinfo', iiprop: 'url',
+    });
+    if (!json) return undefined;
+    const info = Object.values(json.query?.pages || {})[0]?.imageinfo?.[0];
+    return info ? String(info.url) : null;
+  }
+
+  /**
+   * Which file a wiki keeps this item's picture under, when it is not the name the game
+   * uses - "Aghanim's Labryinth 2021 HUD" is the schema's own typo, and some HUDs carry a
+   * "Skin" the wiki leaves off. Fandom is tried first; Liquipedia only for names it has
+   * nothing at all for (a handful - old Battle Passes, some Mega-Kills).
+   * @returns {Promise<{wiki: 'fandom', file: string}|{wiki: 'liquipedia', url: string}|null|undefined>}
+   *   null = no wiki has this picture · undefined = one of them never answered, so nothing
+   *   here counts as a real "no" and it is worth asking again later
    */
   async searchFileName(name) {
-    const want = plain(name);
-    const pick = (titles) => {
-      let best = null;
-      for (const title of titles) {
-        const m = /^Cosmetic[ _]icon[ _](.+)\.(?:png|jpe?g|webp)$/i.exec(title);
-        if (!m || numbering(m[1]) !== numbering(name)) continue;
-        const got = plain(m[1]);
-        // a typo swaps or replaces letters, it does not add or drop words: same length only,
-        // which is what keeps "Alliance HUD Bundle" away from "Alliance HUD"
-        const d = got === want ? 0 : got.length === want.length ? editDistance(got, want) : Infinity;
-        if (d <= 2 && (!best || d < best.d)) best = { d, file: title.replace(/ /g, '_') };
-      }
-      return best ? best.file : null;
-    };
-
+    const pick = titlePicker(name);
     let silent = false;
-    // the search only runs when the prefix listing came back without the item
+
     for (const ask of [() => this.filesByPrefix(name), () => this.filesBySearch(name)]) {
       const list = await ask();
       if (!list) { silent = true; continue; }
-      const hit = pick(list);
-      if (hit) return hit;
+      const file = pick(list);
+      if (file) return { wiki: 'fandom', file };
     }
+
+    for (const ask of [() => this.liqFilesByPrefix(name), () => this.liqFilesBySearch(name)]) {
+      const list = await ask();
+      if (!list) { silent = true; continue; }
+      const file = pick(list);
+      if (!file) continue;
+      const url = await this.liqResolveUrl(file);
+      if (url === undefined) { silent = true; continue; }
+      if (url) return { wiki: 'liquipedia', url };
+    }
+
     return silent ? undefined : null;
   }
 
@@ -192,31 +277,37 @@ class Icons {
       // says nothing about the name, so it must not be remembered as a miss for a week —
       // that is how a slot ends up permanently half-empty after one bad burst.
       let answered = true;
-      const fetchFile = async (wikiName) => {
-        let res;
-        try {
-          res = await this.fetch(WIKI + encodeURIComponent(wikiName), { headers: { 'User-Agent': UA } });
-        } catch {
-          answered = false;
-          return null;
-        }
-        if (res.status === 404) return null;
-        if (!res.ok) { answered = false; return null; }
-        const buf = Buffer.from(await res.arrayBuffer());
-        const mime = buf.length && buf.length <= MAX_BYTES ? sniff(buf) : null;
-        return mime ? { buf, mime } : null;
+      const fetchBytes = async (url, ua, gate) => {
+        const call = async () => {
+          let res;
+          try {
+            res = await this.fetch(url, { headers: { 'User-Agent': ua } });
+          } catch {
+            answered = false;
+            return null;
+          }
+          if (res.status === 404) return null;
+          if (!res.ok) { answered = false; return null; }
+          const buf = Buffer.from(await res.arrayBuffer());
+          const mime = buf.length && buf.length <= MAX_BYTES ? sniff(buf) : null;
+          return mime ? { buf, mime } : null;
+        };
+        return gate ? gate(call) : call();
       };
+      const fetchFandomFile = (fileName) => fetchBytes(WIKI + encodeURIComponent(fileName), UA);
+      const fetchLiquipediaFile = (url) => fetchBytes(url, LIQ_UA, this.liqGate);
 
       try {
         let hit = null;
         for (const wikiName of Icons.fileNames(name)) {
-          hit = await fetchFile(wikiName);
+          hit = await fetchFandomFile(wikiName);
           if (hit) break;
         }
         if (!hit) {
           const found = await this.searchFileName(name);
           if (found === undefined) answered = false;
-          else if (found) hit = await fetchFile(found);
+          else if (found?.wiki === 'fandom') hit = await fetchFandomFile(found.file);
+          else if (found?.wiki === 'liquipedia') hit = await fetchLiquipediaFile(found.url);
         }
         if (hit) {
           fs.writeFileSync(file, hit.buf);

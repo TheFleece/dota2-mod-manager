@@ -2,6 +2,12 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 1.13.1
+
+- The three HUDs 1.13.0 said the wiki had no picture for now have one: Liquipedia keeps
+  pictures for a few dozen looks Fandom never got, `Battle Pass 2022 HUD` among them, and
+  the app asks it once Fandom has come up with nothing at all.
+
 ## 1.13.0
 
 - **What's new, in the app.** The app updates itself in the background, so you used to be
