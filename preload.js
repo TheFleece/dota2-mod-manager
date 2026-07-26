@@ -103,6 +103,8 @@ contextBridge.exposeInMainWorld('api', {
   update: {
     install: () => ipcRenderer.invoke('update:install'),
     version: () => ipcRenderer.invoke('app:version'),
+    notes: (lang) => ipcRenderer.invoke('app:notes', lang),
+    notesSeen: () => ipcRenderer.invoke('app:notesSeen'),
     onUpdate: (cb) => ipcRenderer.on('update', (e, evt) => cb(evt)),
   },
 });

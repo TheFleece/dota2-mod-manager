@@ -465,6 +465,69 @@ function mediaHtml(url, { hoverPlay = false, autoplay = false, controls = false,
   return `<img src="${esc(url)}" loading="lazy" alt="">`;
 }
 
+// ---------- "what's new" after an update ----------
+
+// The changelog is markdown, but only ever the three shapes this app writes: "### heading",
+// "- bullet" and **bold** inside a line. A full parser would be a library for nothing.
+function notesHtml(md) {
+  const inline = (s) => esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+  const out = [];
+  let list = null;
+  const closeList = () => { if (list) { out.push(`<ul>${list.join('')}</ul>`); list = null; } };
+  for (const raw of String(md).split('\n')) {
+    const line = raw.trim();
+    if (!line) { closeList(); continue; }
+    if (line.startsWith('###')) { closeList(); out.push(`<h4>${inline(line.replace(/^#+\s*/, ''))}</h4>`); continue; }
+    if (line.startsWith('- ')) { (list = list || []).push(`<li>${inline(line.slice(2))}</li>`); continue; }
+    // a wrapped bullet or paragraph line continues whatever came before it
+    if (list) list[list.length - 1] = list[list.length - 1].replace('</li>', ' ' + inline(line) + '</li>');
+    else if (out.length && out[out.length - 1].startsWith('<p>')) {
+      out[out.length - 1] = out[out.length - 1].replace('</p>', ' ' + inline(line) + '</p>');
+    } else out.push(`<p>${inline(line)}</p>`);
+  }
+  closeList();
+  return out.join('');
+}
+
+function whatsNewDialog(version, md) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-box notes-box">
+        <div class="notes-head">
+          <span class="ms">auto_awesome</span>
+          <div>
+            <div class="notes-title">${L`Что нового`}</div>
+            <div class="notes-ver">${L`версия ${esc(version)}`}</div>
+          </div>
+        </div>
+        <div class="notes-body">${notesHtml(md)}</div>
+        <div class="confirm-actions">
+          <button class="btn btn-primary" data-c="ok">${L`Понятно`}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const done = () => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(); });
+    overlay.querySelector('[data-c="ok"]').addEventListener('click', done);
+    const onKey = (e) => { if (e.key === 'Escape') done(); };
+    document.addEventListener('keydown', onKey);
+  });
+}
+
+// Show it once per version, and only for a version the user did not install by hand.
+async function showWhatsNew({ force = false } = {}) {
+  let r = null;
+  try { r = await window.api.update.notes(window.I18N_LANG); } catch { return; }
+  if (!r || !r.notes) { if (force) toast(L`Для этой версии заметок нет`, 'warn'); return; }
+  if (!force && !r.unseen) { window.api.update.notesSeen(); return; }
+  await whatsNewDialog(r.version, r.notes);
+  window.api.update.notesSeen();
+}
+
 // ---------- custom confirm dialog ----------
 
 function confirmDialog(message, { okLabel = L`Удалить`, danger = true } = {}) {
@@ -3603,9 +3666,13 @@ async function renderSettings() {
       <div style="font-size:12.5px;color:var(--text-muted)">
         ${L`Обновления скачиваются автоматически из GitHub Releases — когда новая версия готова, появится кнопка установки.`}
       </div>
+      <div class="settings-row">
+        <button class="btn btn-sm" id="whatsNewBtn"><span class="ms">auto_awesome</span>${L`Что нового`}</button>
+      </div>
     </div>
   `;
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
+  $('#whatsNewBtn').addEventListener('click', () => showWhatsNew({ force: true }));
 
   // one language switch for everything: the app, Dota's text and Dota's voice. The voice
   // part decides which dota_<lang> folder the game mounts, so it moves the mods with it —
@@ -3933,4 +4000,8 @@ function showLanguagePicker() {
 
   // first launch, or first launch after this release — let the user pick a language
   if (!cfg.langPromptSeen) await showLanguagePicker();
+
+  // the app updates itself in the background, so this is the only place a user finds out
+  // what changed while they were away
+  showWhatsNew();
 })();

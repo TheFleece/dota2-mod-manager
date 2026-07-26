@@ -327,6 +327,28 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 // register installer.importVpks/importVpkBuffers results into the library
+/**
+ * The changelog section for one version, in the app's language when there is a translation.
+ * The same file CI puts on the release page, shipped with the build so the screen works
+ * offline and needs no GitHub call.
+ * @returns {string|null} markdown, or null when this version has no section
+ */
+function releaseNotes(version, lang) {
+  const files = lang === 'ru' ? ['CHANGELOG.ru.md', 'CHANGELOG.md'] : ['CHANGELOG.md'];
+  const head = new RegExp(`^## ${version.replace(/\./g, '\\.')}(?:[^0-9.].*)?$`, 'm');
+  for (const name of files) {
+    let text;
+    try { text = fs.readFileSync(path.join(app.getAppPath(), name), 'utf-8'); } catch { continue; }
+    const m = head.exec(text);
+    if (!m) continue;
+    const rest = text.slice(m.index + m[0].length);
+    const next = /^## /m.exec(rest);
+    const body = (next ? rest.slice(0, next.index) : rest).trim();
+    if (body) return body;
+  }
+  return null;
+}
+
 function registerImportResults(results) {
   const imported = [];
   let needSchema = false;
@@ -865,6 +887,20 @@ function registerIpc() {
     if (autoUpdater) autoUpdater.quitAndInstall();
   });
   ipcMain.handle('app:version', () => app.getVersion());
+
+  // What changed in the version now running. The app updates itself in the background, so
+  // without this a user is simply handed a different app one day and has to guess what
+  // moved — which is exactly what people ask about in Discord.
+  ipcMain.handle('app:notes', (e, lang) => {
+    const version = app.getVersion();
+    const seen = settings.get('lastSeenVersion');
+    return { version, notes: releaseNotes(version, lang), unseen: !!seen && seen !== version };
+  });
+
+  ipcMain.handle('app:notesSeen', () => {
+    settings.set('lastSeenVersion', app.getVersion());
+    return { ok: true };
+  });
 
   // ----- UI scale ----- (the renderer applies it; this only remembers it)
   ipcMain.handle('ui:setZoom', (e, factor) => {

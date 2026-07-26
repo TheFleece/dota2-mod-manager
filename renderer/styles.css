@@ -2002,6 +2002,29 @@ body.grip-dragging { user-select: none; }
 .progress-info,
 .progress-track { zoom: var(--content-zoom); }
 
+/* ============ "What's new" after an update ============ */
+.notes-box { max-width: 560px; width: 92vw; text-align: left; }
+.notes-head { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
+.notes-head .ms { font-size: 26px; color: var(--primary-soft); }
+.notes-title { font-family: var(--font-head); font-size: 19px; font-weight: 800; }
+.notes-ver { font-size: 12.5px; color: var(--text-muted); }
+.notes-body {
+  max-height: min(46vh, 420px); overflow-y: auto; padding-right: 6px;
+  font-size: 14px; line-height: 1.6; color: var(--text-muted);
+}
+.notes-body h4 {
+  margin: 16px 0 7px; font-size: 14.5px; font-weight: 700; color: var(--text);
+}
+.notes-body h4:first-child { margin-top: 0; }
+.notes-body p { margin: 0 0 9px; }
+.notes-body ul { margin: 0 0 12px; padding-left: 18px; }
+.notes-body li { margin-bottom: 5px; }
+.notes-body b { color: var(--text); }
+.notes-body code {
+  font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
+  background: var(--bg-elev); border-radius: 5px; padding: 1px 5px; color: var(--primary-soft);
+}
+
 /* ============ Cosmetics: same .card/.grid/.toolbar as the mod catalog ============ */
 
 /* icon-loader target inside a .card-media — sized to fill it, same as a plain <img> would */

@@ -41,6 +41,9 @@ const DEFAULTS = {
   cosmetics: {},
   // items_game.txt build the deployed schema was made from, to spot a game update
   schemaStamp: null,
+  // last version whose release notes the user was shown. Null on a fresh install, which is
+  // why nobody gets a "what's new" popup for a version they just installed by hand.
+  lastSeenVersion: null,
 };
 
 class Settings {

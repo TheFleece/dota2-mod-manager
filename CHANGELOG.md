@@ -2,6 +2,14 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 1.13.0
+
+- **What's new, in the app.** The app updates itself in the background, so you used to be
+  handed a new version with no idea what moved. Now it shows the changes once after an
+  update, and Settings has a button to read them again.
+- A shared preset link now opens a page that shows the whole build with pictures before
+  anyone is asked to install anything.
+
 ## 1.12.0
 
 ### Mods that share files now stack instead of fighting

@@ -3,18 +3,28 @@
 
   <h1>Dota 2 Mod Manager</h1>
 
-  <p><b>Desktop mod launcher for Dota 2.</b> Browse 1100+ cosmetic mods and install them in one click. The app copies files, allocates pak slots and cleans up after itself.</p>
+  <p><b>Mods for Dota 2, without the file juggling.</b><br>
+  1100+ skins, terrains, announcers and music in one catalog. Free cosmetics the game
+  already ships. Builds you can hand to a friend as a link.</p>
 
   <p>
-    <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">
-      <img src="https://img.shields.io/github/v/release/TheFleece/dota2-mod-manager?style=for-the-badge&color=8b6ff0&label=Download" alt="Latest release">
+    <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe">
+      <img src="https://img.shields.io/github/v/release/TheFleece/dota2-mod-manager?style=for-the-badge&color=8b6ff0&label=Download" alt="Download the latest release">
     </a>
     <img src="https://img.shields.io/badge/Windows-10%2F11-201c2c?style=for-the-badge" alt="Windows">
     <img src="https://img.shields.io/badge/License-GPL--3.0-c4b5fd?style=for-the-badge" alt="License">
+    <a href="https://thefleece.github.io/dota2-mod-manager/">
+      <img src="https://img.shields.io/badge/Site-thefleece.github.io-2a2440?style=for-the-badge" alt="Website">
+    </a>
   </p>
 
-  <img src="docs/screenshots/home.png" alt="Home screen" width="100%">
+  <img src="docs/screenshots/home.webp" alt="Catalog" width="100%">
 </div>
+
+> **Why not just copy the files yourself?** You can, and people do. What the app adds is
+> everything after that: switching a mod off before a match without deleting it, wearing an
+> item over a hero set, free cosmetics read from the game's own item table, a build you send
+> as one link, and a game that still works after a Dota patch.
 
 ---
 
@@ -26,7 +36,8 @@
 | <img src="docs/icons/install.svg" width="20"> | **One-click install** | The app downloads the mod, picks a free pak slot, gives priority mods low pak numbers and unpacks terrain `maps/` folders |
 | <img src="docs/icons/player.svg" width="20"> | **Built-in previews** | Video and audio previews play in an in-app player |
 | <img src="docs/icons/library.svg" width="20"> | **Library** | Toggle installed mods on and off without deleting them, remove them cleanly, see files installed outside the manager, import your own `.vpk` files (single or multi-part `pak_dir`+`pak_000` sets) via button or drag & drop, export any mod as one self-contained `.vpk` |
-| <img src="docs/icons/install.svg" width="20"> | **Conflict warnings** | The app reads VPK indexes and warns before install when two mods override the same game files |
+| <img src="docs/icons/catalog.svg" width="20"> | **Free cosmetics** | Weather, couriers, wards, loading screens, announcers, mega-kills, read from the game's own item table, so anything Valve adds appears without an app update |
+| <img src="docs/icons/install.svg" width="20"> | **Load order** | Two mods can supply the same file and both stay on: the app says which one is on top and swaps them on a click, which is how an item mod is worn over a hero set |
 | <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Sort by date or name; filter by tag, hero or installed state; search across the whole catalog |
 | <img src="docs/icons/pack.svg" width="20"> | **Packs** | Open a themed pack, drop the mods you don't want, save the result as your own pack |
 | <img src="docs/icons/preset.svg" width="20"> | **Presets** | Save named sets of enabled mods and switch between them in one click |
@@ -35,8 +46,8 @@
 | <img src="docs/icons/update.svg" width="20"> | **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
 
 <div align="center">
-  <img src="docs/screenshots/catalog.png" alt="Catalog with filters" width="49%">
-  <img src="docs/screenshots/player.png" alt="Built-in preview player" width="49%">
+  <img src="docs/screenshots/cosmetics.webp" alt="Free cosmetics from the game's own item table" width="49%">
+  <img src="docs/screenshots/library.webp" alt="Library with load order" width="49%">
 </div>
 
 ## Installation

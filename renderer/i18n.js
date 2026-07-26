@@ -512,6 +512,12 @@ const EN = {
   'Dota 2 подключена · моды в dota_{0}': 'Dota 2 connected · mods in dota_{0}',
   'Dota 2 не найдена — укажи путь в настройках': 'Dota 2 not found — set the path in Settings',
 
+  // ---------- what's new ----------
+  'Что нового': 'What\'s new',
+  'версия {0}': 'version {0}',
+  'Понятно': 'Got it',
+  'Для этой версии заметок нет': 'No notes for this version',
+
   // ---------- progress + updates ----------
   'Скачивание: {0}': 'Downloading: {0}',
   'Найдено обновление v{0} — скачиваю в фоне…': 'Update v{0} found — downloading in the background…',

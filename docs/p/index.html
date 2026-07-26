@@ -11,31 +11,57 @@
   the preset over to the app.
 
   The preset code lives in the URL *fragment*. Browsers never send a fragment to the
-  server, so GitHub serves this page without ever seeing which mods anyone shares.
+  server, so GitHub serves this page without ever seeing which mods anyone shares - and
+  the same property lets this page unpack the build and show it: the whole list is in the
+  link, decoded here in the browser. Someone without the app sees what they are being
+  offered before they are asked to download anything.
 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Dota 2 Mod Manager">
+<meta property="og:title" content="A Dota 2 mod build, shared">
+<meta property="og:description" content="Open the link to see every mod in the build and install it in one click.">
+<meta property="og:image" content="https://thefleece.github.io/dota2-mod-manager/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
   body {
-    margin: 0; min-height: 100vh; display: grid; place-items: center;
-    background: #0d0d13; color: #e9e7f2;
-    font: 15px/1.65 system-ui, "Segoe UI", Roboto, sans-serif;
+    margin: 0; min-height: 100vh; padding: 34px 16px 60px;
+    background: radial-gradient(120% 80% at 50% -10%, #1a1630 0%, #0d0d13 62%);
+    color: #e9e7f2; font: 15px/1.65 system-ui, "Segoe UI", Roboto, sans-serif;
   }
-  .box { width: min(520px, 90vw); padding: 34px 30px; text-align: center; }
+  .box { width: min(720px, 100%); margin: 0 auto; text-align: center; }
   .logo {
-    width: 54px; height: 54px; margin: 0 auto 18px; border-radius: 14px;
+    width: 54px; height: 54px; margin: 0 auto 16px; border-radius: 14px;
     background: linear-gradient(140deg, #7c5cff, #b79dff);
     display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #12101c;
   }
-  h1 { font-size: 20px; margin: 0 0 8px; }
-  p { margin: 0 0 22px; color: #a8a2c0; }
+  h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .by { color: #8f89ab; font-size: 13.5px; margin: 0 0 22px; }
+  .row { display: flex; gap: 11px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
   .btn {
     display: inline-block; padding: 12px 24px; border-radius: 11px;
     background: #7c5cff; color: #fff; text-decoration: none; font-weight: 600; font-size: 15px;
   }
   .btn:hover { background: #8f74ff; }
-  .muted { font-size: 12.5px; color: #726c8c; margin: 26px 0 0; }
+  .btn.ghost { background: transparent; color: #b7aee0; border: 1px solid #322c4d; }
+  .muted { font-size: 12.5px; color: #726c8c; margin: 18px 0 0; }
   .muted a { color: #a992ff; }
   .bad { color: #ff8098; }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 10px; margin: 26px 0 4px; text-align: left;
+  }
+  .card {
+    background: #16131f; border: 1px solid #241f36; border-radius: 12px; overflow: hidden;
+  }
+  .thumb {
+    aspect-ratio: 16 / 10; background: #100e18; display: grid; place-items: center;
+    color: #4a4463; font-size: 11px;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .name { padding: 8px 10px 10px; font-size: 12.5px; font-weight: 600; line-height: 1.35; }
+  .more { color: #8f89ab; font-size: 13px; margin: 12px 0 0; }
   .lang { position: fixed; top: 16px; right: 18px; display: flex; gap: 4px; }
   .lang button {
     background: none; border: 1px solid #2a2440; color: #726c8c; cursor: pointer;
@@ -52,23 +78,37 @@
 <div class="box">
   <div class="logo">D2M</div>
   <h1 id="title"></h1>
-  <p id="lead"></p>
-  <a class="btn" id="open" href="#"></a>
+  <p class="by" id="by"></p>
+  <div class="row">
+    <a class="btn" id="open" href="#"></a>
+    <a class="btn ghost" id="get" href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe"></a>
+  </div>
   <p class="muted" id="foot"></p>
+  <div class="grid" id="grid"></div>
+  <p class="more" id="more"></p>
 </div>
 <script>
+  var RAW = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main';
+  var SHOW = 12; // enough to show what the build is; the rest is a count
+
   var STR = {
     en: {
-      title: 'Opening the preset…', lead: 'If nothing happens, use the button below.',
-      open: 'Open in Mod Manager',
-      foot: 'Don\'t have the app? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Download it</a> and open this link again.',
-      bad: 'No preset in this link', badLead: 'It looks like the link got cut off. Ask for the whole thing.'
+      title: 'A Dota 2 mod build', opening: 'Opening the preset…',
+      by: 'shared by {0}', count: '{0} mods in this build',
+      open: 'Open in Mod Manager', get: 'Download the app',
+      foot: 'The button opens the app if you have it. New here? Download it, run it, then open this link again.',
+      more: 'and {0} more',
+      bad: 'No preset in this link', badLead: 'It looks like the link got cut off. Ask for the whole thing.',
+      cos: 'free cosmetic'
     },
     ru: {
-      title: 'Открываю пресет…', lead: 'Если ничего не произошло, нажми кнопку ниже.',
-      open: 'Открыть в Mod Manager',
-      foot: 'Нет приложения? <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Скачай</a> и открой эту ссылку ещё раз.',
-      bad: 'В ссылке нет пресета', badLead: 'Похоже, ссылку обрезали при копировании. Попроси прислать её целиком.'
+      title: 'Сборка модов для Dota 2', opening: 'Открываю пресет…',
+      by: 'собрал {0}', count: 'модов в сборке: {0}',
+      open: 'Открыть в Mod Manager', get: 'Скачать приложение',
+      foot: 'Кнопка откроет приложение, если оно установлено. Нет его? Скачай, запусти и открой ссылку ещё раз.',
+      more: 'и ещё {0}',
+      bad: 'В ссылке нет пресета', badLead: 'Похоже, ссылку обрезали при копировании. Попроси прислать её целиком.',
+      cos: 'бесплатная косметика'
     }
   };
 
@@ -76,9 +116,17 @@
   var code = (location.hash || '').replace(/^#/, '');
   // only ever build a link out of the exact alphabet the app emits
   var ok = /^[A-Za-z0-9_-]+$/.test(code);
+  var preset = null;
   var saved = null;
   try { saved = localStorage.getItem('d2mmLang'); } catch (e) { /* private mode */ }
   var lang = saved || ((navigator.language || '').toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en');
+
+  var fill = function (s, v) { return s.replace('{0}', v); };
+  var esc = function (s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  };
 
   function apply(l) {
     lang = l;
@@ -88,24 +136,124 @@
     Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
       b.classList.toggle('on', b.dataset.lang === l);
     });
-    $('title').textContent = ok ? t.title : t.bad;
-    $('title').className = ok ? '' : 'bad';
-    $('lead').textContent = ok ? t.lead : t.badLead;
+    if (!ok) {
+      $('title').textContent = t.bad;
+      $('title').className = 'bad';
+      $('by').textContent = t.badLead;
+      return;
+    }
+    $('title').textContent = preset && preset.name ? preset.name : t.opening;
+    $('by').textContent = preset
+      ? (preset.author ? fill(t.by, preset.author) + ' · ' : '') + fill(t.count, preset.mods.length)
+      : '';
     $('open').textContent = t.open;
-    $('foot').innerHTML = t.foot;
+    $('get').textContent = t.get;
+    $('foot').textContent = t.foot;
+    if (preset) paintGrid();
   }
 
   Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
     b.addEventListener('click', function () { apply(b.dataset.lang); });
   });
+
+  // ---- the build itself, unpacked from the link right here in the browser ----
+
+  function fromBase64Url(s) {
+    var b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    var bin = atob(b64);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  // the app deflates the preset (raw, no zlib header) before base64url; DecompressionStream
+  // undoes exactly that. Browsers without it still get the buttons, just no preview.
+  function inflateRaw(bytes) {
+    if (typeof DecompressionStream !== 'function') return Promise.reject(new Error('no ds'));
+    var ds = new DecompressionStream('deflate-raw');
+    var stream = new Blob([bytes]).stream().pipeThrough(ds);
+    return new Response(stream).text();
+  }
+
+  function decode() {
+    return inflateRaw(fromBase64Url(code)).then(function (json) {
+      var raw = JSON.parse(json);
+      if (!raw || raw.v !== 1 || !Array.isArray(raw.m)) throw new Error('bad payload');
+      return {
+        name: typeof raw.n === 'string' ? raw.n.slice(0, 120) : '',
+        author: typeof raw.a === 'string' ? raw.a.slice(0, 80) : '',
+        mods: raw.m.filter(function (e) { return Array.isArray(e) && typeof e[1] === 'string'; })
+          .map(function (e) {
+            return e[0] === '$cos'
+              ? { cosmetic: true, name: String(e[3] || e[1]).slice(0, 300) }
+              : { cat: String(e[0]).slice(0, 60), name: String(e[1]).slice(0, 300) };
+          })
+      };
+    });
+  }
+
+  function paintGrid() {
+    var t = STR[lang];
+    var shown = preset.mods.slice(0, SHOW);
+    $('grid').innerHTML = shown.map(function (m, i) {
+      return '<div class="card"><div class="thumb" data-i="' + i + '">'
+        + (m.cosmetic ? esc(t.cos) : '') + '</div>'
+        + '<div class="name">' + esc(m.name) + '</div></div>';
+    }).join('');
+    $('more').textContent = preset.mods.length > shown.length
+      ? fill(t.more, preset.mods.length - shown.length) : '';
+  }
+
+  // Thumbnails come from the same catalog the app reads. Best effort: no picture is a
+  // cosmetic detail, and the page must never wait on it.
+  function paintThumbs() {
+    var wanted = preset.mods.slice(0, SHOW).filter(function (m) { return !m.cosmetic; });
+    if (!wanted.length) return;
+    fetch(RAW + '/assets/data/mods.json').then(function (r) { return r.json(); }).then(function (data) {
+      var byName = {};
+      var walk = function (catId, list) {
+        (list || []).forEach(function (m) {
+          if (!m.name) return;
+          var prev = m.preview || (m.styles && m.styles[0] && m.styles[0].preview);
+          if (prev) byName[m.name.toLowerCase()] = { cat: catId, preview: prev };
+        });
+      };
+      var mods = data.modsData || data;
+      Object.keys(mods).forEach(function (catId) {
+        var v = mods[catId];
+        if (Array.isArray(v)) walk(catId, v);
+        else if (v && v.groups) v.groups.forEach(function (g) { walk(catId, g.mods); });
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('.thumb[data-i]'), function (el) {
+        var m = preset.mods[Number(el.dataset.i)];
+        if (!m || m.cosmetic) return;
+        var hit = byName[m.name.toLowerCase()];
+        if (!hit || /\.(mp4|webm|mp3|ogg|wav)$/i.test(hit.preview)) return;
+        var url = /^https?:/i.test(hit.preview) ? hit.preview
+          : RAW + '/assets/previews/' + encodeURIComponent(hit.cat) + '/' + encodeURIComponent(hit.preview);
+        var img = new Image();
+        img.loading = 'lazy'; img.alt = '';
+        img.onload = function () { el.innerHTML = ''; el.appendChild(img); };
+        img.src = url;
+      });
+    }).catch(function () { /* the list without pictures is still the list */ });
+  }
+
   apply(lang);
 
   if (!ok) {
     $('open').style.display = 'none';
+    $('get').style.display = 'none';
     $('foot').style.display = 'none';
   } else {
     var deep = 'd2mm://preset/' + code;
     $('open').href = deep;
+    decode().then(function (p) {
+      preset = p;
+      apply(lang);
+      paintThumbs();
+    }).catch(function () { /* older browser or a broken code: the buttons still work */ });
     // browsers differ on whether a custom scheme may fire without a click, so try once and
     // leave the button as the reliable path
     try { location.href = deep; } catch (e) { /* the button still works */ }

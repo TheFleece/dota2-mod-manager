@@ -32,7 +32,9 @@
       "preload.js",
       "src/**/*",
       "renderer/**/*",
-      "package.json"
+      "package.json",
+      "CHANGELOG.md",
+      "CHANGELOG.ru.md"
     ],
     "protocols": [
       {
