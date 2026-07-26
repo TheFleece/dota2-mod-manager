@@ -527,6 +527,13 @@ const EN = {
   'Позже': 'Later',
   'Обновляю каталог…': 'Refreshing the catalog…',
   'Каталог обновлён': 'Catalog updated',
+
+  // ---------- diagnostics ----------
+  'Диагностика': 'Diagnostics',
+  'Один файл с путём и настройками Dota, списком модов, состоянием патча и последними записями журнала приложения — без личных данных, кроме имени в Discord, если ты вошёл. Пришли его вместо скриншотов, если что-то не работает.':
+    "One file with Dota's path and settings, the mod list, patch state and the app's recent log entries — no personal data beyond your Discord name, if you're signed in. Send it instead of screenshots when something's broken.",
+  'Экспортировать отчёт': 'Export report',
+  'Отчёт сохранён': 'Report saved',
 };
 
 function canonKey(strings) {

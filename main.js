@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
+const AdmZip = require('adm-zip');
 
 let autoUpdater = null;
 try {
@@ -21,6 +22,7 @@ const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const { createSchemaService } = require('./src/schema-service');
 const { Icons } = require('./src/icons');
+const { buildReport } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
 const i18n = require('./src/i18n');
 const { t } = i18n;
@@ -176,10 +178,33 @@ function createWindow() {
   }
 }
 
+// A small rotating log every install keeps, so a support report (see src/diagnostics.js and
+// the diag:export handler below) doesn't depend on reproducing the problem live. MM_DIAG is
+// a separate, opt-in mirror to an arbitrary path, used only by the screenshot test harness.
+let _logFile = null;
+function logFile() {
+  if (!_logFile) _logFile = path.join(app.getPath('userData'), 'logs', 'app.log');
+  return _logFile;
+}
+const LOG_MAX_BYTES = 1024 * 1024;
+function appendLog(line) {
+  try {
+    const file = logFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    try { if (fs.statSync(file).size > LOG_MAX_BYTES) fs.renameSync(file, file + '.1'); } catch { /* first write */ }
+    fs.appendFileSync(file, line);
+  } catch { /* logging must never be why the app crashes */ }
+}
+
 const DIAG = process.env.MM_DIAG;
 function diag(msg) {
-  if (DIAG) { try { fs.appendFileSync(DIAG, `${new Date().toISOString()} ${msg}\n`); } catch { /* noop */ } }
+  const line = `${new Date().toISOString()} ${msg}\n`;
+  appendLog(line);
+  if (DIAG) { try { fs.appendFileSync(DIAG, line); } catch { /* noop */ } }
 }
+
+process.on('uncaughtException', (err) => diag('uncaughtException: ' + (err?.stack || err)));
+process.on('unhandledRejection', (reason) => diag('unhandledRejection: ' + (reason?.stack || reason)));
 
 app.whenReady().then(async () => {
   diag('whenReady');
@@ -1855,6 +1880,36 @@ function registerIpc() {
       if (!exe) return { error: t('exe не найден в папке инструмента') };
       shell.openPath(exe);
       return { ok: true };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // ----- diagnostics -----
+  // fire-and-forget: a renderer crash it can't recover from still lands in the log a support
+  // report is built from, instead of vanishing with the window
+  ipcMain.on('diag:rendererError', (e, msg) => diag('renderer: ' + String(msg || '').slice(0, 2000)));
+
+  ipcMain.handle('diag:export', async () => {
+    try {
+      const { report, files } = buildReport({
+        settings, library, installer, schemaService, catalog, icons,
+        app: { version: app.getVersion(), logFile: logFile() },
+      });
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const res = await dialog.showSaveDialog(win, {
+        title: t('Сохранить отчёт для поддержки'),
+        defaultPath: `dota2-mod-manager-diag-${stamp}.zip`,
+        filters: [{ name: t('Отчёт диагностики'), extensions: ['zip'] }],
+      });
+      if (res.canceled || !res.filePath) return { cancelled: true };
+      const zip = new AdmZip();
+      zip.addFile('report.json', Buffer.from(JSON.stringify(report, null, 2)));
+      for (const [name, text] of Object.entries(files)) zip.addFile(name, Buffer.from(text, 'utf-8'));
+      try { zip.addFile('manifest.json', fs.readFileSync(library.file)); } catch { /* nothing installed yet */ }
+      fs.writeFileSync(res.filePath, zip.toBuffer());
+      shell.showItemInFolder(res.filePath);
+      return { ok: true, path: res.filePath };
     } catch (err) {
       return { error: String(err.message || err) };
     }

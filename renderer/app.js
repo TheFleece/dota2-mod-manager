@@ -123,6 +123,16 @@ const state = {
 const $ = (sel) => document.querySelector(sel);
 const viewRoot = $('#view-root');
 
+// A crash the user can't explain is the hardest kind to fix from a support chat. Both land
+// in the app's own log (see main.js diag:rendererError / src/diagnostics.js), so "it broke"
+// turns into a report the user can export instead of a guessing game over Discord.
+window.addEventListener('error', (e) => {
+  window.api.diag.reportError(`window.onerror: ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}`);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  window.api.diag.reportError(`unhandledrejection: ${e.reason?.stack || e.reason}`);
+});
+
 // ---------- favorites ----------
 
 const favKey = (cat, name) => `${cat}|${name}`;
@@ -3703,6 +3713,16 @@ async function renderSettings() {
       </div>
     </div>
 
+    <div class="settings-block" style="animation-delay:270ms">
+      <h3>${L`Диагностика`}</h3>
+      <div style="font-size:12.5px;color:var(--text-muted)">
+        ${L`Один файл с путём и настройками Dota, списком модов, состоянием патча и последними записями журнала приложения — без личных данных, кроме имени в Discord, если ты вошёл. Пришли его вместо скриншотов, если что-то не работает.`}
+      </div>
+      <div class="settings-row" style="margin-top:10px">
+        <button class="btn btn-sm" id="diagExportBtn"><span class="ms">bug_report</span>${L`Экспортировать отчёт`}</button>
+      </div>
+    </div>
+
     <div class="settings-block" style="animation-delay:300ms">
       <h3>${L`О программе`}</h3>
       <div class="settings-row">
@@ -3720,6 +3740,12 @@ async function renderSettings() {
   `;
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
   $('#whatsNewBtn').addEventListener('click', () => showWhatsNew({ force: true }));
+  $('#diagExportBtn').addEventListener('click', async () => {
+    const r = await window.api.diag.export();
+    if (r?.cancelled) return;
+    if (r?.error) toast(r.error, 'error', 7000);
+    else toast(L`Отчёт сохранён`);
+  });
 
   // one language switch for everything: the app, Dota's text and Dota's voice. The voice
   // part decides which dota_<lang> folder the game mounts, so it moves the mods with it —

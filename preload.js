@@ -97,6 +97,10 @@ contextBridge.exposeInMainWorld('api', {
     clearCache: () => ipcRenderer.invoke('misc:clearCache'),
     runTool: (dirName) => ipcRenderer.invoke('misc:runTool', dirName),
   },
+  diag: {
+    export: () => ipcRenderer.invoke('diag:export'),
+    reportError: (msg) => ipcRenderer.send('diag:rendererError', msg),
+  },
   onProgress: (cb) => {
     ipcRenderer.on('progress', (e, evt) => cb(evt));
   },
