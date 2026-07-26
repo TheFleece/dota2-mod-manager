@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
 const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
-const { extractDeltas } = require('./schema');
+const { extractDeltas, deltaTable, crc32 } = require('./schema');
 const { ensureLangFolder } = require('./gamelang');
 const { t } = require('./i18n');
 
@@ -681,10 +681,17 @@ class Installer {
 
   // ---------- export as a single self-contained vpk ----------
 
-  // Merges a mod's lang files (including multi-part _dir + _NNN sets) into one
-  // self-contained VPK buffer — the single-file format the catalog uses, e.g.
-  // for sharing an imported Dota2Changer pack with a catalog author.
-  mergeToSingleVpk(rec) {
+  /**
+   * A mod's lang files (including multi-part _dir + _NNN sets) merged into one
+   * self-contained VPK buffer - the single-file format the catalog uses, e.g. for sharing
+   * an imported Dota2Changer pack with a catalog author.
+   * @param {object} rec
+   * @param {Array<{id, name, block}>} [deltas]  the record's lifted item blocks, for a file
+   *   headed somewhere other than this install (an export, a shared preset). Installing
+   *   strips the table a mod ships and keeps its blocks on the record instead, so without
+   *   these the copy leaves without its effects - see harvestSchema / schema.deltaTable.
+   */
+  mergeToSingleVpk(rec, deltas) {
     const lang = this.langFolder();
     const dirRec = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
     if (!dirRec) throw new Error(t('У этого мода нет _dir.vpk — объединять нечего'));
@@ -697,7 +704,14 @@ class Installer {
     const dirAbs = resolve(dirRec.relPath);
     const base = dirRec.relPath.replace(/_dir\.vpk$/i, '');
     const archivePathFor = (idx) => resolve(`${base}_${String(idx).padStart(3, '0')}.vpk`);
-    return mergeVpkToSingle(dirAbs, archivePathFor);
+    if (!deltas || !deltas.length) return mergeVpkToSingle(dirAbs, archivePathFor);
+
+    const entries = readVpkEntries(fs.readFileSync(dirAbs), dirAbs, archivePathFor)
+      .filter((e) => !/(^|\/)items_game\.txt"?$/.test(entryPath(e)));
+    // latin1 keeps the blocks byte-exact, the way the whole schema path reads and writes them
+    const data = Buffer.from(deltaTable(deltas), 'latin1');
+    entries.push({ ext: 'txt', folder: 'scripts/items', name: 'items_game', crc: crc32(data), preload: Buffer.alloc(0), data });
+    return buildVpk(entries);
   }
 
   // ---------- conflict detection ----------
@@ -1080,7 +1094,9 @@ class Installer {
       const schemaEntry = entries
         .filter((e) => /(^|\/)items_game\.txt"?$/.test(entryPath(e)))
         .sort((a, b) => b.data.length - a.data.length)[0];
-      if (schemaEntry && schemaEntry.data.length > 4096 && vanillaText) {
+      // Any size: a mod off the internet ships the whole 47 MB table, but a mod exported by
+      // this app carries only its own blocks (see mergeToSingleVpk), and that file is small.
+      if (schemaEntry && schemaEntry.data.length && vanillaText) {
         try {
           for (const d of extractDeltas(schemaEntry.data.toString('latin1'), paths, vanillaText)) deltas.push(d);
         } catch { /* a mangled table is not worth failing the install over */ }

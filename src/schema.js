@@ -286,6 +286,26 @@ function blockUsesAssets(blockText, vpkPaths) {
 }
 
 /**
+ * The blocks a mod changed, written back out as a table of their own: the shape items_game
+ * has, holding nothing but this mod's items.
+ *
+ * Installing a mod lifts its item blocks onto the library record and drops the 47 MB table
+ * it shipped (see installer.harvestSchema) - which is right for this install, and wrong for
+ * a file leaving it. A mod exported or shared without those blocks travels without its
+ * effects and icons, so anything built for somewhere else carries this instead: small, and
+ * read straight back by the same harvest on the other side.
+ * @param {Array<{id, name, block}>} deltas
+ * @returns {string}
+ */
+function deltaTable(deltas) {
+  const nl = '\r\n';
+  // verbatim, not reindented: the block is already valid KV, and keeping its own bytes is
+  // what makes the trip out and back byte-identical to what was lifted in the first place
+  const blocks = (deltas || []).map((d) => '\t\t' + d.block).join(nl);
+  return `"items_game"${nl}{${nl}\t"items"${nl}\t{${nl}${blocks}${nl}\t}${nl}}${nl}`;
+}
+
+/**
  * Which item blocks a mod actually changed. Diffing two schemas line by line is
  * useless (the mod's copy is months behind the game's), so instead: a real change
  * always names a file the mod itself ships. Blocks that mention one of those, and
@@ -517,6 +537,7 @@ module.exports = {
   findItem,
   itemFields,
   extractDeltas,
+  deltaTable,
   ownedAssetNeedles,
   blockUsesAssets,
   baseItemPatch,
