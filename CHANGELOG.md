@@ -2,6 +2,20 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 1.14.1
+
+### More cosmetics with a picture, fewer library rows with none
+
+- Not every cosmetic's picture is filed under the name the game uses: some (couriers with
+  their own wiki page, mostly) are illustrated with a plain screenshot under some other name
+  entirely. The app now asks the wiki's exact page for its picture directly, instead of only
+  ever guessing a file name.
+- A "Loading Screen" or "Versus Screen" cosmetic with no picture of its own now falls back to
+  its outfit's picture, for when the outfit has one and that exact screen doesn't.
+- An imported mod recognised as skinning one hero shows that hero's own portrait instead of
+  an empty box in the Library. An unmatched cursor set or an unsplit multi-hero import get a
+  stand-in picture too, instead of nothing.
+
 ## 1.14.0
 
 ### A support report, one file instead of a round of screenshots
