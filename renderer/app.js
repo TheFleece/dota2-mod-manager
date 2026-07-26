@@ -1928,9 +1928,13 @@ function isPackableRec(rec) {
     && (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
 }
 
-// 2x2 preview grid built from a pack's first members
+// 2x2 preview grid built from a pack's first members. When not one of them has a picture of
+// its own, four empty boxes say nothing a single "several heroes in one" stand-in wouldn't
+// say better - the same generic image an unsplit multi-hero import falls back to.
 function packThumbGridHtml(rec) {
-  const cells = (rec.members || []).slice(0, 4).map((m) => {
+  const members = rec.members || [];
+  if (!members.some((m) => recPreviewUrl(m))) return fallbackThumbHtml('generic:pack', 'auto_awesome', 'lib-thumb');
+  const cells = members.slice(0, 4).map((m) => {
     const p = recPreviewUrl(m);
     if (!p) return `<div class="pack-thumb-cell"><span class="ms">${catIcon(m.categoryId)}</span></div>`;
     return isVideo(p)
@@ -2167,27 +2171,38 @@ function thumbHtml(cls, url) {
   return `<img class="${cls}" src="${esc(url)}" loading="lazy" alt="">`;
 }
 
-// An imported mod recognised as skinning exactly one hero (see installer.analyzeRecord),
-// otherwise showing no picture at all - a stand-in worth showing, unlike a font, a cursor
-// set, or a bundle of several heroes at once, where one hero's face would just be wrong.
-function heroFallbackKey(rec) {
-  if (rec.categoryId !== 'imported' || !Array.isArray(rec.heroNames) || rec.heroNames.length !== 1) return null;
-  return 'hero:' + rec.heroNames[0];
+// A stand-in for a record with no picture of its own and no catalog match: a cursor set
+// (whatever its category - a data gap in the catalog is as blank as an unmatched import), an
+// imported mod recognised as skinning exactly one hero (see installer.analyzeRecord), or an
+// unsplit bundle of several heroes at once. Each is a real thing the wiki itself illustrates
+// with one picture; a font, or anything the app cannot place in one of these, stays a plain
+// icon rather than guess.
+function wikiFallbackKey(rec) {
+  if (isCursorRec(rec)) return { key: 'generic:cursor', icon: 'arrow_selector_tool' };
+  if (rec.categoryId !== 'imported' || !Array.isArray(rec.heroNames) || !rec.heroNames.length) return null;
+  return rec.heroNames.length === 1
+    ? { key: 'hero:' + rec.heroNames[0], icon: 'person' }
+    : { key: 'generic:pack', icon: 'auto_awesome' };
 }
 
-// thumbHtml, with the hero-portrait fallback layered on for a record with no picture of its
-// own or the catalog's: fetched and cached the same lazy way a cosmetic's picture is (see
-// watchCosmeticIcons) - the surrounding list's own observer picks up the data-name for free.
-function libThumbHtml(rec, cls) {
-  const url = recPreviewUrl(rec);
-  if (url) return thumbHtml(cls, url);
-  const key = heroFallbackKey(rec);
-  if (!key) return `<div class="${cls}"></div>`;
+// A tile for a fixed fallback key (a hero's portrait, a category's stand-in): whatever is
+// already known client-side, or a placeholder icon with the data-name the list's own
+// IntersectionObserver picks up for free (see watchCosmeticIcons) once it scrolls into view.
+function fallbackThumbHtml(key, icon, cls) {
   if (cosIconCache.has(key)) {
     const cached = cosIconCache.get(key);
     return cached ? `<img class="${cls}" src="${esc(cached)}" loading="lazy" alt="">` : `<div class="${cls}"></div>`;
   }
-  return `<div class="${cls}" data-name="${esc(key)}"><span class="ms" style="font-size:18px;color:var(--text-faint)">person</span></div>`;
+  return `<div class="${cls}" data-name="${esc(key)}"><span class="ms" style="font-size:18px;color:var(--text-faint)">${icon}</span></div>`;
+}
+
+// thumbHtml, with the wiki-picture fallback layered on for a record with no picture of its
+// own or the catalog's.
+function libThumbHtml(rec, cls) {
+  const url = recPreviewUrl(rec);
+  if (url) return thumbHtml(cls, url);
+  const fb = wikiFallbackKey(rec);
+  return fb ? fallbackThumbHtml(fb.key, fb.icon, cls) : `<div class="${cls}"></div>`;
 }
 
 // catalog thumbnail for a fingerprint match, resolved from the loaded catalog index

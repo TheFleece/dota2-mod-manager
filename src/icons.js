@@ -1,13 +1,14 @@
-// Pictures for the cosmetics picker.
+// Pictures for the cosmetics picker, and for the Library where a picture can be found for
+// content that is not a cosmetic at all.
 //
 // The game keeps its own icons as compiled Source 2 textures inside pak01, which the app
 // cannot draw. The Dota wiki hosts a PNG for most cosmetics under a name built from the
-// item's own (and its search finds the rest), so that is where they come from - fetched in
-// the main process and handed to the renderer as data URIs, the same way the Discord avatar
-// is handled: no third-party host in the page's CSP, and nothing about the user leaves with
-// the request. A few dozen looks that Fandom never got a picture for at all (old Battle
-// Passes, some Mega-Kills) are asked of Liquipedia instead, which mirrors the same file
-// naming on its own image host.
+// item's own (a page under the exact name, or its search, finds the rest), so that is where
+// they come from - fetched in the main process and handed to the renderer as data URIs, the
+// same way the Discord avatar is handled: no third-party host in the page's CSP, and nothing
+// about the user leaves with the request. A few dozen looks that Fandom never got a picture
+// for at all (old Battle Passes, some Mega-Kills) are asked of Liquipedia instead, which
+// mirrors the same file naming on its own image host.
 //
 // Everything is cached on disk, misses included: 2000 loading screens must not turn into
 // 2000 requests every time the picker opens.
@@ -122,9 +123,9 @@ class Icons {
     this.fetch = fetchImpl || globalThis.fetch;
     this.dir = path.join(userDataDir, 'icons');
     fs.mkdirSync(this.dir, { recursive: true });
-    // v5: the older files hold names that missed because the app hadn't yet tried a
-    // suffix-stripped retry (see stripScreenSuffix), so they are not carried over
-    this.missFile = path.join(this.dir, 'misses.v5.json');
+    // v6: the older files hold names that missed because the app hadn't yet tried the exact
+    // title's own page picture (see pageImage), so they are not carried over
+    this.missFile = path.join(this.dir, 'misses.v6.json');
     this.misses = new Map();
     this.inflight = new Map();
     this.liqGate = rateGate(LIQ_MIN_GAP_MS);
@@ -200,6 +201,26 @@ class Icons {
   async filesBySearch(name) {
     const json = await this.askFandom({ action: 'query', list: 'search', srnamespace: '6', srlimit: '10', srsearch: `Cosmetic icon ${name}` });
     return json && (json.query?.search || []).map((s) => String(s.title));
+  }
+
+  /**
+   * The lead picture of the wiki article at this EXACT title, when one exists - not every
+   * cosmetic's picture is filed as "Cosmetic_icon_...": a courier with its own page (rare
+   * outfits, mostly) is routinely illustrated with a plain screenshot under some other name
+   * entirely, which no amount of guessing the file name would ever find. MediaWiki resolves
+   * the title itself (case, spacing, real redirects), so this needs no typo tolerance of its
+   * own - it only ever answers for the name the game already got right.
+   * @returns {Promise<string|null|undefined>} a ready-to-fetch image URL · null = no such
+   *   page, or the page has no picture · undefined = the wiki never answered
+   */
+  async pageImage(title) {
+    const json = await this.askFandom({
+      action: 'query', titles: title, prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '512', redirects: '1',
+    });
+    if (!json) return undefined;
+    const page = Object.values(json.query?.pages || {})[0];
+    if (!page || page.missing !== undefined) return null;
+    return page.thumbnail ? String(page.thumbnail.source) : null;
   }
 
   // Liquipedia keeps every wiki's uploads on one shared image host ("commons"), same
@@ -356,6 +377,11 @@ class Icons {
         const hit = await this.fetchFandomFile(wikiName);
         if (hit) return hit;
       }
+      const pageUrl = await this.pageImage(name);
+      if (pageUrl) {
+        const hit = await this.fetchBytes(pageUrl, UA);
+        if (hit) return hit;
+      }
       const found = await this.searchFileName(name);
       if (found === undefined) return undefined;
       if (found === null) return null;
@@ -393,10 +419,37 @@ class Icons {
     });
   }
 
+  // A stand-in for content the app cannot name any more precisely than "a bundle of several
+  // heroes" or "a cursor set" - a real category the wiki itself illustrates with one picture,
+  // reused so an import that is neither a single recognised hero nor a catalog match still
+  // shows something truer than an empty box. Not a per-item lookup, so it never needs a
+  // second wiki or a typo-tolerant search: the title is fixed and known to exist.
+  static GENERIC_PAGES = {
+    // several heroes' worth of emoticons in one picture - the closest the wiki has to
+    // "several heroes bundled into one thing", which is exactly what an unsplit import is
+    pack: 'DAC Compendium 2015 Emoticon Pack',
+    cursor: 'Cursor Pack',
+  };
+
+  /**
+   * @returns {Promise<string|null>}
+   */
+  async getGeneric(kind) {
+    const title = Icons.GENERIC_PAGES[kind];
+    if (!title) return null;
+    return this.cached('generic:' + kind, async () => {
+      const url = await this.pageImage(title);
+      if (url === undefined) return undefined;
+      if (!url) return null;
+      return this.fetchBytes(url, UA);
+    });
+  }
+
   /**
    * Pictures for a batch of names, a few requests at a time. A name prefixed "hero:" asks
-   * for that hero's own portrait (see getHero) instead of a cosmetic look - the same batch
-   * call and the same on-screen loader cover both, so the renderer needs only one pipeline.
+   * for that hero's own portrait (see getHero), "generic:" for a category stand-in (see
+   * getGeneric), instead of a cosmetic look - the same batch call and the same on-screen
+   * loader cover all three, so the renderer needs only one pipeline.
    * @returns {Promise<Record<string, string|null>>}
    */
   async getMany(names) {
@@ -406,7 +459,9 @@ class Icons {
     const worker = async () => {
       while (next < list.length) {
         const name = list[next++];
-        out[name] = name.startsWith('hero:') ? await this.getHero(name.slice(5)) : await this.get(name);
+        if (name.startsWith('hero:')) out[name] = await this.getHero(name.slice(5));
+        else if (name.startsWith('generic:')) out[name] = await this.getGeneric(name.slice(8));
+        else out[name] = await this.get(name);
       }
     };
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, worker));
