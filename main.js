@@ -572,7 +572,7 @@ function shareEntryFor(rec, cat) {
   const a = installer.analyzeRecord(rec) || {};
   return {
     kind: 'embedded', name: rec.name, categoryId: rec.categoryId, info: a.info || '', fp: a.fp || null,
-    size, loadData: () => installer.mergeToSingleVpk(rec),
+    size, loadData: () => installer.mergeToSingleVpk(rec, rec.schema),
   };
 }
 
@@ -1117,7 +1117,7 @@ function registerIpc() {
     try {
       // a cursor set is loose files, not a pak — it travels as the zip the catalog uses
       const cursor = isCursorRecord(rec);
-      const buf = cursor ? installer.cursorZip(rec) : installer.mergeToSingleVpk(rec);
+      const buf = cursor ? installer.cursorZip(rec) : installer.mergeToSingleVpk(rec, rec.schema);
       const safe = rec.name.replace(/[<>:"/\\|?*]/g, '_') || 'mod';
       const res = await dialog.showSaveDialog(win, {
         title: cursor ? t('Сохранить курсор архивом') : t('Сохранить мод одним .vpk файлом'),
@@ -1764,6 +1764,7 @@ function registerIpc() {
     const cat = await catalogIndex();
     const fpIndex = installedFpIndex();
     const errors = [];
+    let schemaTouched = false;
 
     // -> id of the library record that now provides this mod, or null
     const resolveEntry = async (entry) => {
@@ -1791,6 +1792,9 @@ function registerIpc() {
             categoryId: 'imported', name: entry.name, styleLabel: null,
             fileRef: null, preview: null, files,
           });
+          // the sender's copy carries its item blocks with it (see mergeToSingleVpk): lift
+          // them onto this record too, or the mod arrives without its effects
+          if (schemaService.harvest(rec)) schemaTouched = true;
           if (entry.fp) fpIndex.set(entry.fp, rec.id);
           return rec.id;
         }
@@ -1826,6 +1830,9 @@ function registerIpc() {
     if (stash) { try { fs.rmSync(stash, { force: true }); } catch { /* noop */ } }
 
     errors.push(...applyPreset(preset));
+    // a mod that arrived already enabled never passes through applyPreset's own switch, so
+    // its freshly lifted blocks would sit in the library without ever reaching the build
+    if (schemaTouched) schemaService.refresh();
     afterDeployMaster();
     sendProgress({ type: 'done', label: preset.name });
     return { ok: true, installed: preset.modIds.length, errors };
