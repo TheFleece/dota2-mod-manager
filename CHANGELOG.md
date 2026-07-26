@@ -9,6 +9,18 @@ What changed in each release. The app updates itself, so you get all of this wit
   update, and Settings has a button to read them again.
 - A shared preset link now opens a page that shows the whole build with pictures before
   anyone is asked to install anything.
+- The catalog has a **Favorites** filter, the one the cosmetics already had. It shows what
+  you starred without leaving the category.
+
+### Fixes
+
+- Cosmetics the wiki files under another spelling stayed blank tiles: the game writes
+  `Aghanim's Labryinth 2021 HUD`, and it calls two HUDs a `Hud Skin` where the wiki does
+  not. The app now asks the wiki which file it keeps such a look under. Three HUDs stay
+  blank because the wiki has no picture for them at all.
+- A mod whose preview is a video showed an empty box in the Library. You get its first
+  frame, and a mod installed without a picture borrows the catalog's.
+- Installing a pack dropped the picture of any mod that comes in several styles.
 
 ## 1.12.0
 

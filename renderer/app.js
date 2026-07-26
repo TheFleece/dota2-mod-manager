@@ -78,6 +78,11 @@ const SORTS = [
   { key: 'name-desc', label: 'По имени Я-А' },
 ];
 
+// What the toolbar above a grid holds. Mods and free cosmetics share it, so "Установленные"
+// and "Избранное" mean the same thing wherever they are — and switching category resets it.
+const FILTER_DEFAULTS = { sort: 'default', tags: new Set(), installedOnly: false, favOnly: false, group: '', hero: '' };
+const freshFilters = () => ({ ...FILTER_DEFAULTS, tags: new Set() });
+
 // Chrome panels the user can resize, scale and fold away: the title bar, the status bar and
 // the category rail. Everything lives in CSS variables (see "Panel grips").
 // Two independent knobs each: the grip drags its size, Ctrl + wheel over it sets its own
@@ -99,8 +104,7 @@ const state = {
   activeCategory: 'all',
   search: '',
   cosSearch: '',           // search inside one cosmetic slot (its list can run to thousands)
-  cosFavOnly: false,       // that slot's "Избранное" chip
-  filters: { sort: 'default', tags: new Set(), installedOnly: false, group: '', hero: '' },
+  filters: freshFilters(),
   installedIndex: new Map(),
   cosmeticPicks: new Map(), // slot -> live library record for it (rebuilt from mods:list)
   installing: new Set(),
@@ -772,10 +776,11 @@ function searchCosmetics(q) {
   return out;
 }
 
-// the catalog sort/"installed only" filters, applied to a [{slot, o}] list
+// the catalog sort/"installed only"/"starred only" filters, applied to a [{slot, o}] list
 function filterCosmetics(list) {
   const f = state.filters;
   let out = f.installedOnly ? list.filter(({ slot, o }) => pickedIn(slot)?.itemId === o.id) : list;
+  if (f.favOnly) out = out.filter(({ slot, o }) => isFav(COSMETIC_PREFIX + slot, o.name));
   if (f.sort === 'name') out = [...out].sort((a, b) => a.o.name.localeCompare(b.o.name));
   else if (f.sort === 'name-desc') out = [...out].sort((a, b) => b.o.name.localeCompare(a.o.name));
   return out;
@@ -916,6 +921,9 @@ function applyFilters(mods, catForInstalled) {
   }
   if (f.installedOnly) {
     out = out.filter((m) => isInstalled(m._cat || catForInstalled, m));
+  }
+  if (f.favOnly) {
+    out = out.filter((m) => isFav(m._cat || catForInstalled, m.name));
   }
   const dateOf = (m) => m.meta?.date || 0;
   switch (f.sort) {
@@ -1155,9 +1163,8 @@ function renderRail() {
   rail.querySelectorAll('.rail-item').forEach((b) => {
     b.addEventListener('click', () => {
       state.activeCategory = b.dataset.cat;
-      state.filters = { sort: 'default', tags: new Set(), installedOnly: false, group: '', hero: '' };
+      state.filters = freshFilters();
       state.cosSearch = '';
-      state.cosFavOnly = false;
       if (state.search) {
         state.search = '';
         $('#globalSearch').value = '';
@@ -1212,7 +1219,7 @@ function renderFavorites() {
       <h1 class="view-title">${L`Избранное`}</h1>
       <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}${cosAll.length ? ` · ${cosAll.length} ${plural(cosAll.length, 'косметика', 'косметики', 'косметик')}` : ''}</span>
     </div>
-    ${empty ? '' : toolbarHtml(mods.length + cos.length, { installable })}
+    ${empty ? '' : toolbarHtml(mods.length + cos.length, { installable, fav: false })}
     ${empty ? `<div class="empty-note">${L`Здесь пусто — жми на сердечко у мода в каталоге`}</div>` : ''}
     ${all.length ? `
       ${cosAll.length ? `<div class="section-h"><span class="ms">extension</span>${L`Моды`}</div>` : ''}
@@ -1272,7 +1279,7 @@ function renderHome() {
   viewRoot.querySelectorAll('.cat-tile').forEach((t) => {
     t.addEventListener('click', () => {
       state.activeCategory = t.dataset.cat;
-      state.filters = { sort: 'default', tags: new Set(), installedOnly: false, group: '', hero: '' };
+      state.filters = freshFilters();
       renderCatalog();
       $('#main').scrollTop = 0;
     });
@@ -1374,7 +1381,7 @@ function renderCategory(categoryId) {
 
 const GROUP_LABEL = { 'hero-items': 'Все герои', 'item-effects': 'Все предметы', creeps: 'Все крипы', towers: 'Все башни', 'creep-deny': 'Все типы' };
 
-function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categoryId = null, installable = true }) {
+function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categoryId = null, installable = true, fav = true }) {
   const f = state.filters;
   return `
     <div class="toolbar">
@@ -1400,10 +1407,14 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
             ${groups.map((g) => `<option value="${esc(g)}" ${f.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
           </select>
         </div>` : ''}
+      ${installable || fav ? '<div class="sep"></div>' : ''}
       ${installable ? `
-      <div class="sep"></div>
       <button class="fchip ${f.installedOnly ? 'active' : ''}" id="installedChip">
         <span class="ms">check_circle</span>${L`Установленные`}
+      </button>` : ''}
+      ${fav ? `
+      <button class="fchip ${f.favOnly ? 'active' : ''}" id="favChip">
+        <span class="ms">favorite</span>${L`Избранное`}
       </button>` : ''}
       ${tags.length ? '<div class="sep"></div>' : ''}
       ${tags.map(([tag, cnt]) => `
@@ -1429,6 +1440,10 @@ function bindToolbar() {
   });
   $('#installedChip')?.addEventListener('click', () => {
     state.filters.installedOnly = !state.filters.installedOnly;
+    renderCatalog();
+  });
+  $('#favChip')?.addEventListener('click', () => {
+    state.filters.favOnly = !state.filters.favOnly;
     renderCatalog();
   });
   document.querySelectorAll('.fchip[data-tag]').forEach((c) => {
@@ -1532,7 +1547,7 @@ function bindFavButton(btn) {
     btn.setAttribute('aria-label', label);
     if (state.view !== 'catalog') return;
     // in a list that IS the favourites, the card has to leave it
-    if (state.activeCategory === 'favorites' || (state.cosFavOnly && state.activeCategory.startsWith(COSMETIC_PREFIX))) renderCatalog();
+    if (state.activeCategory === 'favorites' || state.filters.favOnly) renderCatalog();
     else renderRail();
   });
 }
@@ -1671,7 +1686,7 @@ function drawModal() {
             const inst = x.hit && isInstalled(x.hit.categoryId, x.hit.mod);
             return `
             <div class="pack-row ${excluded ? 'excluded' : ''} ${x.hit ? '' : 'missing'}" data-member="${esc(x.name)}">
-              ${thumb && !isVideo(thumb) ? `<img class="pack-thumb" src="${esc(thumb)}" loading="lazy" alt="">` : '<div class="pack-thumb"></div>'}
+              ${thumbHtml('pack-thumb', thumb)}
               <div class="pack-info">
                 <div class="pack-mod-name">${esc(x.name)}</div>
                 <div class="pack-mod-cat">${x.hit ? esc(catName(x.hit.categoryId)) : L`не найден в каталоге`}${inst ? L` · установлен` : ''}</div>
@@ -1855,11 +1870,13 @@ async function installPack(pack) {
     const hit = state.modIndex.get(name.toLowerCase());
     if (!hit) { skip++; continue; }
     const { categoryId, mod } = hit;
-    const fileRef = mod.file || mod.styles?.[0]?.file;
-    const styleLabel = mod.file ? null : mod.styles?.[0]?.label || null;
+    // a mod with styles keeps everything per style — its file, its label and its picture
+    const style = mod.file ? null : mod.styles?.[0];
+    const fileRef = mod.file || style?.file;
+    const styleLabel = style?.label || null;
     if (!fileRef || !/\.(vpk|zip)$/i.test(fileRef)) { skip++; continue; }
     if (state.installedIndex.has(keyOf(categoryId, mod.name, styleLabel))) { skip++; continue; }
-    const r = await doInstall(categoryId, mod, styleLabel, fileRef, mod.preview);
+    const r = await doInstall(categoryId, mod, styleLabel, fileRef, style?.preview || mod.preview);
     if (r?.ok) ok++;
     else if (r?.cancelled) skip++;
     else fail++;
@@ -1904,9 +1921,11 @@ function isPackableRec(rec) {
 // 2x2 preview grid built from a pack's first members
 function packThumbGridHtml(rec) {
   const cells = (rec.members || []).slice(0, 4).map((m) => {
-    const p = previewUrl(m.categoryId, m.preview);
-    return p && !isVideo(p) ? `<img src="${esc(p)}" loading="lazy" alt="">`
-      : `<div class="pack-thumb-cell"><span class="ms">${catIcon(m.categoryId)}</span></div>`;
+    const p = recPreviewUrl(m);
+    if (!p) return `<div class="pack-thumb-cell"><span class="ms">${catIcon(m.categoryId)}</span></div>`;
+    return isVideo(p)
+      ? `<video src="${esc(p)}" muted playsinline preload="metadata"></video>`
+      : `<img src="${esc(p)}" loading="lazy" alt="">`;
   });
   while (cells.length < 4) cells.push('<div class="pack-thumb-cell"></div>');
   return `<div class="lib-thumb pack-thumb-grid">${cells.join('')}</div>`;
@@ -1915,8 +1934,7 @@ function packThumbGridHtml(rec) {
 function memberRowHtml(rec, m, masterOff) {
   const key = memberKey(rec.id, m.id);
   const sel = state.librarySel.has(key);
-  const p = previewUrl(m.categoryId, m.preview);
-  const thumb = p && !isVideo(p) ? `<img class="member-thumb" src="${esc(p)}" loading="lazy" alt="">` : '<div class="member-thumb"></div>';
+  const thumb = thumbHtml('member-thumb', recPreviewUrl(m));
   return `
     <div class="member-row ${m.enabled ? '' : 'disabled'} ${sel ? 'selected' : ''}">
       <input type="checkbox" class="lib-check" data-check="${esc(key)}" ${sel ? 'checked' : ''} aria-label="${L`Выбрать мод в паке`}">
@@ -2014,11 +2032,9 @@ function normalRowHtml(rec, i, masterOff) {
   const selectable = !isFontRec(rec);
   const selected = state.librarySel.has(rec.id);
   const ov = overlapPartners(rec.id);
-  // own preview, else the catalog thumbnail if the file is recognised (so a matched
-  // import shows an image right away, before it's even adopted); a cosmetic pick's
+  // own preview, else the catalog's for the same mod (see recPreviewUrl); a cosmetic pick's
   // picture is fetched lazily by the same loader the catalog cards use
-  let prev = rec.preview ? previewUrl(rec.categoryId, rec.preview) : null;
-  if (!prev && rec.match) { const cp = catalogPreviewFor(rec.match); if (cp) prev = previewUrl(rec.match[0].categoryId, cp); }
+  const prev = recPreviewUrl(rec);
   const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
   const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
   return `
@@ -2026,7 +2042,7 @@ function normalRowHtml(rec, i, masterOff) {
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
       ${cosmetic
         ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms" style="font-size:20px;color:var(--text-faint)">${cosmeticMeta(rec.slot).icon}</span></div>`
-        : prev && !isVideo(prev) ? `<img class="lib-thumb" src="${esc(prev)}" loading="lazy" alt="">` : '<div class="lib-thumb"></div>'}
+        : thumbHtml('lib-thumb', prev)}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${overlapTagHtml(ov)}${schemaTagHtml(rec)}</div>
         <div class="lib-meta">
@@ -2107,6 +2123,38 @@ function selectableCosmeticIds() {
   return (state.libRecords || [])
     .filter((r) => isCosmeticRec(r) && libMatchesSearch(r))
     .map((r) => r.id);
+}
+
+// The catalog's own picture for a mod, by the name it is filed under. Styles have one each,
+// so the record's file (or its style label) says which of them is this one's.
+function catalogPreviewUrl(categoryId, name, styleLabel, fileRef) {
+  const hit = state.modIndex.get(String(name || '').toLowerCase());
+  if (!hit || hit.categoryId !== categoryId) return null;
+  const styles = hit.mod.styles || [];
+  const style = styles.find((s) => fileRef && s.file === fileRef)
+    || styles.find((s) => (s.label || null) === (styleLabel || null));
+  const preview = style?.preview || hit.mod.preview || styles[0]?.preview;
+  return preview ? previewUrl(categoryId, preview) : null;
+}
+
+// Picture for one library entry — a row or a pack member: its own, else the catalog's for
+// the same mod. The fallback is what gives a record installed without a preview (and an
+// import recognised by its fingerprint) a thumbnail instead of an empty box.
+function recPreviewUrl(rec) {
+  if (rec.preview) return previewUrl(rec.categoryId, rec.preview);
+  if (rec.match) {
+    const cp = catalogPreviewFor(rec.match);
+    if (cp) return previewUrl(rec.match[0].categoryId, cp);
+  }
+  return catalogPreviewUrl(rec.categoryId, rec.name, rec.styleLabel, rec.fileRef);
+}
+
+// A library thumbnail: a still for a picture, the first frame for a clip (a few catalog
+// entries only ship an .mp4), an empty box when there is nothing to show.
+function thumbHtml(cls, url) {
+  if (!url) return `<div class="${cls}"></div>`;
+  if (isVideo(url)) return `<video class="${cls}" src="${esc(url)}" muted playsinline preload="metadata"></video>`;
+  return `<img class="${cls}" src="${esc(url)}" loading="lazy" alt="">`;
 }
 
 // catalog thumbnail for a fingerprint match, resolved from the loaded catalog index
@@ -3272,7 +3320,6 @@ async function renderCosmeticCategory(slot) {
     const q = state.cosSearch.trim().toLowerCase();
     let list = data.options.map((o) => ({ slot, o }));
     if (q) list = list.filter(({ o }) => o.name.toLowerCase().includes(q));
-    if (state.cosFavOnly) list = list.filter(({ o }) => isFav(COSMETIC_PREFIX + slot, o.name));
     return filterCosmetics(list);
   };
 
@@ -3303,7 +3350,7 @@ async function renderCosmeticCategory(slot) {
       <div class="tb-search cat-search"><span class="ms">search</span><input type="text" id="cosSearch" placeholder="${L`Поиск…`}" value="${esc(state.cosSearch)}" autocomplete="off"></div>
       <div class="sep"></div>
       <button class="fchip ${f.installedOnly ? 'active' : ''}" id="cosInstalledChip"><span class="ms">check_circle</span>${L`Установленные`}</button>
-      <button class="fchip ${state.cosFavOnly ? 'active' : ''}" id="cosFavChip"><span class="ms">favorite</span>${L`Избранное`}</button>
+      <button class="fchip ${f.favOnly ? 'active' : ''}" id="cosFavChip"><span class="ms">favorite</span>${L`Избранное`}</button>
       <span class="count" id="cosCount"></span>
     </div>
     <div class="grid" id="cosGrid"></div>`;
@@ -3316,8 +3363,8 @@ async function renderCosmeticCategory(slot) {
     paintGrid();
   });
   $('#cosFavChip').addEventListener('click', (e) => {
-    state.cosFavOnly = !state.cosFavOnly;
-    e.currentTarget.classList.toggle('active', state.cosFavOnly);
+    f.favOnly = !f.favOnly;
+    e.currentTarget.classList.toggle('active', f.favOnly);
     paintGrid();
   });
   paintGrid();
