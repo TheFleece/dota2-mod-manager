@@ -2,6 +2,18 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 1.14.3
+
+### Fixes
+
+- After Dota updated, safe mode left the game asking you to verify your files, and
+  matchmaking would not start. Turning safe mode on rebuilds Dota's list of file
+  signatures, and the app rebuilt it from a copy saved before the update: the list then
+  described the older build instead of the files on your disk. Turning safe mode back on
+  reapplied that same old copy, which is why only Steam's file check cleared it. The app
+  now refreshes its copy whenever the game updates, and changes nothing in the list but
+  its own line.
+
 ## 1.14.2
 
 ### Fixes
