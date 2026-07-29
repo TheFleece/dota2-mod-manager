@@ -125,6 +125,17 @@ class Library {
     this.save();
   }
 
+  // Re-capture what is enabled right now into an existing preset. Saving by name meant
+  // retyping it exactly to update a build, and a typo silently created a second preset.
+  updatePresetMods(presetId) {
+    const p = this.getPreset(presetId);
+    if (!p || p.wanted) return null;
+    p.modIds = this.data.installed.filter((m) => m.enabled).map((m) => m.id);
+    p.updatedAt = Date.now();
+    this.save();
+    return p;
+  }
+
   // A preset that arrived as a .d2mm and hasn't been installed yet: it holds the sender's
   // wish list (`wanted`) instead of local mod ids, plus where the file is stashed.
   addSharedPreset({ name, note, author, wanted, sourceFile }) {

@@ -12,7 +12,8 @@ try {
 
 const { Settings } = require('./src/settings');
 const { Catalog } = require('./src/catalog');
-const { Installer, conflictingPaths } = require('./src/installer');
+const { Installer } = require('./src/installer');
+const { findOverlapsWith } = require('./src/overlap');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
 const { writePresetFile, readPresetFile } = require('./src/preset-share');
@@ -374,50 +375,81 @@ function releaseNotes(version, lang) {
   return null;
 }
 
+/**
+ * Everything a VPK that just landed in the game folder needs before it counts as a mod:
+ * a name that says what is in it, the item blocks lifted out of it, a split when it turns
+ * out to be several heroes in one file, and a match against the catalog fingerprints.
+ *
+ * Every route into the library goes through here — the import button, drag and drop, and
+ * the mods that arrive inside a shared preset. That last one used to land as a bare record
+ * instead, which is why a received build showed up unnamed, unrecognised and still needing
+ * "split" by hand while the same file dragged in by the user came out clean.
+ *
+ * @param {{files: Array, name?: string, fileRef?: string, identity?: object}} input
+ * @returns {{ records: Array<object>, schema: boolean, split: boolean }}
+ */
+function adoptImportedFiles({ files, name, fileRef, identity }) {
+  const dirRel = (files.find((f) => /_dir\.vpk$/i.test(f.relPath)) || files[0])?.relPath;
+  // a name from the file's own content beats "pak42" and beats a sender's slot name; a
+  // real identity (a catalog mod, or a name the sender meant) is kept as it is
+  const contentName = (dirRel && installer.displayNameForFile(dirRel)) || null;
+  const useContentName = !name || /^!?pak\d+(_dir)?$/i.test(name);
+  const base = identity || {
+    name: (useContentName && contentName) || name || contentName || t('Мод'),
+    categoryId: 'imported',
+    styleLabel: null,
+    preview: null,
+  };
+  const rec = library.add({ ...base, fileRef: fileRef || null, files });
+
+  // skinchanger-style packs carry the whole item table and the localization files:
+  // keep the item blocks they changed, drop the tables (see installer.harvestSchema)
+  const harvest = schemaService.harvest(rec);
+  let schema = !!(harvest && harvest.deltas);
+
+  // …and they can hold several heroes at once. One mod per hero, each with its own files
+  // and its own item blocks, so they can be turned on and off separately.
+  let parts = null;
+  try {
+    const fresh = library.find(rec.id) || rec;
+    const subjects = (installer.analyzeRecord(fresh) || {}).subjects || 0;
+    // a curated collection of a dozen heroes would eat a dozen pak slots, so only the
+    // small exports split by themselves - bigger ones keep the manual "Split" button
+    if (subjects >= 2 && subjects <= 4) parts = schemaService.split(fresh);
+  } catch { /* a pack that will not split stays one mod */ }
+  if (parts && parts.length) {
+    for (const p of parts) if (Array.isArray(p.schema) && p.schema.length) schema = true;
+    return { records: parts, schema, split: true };
+  }
+  return { records: [library.find(rec.id) || rec], schema, split: false };
+}
+
+// does this freshly added record cover other enabled mods? Same rules as the library's own
+// badges (src/overlap.js), so the toast and the row cannot disagree.
+function overlapNamesFor(rec) {
+  try {
+    const paths = installer.installedContentPaths(rec);
+    const others = installer.overlapEntries(library.list().filter((o) => o.id !== rec.id));
+    return findOverlapsWith({ id: rec.id, name: rec.name, paths }, others).map((h) => h.name);
+  } catch { return []; }
+}
+
 function registerImportResults(results) {
   const imported = [];
   let needSchema = false;
   for (const r of results) {
     if (r.error) continue;
-    // name the import by its content (a hero / set / kind) instead of the bare pak slot
-    const dirRel = (r.files.find((f) => /_dir\.vpk$/i.test(f.relPath)) || r.files[0])?.relPath;
-    const contentName = (dirRel && installer.displayNameForFile(dirRel)) || r.name;
-    const rec = library.add({
-      name: contentName, categoryId: 'imported', styleLabel: null,
-      fileRef: r.source, preview: null, files: r.files,
-    });
-    // skinchanger-style packs carry the whole item table and the localization files:
-    // keep the item blocks they changed, drop the tables (see installer.harvestSchema)
-    const harvest = schemaService.harvest(rec);
-    if (harvest && harvest.deltas) needSchema = true;
-    // …and they can hold several heroes at once. One mod per hero, each with its own files
-    // and its own item blocks, so they can be turned on and off separately.
-    let parts = null;
-    try {
-      const fresh = library.find(rec.id) || rec;
-      const heroes = (installer.analyzeRecord(fresh) || {}).heroes || 0;
-      // a curated collection of a dozen heroes would eat a dozen pak slots, so only the
-      // small exports split by themselves - bigger ones keep the manual "Split" button
-      if (heroes >= 2 && heroes <= 4) parts = schemaService.split(fresh);
-    } catch { /* a pack that will not split stays one mod */ }
-    if (parts && parts.length) {
-      for (const p of parts) {
-        imported.push({ name: p.name, relPath: p.files[0].relPath, merged: 0, conflicts: [], fromSplit: rec.name });
-        if (Array.isArray(p.schema) && p.schema.length) needSchema = true;
-      }
-      continue;
+    const { records, schema, split } = adoptImportedFiles({ files: r.files, name: r.name, fileRef: r.source });
+    if (schema) needSchema = true;
+    for (const rec of records) {
+      imported.push({
+        name: rec.name,
+        relPath: rec.files[0].relPath,
+        merged: split ? 0 : r.merged || 0,
+        conflicts: split ? [] : overlapNamesFor(rec),
+        ...(split ? { fromSplit: r.name } : {}),
+      });
     }
-    // best-effort warning: does the new file overlap other enabled mods?
-    let conflicts = [];
-    try {
-      const own = installer.installedContentPaths(rec);
-      conflicts = library.list()
-        .filter((o) => o.id !== rec.id && o.enabled)
-        // real clash only when the two mods provide the same path with different content
-        .filter((o) => conflictingPaths(own, installer.installedContentPaths(o)).length > 0)
-        .map((o) => o.name);
-    } catch { /* ignore */ }
-    imported.push({ name: rec.name, relPath: r.files[0].relPath, merged: r.merged || 0, conflicts });
   }
   if (imported.length && installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
   if (needSchema) schemaService.refresh();
@@ -629,32 +661,40 @@ function installedFpIndex() {
   return map;
 }
 
-// The mods of a preset flattened for a link, or null if even one of them can't be named —
-// a link carries identities only, so a single import makes the whole preset file-only.
+// The mods of a preset flattened for a link, plus the names of the ones that cannot ride
+// along. A link carries identities only, so a mod the receiver has no way to fetch — a
+// user's own import — has to be left out; the rest of the build still travels, and the
+// sender is told exactly what was dropped. Refusing to make a link at all over one import
+// is what made "share by link" look broken in a library that is mostly imports.
+//
 // A pack flattens to its members: packing is a local storage choice, not part of the build.
 // A cosmetic pick travels too — slot + item id is a few bytes, and needs no catalog lookup
 // at all (both players' games carry the same Valve schema).
 function presetLinkMods(preset, cat) {
-  const out = [];
+  const mods = [];
+  const skipped = [];
   for (const id of preset.modIds || []) {
     const rec = library.find(id);
     if (!rec) continue;
     if (rec.categoryId === 'cosmetic') {
-      out.push({ kind: 'cosmetic', slot: rec.slot, itemId: rec.itemId, name: rec.name });
+      mods.push({ kind: 'cosmetic', slot: rec.slot, itemId: rec.itemId, name: rec.name });
       continue;
     }
     for (const it of (rec.kind === 'pack' ? rec.members || [] : [rec])) {
-      if (it.categoryId === 'imported' || !cat.lookup(it.categoryId, it.name, it.styleLabel)) return null;
-      out.push({ kind: 'catalog', categoryId: it.categoryId, name: it.name, styleLabel: it.styleLabel || null });
+      if (it.categoryId === 'imported' || !cat.lookup(it.categoryId, it.name, it.styleLabel)) {
+        skipped.push(it.name);
+        continue;
+      }
+      mods.push({ kind: 'catalog', categoryId: it.categoryId, name: it.name, styleLabel: it.styleLabel || null });
     }
   }
-  return out.length ? out : null;
+  return { mods, skipped };
 }
 
 // What installing a received preset would actually do, for the card in the Presets tab.
 async function sharedPresetStatus(preset, cat) {
   const fpIndex = installedFpIndex();
-  const out = { installed: 0, download: 0, embedded: 0, unavailable: [] };
+  const out = { installed: 0, download: 0, embedded: 0, free: 0, unavailable: [] };
   const visit = (e) => {
     if (e.kind === 'catalog') {
       if (library.findByKey(e.categoryId, e.name, e.styleLabel)) out.installed++;
@@ -667,7 +707,7 @@ async function sharedPresetStatus(preset, cat) {
       // free either way — nothing to fetch, just an instant pick from the local game schema
       const have = library.list().find((r) => r.categoryId === 'cosmetic' && r.slot === e.slot && r.itemId === e.itemId);
       if (have && have.enabled !== false) out.installed++;
-      else out.download++;
+      else out.free++;
     } else {
       out.unavailable.push(e.name);
     }
@@ -1174,11 +1214,25 @@ function registerIpc() {
     } catch { /* no game path yet — nothing to sync */ }
 
     let external = [];
+    // fingerprint -> a mod already in the library, so a file that is byte-identical to
+    // something managed can be called what it is (a leftover copy) instead of a mystery
+    const installedFps = new Map();
+    try {
+      for (const rec of library.list()) {
+        if (rec.kind === 'pack') continue;
+        const a = installer.analyzeRecord(rec);
+        if (a && a.fp && !installedFps.has(a.fp)) installedFps.set(a.fp, rec.name);
+      }
+    } catch { /* no game path — nothing to compare against */ }
     try {
       const known = library.knownFiles();
       const canMatch = fingerprints.hasData();
       external = installer.externalFiles(known, { scanExtras: canMatch });
-      for (const f of external) if (f.fp) f.match = fingerprints.match(f.fp); // recognise catalog mods
+      for (const f of external) {
+        if (!f.fp) continue;
+        f.match = fingerprints.match(f.fp); // recognise catalog mods
+        if (installedFps.has(f.fp)) f.duplicateOf = installedFps.get(f.fp);
+      }
       // lang-root files are always worth listing; maps/cursor only when recognised
       external = external.filter((f) => f.primary || f.match);
       // fonts share panorama\fonts with vanilla — subset-match instead of a folder fp
@@ -1367,8 +1421,16 @@ function registerIpc() {
 
   ipcMain.handle('mods:externalRemove', (e, fileName) => {
     try {
-      const abs = path.join(installer.langFolder(), fileName);
-      if (fs.existsSync(abs)) fs.rmSync(abs, { force: true });
+      const lang = installer.langFolder();
+      const base = fileName.replace(/\.off$/i, '');
+      // the index alone leaves its data volumes behind as orphans the app then lists as
+      // more foreign files — take the whole set, in whatever on/off state each part is in
+      for (const rel of [base, ...installer.siblingParts(base)]) {
+        for (const suf of ['', '.off']) {
+          const abs = path.join(lang, rel + suf);
+          if (fs.existsSync(abs)) fs.rmSync(abs, { force: true });
+        }
+      }
       return { ok: true };
     } catch (err) {
       return { error: String(err.message || err) };
@@ -1408,29 +1470,43 @@ function registerIpc() {
     return { ok: true, name: m.name };
   });
 
-  // adopt a foreign file in the game folder as its matching catalog mod: register it
-  // (and any multi-part data archives) in the library under the catalog identity
+  /**
+   * Take a file someone dropped into the game folder by hand into the library.
+   *
+   * Recognised as a catalog mod, it joins under that identity (preview, category, updates).
+   * Unrecognised, it still joins — as an import named after its content, exactly what
+   * dragging the same file onto the app would have produced. Refusing everything the
+   * fingerprint list had never seen is what left users with a nameless "external file" row
+   * and no way out of it; the catalog is a nice-to-have, not the price of admission.
+   */
   ipcMain.handle('mods:adoptExternal', (e, fileName, preview) => {
     try {
       const lang = installer.langFolder();
       const base = fileName.replace(/\.off$/i, '');
-      const buf = fs.readFileSync(path.join(lang, base));
-      const { fingerprintVpk } = require('./src/vpk');
-      const matches = fingerprints.match(fingerprintVpk(buf));
-      if (!matches) return { error: t('Совпадение с каталогом не найдено') };
-      const m = matches[0]; // identical-content entries are interchangeable; take the first
-      // include the _dir.vpk and any sibling data archives (<base>_NNN.vpk)
-      const origBase = base.replace(/_dir\.vpk$/i, '');
-      const partRe = new RegExp(`^${origBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i');
+      const onDisk = ['', '.off'].map((s) => path.join(lang, base + s)).find((p) => fs.existsSync(p));
+      if (!onDisk) return { error: t('Файл не найден в папке модов') };
+
+      const { fingerprintVpk, readVpkIndexFile } = require('./src/vpk');
+      let matches = null;
+      try { matches = fingerprints.match(fingerprintVpk(readVpkIndexFile(onDisk))); } catch { /* not a readable index */ }
+
+      // the _dir.vpk plus any sibling data archives (<base>_NNN.vpk) — one mod, several files
       const files = [{ root: 'lang', relPath: base }];
-      for (const f of fs.readdirSync(lang)) if (partRe.test(f)) files.push({ root: 'lang', relPath: f });
-      const rec = library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: preview || null, files });
+      for (const part of installer.siblingParts(base)) files.push({ root: 'lang', relPath: part });
+
+      const m = matches && matches[0]; // identical-content entries are interchangeable
+      const identity = m
+        ? { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, preview: preview || null }
+        : { name: installer.displayNameForFile(base) || base.replace(/_dir\.vpk$/i, ''), categoryId: 'imported', styleLabel: null, preview: null };
+      const rec = library.add({ ...identity, fileRef: fileName, files });
       // A file dropped into the folder by something else has never been through an install,
       // so its item blocks are still sitting inside it doing nothing. Adopting is the moment
       // the app takes it over - lift them now, or the mod stays without its effects.
       const harvest = schemaService.harvest(rec);
       if (harvest && harvest.deltas) schemaService.refresh();
-      return { ok: true, name: m.name };
+      // a file that arrived switched off keeps that state, the way an imported mod would not
+      if (/\.off$/i.test(fileName)) library.setEnabled(rec.id, false);
+      return { ok: true, name: identity.name, matched: !!m };
     } catch (err) {
       return { error: String(err.message || err) };
     }
@@ -1661,16 +1737,34 @@ function registerIpc() {
   // ----- presets -----
   ipcMain.handle('presets:list', async () => {
     const cat = await catalogIndex();
-    return Promise.all(library.listPresets().map(async (p) => (p.wanted
+    return Promise.all(library.listPresets().map(async (p) => {
       // a received preset shows what installing it would cost before anything downloads
-      ? { ...p, status: await sharedPresetStatus(p, cat).catch(() => null) }
-      // and an own preset only offers a link when every mod in it can be named
-      : { ...p, shareable: !!presetLinkMods(p, cat) })));
+      if (p.wanted) return { ...p, status: await sharedPresetStatus(p, cat).catch(() => null) };
+      // an own preset says how much of it a link could carry, so the button can explain
+      // itself instead of quietly disappearing
+      const { mods, skipped } = presetLinkMods(p, cat);
+      return { ...p, link: { count: mods.length, skipped } };
+    }));
   });
   ipcMain.handle('presets:save', (e, name) => {
     library.savePreset(name);
     return library.listPresets();
   });
+  // overwrite a preset with the current on/off state — the "save" the user actually means
+  // when they have tweaked a build they already named
+  ipcMain.handle('presets:update', (e, id) => {
+    const p = library.updatePresetMods(id);
+    if (!p) return { error: t('Пресет не найден') };
+    return { ok: true, count: p.modIds.length };
+  });
+
+  ipcMain.handle('presets:rename', (e, id, name) => {
+    const clean = String(name || '').trim().slice(0, 120);
+    if (!clean) return { error: t('Введи название пресета') };
+    if (!library.updatePreset(id, { name: clean })) return { error: t('Пресет не найден') };
+    return { ok: true, name: clean };
+  });
+
   ipcMain.handle('presets:delete', (e, id) => {
     dropSharedPresetFile(library.getPreset(id));
     library.deletePreset(id);
@@ -1736,11 +1830,11 @@ function registerIpc() {
     const preset = library.getPreset(id);
     if (!preset) return { error: t('Пресет не найден') };
     try {
-      const mods = presetLinkMods(preset, await catalogIndex());
-      if (!mods) return { error: t('В пресете есть свои моды — ссылкой не поделиться, только файлом') };
+      const { mods, skipped } = presetLinkMods(preset, await catalogIndex());
+      if (!mods.length) return { error: t('В пресете только свои моды — ссылка их не донесёт, отправь файлом') };
       const account = settings.get('account');
       const link = encodePresetLink({ name: preset.name, author: account && account.username, mods });
-      return { ok: true, ...link, count: mods.length };
+      return { ok: true, ...link, count: mods.length, skipped };
     } catch (err) {
       return { error: String(err.message || err) };
     }
@@ -1771,14 +1865,15 @@ function registerIpc() {
     const errors = [];
     let schemaTouched = false;
 
-    // -> id of the library record that now provides this mod, or null
+    // -> ids of the library records that now provide this mod (a multi-hero bundle splits
+    // into several), or an empty list when it could not be resolved at all
     const resolveEntry = async (entry) => {
       try {
         if (entry.kind === 'catalog') {
           const have = library.findByKey(entry.categoryId, entry.name, entry.styleLabel);
-          if (have) return have.id;
+          if (have) return [have.id];
           const hit = cat.lookup(entry.categoryId, entry.name, entry.styleLabel);
-          if (!hit) { errors.push(`${entry.name}: ${t('нет в каталоге')}`); return null; }
+          if (!hit) { errors.push(`${entry.name}: ${t('нет в каталоге')}`); return []; }
           if (hit.categoryId === 'cursors') disableOtherCursors(null); // one cursor at a time
           const files = await installer.install({ categoryId: hit.categoryId, modName: hit.name, fileRef: hit.fileRef });
           const rec = library.add({
@@ -1786,32 +1881,29 @@ function registerIpc() {
             fileRef: hit.fileRef, preview: hit.preview, files,
           });
           if (hit.categoryId === 'cursors') { try { installer.ensureCursorStore(rec.id, files); } catch { /* noop */ } }
-          return rec.id;
+          return [rec.id];
         }
         if (entry.kind === 'embedded') {
-          if (entry.fp && fpIndex.has(entry.fp)) return fpIndex.get(entry.fp); // already on disk
-          if (!bundle) { errors.push(`${entry.name}: ${t('файл пресета недоступен')}`); return null; }
+          if (entry.fp && fpIndex.has(entry.fp)) return [fpIndex.get(entry.fp)]; // already on disk
+          if (!bundle) { errors.push(`${entry.name}: ${t('файл пресета недоступен')}`); return []; }
           sendProgress({ type: 'stage', label: entry.name, stage: t('установка') });
           const files = installer.installVpkBuffer(bundle.readMod(entry.file));
-          const rec = library.add({
-            categoryId: 'imported', name: entry.name, styleLabel: null,
-            fileRef: null, preview: null, files,
-          });
-          // the sender's copy carries its item blocks with it (see mergeToSingleVpk): lift
-          // them onto this record too, or the mod arrives without its effects
-          if (schemaService.harvest(rec)) schemaTouched = true;
-          if (entry.fp) fpIndex.set(entry.fp, rec.id);
-          return rec.id;
+          // exactly the treatment a dragged-in file gets: the sender's item blocks lifted
+          // out, a multi-hero bundle split, a name from the content when theirs is a slot
+          const { records, schema } = adoptImportedFiles({ files, name: entry.name, fileRef: null });
+          if (schema) schemaTouched = true;
+          if (entry.fp && records.length === 1) fpIndex.set(entry.fp, records[0].id);
+          return records.map((r) => r.id);
         }
         if (entry.kind === 'cosmetic') {
           const rec = schemaService.pickCosmetic(entry.slot, entry.itemId, entry.name);
-          return rec ? rec.id : null;
+          return rec ? [rec.id] : [];
         }
         errors.push(`${entry.name}: ${entry.reason || t('нет в файле')}`);
-        return null;
+        return [];
       } catch (err) {
         errors.push(`${entry.name}: ${String(err.message || err)}`);
-        return null;
+        return [];
       }
     };
 
@@ -1819,12 +1911,11 @@ function registerIpc() {
     for (const entry of preset.wanted) {
       if (entry.kind === 'pack') {
         const memberIds = [];
-        for (const m of entry.members) { const r = await resolveEntry(m); if (r) memberIds.push(r); }
+        for (const m of entry.members) memberIds.push(...await resolveEntry(m));
         const built = packFromRecords(entry.name, memberIds);
         if (built) ids.push(built.id); else ids.push(...memberIds);
       } else {
-        const r = await resolveEntry(entry);
-        if (r) ids.push(r);
+        ids.push(...await resolveEntry(entry));
       }
     }
 

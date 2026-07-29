@@ -7,6 +7,7 @@ const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
 const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
 const { extractDeltas, deltaTable, crc32 } = require('./schema');
+const { GLOBAL_TABLE_RE, dropSharedPaths, findOverlaps, findOverlapsWith } = require('./overlap');
 const { ensureLangFolder } = require('./gamelang');
 const { t } = require('./i18n');
 
@@ -39,52 +40,6 @@ function isOfficialLangFile(baseLower) {
 function fileUrl(categoryId, fileRef) {
   if (/^https?:\/\//i.test(fileRef)) return fileRef;
   return `${RAW_BASE}/assets/files/${categoryId}/${encodeURIComponent(fileRef)}`;
-}
-
-// Engine stock / placeholder assets that mods carry but never really fight over:
-//   - materials/default/, materials/particle/basic_, materials/models/cubemaps/,
-//     particles/basic_ — the "basic_"/default filler Source 2's compiler bakes into
-//     almost every mod VPK;
-//   - models/dev/ (the ERROR placeholder) and models/nomodel/ (the empty null model
-//     used to hide default parts) — shared by unrelated skins that hide something.
-// They are identical across unrelated mods, so counting them made the conflict check
-// fire on nearly every install (two skins for different heroes still "shared" ~30).
-// Drop them so only genuine same-asset clashes warn.
-const STOCK_CONTENT_RE = /^(?:materials\/default\/|materials\/particle\/basic_|materials\/models\/cubemaps\/|particles\/(?:models\/)?basic_|models\/(?:dev|nomodel)\/)/;
-
-// Whole-game tables and tool branding that packaging tools bake into EVERY export.
-// Dota 2 Skinchanger, for one, ships a full 47 MB scripts/items/items_game.txt plus the
-// localization files, its loadout stylesheets, its logo strip and a steam-id watermark in
-// every single pack it builds. Two packs for two different heroes therefore always differ
-// on items_game.txt — which made the app announce "Abaddon conflicts with Elder Titan".
-// They don't: the skins live in per-hero asset paths, and these files are interchangeable
-// copies of the same table, so whichever one the game loads first serves both mods.
-const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
-  'scripts/items/items_game(?:\\.txt)?"?$',            // the game's whole item table
-  'resource/localization/',                            // full dota_<lang>.txt copies
-  'panorama/styles/(?:hero_slot_item_picker_loadout|ui_econ_item)\\.vcss_c"?$',
-  'panorama/images/(?:ds|tg|tt|wb|yu|remove|header_credits|footer_credits)[^/]*$',
-  '(?:models/heroes|panorama)/\\d{8,}\\.vxml_c"?$',    // <steam id>.vxml_c watermark
-].join('|') + ')');
-
-// drops stock/filler and shared tool-table keys from a Map<path, crc> (in place)
-function dropSharedPaths(paths) {
-  for (const p of paths.keys()) if (STOCK_CONTENT_RE.test(p) || GLOBAL_TABLE_RE.test(p)) paths.delete(p);
-  return paths;
-}
-
-// Genuine clashes between two Map<path, crc>: a shared path whose content actually differs.
-// An identical CRC on both sides means the two mods ship the byte-for-byte same file (shared
-// filler assets — particle packs, transparent materials, ...), which is not a conflict at all.
-// A missing CRC (-1, e.g. a loose non-VPK file) is treated as unknown -> counted, to stay safe.
-function conflictingPaths(candidate, installed) {
-  const out = [];
-  for (const [p, cc] of candidate) {
-    if (!installed.has(p)) continue;
-    const ic = installed.get(p);
-    if (cc === -1 || ic === -1 || cc !== ic) out.push(p);
-  }
-  return out;
 }
 
 class Installer {
@@ -785,67 +740,55 @@ class Installer {
     return dropSharedPaths(out);
   }
 
+  // The enabled mods as src/overlap.js wants them: id, name, content paths, pak slot.
+  overlapEntries(records) {
+    const live = (records || []).filter((r) => r.enabled && (r.files || []).some((f) => f.root === 'lang'));
+    const out = [];
+    for (const rec of live) {
+      try {
+        const paths = this.installedContentPaths(rec);
+        if (paths.size) out.push({ id: rec.id, name: rec.name, paths, slot: this.slotNumber(rec) });
+      } catch { /* no game path / unreadable — skip */ }
+    }
+    return out;
+  }
+
   /**
-   * Every pair of currently-enabled mods that supplies the same game files. Paths both
-   * sides provide byte-identically, engine filler and shared tool tables are already out
-   * (see dropSharedPaths), so what survives is a real overlap - one of the two supplies
-   * those files and the other's copy is shadowed.
-   *
-   * Which one is decided by the slot: the smaller pak number mounts first and wins (see
-   * "load order" above). `winner` is that record's id, or null when neither lives in a
-   * numbered pak and the engine's own order settles it.
+   * Every pair of currently-enabled mods where one really covers the other's files — see
+   * src/overlap.js for what "really" filters out. The engine mounts the lower pak number
+   * first and that copy wins, so `winner` is that record's id (null when neither lives in
+   * a numbered pak and the engine's own order settles it).
    * @param {Array<object>} records library records
    * @returns {Array<{a:{id,name}, b:{id,name}, count:number, summary:string, winner:string|null}>}
    */
   libraryConflicts(records) {
-    const live = (records || []).filter((r) => r.enabled && (r.files || []).some((f) => f.root === 'lang'));
-    const paths = [];
-    for (const rec of live) {
-      try {
-        const own = this.installedContentPaths(rec);
-        if (own.size) paths.push({ rec, own, slot: this.slotNumber(rec) });
-      } catch { /* no game path / unreadable — skip */ }
-    }
-    const out = [];
-    for (let i = 0; i < paths.length; i++) {
-      for (let j = i + 1; j < paths.length; j++) {
-        const overlap = conflictingPaths(paths[i].own, paths[j].own);
-        if (!overlap.length) continue;
-        const [x, y] = [paths[i], paths[j]];
-        const winner = x.slot == null || y.slot == null || x.slot === y.slot ? null
-          : (x.slot < y.slot ? x.rec.id : y.rec.id);
-        out.push({
-          a: { id: x.rec.id, name: x.rec.name },
-          b: { id: y.rec.id, name: y.rec.name },
-          count: overlap.length,
-          summary: analyzeVpkPaths(overlap).heroes.map(describeHero).join('; '),
-          winner,
-        });
-      }
-    }
-    return out.sort((x, y) => y.count - x.count);
+    return findOverlaps(this.overlapEntries(records)).map((c) => ({
+      a: c.a,
+      b: c.b,
+      count: c.count,
+      summary: analyzeVpkPaths(c.paths).heroes.map(describeHero).join('; '),
+      winner: c.winner,
+    }));
   }
 
-  // Which of the given (enabled) records overlap with the candidate download
+  // Which of the given (enabled) records the candidate download would cover, judged by the
+  // same rules the library uses — a warning before the download has to match what the
+  // library says after it, or one of the two is lying.
   async findConflicts({ categoryId, fileRef, modName }, records) {
     if (['fonts', 'cursors', 'tools'].includes(categoryId)) return [];
     const local = await this.download(categoryId, fileRef, modName);
-    const candidate = this.modContentPaths(local);
-    if (!candidate.size) return [];
-    const conflicts = [];
-    for (const rec of records) {
-      if (!rec.enabled) continue;
-      const own = this.installedContentPaths(rec);
-      // only paths the two mods provide with DIFFERENT content are real clashes; a shared
-      // filler asset (same CRC on both sides) is byte-identical and loads fine either way
-      const overlap = conflictingPaths(candidate, own);
-      if (overlap.length) {
-        const shared = analyzeVpkPaths(overlap);
-        const summary = shared.heroes.map(describeHero).join('; ');
-        conflicts.push({ name: rec.name, count: overlap.length, summary, sample: overlap.slice(0, 3) });
-      }
-    }
-    return conflicts;
+    const paths = this.modContentPaths(local);
+    if (!paths.size) return [];
+    const hits = findOverlapsWith(
+      { id: '__candidate__', name: modName || t('Новый мод'), paths },
+      this.overlapEntries(records)
+    );
+    return hits.map((h) => ({
+      name: h.name,
+      count: h.count,
+      summary: analyzeVpkPaths(h.paths).heroes.map(describeHero).join('; '),
+      sample: h.paths,
+    }));
   }
 
   // ---------- import of user-provided vpk files ----------
@@ -1148,6 +1091,9 @@ class Installer {
       const a = analyzeVpkPaths(listVpkPaths(buf));
       return {
         info: describeAnalysis(a), heroes: a.heroes.length,
+        // heroes the file carries actual models for — the ones it could be split into.
+        // Every hero it merely mentions counts for the summary, not for splitting.
+        subjects: a.heroes.filter((h) => h.models > 0).length,
         // which hero(es) the content is for, by display name - lets the renderer show a
         // hero's own portrait as a stand-in for an import with no picture of its own
         heroNames: a.heroes.map((h) => h.name),
@@ -1333,21 +1279,50 @@ class Installer {
     if (changed) this._pathCache.clear();
   }
 
-  // build a foreign VPK item, tagged and fingerprinted when it has a readable index
+  /**
+   * Build a foreign VPK item: read enough of the file to name it, illustrate it and
+   * recognise it. A file dropped into the folder by hand is the same kind of thing as an
+   * import, and the library shows it that way — a bare "pak90_dir.vpk" told the user
+   * nothing about what was in it, which is exactly why it looked broken.
+   */
   vpkItem(abs, relPath, displayName, primary) {
+    const base = relPath.replace(/\.off$/i, '');
     const item = {
-      kind: 'vpk', key: relPath, name: displayName, primary,
+      kind: 'vpk', key: relPath, name: displayName, fileName: base, primary,
       size: fs.statSync(abs).size, enabled: !abs.toLowerCase().endsWith('.off'),
-      files: [{ root: 'lang', relPath: relPath.replace(/\.off$/i, '') }],
+      files: [{ root: 'lang', relPath: base }],
     };
+    // data volumes that belong to this index — they travel with it on adopt and delete
+    for (const part of this.siblingParts(base)) item.files.push({ root: 'lang', relPath: part });
     try {
       const buf = readVpkIndexFile(abs);
       const a = analyzeVpkPaths(listVpkPaths(buf));
       item.info = describeAnalysis(a);
       item.heroes = a.heroes.length;
+      item.subjects = a.heroes.filter((h) => h.models > 0).length;
+      item.heroNames = a.heroes.map((h) => h.name);
+      item.kindTag = a.kind;
       item.fp = fingerprintVpk(buf);
-    } catch { /* data part / unreadable — leave untagged */ }
+      // a content name ("Juggernaut", "Ландшафт") instead of the slot the file happens
+      // to sit in; the file name stays on the row as the sub-label
+      item.name = nameFromAnalysis(a) || displayName;
+    } catch { /* data part / unreadable — leave untagged, keep the file name */ }
     return item;
+  }
+
+  // "<base>_NNN.vpk" volumes sitting next to a "<base>_dir.vpk" in the lang folder
+  siblingParts(dirRelPath) {
+    if (!/_dir\.vpk$/i.test(dirRelPath)) return [];
+    const lang = this.langFolder();
+    const dir = path.dirname(path.join(lang, dirRelPath));
+    const prefix = path.basename(dirRelPath).replace(/_dir\.vpk$/i, '');
+    const re = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i');
+    const sub = path.dirname(dirRelPath);
+    try {
+      return fs.readdirSync(dir)
+        .filter((f) => re.test(f.replace(/\.off$/i, '')))
+        .map((f) => (sub === '.' ? f : `${sub}/${f}`).replace(/\.off$/i, ''));
+    } catch { return []; }
   }
 
   // Foreign content — files not installed through the app — across every place a mod
@@ -1365,12 +1340,23 @@ class Installer {
 
     const lang = this.langFolder();
     if (fs.existsSync(lang)) {
-      for (const f of fs.readdirSync(lang)) {
+      const names = fs.readdirSync(lang);
+      // a "<base>_NNN.vpk" volume is part of its "<base>_dir.vpk", not a mod of its own:
+      // listing it separately gave the user rows they could neither name nor act on
+      const indexed = new Set();
+      for (const f of names) {
+        const b = f.toLowerCase().replace(/\.off$/, '');
+        const m = b.match(/^(.*)_dir\.vpk$/);
+        if (m) indexed.add(m[1]);
+      }
+      for (const f of names) {
         const full = path.join(lang, f);
         if (!fs.statSync(full).isFile()) continue;
         if (f.toLowerCase().endsWith(MASTER_OFF)) continue; // master-off files: handled by the toggle, not foreign
         const base = f.toLowerCase().replace(/\.off$/, '');
         if (isOfficialLangFile(base) || knownLang.has(base)) continue;
+        const part = base.match(/^(.*)_\d{3}\.vpk$/);
+        if (part && indexed.has(part[1])) continue;
         out.push(this.vpkItem(full, f, f, true));
       }
       // terrains ship as language\maps\dota.vpk (not a *_dir.vpk in the root)
@@ -1450,4 +1436,4 @@ class Installer {
   }
 }
 
-module.exports = { Installer, PRIORITY_CATEGORIES, conflictingPaths };
+module.exports = { Installer, PRIORITY_CATEGORIES };

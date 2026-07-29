@@ -2071,7 +2071,7 @@ function normalRowHtml(rec, i, masterOff) {
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : cosmetic ? `title="${L`На один слот — только одна активная косметика`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
         ${raiseBtnHtml(rec, ov)}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
-        ${rec.heroes >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
+        ${rec.subjects >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
         ${isCursorRec(rec)
           ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить курсор архивом (для отправки или на память)`}"><span class="ms">save</span>${L`Экспорт`}</button>`
           : rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath)) ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить мод одним .vpk файлом (для отправки автору каталога)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
@@ -2111,7 +2111,9 @@ function countAdoptableSelected() {
 // adopt every recognised mod at once — installed records and foreign files alike
 async function adoptAll() {
   const recs = (state.libRecords || []).filter((r) => r.match);
-  const exts = (state.libExternal || []).filter((f) => f.match);
+  // a foreign file that is a copy of an installed mod would land as a second row for the
+  // same thing — it wants deleting, not adopting
+  const exts = (state.libExternal || []).filter((f) => f.match && !f.duplicateOf);
   if (!recs.length && !exts.length) return;
   for (const r of recs) await window.api.mods.adoptMod(r.id, catalogPreviewFor(r.match));
   for (const f of exts) {
@@ -2205,6 +2207,22 @@ function libThumbHtml(rec, cls) {
   return fb ? fallbackThumbHtml(fb.key, fb.icon, cls) : `<div class="${cls}"></div>`;
 }
 
+// A foreign file's tile, from the same sources a library row uses: the catalog's picture
+// when the file is recognised, otherwise the wiki portrait of the hero it turned out to be
+// about. A file in the mods folder is a mod — it should not look emptier than one the app
+// installed itself just because nobody clicked "adopt" yet.
+function extThumbHtml(f) {
+  const cls = 'lib-thumb';
+  if (f.kind === 'cursor') return fallbackThumbHtml('generic:cursor', 'arrow_selector_tool', cls);
+  if (f.kind === 'font') return `<div class="${cls}"><span class="ms" style="font-size:18px;color:var(--text-faint)">text_fields</span></div>`;
+  const cp = catalogPreviewFor(f.match);
+  if (cp) return thumbHtml(cls, previewUrl(f.match[0].categoryId, cp));
+  const heroes = f.heroNames || [];
+  if (heroes.length === 1) return fallbackThumbHtml('hero:' + heroes[0], 'person', cls);
+  if (heroes.length > 1) return fallbackThumbHtml('generic:pack', 'auto_awesome', cls);
+  return `<div class="${cls}"><span class="ms" style="font-size:18px;color:var(--text-faint)">folder_zip</span></div>`;
+}
+
 // catalog thumbnail for a fingerprint match, resolved from the loaded catalog index
 function catalogPreviewFor(match) {
   const m = match && match[0];
@@ -2281,6 +2299,7 @@ function libraryListHtml(masterOff) {
 }
 
 let libCosIconWatcher = null;
+let libExtIconWatcher = null;
 function paintLibraryList() {
   const libList = $('#libList');
   if (!libList) return;
@@ -2394,7 +2413,8 @@ async function renderLibrary() {
   const nearLimit = slots >= 90;
   const external = externalAll;
   state.libExternal = externalAll;
-  const matchedCount = installedAll.filter((r) => r.match).length + externalAll.filter((f) => f.match).length;
+  const matchedCount = installedAll.filter((r) => r.match).length + externalAll.filter((f) => f.match && !f.duplicateOf).length;
+  const extDupes = externalAll.filter((f) => f.duplicateOf).length;
 
   // mods fighting over the same game files: only one of each pair actually loads
   state.libConflicts = res.conflicts || [];
@@ -2473,7 +2493,10 @@ async function renderLibrary() {
     <div class="lib-list" id="libList"></div>
     ${external.length ? `
       <div class="section-h" style="margin-top:26px"><span class="ms">folder_zip</span>${L`Внешние файлы в папке модов`}</div>
-      <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">${L`Файлы, установленные не через менеджер`}</div>
+      <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">
+        ${L`Моды, положенные в папку мимо менеджера. «Принять» берёт файл в библиотеку — с превью, переключателем и всем остальным.`}
+        ${extDupes ? ` <b>${extDupes}</b> ${plural(extDupes, 'из них — копия уже установленного мода', 'из них — копии уже установленных модов', 'из них — копии уже установленных модов')}.` : ''}
+      </div>
       <div class="lib-list" id="extList"></div>` : ''}
     <div style="height:72px"></div>
     <div class="bulk-bar" id="bulkBar">
@@ -2733,30 +2756,41 @@ async function bindLibrary(external) {
     const extList = $('#extList');
     for (const f of external) {
       const row = document.createElement('div');
-      row.className = `lib-row ${f.enabled ? '' : 'disabled'}`;
-      const label = f.match ? `<span class="lib-tag match">${esc(matchLabel(f.match))}</span>`
-        : f.info ? `<span class="lib-tag">${esc(f.info)}</span>` : '';
+      row.className = `lib-row ${f.enabled ? '' : 'disabled'} ${f.duplicateOf ? 'dup' : ''}`;
       const simple = f.kind === 'cursor' || f.kind === 'font'; // full-folder/subset sets — adopt only
       const displayName = f.kind === 'cursor' ? L`Курсор в игре` : f.name;
+      const label = f.duplicateOf
+        ? `<span class="lib-tag dup" title="${esc(L`Тот же файл уже стоит как «${f.duplicateOf}» — эта копия лишняя`)}"><span class="ms">content_copy</span>${L`копия`}</span>`
+        : f.match ? `<span class="lib-tag match">${esc(matchLabel(f.match))}</span>`
+        : f.info ? `<span class="lib-tag">${esc(f.info)}</span>` : '';
+      // what the row is, then where it lives: the file name is the useful part for a
+      // foreign vpk, since that is what the user sees in the folder
       const sub = f.kind === 'cursor' ? 'resource/cursor'
         : f.kind === 'font' ? L`шрифт · panorama/fonts`
+        : f.duplicateOf ? L`копия «${f.duplicateOf}»`
         : f.match ? L`мод из каталога` : f.info ? L`опознан по содержимому` : L`внешний файл`;
+      const fileName = !simple && f.fileName && f.fileName !== displayName ? `<span>${esc(f.fileName)}</span>` : '';
       const size = simple ? '' : `<span>${fmtMB(f.size)} MB</span>`;
       row.innerHTML = `
-        <div class="lib-thumb"></div>
+        ${extThumbHtml(f)}
         <div class="lib-info">
           <div class="lib-name">${esc(displayName)}${label ? ' ' + label : ''}</div>
-          <div class="lib-meta">${size}<span>${sub}</span></div>
+          <div class="lib-meta">${fileName}${size}<span>${sub}</span></div>
         </div>
         <div class="lib-actions">
           ${simple ? '' : `<button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.key)}" role="switch" aria-checked="${f.enabled}"></button>`}
-          ${f.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="${L`Привязать к каталогу и управлять как обычным модом`}"><span class="ms">library_add_check</span>${L`Принять`}</button>` : ''}
-          ${f.heroes >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.key)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
+          ${f.duplicateOf ? '' : `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="${f.match ? L`Привязать к каталогу и управлять как обычным модом` : L`Взять файл в библиотеку — дальше как у обычного мода`}"><span class="ms">library_add_check</span>${L`Принять`}</button>`}
+          ${f.subjects >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.key)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
           ${simple ? '' : `<button class="btn btn-sm btn-danger" data-extdel="${esc(f.key)}">${L`Удалить`}</button>`}
         </div>
       `;
       extList.appendChild(row);
     }
+    // hero portraits for the placeholder tiles above, same lazy loader as the mod grid
+    paintCosmeticIcons(extList);
+    if (libExtIconWatcher) libExtIconWatcher.disconnect();
+    libExtIconWatcher = watchCosmeticIcons(extList, null);
+
     const byKey = (k) => external.find((x) => x.key === k);
     extList.querySelectorAll('.toggle').forEach((t) => {
       t.addEventListener('click', async () => {
@@ -2774,7 +2808,7 @@ async function bindLibrary(external) {
           : f.kind === 'font' ? await window.api.mods.adoptFont(f.name, prev)
           : await window.api.mods.adoptExternal(f.key, prev);
         if (r.error) toast(r.error, 'error', 6000);
-        else toast(L`«${r.name}» принят из каталога`, 'ok');
+        else toast(r.matched === false ? L`«${r.name}» в библиотеке` : L`«${r.name}» принят из каталога`, 'ok');
         await refreshInstalledIndex();
         renderLibrary();
       });
@@ -2835,8 +2869,6 @@ document.addEventListener('dragenter', (e) => {
   e.preventDefault();
   if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
     dragDepth++;
-    // the hint has to say what THIS tab takes, since the two tabs take different files
-    document.body.dataset.drop = ['library', 'presets'].includes(state.view) ? state.view : 'none';
     document.body.classList.add('dropping');
   }
 });
@@ -2850,16 +2882,14 @@ document.addEventListener('dragleave', () => {
 // files, which is how a whole unzipped Skinchanger pack can be dropped in at once.
 const isFolderFile = (f) => !f.type && !/\.[a-z0-9]+$/i.test(f.name || '');
 
-// Library tab: mod files, an archive of them, or a folder to scan.
+// Mod files, an archive of them, or a folder to scan.
 async function dropMods(dropped) {
   const wanted = dropped.filter((f) => /\.(vpk|zip)$/i.test(f.name || '') || isFolderFile(f));
   if (!wanted.length) {
-    const hint = dropped.some((f) => /\.d2mm$/i.test(f.name || ''))
-      ? L`Это пресет — открой его во вкладке «Пресеты»`
-      : L`Импортировать можно .vpk файлы, .zip или папку с ними`;
-    toast(hint, 'warn', 5000);
+    toast(L`Импортировать можно .vpk файлы, .zip или папку с ними`, 'warn', 5000);
     return;
   }
+  if (state.view !== 'library') switchView('library');
   // prefer real on-disk paths (lets the importer pick up sibling _NNN parts too)
   const paths = wanted.map((f) => { try { return window.api.mods.pathForFile(f); } catch { return null; } }).filter(Boolean);
   if (paths.length === wanted.length) {
@@ -2877,20 +2907,13 @@ async function dropMods(dropped) {
   }
 }
 
-// Presets tab: shared preset files only.
+// A received .d2mm.
 async function dropPresets(dropped) {
   const file = dropped.find((f) => /\.d2mm$/i.test(f.name || ''));
-  if (!file) {
-    const hint = dropped.some((f) => /\.(vpk|zip)$/i.test(f.name || '') || isFolderFile(f))
-      ? L`Это мод — перетащи его во вкладку «Библиотека»`
-      : L`Сюда можно перетащить файл пресета .d2mm`;
-    toast(hint, 'warn', 5000);
-    return;
-  }
   let p = null;
   try { p = window.api.mods.pathForFile(file); } catch { /* no path for this drop */ }
   if (!p) { toast(L`Не удалось прочитать файл пресета`, 'error'); return; }
-  handlePresetImport(await window.api.presets.importFile(p));
+  handlePresetImport(await window.api.presets.importFile(p)); // switches to Presets itself
 }
 
 document.addEventListener('drop', async (e) => {
@@ -2899,10 +2922,12 @@ document.addEventListener('drop', async (e) => {
   document.body.classList.remove('dropping');
   const dropped = [...(e.dataTransfer?.files || [])];
   if (!dropped.length) return;
-  // each tab accepts its own kind of file, so a drop is never ambiguous
-  if (state.view === 'presets') return dropPresets(dropped);
-  if (state.view === 'library') return dropMods(dropped);
-  toast(L`Моды перетаскивай в «Библиотеку», пресеты — в «Пресеты»`, 'warn', 5000);
+  // The file says what to do with it, not the tab that happens to be open. Routing by tab
+  // meant a preset dropped anywhere but Presets was answered with "open the other tab" —
+  // a file arriving from Discord lands wherever the user happens to be standing.
+  if (dropped.some((f) => /\.d2mm$/i.test(f.name || ''))) return dropPresets(dropped);
+  if (dropped.some((f) => /\.(vpk|zip)$/i.test(f.name || '') || isFolderFile(f))) return dropMods(dropped);
+  toast(L`Сюда можно бросить моды (.vpk, .zip, папку) или пресет .d2mm`, 'warn', 5000);
 });
 
 // a d2mm:// link clicked outside the app (or the one it was launched with)
@@ -3030,12 +3055,13 @@ function flashCopied(btn) {
 
 // a received preset that hasn't been installed yet
 function sharedPresetCardHtml(p) {
-  const s = p.status || { installed: 0, download: 0, embedded: 0, unavailable: [] };
-  const total = s.installed + s.download + s.embedded + s.unavailable.length;
+  const s = p.status || { installed: 0, download: 0, embedded: 0, free: 0, unavailable: [] };
+  const total = s.installed + s.download + s.embedded + (s.free || 0) + s.unavailable.length;
   const bits = [];
   if (s.installed) bits.push(L`${s.installed} уже стоят`);
   if (s.download) bits.push(L`${s.download} скачать из каталога`);
   if (s.embedded) bits.push(L`${s.embedded} внутри файла`);
+  if (s.free) bits.push(L`${s.free} косметика из игры`);
   return `
     <div class="preset-head">
       <div class="preset-name">${esc(p.name)}</div>
@@ -3079,16 +3105,26 @@ async function renderPresets() {
       card.innerHTML = sharedPresetCardHtml(p);
     } else {
       const names = p.modIds.map((id) => byId.get(id)?.name).filter(Boolean);
+      const link = p.link || { count: 0, skipped: [] };
+      const linkTitle = !link.count
+        ? L`В пресете только свои моды — ссылка их не донесёт, отправь файлом`
+        : link.skipped.length
+          ? L`Ссылка донесёт ${link.count} из каталога; свои моды (${link.skipped.length}) в неё не влезут — для них нужен файл`
+          : L`Скопировать короткую ссылку на пресет`;
       card.innerHTML = `
         <div class="preset-head">
           <div class="preset-name">${esc(p.name)}</div>
           <span style="font-size:12px;color:var(--text-muted)">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
           <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
-          ${p.shareable ? `<button class="btn btn-sm" data-link="${p.id}" title="${L`Скопировать короткую ссылку — работает, пока в пресете только моды из каталога`}"><span class="ms">link</span>${L`Ссылка`}</button>` : ''}
-          <button class="btn btn-sm" data-share="${p.id}" title="${L`Сохранить пресет файлом, чтобы отправить другому`}"><span class="ms">ios_share</span>${L`Файл`}</button>
+          <button class="btn btn-sm" data-pupd="${p.id}" title="${L`Перезаписать пресет тем, что включено сейчас`}"><span class="ms">save</span>${L`Обновить`}</button>
+          <button class="btn btn-sm btn-icon" data-pren="${p.id}" title="${L`Переименовать`}" aria-label="${L`Переименовать`}"><span class="ms">edit</span></button>
+          <button class="btn btn-sm" data-link="${p.id}" title="${esc(linkTitle)}" ${link.count ? '' : 'disabled'}><span class="ms">link</span>${L`Ссылка`}</button>
+          <button class="btn btn-sm" data-share="${p.id}" title="${L`Сохранить пресет файлом — донесёт и свои моды тоже`}"><span class="ms">ios_share</span>${L`Файл`}</button>
           <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
         </div>
-        <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>`;
+        <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>
+        ${link.skipped.length && link.count ? `
+          <div class="preset-hint"><span class="ms">link_off</span>${L`Ссылкой не уедут: ${esc(link.skipped.slice(0, 4).join(', '))}${link.skipped.length > 4 ? '…' : ''} — их нет в каталоге. Отправь файлом, чтобы попали.`}</div>` : ''}`;
     }
     list.appendChild(card);
   });
@@ -3110,12 +3146,35 @@ async function renderPresets() {
       refreshInstalledIndex();
     });
   });
+  list.querySelectorAll('[data-pupd]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const r = await window.api.presets.update(b.dataset.pupd);
+      if (r.error) { toast(r.error, 'error', 6000); return; }
+      toast(L`Пресет обновлён: ${r.count} ${plural(r.count, 'мод', 'мода', 'модов')}`, 'ok');
+      renderPresets();
+    });
+  });
+  list.querySelectorAll('[data-pren]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const cur = presets.find((p) => p.id === b.dataset.pren);
+      const name = await promptDialog(L`Новое название пресета`, { value: cur?.name || '', okLabel: L`Переименовать` });
+      if (!name) return;
+      const r = await window.api.presets.rename(b.dataset.pren, name);
+      if (r.error) { toast(r.error, 'error', 6000); return; }
+      renderPresets();
+    });
+  });
   list.querySelectorAll('[data-link]').forEach((b) => {
     b.addEventListener('click', async () => {
       const r = await window.api.presets.shareLink(b.dataset.link);
       if (r.error) { toast(r.error, 'warn', 7000); return; }
       navigator.clipboard.writeText(r.web);
       flashCopied(b);
+      // never let a partial link leave silently: the receiver would open a build missing
+      // mods and have no idea any were dropped
+      if (r.skipped?.length) {
+        toast(L`В ссылку вошли ${r.count} ${plural(r.count, 'мод', 'мода', 'модов')} из каталога. Свои моды (${r.skipped.length}) она не несёт — отправь файлом.`, 'warn', 8000);
+      }
     });
   });
   list.querySelectorAll('[data-share]').forEach((b) => {

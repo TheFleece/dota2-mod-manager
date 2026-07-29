@@ -208,9 +208,32 @@ const HERO_DISPLAY = {
   primal_beast: 'Primal Beast', void_spirit: 'Void Spirit',
 };
 
+// Short and misspelled folder names authors use for a hero whose canonical id looks
+// nothing like the name. Anything that differs only in spacing or punctuation
+// (crystalmaiden / crystal_maiden, queenofpain / queen_of_pain) needs no entry — heroKey
+// below folds those together on its own.
+const HERO_ALIAS = {
+  nyx: 'nerubian_assassin', nyx_assassin: 'nerubian_assassin', nyx_assasin: 'nerubian_assassin',
+  outworld_destroyer: 'obsidian_destroyer', outworld_devourer: 'obsidian_destroyer',
+  wraith_king: 'skeleton_king', windranger: 'windrunner', timbersaw: 'shredder',
+  clockwerk: 'rattletrap', natures_prophet: 'furion', nature_prophet: 'furion',
+  doom: 'doom_bringer', io: 'wisp', zeus: 'zuus', necrophos: 'necrolyte', magnus: 'magnataur',
+  treant_protector: 'treant', underlord: 'abyssal_underlord', lifestealer: 'life_stealer',
+  centaur_warrunner: 'centaur', vengeful_spirit: 'vengefulspirit', shadow_fiend: 'nevermore',
+};
+
 function heroDisplayName(id) {
-  if (HERO_DISPLAY[id]) return HERO_DISPLAY[id];
-  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const canon = HERO_ALIAS[id] || id;
+  if (HERO_DISPLAY[canon]) return HERO_DISPLAY[canon];
+  return canon.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Identity of a hero regardless of how the author spelled the folder. Authors mix
+// "crystal_maiden", "crystalmaiden" and "CrystalMaiden" inside one pack, and each spelling
+// used to count as a separate hero — which turned a single-hero skin into a "bundle of 3"
+// and offered to split it into parts that make no sense.
+function heroKey(id) {
+  return heroDisplayName(id).toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 // keyword found in a model filename token -> canonical equip slot
@@ -240,12 +263,26 @@ function slotFromModelStem(hero, stem) {
   let tok = stem.startsWith(hero + '_') ? stem.slice(hero.length + 1) : stem;
   tok = tok.replace(/_(lod\d+|c|model|hero|full|default|\d+)$/g, '');
   if (!tok || /^\d+$/.test(tok) || /(^|_)(base|body|model)$/.test(tok)) return 'base';
-  for (const [kw, slot] of SLOT_KEYWORDS) if (tok.includes(kw)) return slot;
+  // the last token is what the piece IS ("transmuted_armaments_back" is a back item);
+  // matching the whole string first made every set item an "arm" because "armaments"
+  // happens to contain "arm"
+  for (const part of [tok.split('_').pop(), tok]) {
+    for (const [kw, slot] of SLOT_KEYWORDS) if (part.includes(kw)) return slot;
+  }
   return 'misc';
 }
 
 const HERO_MODEL_RE = /^models\/heroes\/([a-z0-9_]+)\/(.+)$/;
 const HERO_PARTICLE_RE = /^particles\/units\/heroes\/hero_([a-z0-9_]+)\//;
+// Valve files every cosmetic item under the hero it belongs to, and every hero material
+// under materials/models/heroes. A set mod - by far the most common thing people install -
+// touches only these, and none of them used to be read at all: an arcana or a courier set
+// came out with no hero, no name and no picture, which is what left a row saying nothing
+// but "pak90_dir.vpk". The item roots also carry things that are not heroes (consumables,
+// couriers, wards...), so the folder is only taken as a hero when it is not one of those.
+const ITEM_MODEL_RE = /^models\/items\/([a-z0-9_]+)\/(.+)$/;
+const ITEM_MATERIAL_RE = /^materials\/models\/(?:heroes|items)\/([a-z0-9_]+)\//;
+const ECON_PARTICLE_RE = /^particles\/econ\/items\/([a-z0-9_]+)\//;
 // Dota 2 Skinchanger writes its own content root named after the cart: "8213/heroes/<hero>/"
 // and "8213/particles/<hero>/". Those two are as canonical as Valve's own layout, unlike the
 // free-form folders authors put under materials/ — so they count, and only under a numeric
@@ -256,6 +293,12 @@ const CART_PARTICLE_RE = /^\d{3,}\/particles\/([a-z0-9_]+)\//;
 const NON_HERO_FOLDER = new Set([
   'misc', 'common', 'shared', 'econ', 'items', 'generic', 'ui', 'props',
   'weather', 'ambient', 'effects', 'base', 'default', 'error', 'test',
+  // things Valve also files under models/items and particles/econ/items
+  'consumables', 'consumable', 'courier', 'couriers', 'ward', 'wards',
+  'creeps', 'creep', 'towers', 'tower', 'neutral', 'neutrals', 'roshan',
+  'pedestal', 'pedestals', 'taunts', 'taunt', 'emblems', 'emblem', 'sprays',
+  'loadingscreens', 'loadingscreen', 'announcer', 'music', 'hud', 'terrain',
+  'chests', 'chest', 'bundles', 'bundle', 'tools', 'dev', 'nomodel',
 ]);
 
 /**
@@ -271,7 +314,7 @@ function analyzeVpkPaths(paths) {
   };
   for (const p of paths) {
     let m = HERO_MODEL_RE.exec(p) || CART_MODEL_RE.exec(p);
-    if (m) {
+    if (m && !NON_HERO_FOLDER.has(m[1])) {
       const h = hero(m[1]);
       if (/\.vmdl_c$/.test(p)) {
         const stem = m[2].replace(/\.vmdl_c$/, '').split('/').pop();
@@ -281,21 +324,40 @@ function analyzeVpkPaths(paths) {
       }
       continue;
     }
-    m = HERO_PARTICLE_RE.exec(p) || CART_PARTICLE_RE.exec(p);
+    // a cosmetic item: models/items/<hero>/<set>/<piece>.vmdl_c — never a base override,
+    // so it adds a slot and never sets `base`
+    m = ITEM_MODEL_RE.exec(p);
+    if (m && !NON_HERO_FOLDER.has(m[1])) {
+      const h = hero(m[1]);
+      if (/\.vmdl_c$/.test(p)) {
+        h.slots.add(slotFromModelStem(m[1], m[2].replace(/\.vmdl_c$/, '').split('/').pop()));
+        h.models++;
+      }
+      continue;
+    }
+    m = HERO_PARTICLE_RE.exec(p) || CART_PARTICLE_RE.exec(p) || ECON_PARTICLE_RE.exec(p) || ITEM_MATERIAL_RE.exec(p);
     if (m && !NON_HERO_FOLDER.has(m[1])) hero(m[1]);
   }
   // authors sometimes use both the canonical folder (nerubian_assassin) and a custom
-  // alias (nyx_assassin) for the same hero — merge entries that resolve to one name.
-  const byName = new Map();
+  // alias (nyx, crystalmaiden) for the same hero — merge everything that resolves to the
+  // same hero, and keep the id the engine itself uses so splitting can find the files
+  const byKey = new Map();
   for (const [id, v] of heroes) {
-    const name = heroDisplayName(id);
-    const cur = byName.get(name) || { id, name, slots: new Set(), base: false, models: 0 };
+    const key = heroKey(id);
+    const cur = byKey.get(key) || { id, name: heroDisplayName(id), slots: new Set(), base: false, models: 0 };
+    // Of several spellings, keep the one the app has a proper name for: "crystal_maiden"
+    // reads as "Crystal Maiden", the "crystalmaiden" an author typed reads as "Crystalmaiden".
+    // The id matters too — splitting looks for the hero's files by it.
+    if (HERO_DISPLAY[HERO_ALIAS[id] || id] && !HERO_DISPLAY[HERO_ALIAS[cur.id] || cur.id]) {
+      cur.id = id;
+      cur.name = heroDisplayName(id);
+    }
     for (const s of v.slots) cur.slots.add(s);
     cur.base = cur.base || v.base;
     cur.models += v.models;
-    byName.set(name, cur);
+    byKey.set(key, cur);
   }
-  const list = [...byName.values()].map((v) => ({
+  const list = [...byKey.values()].map((v) => ({
     id: v.id, name: v.name, slots: [...v.slots], base: v.base, models: v.models,
   })).sort((a, b) => b.models - a.models || a.name.localeCompare(b.name));
 
@@ -585,7 +647,10 @@ function splitVpkByHero(dirPath, archivePathFor) {
   const dirBuf = fs.readFileSync(dirPath);
   const entries = readVpkEntries(dirBuf, dirPath, archivePathFor);
   const paths = entries.map(entryPath);
-  const heroes = analyzeVpkPaths(paths).heroes;
+  // only heroes the file really carries models for can become a part of their own; a hero
+  // named by one stray material is a reference, and a "part" holding nothing but the
+  // shared leftovers is not a mod
+  const heroes = analyzeVpkPaths(paths).heroes.filter((h) => h.models > 0);
   if (heroes.length < 2) return [];
   const ids = heroes.map((h) => h.id);
   // Canonical layouts first. Then any folder named after a hero we already found in this

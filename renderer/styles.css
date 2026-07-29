@@ -948,6 +948,11 @@ input, select { font-family: inherit; }
   border-color: rgba(251, 191, 36, 0.4);
 }
 .lib-tag.schema .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
+/* foreign file that is byte-identical to an installed mod: nothing is wrong, there is
+   just one copy too many — stated quietly, since deleting it is the user's call */
+.lib-tag.dup { color: var(--text-muted); background: var(--bg-elev); }
+.lib-tag.dup .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
+.lib-row.dup { opacity: 0.72; }
 .lib-row.conflict { border-color: rgba(251, 191, 36, 0.3); }
 .lib-meta { font-size: 11.5px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; }
 .lib-actions { display: flex; align-items: center; gap: 8px; }
@@ -1036,6 +1041,9 @@ input, select { font-family: inherit; }
 .lib-listhead .btn-xs:first-of-type { margin-left: auto; }
 .btn-xs { padding: 4px 10px; font-size: 12px; }
 .btn-xs .ms { font-size: 15px; }
+/* square button that is only an icon — the label lives in its title/aria-label */
+.btn-icon { padding: 5px 7px; }
+.btn-icon .ms { margin: 0; font-size: 16px; }
 
 /* checkbox — themed to the lavender accent */
 .lib-check {
@@ -1164,6 +1172,12 @@ input:-webkit-autofill, input:-webkit-autofill:focus {
   margin-top: 9px; font-size: 12px; color: var(--warning);
 }
 .preset-warn .ms { font-size: 16px; }
+/* what a link would leave behind — a note, not a warning: the file share still carries it */
+.preset-hint {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 8px; font-size: 12px; color: var(--text-muted);
+}
+.preset-hint .ms { font-size: 15px; }
 
 /* share dialog: what travels as a link and what as bytes */
 .share-box { width: min(520px, calc(92vw / var(--content-zoom))); text-align: left; }
@@ -1718,9 +1732,10 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
   * { transition: none !important; animation: none !important; }
 }
 
-/* drag & drop hint — each tab takes its own kind of file (localized via <html lang>) */
+/* drag & drop hint — a drop is routed by what the file is, not by the open tab
+   (localized via <html lang>) */
 body.dropping::after {
-  content: 'Drop to import .vpk into your library';
+  content: 'Drop mods (.vpk, .zip, a folder) or a .d2mm preset';
   position: fixed;
   inset: 14px;
   display: flex;
@@ -1737,13 +1752,8 @@ body.dropping::after {
   pointer-events: none;
 }
 html[lang="ru"] body.dropping::after {
-  content: 'Отпусти, чтобы импортировать .vpk в библиотеку';
+  content: 'Отпусти: моды (.vpk, .zip, папку) или пресет .d2mm';
 }
-/* per-tab overrides (kept last so they win over the localized base rule) */
-body.dropping[data-drop="presets"]::after { content: 'Drop a .d2mm preset file here'; }
-body.dropping[data-drop="none"]::after { content: 'Mods go to the Library tab, presets to the Presets tab'; }
-html[lang="ru"] body.dropping[data-drop="presets"]::after { content: 'Отпусти файл пресета .d2mm'; }
-html[lang="ru"] body.dropping[data-drop="none"]::after { content: 'Моды — во вкладку «Библиотека», пресеты — во вкладку «Пресеты»'; }
 
 /* ============ Language picker (first launch) ============ */
 .lang-pick-overlay {

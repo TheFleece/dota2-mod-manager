@@ -34,6 +34,7 @@ window.EN_PLURAL = {
   'общих файлов': ['shared file', 'shared files'],
   'файлов склеены': ['file merged', 'files merged'],
   'косметик': ['cosmetic', 'cosmetics'],
+  'из них — копии уже установленных модов': ['of them is a copy of a mod you already have', 'of them are copies of mods you already have'],
   'вариантов': ['option', 'options'],
   'видов': ['look', 'looks'],
 };
@@ -315,8 +316,15 @@ const EN = {
   'опознан по содержимому': 'recognized by content',
   'внешний файл': 'external file',
   'Привязать к каталогу и управлять как обычным модом': 'Adopt into the catalog and manage like a normal mod',
+  'Взять файл в библиотеку — дальше как у обычного мода': 'Take the file into your library — from there it behaves like any mod',
   'Принять': 'Adopt',
   '«{0}» принят из каталога': '«{0}» adopted from the catalog',
+  '«{0}» в библиотеке': '«{0}» is in your library',
+  'Моды, положенные в папку мимо менеджера. «Принять» берёт файл в библиотеку — с превью, переключателем и всем остальным.':
+    'Mods put in the folder without the manager. "Adopt" takes a file into your library — preview, switch and all.',
+  'копия': 'copy',
+  'копия «{0}»': 'copy of «{0}»',
+  'Тот же файл уже стоит как «{0}» — эта копия лишняя': 'The same file is already installed as «{0}» — this copy is redundant',
   'Разбить «{0}» на отдельные моды по героям? Файл заменится на отдельные управляемые моды.':
     'Split «{0}» into separate mods by hero? The file is replaced by separate managed mods.',
   'Удалить файл {0}?': 'Delete file {0}?',
@@ -381,17 +389,29 @@ const EN = {
   'Не найдены ни у тебя, ни в файле:': 'Found neither here nor in the file:',
   'Пресет «{0}» добавлен — нажми «Установить»': 'Preset «{0}» added — press «Install»',
   'Установлено и применено: {0} {1}': 'Installed and applied: {0} {1}',
-  'Это пресет — открой его во вкладке «Пресеты»': 'That is a preset — open it in the Presets tab',
-  'Это мод — перетащи его во вкладку «Библиотека»': 'That is a mod — drop it in the Library tab',
-  'Сюда можно перетащить файл пресета .d2mm': 'You can drop a .d2mm preset file here',
+  '{0} косметика из игры': '{0} cosmetic from the game',
   'Не удалось прочитать файл пресета': 'Could not read the preset file',
-  'Моды перетаскивай в «Библиотеку», пресеты — в «Пресеты»': 'Drop mods in the Library, presets in the Presets tab',
+  'Сюда можно бросить моды (.vpk, .zip, папку) или пресет .d2mm':
+    'You can drop mods here (.vpk, .zip, a folder) or a .d2mm preset',
+  'Обновить': 'Update',
+  'Перезаписать пресет тем, что включено сейчас': 'Overwrite the preset with what is enabled right now',
+  'Переименовать': 'Rename',
+  'Новое название пресета': 'New preset name',
+  'Пресет обновлён: {0} {1}': 'Preset updated: {0} {1}',
 
   // ---------- preset links ----------
   'Ссылка': 'Link',
   'Файл': 'File',
-  'Скопировать короткую ссылку — работает, пока в пресете только моды из каталога':
-    'Copy a short link — available while the preset holds catalog mods only',
+  'Сохранить пресет файлом — донесёт и свои моды тоже': 'Save the preset as a file — it carries your own mods too',
+  'Скопировать короткую ссылку на пресет': 'Copy a short link to the preset',
+  'В пресете только свои моды — ссылка их не донесёт, отправь файлом':
+    'The preset holds only your own mods — a link cannot carry them, send the file',
+  'Ссылка донесёт {0} из каталога; свои моды ({1}) в неё не влезут — для них нужен файл':
+    'A link carries the {0} catalog mods; your own ({1}) will not fit in one — send the file for those',
+  'Ссылкой не уедут: {0}{1} — их нет в каталоге. Отправь файлом, чтобы попали.':
+    'A link leaves these behind: {0}{1} — they are not in the catalog. Send the file to include them.',
+  'В ссылку вошли {0} {1} из каталога. Свои моды ({2}) она не несёт — отправь файлом.':
+    'The link carries {0} catalog {1}. Your own mods ({2}) are not in it — send the file for those.',
   'Добавить': 'Add',
 
   // ---------- account ----------
