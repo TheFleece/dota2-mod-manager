@@ -2,6 +2,18 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 1.14.2
+
+### Fixes
+
+- A mod exported for someone else, or shared inside a preset, carried its models but not
+  the item-schema blocks that give it effects and icons: the same blocks the app lifts on
+  install and keeps on the record. It now carries a compact copy of them, read back the
+  same way on the other side.
+- Adopting a mod file another tool had already dropped into the mods folder skipped that
+  same step: it became a library record, but its item blocks stayed unread and its effects
+  never showed up.
+
 ## 1.14.1
 
 ### More cosmetics with a picture, fewer library rows with none
