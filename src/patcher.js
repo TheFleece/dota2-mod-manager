@@ -113,8 +113,12 @@ function patchedBranch(branchText, block) {
     else if (branchText[i] === '}') { depth--; if (!depth) { close = i; break; } }
   }
   if (close === -1) throw new Error(t('gameinfo_branchspecific.gi: блок FileSystem не закрыт'));
+  // The original file ends its FileSystem body with a lone indent tab meant for its closing
+  // brace ("...\r\n\t}") - strip it before splicing in our own block, or the two indents stack
+  // into a stray extra tab ahead of "SearchPaths".
+  const head = branchText.slice(0, close).replace(/[ \t]+$/, '');
   const indented = block.split(/\r?\n/).map((l) => (l.trim() ? '\t\t' + l.trim() : l)).join('\r\n');
-  return branchText.slice(0, close) + indented + '\r\n\t' + branchText.slice(close);
+  return head + indented + '\r\n\t' + branchText.slice(close);
 }
 
 /**
