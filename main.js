@@ -1424,7 +1424,12 @@ function registerIpc() {
       const partRe = new RegExp(`^${origBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_\\d{3}\\.vpk$`, 'i');
       const files = [{ root: 'lang', relPath: base }];
       for (const f of fs.readdirSync(lang)) if (partRe.test(f)) files.push({ root: 'lang', relPath: f });
-      library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: preview || null, files });
+      const rec = library.add({ name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, fileRef: fileName, preview: preview || null, files });
+      // A file dropped into the folder by something else has never been through an install,
+      // so its item blocks are still sitting inside it doing nothing. Adopting is the moment
+      // the app takes it over - lift them now, or the mod stays without its effects.
+      const harvest = schemaService.harvest(rec);
+      if (harvest && harvest.deltas) schemaService.refresh();
       return { ok: true, name: m.name };
     } catch (err) {
       return { error: String(err.message || err) };
