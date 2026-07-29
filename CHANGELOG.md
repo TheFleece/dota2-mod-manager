@@ -2,6 +2,76 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 1.15.0
+
+### You decide which mod loads first
+
+Dota mounts mod files in order, and the first copy of a shared file is the one you see. The
+app used to work out who covered whom by comparing what every mod ships, then offer to swap
+the two. It got that wrong far too often: two mods that happen to carry the same stock
+texture are not fighting over anything, and a badge telling you a working mod is "covered"
+helps nobody.
+
+All of that is gone. The Library lists mods in the order the game loads them, and every row
+has arrows. Move a mod up and its version of any shared file wins. No warning before an
+install, no badge to decode, no button promising to sort it out for you.
+
+### A file you put in the mods folder yourself is a mod
+
+Such a file used to sit at the bottom of the Library as a row reading `pak90_dir.vpk`, with
+an empty square where a picture goes and nothing you could do about it.
+
+- The app reads the file and names it after what is inside, next to the portrait of the hero
+  it turned out to be for.
+- **Adopt** takes in any mod file now, not only the ones the catalog recognises. A file
+  nobody has a name for joins your library as an import.
+- A file byte-identical to a mod you already have is marked as a copy, so you can delete it
+  instead of keeping two rows for one mod.
+- Data volumes (`pak90_000.vpk`) belong to their index. They no longer show up as separate
+  rows you cannot name or act on, and deleting the mod takes them with it.
+
+### Sets, arcanas and item mods arrive with a name and a picture
+
+The app knew where Dota keeps hero models and missed where it keeps cosmetic items:
+`models/items/<hero>`, `materials/models/heroes` and the econ particle folders. A set or an
+arcana therefore came out with no hero, no name, no category and no picture. All of those
+read correctly now, down to which slots the set covers.
+
+It also treated every spelling of a hero folder as a separate hero, so a single-hero skin
+could claim to be a bundle of three and offer to split into parts that make no sense.
+`crystalmaiden` and `crystal_maiden` are one hero again, and so are `nyx` and
+`nerubian_assassin`.
+
+### Presets
+
+- A preset link used to vanish the moment your build held one mod of your own, with nothing
+  said about why. It now carries the catalog mods and names what it had to leave behind, so
+  you know to send the file for those.
+- Mods arriving inside a shared preset get what a file you drag in gets: a name from their
+  content, their item blocks lifted out, a split when one file holds several heroes.
+- **Update** overwrites a preset with whatever is enabled right now, and the pencil renames
+  it. Retyping the name exactly used to be the only way, and a typo quietly left you with a
+  second preset.
+- Drop a `.d2mm` anywhere in the window and it opens in Presets. Drop a `.vpk` anywhere and
+  it imports. The tab you happen to be standing on no longer decides.
+
+### Fixes
+
+- Safe mode left Dota asking you to verify your files, with matchmaking refusing to start:
+  the opposite of what safe mode is for. Switching it on puts back the one game file the app
+  edits, and the app rebuilt that file one tab character shorter than the copy Dota ships.
+  It still loaded, so nothing looked broken, but it no longer matched the signature Dota
+  checks it against. The app now rebuilds the file exactly, verifies it against Dota's own
+  signature list before writing it, and repairs a bad copy it saved earlier. When it cannot,
+  it says so and points you at Steam's file check rather than leaving you to guess.
+- Sharing a preset counted nine mods you had installed from the catalog as your own: it
+  packed them into the file whole and left them out of the link. Five catalog sections list
+  their mods in groups (creeps, towers, hero items, item effects, creep deny) and the app
+  read only the ungrouped ones. A build that came out at 111 MB is half a megabyte now.
+- Switching a mod off, or turning everything off with the master switch, cost imported mods
+  their name, their content tag and their picture until you switched them back on. The app
+  looked for a mod's file under its plain name, and a switched-off mod is renamed on disk.
+
 ## 1.14.3
 
 ### Fixes
