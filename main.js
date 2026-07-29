@@ -13,7 +13,6 @@ try {
 const { Settings } = require('./src/settings');
 const { Catalog } = require('./src/catalog');
 const { Installer } = require('./src/installer');
-const { findOverlapsWith } = require('./src/overlap');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
 const { writePresetFile, readPresetFile } = require('./src/preset-share');
@@ -424,16 +423,6 @@ function adoptImportedFiles({ files, name, fileRef, identity }) {
   return { records: [library.find(rec.id) || rec], schema, split: false };
 }
 
-// does this freshly added record cover other enabled mods? Same rules as the library's own
-// badges (src/overlap.js), so the toast and the row cannot disagree.
-function overlapNamesFor(rec) {
-  try {
-    const paths = installer.installedContentPaths(rec);
-    const others = installer.overlapEntries(library.list().filter((o) => o.id !== rec.id));
-    return findOverlapsWith({ id: rec.id, name: rec.name, paths }, others).map((h) => h.name);
-  } catch { return []; }
-}
-
 function registerImportResults(results) {
   const imported = [];
   let needSchema = false;
@@ -446,7 +435,6 @@ function registerImportResults(results) {
         name: rec.name,
         relPath: rec.files[0].relPath,
         merged: split ? 0 : r.merged || 0,
-        conflicts: split ? [] : overlapNamesFor(rec),
         ...(split ? { fromSplit: r.name } : {}),
       });
     }
@@ -551,6 +539,18 @@ function dropSharedPresetFile(preset) {
   if (f) { try { fs.rmSync(f, { force: true }); } catch { /* noop */ } }
 }
 
+// The mods of one catalog category. Most categories are a flat array, but some (creeps,
+// towers, hero-items, item-effects, creep-deny) group theirs under `groups` - the same two
+// shapes the catalog view walks (see categoryMods in renderer/app.js). Reading only the
+// flat ones meant every mod in a grouped category looked like it was not in the catalog:
+// the share dialog called them the user's own and packed them into the file as bytes, and
+// a preset link dropped them entirely.
+function categoryModList(data) {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.groups)) return data.groups.flatMap((g) => g.mods || []);
+  return [];
+}
+
 // "<categoryId>|<name>|<styleLabel>" -> what mods:install needs to fetch it
 async function catalogIndex() {
   const map = new Map();
@@ -558,8 +558,8 @@ async function catalogIndex() {
   let data;
   try { data = await catalog.load(); } catch { return map; } // offline with no cache
   for (const [categoryId, list] of Object.entries((data.mods && data.mods.modsData) || {})) {
-    if (!Array.isArray(list)) continue;
-    for (const m of list) {
+    for (const m of categoryModList(list)) {
+      if (!m || !m.name) continue;
       if (Array.isArray(m.styles)) {
         for (const s of m.styles) {
           map.set(key(categoryId, m.name, s.label), { categoryId, name: m.name, styleLabel: s.label, fileRef: s.file, preview: s.preview });
@@ -1137,20 +1137,6 @@ function registerIpc() {
     }
   });
 
-  ipcMain.handle('mods:checkConflicts', async (e, payload) => {
-    // payload: { categoryId, name, fileRef }
-    try {
-      const conflicts = await installer.findConflicts(
-        { categoryId: payload.categoryId, fileRef: payload.fileRef, modName: payload.name },
-        library.list()
-      );
-      return { conflicts };
-    } catch (err) {
-      // conflict check is best-effort — never block installation on its errors
-      return { conflicts: [], error: String(err.message || err) };
-    }
-  });
-
   ipcMain.handle('mods:exportSingle', async (e, id) => {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
@@ -1267,9 +1253,6 @@ function registerIpc() {
     });
     let slots = 0;
     try { slots = installer.usedModSlots(); } catch { /* no game path */ }
-    // mods that overwrite each other's files — surfaced as a warning in the library
-    let conflicts = [];
-    try { conflicts = installer.libraryConflicts(installed); } catch { /* best-effort */ }
     // the renderer re-lists after every install, toggle, preset and bulk action, so this is
     // the one place that keeps the Discord status honest without hooking a dozen handlers
     refreshPresence();
@@ -1282,7 +1265,7 @@ function registerIpc() {
       const { schema, ...rest } = rec;
       return { ...rest, schemaCount: schema.length, schemaLive: schemaOn };
     });
-    return { installed: listed, external, slots, slotCeil: 98, conflicts };
+    return { installed: listed, external, slots, slotCeil: 98 };
   });
 
   // ----- launch + master mods switch -----
@@ -1381,24 +1364,32 @@ function registerIpc() {
     }
   });
 
-  // Put a mod on top of the ones it shares files with. Both keep loading — the game reads
-  // the lower pak number first and that copy wins — so this is how a separate item mod is
-  // worn over a hero set instead of one of the two having to be switched off.
-  ipcMain.handle('mods:raise', (e, id) => {
+  /**
+   * Move a mod one step through the load order. The game mounts pakNN_dir.vpk in numeric
+   * order and the first copy of a file wins, so the pak number IS the priority - stepping
+   * up means trading slots with the mod directly above.
+   *
+   * This is the whole ordering story now. The app used to work out who covered whom by
+   * comparing what every mod ships and then offer to fix it, which was wrong often enough
+   * to be worse than useless: mods that merely share a stock file are not fighting, and no
+   * amount of filtering told the two cases apart reliably. Which mod wins is a decision
+   * only the person looking at the game can make.
+   */
+  ipcMain.handle('mods:move', (e, id, dir) => {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
     try {
-      const all = library.list();
-      const partnerIds = new Set();
-      for (const c of installer.libraryConflicts(all)) {
-        if (c.a.id === id) partnerIds.add(c.b.id);
-        else if (c.b.id === id) partnerIds.add(c.a.id);
-      }
-      const partners = all.filter((r) => partnerIds.has(r.id));
-      if (!partners.length) return { ok: true, moved: 0 };
-      const { moved } = installer.raiseAbove(rec, partners);
-      for (const m of moved) library.update(m.id, { files: m.files });
-      return { ok: true, moved: moved.length, names: partners.map((p) => p.name) };
+      const ordered = library.list()
+        .map((r) => ({ r, n: installer.slotNumber(r) }))
+        .filter((x) => x.n != null)
+        .sort((a, b) => a.n - b.n);
+      const at = ordered.findIndex((x) => x.r.id === id);
+      if (at === -1) return { error: t('У мода нет слота pakNN') };
+      const to = at + (dir < 0 ? -1 : 1);
+      if (to < 0 || to >= ordered.length) return { ok: true, moved: 0 };
+      const other = ordered[to].r;
+      for (const m of installer.swapSlots(rec, other)) library.update(m.id, { files: m.files });
+      return { ok: true, moved: 1, with: other.name };
     } catch (err) {
       return { error: String(err.message || err) };
     }

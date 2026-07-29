@@ -26,12 +26,9 @@ window.EN_PLURAL = {
   'файлов': ['file', 'files'],
   'слотов': ['slot', 'slots'],
   'файлов опознаны': ['file recognized', 'files recognized'],
-  'модов конфликтуют': ['mod conflicts', 'mods conflict'],
-  'модов делят': ['mod shares', 'mods share'],
   'модов из каталога': ['mod from the catalog', 'mods from the catalog'],
   'своих модов': ['mod of your own', 'mods of your own'],
   'модов не получится передать': ['mod cannot be shared', 'mods cannot be shared'],
-  'общих файлов': ['shared file', 'shared files'],
   'файлов склеены': ['file merged', 'files merged'],
   'косметик': ['cosmetic', 'cosmetics'],
   'из них — копии уже установленных модов': ['of them is a copy of a mod you already have', 'of them are copies of mods you already have'],
@@ -199,12 +196,8 @@ const EN = {
   'Удалить «{0}»?': 'Delete «{0}»?',
   '{0} удалён': '{0} removed',
 
-  // ---------- install / conflicts ----------
+  // ---------- install ----------
   ' (и ещё {0})': ' (and {0} more)',
-  'оба дают {0}': 'both supply {0}',
-  'общих файлов: {0}': 'shared files: {0}',
-  '«{0}» и уже установленный «{1}»{2} дают одни и те же файлы — {3}. Оба останутся включёнными: «{4}» встанет сверху, в игре будет его версия этих файлов. Поменять порядок можно в Библиотеке.':
-    '«{0}» and the already-installed «{1}»{2} supply the same files — {3}. Both stay on: «{4}» goes on top, so its version of those files is what the game shows. You can change the order in the Library.',
   '{0} установлен': '{0} installed',
   '{0} установлен — «{1}» выключен: курсор в игре может быть только один':
     '{0} installed — «{1}» switched off: the game can only show one cursor',
@@ -331,8 +324,6 @@ const EN = {
 
   // ---------- import ----------
   'Импортировано: {0} {1}': 'Imported: {0} {1}',
-  '«{0}» перекрывается с: {1}': '«{0}» overlaps with: {1}',
-  '«{0}» перекрывается с: {1}{2}': '«{0}» overlaps with: {1}{2}',
   '{0} {1} в {2} {3}': '{0} {1} into {2} {3}',
   'Импорт папки': 'Import folder',
   'Импортировать все .vpk из папки — например из распакованного пака Dota 2 Skinchanger':
@@ -341,22 +332,14 @@ const EN = {
   'Не удалось прочитать перетащенные файлы': 'Could not read the dropped files',
   'Не удалось прочитать перетащенную папку': 'Could not read the dropped folder',
 
-  // ---------- overlapping mods (load order) ----------
-  'общие файлы': 'shared files',
-  'сверху': 'on top',
-  'перекрыт': 'covered',
-  'Наверх': 'Move up',
-  'Эти файлы берутся из «{0}» — он грузится раньше. «Наверх» поменяет их местами.':
-    'Those files come from «{0}» — it loads first. "Move up" swaps the two.',
-  'Общие файлы берутся отсюда, поверх «{0}»': 'The shared files come from here, over «{0}»',
-  'Общие файлы с «{0}» — порядок решает игра': 'Files shared with «{0}» — the game decides the order',
-  'Загружать раньше «{0}» — общие файлы будут браться из этого мода':
-    'Load before «{0}» — the shared files will come from this mod',
-  '«{0}» теперь сверху — общие файлы берутся из него': '«{0}» is on top now — the shared files come from it',
-  ' файлы игры с другими — это нормально: работает тот, что сверху, остальные копии этих файлов игра не читает. Так предмет из каталога надевается поверх сета на героя. Кнопка «Наверх» меняет, кто сверху.':
-    ' game files with others — which is fine: the one on top supplies them and the game never reads the other copies. That is how an item from the catalog is worn over a hero set. The "Move up" button changes who is on top.',
-  '«<b>{0}</b>» поверх «<b>{1}</b>»': '«<b>{0}</b>» over «<b>{1}</b>»',
-  '«<b>{0}</b>» и «<b>{1}</b>» — порядок решает игра': '«<b>{0}</b>» and «<b>{1}</b>» — the game decides the order',
+  // ---------- load order ----------
+  'Загружать раньше: при общих файлах победит этот мод': 'Load earlier: on a shared file this mod wins',
+  'Загружать позже': 'Load later',
+  'Выше в порядке загрузки': 'Earlier in the load order',
+  'Ниже в порядке загрузки': 'Later in the load order',
+  'Файл игры не совпадает с подписью Dota': "A game file does not match Dota's own signature",
+  '. Пока так, клиент может не пускать в матчмейкинг — и моды тут ни при чём. Приложение не смогло восстановить оригинал само: проверь целостность файлов Dota 2 через Steam, это чинит за минуту.':
+    ". While that is true the client can refuse to matchmake, and mods have nothing to do with it. The app could not restore the original itself: verify Dota 2's files through Steam, it takes a minute.",
   'и': 'and',
   'и ещё {0}': 'and {0} more',
   'Включено': 'Enabled', 'Выключено': 'Disabled',

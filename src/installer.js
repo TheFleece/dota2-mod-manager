@@ -5,9 +5,21 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
 const { extractDeltas, deltaTable, crc32 } = require('./schema');
-const { GLOBAL_TABLE_RE, dropSharedPaths, findOverlaps, findOverlapsWith } = require('./overlap');
+// Whole-game tables and tool branding that packaging tools bake into EVERY export.
+// Dota 2 Skinchanger, for one, ships a full 47 MB scripts/items/items_game.txt plus the
+// localization files, its loadout stylesheets, its logo strip and a steam-id watermark in
+// every single pack it builds. None of it belongs in a language folder - the localization
+// copy in particular outranks the game's own and rolls UI text back to whenever the pack
+// was built - so harvestSchema strips them on the way in.
+const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
+  'scripts/items/items_game(?:\\.txt)?"?$',            // the game's whole item table
+  'resource/localization/',                            // full dota_<lang>.txt copies
+  'panorama/styles/(?:hero_slot_item_picker_loadout|ui_econ_item)\\.vcss_c"?$',
+  'panorama/images/(?:ds|tg|tt|wb|yu|remove|header_credits|footer_credits)[^/]*$',
+  '(?:models/heroes|panorama)/\\d{8,}\\.vxml_c"?$',    // <steam id>.vxml_c watermark
+].join('|') + ')');
 const { ensureLangFolder } = require('./gamelang');
 const { t } = require('./i18n');
 
@@ -64,13 +76,24 @@ class Installer {
     this.getGamePath = getGamePath;
     this.getLangSuffix = getLangSuffix;
     this.onProgress = onProgress || (() => {});
-    this._pathCache = new Map(); // "<abs>|<size>|<mtime>" -> Map<path, crc>
   }
 
   langFolder() {
     const game = this.getGamePath();
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     return path.join(game, `dota_${this.getLangSuffix()}`);
+  }
+
+  /**
+   * Where a mod's file actually is right now. Switching a mod off renames it to ".off" and
+   * the master switch renames everything to ".moff", so anything that reads a mod's own
+   * bytes has to look for those too - reading the plain name only meant a disabled mod
+   * became unreadable, and with it nameless and pictureless in the library.
+   * Falls back to the plain path so callers still get a sensible error.
+   */
+  langFileOnDisk(relPath) {
+    const base = path.join(this.langFolder(), relPath);
+    return ['', '.off', MASTER_OFF].map((s) => base + s).find((p) => fs.existsSync(p)) || base;
   }
 
   // Called before writing into the folder. English is the one language Valve ships no
@@ -279,39 +302,23 @@ class Installer {
   }
 
   /**
-   * Put `rec` on top of the records it shares files with: take a free slot below them when
-   * there is one, otherwise trade places with whoever is on top now. pak00 is the parking
-   * spot for the trade - the game never mounts it, so a crash mid-swap leaves a file that
-   * is merely inactive, not one that fights for the same name.
-   * @param {object} rec        the record to raise
-   * @param {Array<object>} partners  records it overlaps with
-   * @returns {{ moved: Array<{ id: string, files: Array<object> }> }} records to save
+   * Trade two records' slots, which is how a mod moves up or down the load order.
+   * pak00 is the parking spot for the swap - the game never mounts it, so a crash
+   * mid-swap leaves a file that is merely inactive, not one fighting for a name in use.
+   * @returns {Array<{ id: string, files: Array<object> }>} records to save
    */
-  raiseAbove(rec, partners) {
-    const mine = this.slotNumber(rec);
-    if (mine == null) throw new Error(t('У мода нет слота pakNN'));
-    const above = partners
-      .map((p) => ({ rec: p, n: this.slotNumber(p) }))
-      .filter((p) => p.n != null && p.n <= mine)
-      .sort((a, b) => a.n - b.n);
-    if (!above.length) return { moved: [] }; // already on top of every partner
-
-    const used = this.usedPakNames();
-    const free = this.freeSlotBelow(above[0].n, used);
-    if (free) return { moved: [{ id: rec.id, files: this.moveToSlot(rec, free) }] };
-
-    // no free slot above them: swap with the one currently on top
-    const top = above[0].rec;
-    const topBase = this.slotBase(top);
-    const myBase = this.slotBase(rec);
-    const parked = this.moveToSlot(rec, 'pak00');
+  swapSlots(a, b) {
+    const aBase = this.slotBase(a);
+    const bBase = this.slotBase(b);
+    if (!aBase || !bBase) throw new Error(t('У мода нет слота pakNN'));
+    const parked = this.moveToSlot(a, 'pak00');
     try {
-      const movedTop = this.moveToSlot(top, myBase);
-      const movedMine = this.moveToSlot({ ...rec, files: parked }, topBase);
-      return { moved: [{ id: rec.id, files: movedMine }, { id: top.id, files: movedTop }] };
+      const movedB = this.moveToSlot(b, aBase);
+      const movedA = this.moveToSlot({ ...a, files: parked }, bBase);
+      return [{ id: a.id, files: movedA }, { id: b.id, files: movedB }];
     } catch (err) {
       // put ours back where it was rather than leave it parked in a slot nothing mounts
-      try { this.moveToSlot({ ...rec, files: parked }, myBase); } catch { /* nothing else to try */ }
+      try { this.moveToSlot({ ...a, files: parked }, aBase); } catch { /* nothing else to try */ }
       throw err;
     }
   }
@@ -373,7 +380,7 @@ class Installer {
     });
     // slots for the archive's VPKs, decided before a byte is written (see planPakNames).
     // A "maps/..." payload is not a pak: terrains and the mods that come with them replace
-    // the map file itself, which only works from maps\dota.vpk (same rule modContentPaths
+    // the map file itself, which only works from maps\dota.vpk (the same rule the importer
     // reads by), so those keep their path.
     const isMapsPath = (l) => /(^|\/)maps\//.test(l);
     const pakPlan = this.planPakNames(
@@ -669,128 +676,6 @@ class Installer {
     return buildVpk(entries);
   }
 
-  // ---------- conflict detection ----------
-
-  // Game paths a downloaded mod file would provide, mapped to their VPK CRC (-1 = unknown,
-  // for loose non-VPK payload files). Returns Map<path, crc>.
-  modContentPaths(localFile) {
-    const out = new Map();
-    const lower = localFile.toLowerCase();
-    if (lower.endsWith('.vpk')) {
-      for (const [p, crc] of listVpkPathCrcsFile(localFile)) out.set(p, crc);
-      return dropSharedPaths(out);
-    }
-    if (!lower.endsWith('.zip')) return out;
-    const zip = new AdmZip(localFile);
-    for (const entry of zip.getEntries()) {
-      if (entry.isDirectory) continue;
-      const rel = entry.entryName.replace(/\\/g, '/');
-      const l = rel.toLowerCase();
-      const baseName = rel.split('/').pop();
-      if (!baseName || l.includes('!guide') || /(^|\/)(guide\.txt|install\.bat|uninstall\.bat|readme[^/]*)$/i.test(l)) continue;
-      if (l.endsWith('_dir.vpk')) {
-        try { for (const [p, crc] of listVpkPathCrcs(entry.getData())) out.set(p, crc); } catch { /* skip broken vpk */ }
-      } else if (l.endsWith('.vpk')) {
-        // secondary archive parts (pakNN_000.vpk) carry no index
-      } else if (l.includes('maps/')) {
-        const parts = rel.split('/');
-        const mapsIdx = parts.findIndex((p) => p.toLowerCase() === 'maps');
-        out.set(parts.slice(mapsIdx).join('/').toLowerCase(), -1);
-      } else {
-        const parts = rel.split('/');
-        out.set((parts.length > 1 ? parts.slice(1).join('/') : rel).toLowerCase(), -1);
-      }
-    }
-    return dropSharedPaths(out);
-  }
-
-  // Path->crc index of one installed VPK, memoised on (size, mtime). Scanning the whole
-  // library for conflicts re-reads the same files on every render otherwise.
-  vpkContentPaths(abs) {
-    const st = fs.statSync(abs);
-    const key = `${abs}|${st.size}|${st.mtimeMs}`;
-    const hit = this._pathCache.get(key);
-    if (hit) return hit;
-    const map = listVpkPathCrcsFile(abs);
-    if (this._pathCache.size > 200) this._pathCache.clear();
-    this._pathCache.set(key, map);
-    return map;
-  }
-
-  // Game paths of an installed library record, read from disk, mapped to their VPK CRC.
-  // Returns Map<path, crc> (-1 = unknown, for loose non-VPK lang files).
-  installedContentPaths(rec) {
-    const lang = this.langFolder();
-    const out = new Map();
-    for (const f of rec.files) {
-      if (f.root !== 'lang') continue;
-      if (/\.vpk$/i.test(f.relPath)) {
-        if (!/_dir\.vpk$/i.test(f.relPath)) continue;
-        // a disabled mod keeps its bytes under .off/.moff — still worth comparing
-        const base = path.join(lang, f.relPath);
-        const abs = ['', '.off', MASTER_OFF].map((s) => base + s).find((p) => fs.existsSync(p));
-        if (!abs) continue;
-        try {
-          for (const [p, crc] of this.vpkContentPaths(abs)) out.set(p, crc);
-        } catch { /* unreadable — ignore */ }
-      } else {
-        out.set(f.relPath.replace(/\\/g, '/').toLowerCase(), -1);
-      }
-    }
-    return dropSharedPaths(out);
-  }
-
-  // The enabled mods as src/overlap.js wants them: id, name, content paths, pak slot.
-  overlapEntries(records) {
-    const live = (records || []).filter((r) => r.enabled && (r.files || []).some((f) => f.root === 'lang'));
-    const out = [];
-    for (const rec of live) {
-      try {
-        const paths = this.installedContentPaths(rec);
-        if (paths.size) out.push({ id: rec.id, name: rec.name, paths, slot: this.slotNumber(rec) });
-      } catch { /* no game path / unreadable — skip */ }
-    }
-    return out;
-  }
-
-  /**
-   * Every pair of currently-enabled mods where one really covers the other's files — see
-   * src/overlap.js for what "really" filters out. The engine mounts the lower pak number
-   * first and that copy wins, so `winner` is that record's id (null when neither lives in
-   * a numbered pak and the engine's own order settles it).
-   * @param {Array<object>} records library records
-   * @returns {Array<{a:{id,name}, b:{id,name}, count:number, summary:string, winner:string|null}>}
-   */
-  libraryConflicts(records) {
-    return findOverlaps(this.overlapEntries(records)).map((c) => ({
-      a: c.a,
-      b: c.b,
-      count: c.count,
-      summary: analyzeVpkPaths(c.paths).heroes.map(describeHero).join('; '),
-      winner: c.winner,
-    }));
-  }
-
-  // Which of the given (enabled) records the candidate download would cover, judged by the
-  // same rules the library uses — a warning before the download has to match what the
-  // library says after it, or one of the two is lying.
-  async findConflicts({ categoryId, fileRef, modName }, records) {
-    if (['fonts', 'cursors', 'tools'].includes(categoryId)) return [];
-    const local = await this.download(categoryId, fileRef, modName);
-    const paths = this.modContentPaths(local);
-    if (!paths.size) return [];
-    const hits = findOverlapsWith(
-      { id: '__candidate__', name: modName || t('Новый мод'), paths },
-      this.overlapEntries(records)
-    );
-    return hits.map((h) => ({
-      name: h.name,
-      count: h.count,
-      summary: analyzeVpkPaths(h.paths).heroes.map(describeHero).join('; '),
-      sample: h.paths,
-    }));
-  }
-
   // ---------- import of user-provided vpk files ----------
 
   // Import whatever the user pointed at: .vpk files, a .zip, or a folder to walk.
@@ -977,7 +862,7 @@ class Installer {
   // content isn't recognisable — used to name imported files instead of a bare "pakNN".
   displayNameForFile(relPath) {
     try {
-      return nameFromAnalysis(analyzeVpkPaths(listVpkPathsFile(path.join(this.langFolder(), relPath))));
+      return nameFromAnalysis(analyzeVpkPaths(listVpkPathsFile(this.langFileOnDisk(relPath))));
     } catch { return null; }
   }
 
@@ -1087,7 +972,7 @@ class Installer {
     const dir = rec.files.find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
     if (!dir) return null;
     try {
-      const buf = readVpkIndexFile(path.join(this.langFolder(), dir.relPath));
+      const buf = readVpkIndexFile(this.langFileOnDisk(dir.relPath));
       const a = analyzeVpkPaths(listVpkPaths(buf));
       return {
         info: describeAnalysis(a), heroes: a.heroes.length,
@@ -1276,7 +1161,6 @@ class Installer {
         changed = true;
       } catch { /* missing or unreadable volume — leave the set as it is */ }
     }
-    if (changed) this._pathCache.clear();
   }
 
   /**

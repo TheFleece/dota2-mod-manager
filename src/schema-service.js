@@ -83,7 +83,19 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
   // build. Runs on startup and before launching the game.
   function heal() {
     const game = gamePath();
-    if (!game || !settings.get('schemaPatch')) return { ok: true, healed: [] };
+    if (!game) return { ok: true, healed: [] };
+    // Safe mode still needs a look: if the game's own file is not what Valve signed, the
+    // client refuses the install and nothing in the app is on to explain it. Putting the
+    // verified original back is the whole repair (see patcher.restoreBranch).
+    if (!settings.get('schemaPatch')) {
+      try {
+        if (patcher.state(game, patcher.FOLDER).vanillaOk) return { ok: true, healed: [] };
+        patcher.revert({ gamePath: game, folder: patcher.FOLDER, backupDir });
+        return { ok: true, healed: patcher.state(game, patcher.FOLDER).vanillaOk ? ['vanilla'] : [] };
+      } catch (err) {
+        return { ok: false, error: String(err.message || err), healed: [] };
+      }
+    }
     const healed = [];
     try {
       const st = patcher.state(game, patcher.FOLDER);

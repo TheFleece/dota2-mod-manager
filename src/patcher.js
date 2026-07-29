@@ -122,9 +122,15 @@ function patchedBranch(branchText, block) {
 }
 
 /**
- * Undo our own insertion in a gameinfo file, byte for byte. patchedBranch() adds exactly
- * "\t\t" + <SearchPaths block> + "\r\n\t" before the FileSystem closing brace, so cutting
- * that range gives back the file the game shipped.
+ * Undo our own insertion in a gameinfo file, byte for byte.
+ *
+ * patchedBranch() writes <body> + "\t\t" + <SearchPaths block> + "\r\n\t" + "}", having
+ * first stripped the indent the original had before that closing brace. The inverse has to
+ * put that indent back, so the whitespace on BOTH sides of the block is taken out and the
+ * one shape the original always has - "\r\n\t" before the closing brace - is written in its
+ * place. Cutting only the block and the whitespace after it (what this used to do) returned
+ * a file one tab shorter than the one Valve shipped: close enough to load, but no longer
+ * matching the hash the client checks it against, which is what stops matchmaking.
  *
  * Used wherever a patched file could be mistaken for an original: a backup taken while the
  * patch was already applied would otherwise be useless, and telling the user to go repair
@@ -145,12 +151,63 @@ function stripPatch(text) {
       else if (out[i] === '}') { depth--; if (!depth) { end = i + 1; break; } }
     }
     if (end === -1) break;
-    const start = out.startsWith('\t\t', kw - 2) ? kw - 2 : kw;
-    if (out.startsWith('\r\n\t', end)) end += 3;
-    else if (out.startsWith('\n\t', end)) end += 2;
-    out = out.slice(0, start) + out.slice(end);
+    let start = kw;
+    while (start > 0 && /[ \t\r\n]/.test(out[start - 1])) start--;
+    while (end < out.length && /[ \t\r\n]/.test(out[end])) end++;
+    // the block always sits at the end of the FileSystem body, so what follows is that
+    // body's closing brace and the indent it wants is a single tab
+    const joiner = out[end] === '}' ? '\r\n\t' : '\r\n';
+    out = out.slice(0, start) + joiner + out.slice(end);
   }
   return out;
+}
+
+/**
+ * Valve's own recorded hash for the file we edit, read out of the signature list the game
+ * ships with. Ground truth: whatever we put back has to hash to this, or the client refuses
+ * the install ("verify integrity of game files") and matchmaking stops. Their entry sits
+ * BEFORE the DIGEST line - ours, when present, is appended after it.
+ * @returns {{sha1: string, crc: string} | null}
+ */
+function vanillaBranchHashes(signaturesText) {
+  const lines = signaturesText.split(/\r?\n/);
+  const digest = lines.findIndex((l) => l.startsWith('DIGEST:'));
+  const scope = digest === -1 ? lines : lines.slice(0, digest);
+  for (const l of scope) {
+    const m = /gameinfo_branchspecific\.gi~SHA1:([0-9A-Fa-f]{40});CRC:([0-9A-Fa-f]{8})\s*$/.exec(l);
+    if (m) return { sha1: m[1].toUpperCase(), crc: m[2].toUpperCase() };
+  }
+  return null;
+}
+
+function matchesVanilla(text, want) {
+  if (!want) return true; // no list to check against - nothing to contradict
+  const h = fileHashes(Buffer.from(text, 'latin1'));
+  return h.sha1 === want.sha1 && h.crc === want.crc;
+}
+
+/**
+ * The original branchspecific file, reconstructed and CHECKED against Valve's own list
+ * rather than trusted. A copy this app made in an older version can be a tab short of the
+ * real thing, and a wrong copy is worse than none: it loads, so nothing looks broken until
+ * the client quietly stops finding matches. The only thing a reconstruction can get wrong
+ * is the indent ahead of the FileSystem closing brace, so when the hash disagrees the few
+ * shapes that indent can take are tried and the one Valve signed is kept.
+ * @returns {{ text: string, verified: boolean }}
+ */
+function restoreBranch(text, want) {
+  const base = stripPatch(text);
+  if (matchesVanilla(base, want)) return { text: base, verified: !!want };
+  const at = base.lastIndexOf('\n', base.lastIndexOf('}', base.lastIndexOf('}') - 1));
+  if (at !== -1) {
+    let end = at + 1;
+    while (end < base.length && /[ \t]/.test(base[end])) end++;
+    for (const indent of ['\t', '', '\t\t']) {
+      const candidate = base.slice(0, at + 1) + indent + base.slice(end);
+      if (matchesVanilla(candidate, want)) return { text: candidate, verified: true };
+    }
+  }
+  return { text: base, verified: false };
 }
 
 /**
@@ -184,7 +241,7 @@ function stripSignatures(text) {
  */
 function state(gamePath, folder) {
   const p = paths(gamePath);
-  const out = { patched: false, signed: false, folder: null, foreign: null };
+  const out = { patched: false, signed: false, folder: null, foreign: null, vanillaOk: true };
   if (!fs.existsSync(p.branch) || !fs.existsSync(p.signatures)) return out;
   const branch = fs.readFileSync(p.branch, 'latin1');
   if (branch.includes(MARKER)) {
@@ -194,9 +251,16 @@ function state(gamePath, folder) {
   for (const name of KNOWN_FOREIGN) {
     if (new RegExp(`^\\s*(Game|Mod)\\s+${name}\\s*$`, 'm').test(branch)) out.foreign = name;
   }
+  const sigText = fs.readFileSync(p.signatures, 'latin1');
   if (out.patched) {
     const want = signatureLine(fs.readFileSync(p.branch));
-    out.signed = fs.readFileSync(p.signatures, 'latin1').split(/\r?\n/).some((l) => l.trim() === want);
+    out.signed = sigText.split(/\r?\n/).some((l) => l.trim() === want);
+  } else {
+    // Not patched means the file must be exactly what Valve shipped. If it is not, the
+    // client will refuse the install even though this app is doing nothing right now -
+    // worth knowing, because "turning the patch off broke my game" reads as our fault
+    // and the only cure is Steam's own file check.
+    out.vanillaOk = matchesVanilla(branch, vanillaBranchHashes(sigText));
   }
   return out;
 }
@@ -209,13 +273,17 @@ function state(gamePath, folder) {
 // the existing backup is left alone; if none exists yet it is reconstructed via clean() (a
 // backup lost between runs, a second tool, a crash mid-write) so the user has nothing to fix
 // by hand.
-function backupOnce(file, backupDir, clean, isOurs) {
+function backupOnce(file, backupDir, clean, isOurs, isGood) {
   fs.mkdirSync(backupDir, { recursive: true });
   const dest = path.join(backupDir, path.basename(file) + '.orig');
   const raw = fs.readFileSync(file, 'latin1');
+  // A copy we hold that does not match what the game says the original is buys nothing -
+  // it is the thing that would be restored later, so it gets replaced even though a backup
+  // already exists. Without this check one bad reconstruction sticks around forever.
+  const stale = isGood && fs.existsSync(dest) && !isGood(fs.readFileSync(dest, 'latin1'));
   if (!isOurs(raw)) {
     fs.writeFileSync(dest, Buffer.from(raw, 'latin1'));
-  } else if (!fs.existsSync(dest)) {
+  } else if (!fs.existsSync(dest) || stale) {
     fs.writeFileSync(dest, Buffer.from(clean(raw), 'latin1'));
   }
   return dest;
@@ -251,12 +319,14 @@ function apply({ gamePath, folder, backupDir }) {
   for (const f of [p.gameinfo, p.branch, p.signatures]) {
     if (!fs.existsSync(f)) throw new Error(t('Не найден {0}', f));
   }
-  backupOnce(p.branch, backupDir, stripPatch, (t) => t.includes(MARKER));
+  const want = vanillaBranchHashes(fs.readFileSync(p.signatures, 'latin1'));
+  const good = (text) => matchesVanilla(restoreBranch(text, want).text, want);
+  backupOnce(p.branch, backupDir, (t) => restoreBranch(t, want).text, (t) => t.includes(MARKER), good);
   backupOnce(p.signatures, backupDir, stripSignatures, hasSignaturePatch);
 
   // Always start from the pristine copies so patches never stack. A backup that somehow
   // carries our edit is cleaned rather than refused - the user has nothing to fix by hand.
-  const branchOrig = stripPatch(fs.readFileSync(path.join(backupDir, path.basename(p.branch) + '.orig'), 'latin1'));
+  const branchOrig = restoreBranch(fs.readFileSync(path.join(backupDir, path.basename(p.branch) + '.orig'), 'latin1'), want).text;
   const sigOrig = stripSignatures(fs.readFileSync(path.join(backupDir, path.basename(p.signatures) + '.orig'), 'latin1'));
 
   const block = withModFolder(searchPathsBlock(fs.readFileSync(p.gameinfo, 'latin1')), folder);
@@ -270,14 +340,27 @@ function apply({ gamePath, folder, backupDir }) {
   return state(gamePath, folder);
 }
 
-// Put the originals back and drop the folder if it is empty.
+/**
+ * Put the originals back and drop the folder if it is empty.
+ *
+ * The signature list is restored first, so the hashes Valve recorded are on disk before the
+ * file they describe is written - and so the check below reads this build's list, not a
+ * leftover from an earlier one. What goes back in place of the patched file is verified
+ * against that list rather than taken on faith: this is the moment the game becomes vanilla
+ * again, and a copy that is even one byte off leaves the client refusing to matchmake with
+ * no mod in sight to blame.
+ */
 function revert({ gamePath, folder, backupDir }) {
   const p = paths(gamePath);
-  for (const [f, clean] of [[p.branch, stripPatch], [p.signatures, stripSignatures]]) {
-    const src = path.join(backupDir, path.basename(f) + '.orig');
-    if (!fs.existsSync(src)) continue;
-    // a backup that carries our edit still restores a clean file
-    writeAtomic(f, Buffer.from(clean(fs.readFileSync(src, 'latin1')), 'latin1'));
+  const sigSrc = path.join(backupDir, path.basename(p.signatures) + '.orig');
+  if (fs.existsSync(sigSrc)) {
+    writeAtomic(p.signatures, Buffer.from(stripSignatures(fs.readFileSync(sigSrc, 'latin1')), 'latin1'));
+  }
+  const branchSrc = path.join(backupDir, path.basename(p.branch) + '.orig');
+  if (fs.existsSync(branchSrc)) {
+    const want = fs.existsSync(p.signatures) ? vanillaBranchHashes(fs.readFileSync(p.signatures, 'latin1')) : null;
+    const { text } = restoreBranch(fs.readFileSync(branchSrc, 'latin1'), want);
+    writeAtomic(p.branch, Buffer.from(text, 'latin1'));
   }
   if (folder) {
     const dir = path.join(gamePath, folder);
@@ -298,6 +381,9 @@ module.exports = {
   stripPatch,
   stripSignatures,
   hasSignaturePatch,
+  vanillaBranchHashes,
+  matchesVanilla,
+  restoreBranch,
   state,
   apply,
   revert,

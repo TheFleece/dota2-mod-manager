@@ -32,7 +32,7 @@ const EN = {
   'Совпадение с каталогом не найдено': 'No catalog match found',
   'Файл не найден в папке модов': 'That file is not in the mods folder',
   'Мод': 'Mod',
-  'Новый мод': 'New mod',
+  'У мода нет слота pakNN': 'This mod has no pakNN slot',
   'Папка курсора не найдена': 'Cursor folder not found',
   'Файлы курсора не сохранены — переустанови мод': 'This cursor’s files were not kept — reinstall the mod',
   'Выбери минимум 2 мода (или пак и мод / два пака)': 'Pick at least 2 mods (or a pack and a mod / two packs)',

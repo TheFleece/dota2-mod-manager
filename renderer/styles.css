@@ -920,22 +920,6 @@ input, select { font-family: inherit; }
   background: rgba(74, 222, 128, 0.12);
   border-color: rgba(74, 222, 128, 0.4);
 }
-/* mod overwrites another enabled mod's files — icon + word, never colour alone */
-.lib-tag.conflict {
-  color: var(--warning);
-  background: rgba(251, 191, 36, 0.12);
-  border-color: rgba(251, 191, 36, 0.4);
-}
-.lib-tag.conflict .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
-/* Sharing files with another mod is a stack, not a fault: the one on top supplies them.
-   Calm colours — green for the mod that wins, muted for the one it covers. */
-.lib-tag.over {
-  color: var(--success);
-  background: rgba(74, 222, 128, 0.1);
-  border-color: rgba(74, 222, 128, 0.34);
-}
-.lib-tag.under { color: var(--text-muted); background: var(--bg-elev); }
-.lib-tag.over .ms, .lib-tag.under .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
 /* mod carries item-schema changes: live (effects assembled) vs waiting for the patch */
 .lib-tag.schema {
   color: var(--primary-soft);
@@ -953,9 +937,12 @@ input, select { font-family: inherit; }
 .lib-tag.dup { color: var(--text-muted); background: var(--bg-elev); }
 .lib-tag.dup .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
 .lib-row.dup { opacity: 0.72; }
-.lib-row.conflict { border-color: rgba(251, 191, 36, 0.3); }
 .lib-meta { font-size: 11.5px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; }
 .lib-actions { display: flex; align-items: center; gap: 8px; }
+
+/* load-order arrows: a tight pair, so they read as one control rather than two buttons */
+.lib-order { display: inline-flex; gap: 2px; }
+.lib-order .btn[disabled] { opacity: 0.35; }
 
 /* toggle */
 .toggle {
@@ -1020,12 +1007,6 @@ input, select { font-family: inherit; }
 .lib-banner.off .ms { color: var(--danger); }
 .lib-banner.info { background: var(--primary-dim); border: 1px solid var(--primary); color: var(--text-muted); }
 .lib-banner.info .ms { color: var(--primary-soft); }
-/* conflicting mod pairs: headline + one line per pair */
-.lib-banner.conflict-banner { align-items: flex-start; }
-.lib-banner.conflict-banner .ms { margin-top: 1px; }
-.conflict-list { list-style: none; margin: 7px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.conflict-list li { font-size: 12.5px; line-height: 1.55; }
-.conflict-count { color: var(--text-muted); opacity: 0.75; font-size: 11.5px; margin-left: 8px; }
 
 /* list header: select-all + global enable/disable */
 .lib-toolbar-actions { display: flex; align-items: center; gap: 8px; }
