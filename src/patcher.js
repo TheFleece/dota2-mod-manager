@@ -183,14 +183,21 @@ function state(gamePath, folder) {
   return out;
 }
 
-// Store the pristine file. If the only copy we can reach is already patched (a backup lost
-// between runs, a second tool, a crash mid-write), our own edit is undone first so what
-// lands in the backup is still what the game shipped.
-function backupOnce(file, backupDir, clean) {
+// Store the pristine file. A Dota update overwrites the game's copy with a fresh vanilla
+// build before heal() re-patches it - that moment is the only time we ever see the new
+// ground truth, so a file with no trace of our own edit always replaces whatever backup we
+// are holding (an old backup is what makes revert() write files Steam's current build no
+// longer recognises - "verify integrity of game files" territory). Once our edit is present,
+// the existing backup is left alone; if none exists yet it is reconstructed via clean() (a
+// backup lost between runs, a second tool, a crash mid-write) so the user has nothing to fix
+// by hand.
+function backupOnce(file, backupDir, clean, isOurs) {
   fs.mkdirSync(backupDir, { recursive: true });
   const dest = path.join(backupDir, path.basename(file) + '.orig');
-  if (!fs.existsSync(dest)) {
-    const raw = fs.readFileSync(file, 'latin1');
+  const raw = fs.readFileSync(file, 'latin1');
+  if (!isOurs(raw)) {
+    fs.writeFileSync(dest, Buffer.from(raw, 'latin1'));
+  } else if (!fs.existsSync(dest)) {
     fs.writeFileSync(dest, Buffer.from(clean(raw), 'latin1'));
   }
   return dest;
@@ -226,8 +233,8 @@ function apply({ gamePath, folder, backupDir }) {
   for (const f of [p.gameinfo, p.branch, p.signatures]) {
     if (!fs.existsSync(f)) throw new Error(t('Не найден {0}', f));
   }
-  backupOnce(p.branch, backupDir, stripPatch);
-  backupOnce(p.signatures, backupDir, stripSignatures);
+  backupOnce(p.branch, backupDir, stripPatch, (t) => t.includes(MARKER));
+  backupOnce(p.signatures, backupDir, stripSignatures, (t) => t.includes(SIG_PREFIX + '~'));
 
   // Always start from the pristine copies so patches never stack. A backup that somehow
   // carries our edit is cleaned rather than refused - the user has nothing to fix by hand.
