@@ -153,6 +153,20 @@ function stripPatch(text) {
   return out;
 }
 
+/**
+ * Is our line present in a signature list? Valve's own pristine file ALREADY carries an
+ * entry for gameinfo_branchspecific.gi (before DIGEST, with the vanilla hash), so merely
+ * finding the path proves nothing - only an entry appended AFTER the DIGEST line is ours.
+ * Getting this wrong makes a pristine list look patched, which freezes the backup at a
+ * pre-update build and lets apply() write those stale hashes over the live file.
+ */
+function hasSignaturePatch(text) {
+  const lines = text.split(/\r?\n/);
+  const digest = lines.findIndex((l) => l.startsWith('DIGEST:'));
+  if (digest === -1) return false;
+  return lines.slice(digest + 1).some((l) => l.startsWith(SIG_PREFIX + '~'));
+}
+
 // Same for the signature list: our line is appended after the DIGEST line, so anything of
 // ours past that point comes off and the file the game shipped is left behind.
 function stripSignatures(text) {
@@ -238,7 +252,7 @@ function apply({ gamePath, folder, backupDir }) {
     if (!fs.existsSync(f)) throw new Error(t('Не найден {0}', f));
   }
   backupOnce(p.branch, backupDir, stripPatch, (t) => t.includes(MARKER));
-  backupOnce(p.signatures, backupDir, stripSignatures, (t) => t.includes(SIG_PREFIX + '~'));
+  backupOnce(p.signatures, backupDir, stripSignatures, hasSignaturePatch);
 
   // Always start from the pristine copies so patches never stack. A backup that somehow
   // carries our edit is cleaned rather than refused - the user has nothing to fix by hand.
@@ -283,6 +297,7 @@ module.exports = {
   patchedBranch,
   stripPatch,
   stripSignatures,
+  hasSignaturePatch,
   state,
   apply,
   revert,
