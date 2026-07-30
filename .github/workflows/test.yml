@@ -1,0 +1,30 @@
+# Unit tests for the parts that touch the player's game files: the search-path patch, the VPK
+# reader/writer, language-folder detection and the item schema. A regression in any of them is
+# invisible until someone's game stops working, so they run on every push.
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - v2
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24 for the test runner, not the 20 Electron bundles: the tests use zlib.crc32
+      # (Node 22+). Nothing under test/ or tools/ is packaged into the app - the build's file
+      # list is main.js, preload.js, src/, renderer/ - so this cannot drift into runtime code.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # No install step on purpose: the modules under test are dependency-free, and the app's
+      # own deps are irrelevant here. Keeps the run at a couple of seconds.
+      - name: Run tests
+        run: npm test

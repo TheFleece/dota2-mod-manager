@@ -7,6 +7,7 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win",
+    "test": "node --test \"test/**/*.test.js\"",
     "sandbox:seed": "node tools/sandbox.js seed",
     "sandbox:reset": "node tools/sandbox.js reset",
     "sandbox:status": "node tools/sandbox.js status",
