@@ -1,49 +1,8 @@
-/* ============ Design tokens — Soft Cinematic Lavender ============ */
-:root {
-  --bg-deep: #0e0c14;
-  --bg-base: #16131f;
-  --bg-elev: #1d1a28;
-  --surface: rgba(255, 255, 255, 0.055);
-  --surface-hover: rgba(255, 255, 255, 0.095);
-  --surface-solid: #201c2c;
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.17);
-
-  --primary: #8b6ff0;
-  --primary-soft: #c4b5fd;
-  --primary-glow: rgba(139, 111, 240, 0.32);
-  --primary-dim: rgba(139, 111, 240, 0.17);
-  --accent: #fb7185;
-  --accent-glow: rgba(251, 113, 133, 0.28);
-
-  --text: #f1eff7;
-  --text-muted: #aaa6bb;
-  --text-faint: #746f87;
-
-  --success: #4ade80;
-  --danger: #fb7185;
-  --warning: #fcd34d;
-
-  --radius: 20px;
-  --radius-sm: 14px;
-  --radius-xs: 11px;
-  --shadow: 0 10px 40px rgba(5, 3, 12, 0.55);
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --font-head: 'Exo 2', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-
-  /* Panel sizes and zoom, all driven at runtime (see the "Panel grips" section).
-     The content scale is CSS zoom on the content itself, not on the window: the panels are
-     outside it and carry their own, so scaling the catalog leaves the chrome alone and both
-     land in the same style pass (a window zoom arrives a frame later and made it shudder). */
-  --tb-h: 48px;
-  --status-h: 50px;
-  --rail-w: 218px;
-  --content-zoom: 1;
-  --top-zoom: 1;
-  --bottom-zoom: 1;
-  --rail-zoom: 1;
-}
+/* Tokens live in styles/tokens.css, loaded before this file. Nothing here may
+   invent a size, radius, duration or shadow - take the neighbouring step from a
+   scale instead of adding a value. Sections migrate onto the scales one at a
+   time; --radius-sm / --radius-xs / --shadow / --ease below are legacy aliases
+   that disappear with the section that still uses them. */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -51,9 +10,9 @@ html, body { height: 100%; }
 
 body {
   font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.55;
+  font-size: var(--text-base);
+  font-weight: var(--weight-body);
+  line-height: var(--leading-normal);
   color: var(--text);
   background: linear-gradient(155deg, var(--bg-base) 0%, var(--bg-deep) 100%);
   overflow: hidden;
