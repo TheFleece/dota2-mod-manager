@@ -1,2 +1,6 @@
 node_modules/
 dist/
+
+# Throwaway Dota tree and downloaded mods built by tools/sandbox.js. The list of what a
+# sandbox should hold travels with the repo in tools/sandbox-mods.json; the files do not.
+sandbox/
