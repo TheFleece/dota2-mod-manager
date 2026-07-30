@@ -1,34 +1,13 @@
 /* Dota 2 Mod Manager — renderer */
 'use strict';
-
+import { $ } from './core/dom.js';
 import { RAW_BASE, CAT_RU, CAT_ICON, COSMETIC_SLOTS, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, SORTS, FILTER_DEFAULTS, freshFilters, PANEL_DEFAULTS, PANEL_LIMITS, PANEL_ZOOM_LIMITS } from './core/constants.js';
 import { esc, fmtMB, fmtDate, plural } from './ui/format.js';
-
-
-const state = {
-  view: 'catalog',
-  catalog: null,
-  cosmeticSlots: null,     // free-cosmetics slots from the game's own schema (safe mode off)
-  patchState: null,        // src/patcher.js + schema-service state: patched/signed/conflicts/foreign
-  settings: null,
-  activeCategory: 'all',
-  search: '',
-  cosSearch: '',           // search inside one cosmetic slot (its list can run to thousands)
-  filters: freshFilters(),
-  installedIndex: new Map(),
-  cosmeticPicks: new Map(), // slot -> live library record for it (rebuilt from mods:list)
-  installing: new Set(),
-  modIndex: new Map(),
-  librarySel: new Set(),   // ids of library records ticked for bulk actions
-  libSearch: '',           // library-scoped search query
-  masterOff: false,        // mods master switch state (all mods disabled at once)
-  packsOpen: new Set(),    // ids of expanded pack cards
-  slotCount: 0,            // mods occupying a numbered pak, so the order arrows know the ends
-  favorites: new Set(),    // starred catalog mods, as "<categoryId>|<name>" keys
-  gameLangOpen: false,     // Settings: the per-language Dota block is unfolded
-  scaleOpen: false,        // Settings: the per-part scale block is unfolded
-  panels: { ...PANEL_DEFAULTS },
-};
+import { fmtTime, openPlayer } from './ui/player.js';
+import { notesHtml, whatsNewDialog, showWhatsNew, confirmDialog, promptDialog } from './ui/dialog.js';
+import { previewUrl, isVideo, isAudio, isMedia, resolveUrl, mediaHtml } from './ui/media.js';
+import { state } from './core/store.js';
+import { toast } from './ui/toast.js';
 
 const viewRoot = $('#view-root');
 
@@ -325,13 +304,6 @@ function favButtonHtml(cat, name) {
     aria-pressed="${on}" title="${on ? L`Убрать из избранного` : L`В избранное`}"
     aria-label="${on ? L`Убрать из избранного` : L`В избранное`}"><span class="ms">${on ? 'favorite' : 'favorite_border'}</span></button>`;
 }
-
-
-import { $ } from './core/dom.js';
-import { toast } from './ui/toast.js';
-import { previewUrl, isVideo, isAudio, isMedia, resolveUrl, mediaHtml } from './ui/media.js';
-import { notesHtml, whatsNewDialog, showWhatsNew, confirmDialog, promptDialog } from './ui/dialog.js';
-import { fmtTime, openPlayer } from './ui/player.js';
 
 
 function authorUrl(name) {
