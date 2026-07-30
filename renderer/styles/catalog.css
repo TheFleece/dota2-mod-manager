@@ -1,0 +1,335 @@
+/* ============ Home (all categories) ============ */
+.home-hero { margin: 6px 0 22px; }
+.home-hero h1 {
+  font-size: 30px;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--text), var(--primary-soft));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.home-hero p { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+.recent-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 240px;
+  gap: 13px;
+  overflow-x: auto;
+  /* headroom so hover lift, borders and glows don't get clipped */
+  padding: 10px 8px 16px;
+  margin: -10px -8px 18px;
+  scroll-snap-type: x proximity;
+}
+.recent-row .card { scroll-snap-align: start; }
+
+.cat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+.cat-tile {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  aspect-ratio: 16 / 8.5;
+  background: var(--surface-solid);
+  transition: transform 0.25s var(--ease), border-color 0.25s, box-shadow 0.25s var(--ease);
+  animation: cardIn 0.4s var(--ease) both;
+  animation-delay: calc(var(--i) * 24ms);
+}
+.cat-tile:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(139, 111, 240, 0.14);
+}
+.cat-tile img, .cat-tile video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s var(--ease);
+}
+.cat-tile:hover img, .cat-tile:hover video { transform: scale(1.06); }
+.cat-tile .ct-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(4, 4, 8, 0.92) 100%);
+}
+.cat-tile .ct-label {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.cat-tile .ct-name { font-family: var(--font-head); font-weight: 700; font-size: 16px; }
+.cat-tile .ct-cnt { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.section-h {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 4px 0 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+.section-h .ms { color: var(--primary-soft); font-size: 19px; }
+.section-h::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ============ Mod grid ============ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(222px, 1fr));
+  gap: 14px;
+}
+.group-title {
+  grid-column: 1 / -1;
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-soft);
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.group-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform 0.25s var(--ease), border-color 0.25s, box-shadow 0.25s var(--ease), background 0.25s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  animation: cardIn 0.4s var(--ease) both;
+  animation-delay: calc(var(--i) * 22ms);
+}
+.card:hover {
+  transform: translateY(-5px) scale(1.015);
+  border-color: rgba(196, 181, 253, 0.5);
+  background: var(--surface-hover);
+  box-shadow: 0 14px 40px rgba(5, 3, 12, 0.55), 0 0 32px rgba(139, 111, 240, 0.18);
+}
+.card-media {
+  aspect-ratio: 16 / 10;
+  background: var(--bg-elev);
+  position: relative;
+  overflow: hidden;
+}
+.card-media img, .card-media video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s var(--ease);
+}
+.card:hover .card-media img, .card:hover .card-media video { transform: scale(1.07); }
+.noimg {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-faint);
+}
+.media-tags {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  pointer-events: none;
+}
+.mtag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(14, 12, 20, 0.68);
+  backdrop-filter: blur(10px);
+  color: var(--primary-soft);
+  border: 1px solid rgba(196, 181, 253, 0.28);
+}
+.mtag.ok { color: var(--success); border-color: rgba(74, 222, 128, 0.4); }
+.media-swatches {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+.swatch-dot {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(10, 10, 16, 0.8);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.card-body { padding: 11px 14px 13px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.card-name { font-weight: 700; font-size: 14.5px; line-height: 1.3; }
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+.author-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  transition: all 0.2s var(--ease);
+}
+.author-chip .ms { font-size: 12px; }
+.author-chip.clickable { cursor: pointer; }
+.author-chip.clickable:hover {
+  border-color: var(--primary);
+  color: var(--primary-soft);
+  box-shadow: 0 0 14px rgba(139, 111, 240, 0.2);
+}
+
+.empty-note {
+  color: var(--text-muted);
+  padding: 48px 0;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+/* ============ Preview badge on cards ============ */
+.mtag-play {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 5px 11px 5px 8px;
+  border-radius: 999px;
+  background: rgba(14, 12, 20, 0.72);
+  backdrop-filter: blur(10px);
+  color: var(--primary-soft);
+  border: 1px solid rgba(196, 181, 253, 0.32);
+  cursor: pointer;
+  transition: all 0.22s var(--ease);
+  z-index: 2;
+}
+.mtag-play .ms { font-size: 14px; }
+.mtag-play:hover {
+  background: rgba(139, 111, 240, 0.35);
+  box-shadow: 0 0 18px rgba(139, 111, 240, 0.4);
+  transform: translateY(-1px);
+  color: #fff;
+}
+
+/* ============ Favorites (star on cards / in the modal) ============ */
+.fav-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(196, 181, 253, 0.28);
+  border-radius: 999px;
+  background: rgba(14, 12, 20, 0.68);
+  backdrop-filter: blur(10px);
+  color: var(--text-muted);
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease), color 0.2s, background 0.2s, border-color 0.2s;
+}
+.card:hover .fav-btn, .fav-btn:focus-visible { opacity: 1; transform: none; }
+.fav-btn:hover { color: var(--accent); background: rgba(251, 113, 133, 0.22); border-color: rgba(251, 113, 133, 0.45); }
+.fav-btn.on { opacity: 1; transform: none; color: var(--accent); border-color: rgba(251, 113, 133, 0.45); }
+.fav-btn .ms { font-size: 17px; }
+/* the icon font ships a FILL axis — a starred mod gets the solid heart */
+.fav-btn.on .ms, .rail-item.fav .ms { font-variation-settings: 'FILL' 1; }
+/* keep the tag row clear of the star */
+.card-media .media-tags { padding-right: 34px; }
+/* in the modal the star sits beside the title and is always visible */
+.modal-title-row .fav-btn {
+  position: static;
+  opacity: 1;
+  transform: none;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  backdrop-filter: none;
+  background: var(--surface);
+  border-color: var(--border);
+}
+.modal-title-row .fav-btn .ms { font-size: 19px; }
+.modal-title-row .fav-btn.on { border-color: rgba(251, 113, 133, 0.45); }
+.rail-item.fav .ms { color: var(--accent); }
+
+/* ============ Cosmetics: same .card/.grid/.toolbar as the mod catalog ============ */
+
+/* icon-loader target inside a .card-media — sized to fill it, same as a plain <img> would */
+.card-thumb { display: block; width: 100%; height: 100%; }
+.cat-search { width: 240px; }
+.cat-search input { border: none; background: none; color: var(--text); font: inherit; font-size: 13px; width: 100%; outline: none; }
+
+/* A picture the wiki simply does not have: the tile still has to look like a finished
+   card, not a broken image — the slot's own icon on the same soft glow as everywhere. */
+.card-thumb .noimg {
+  background: radial-gradient(circle at 50% 42%, rgba(139, 111, 240, 0.16), transparent 68%);
+}
+.card-thumb .noimg .ms { font-size: 34px; }
+
+/* a look with no picture on the wiki: the same soft glow the cards use, not an empty box */
+.modal-media.cos {
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 40%, rgba(139, 111, 240, 0.18), transparent 70%), var(--bg-elev);
+}
+.modal-media.cos .noimg .ms { font-size: 64px; }
+
+/* "…and N more" under a search grid that was cut short */
+.search-more { color: var(--text-faint); font-size: 12.5px; padding: 14px 2px 0; text-align: center; }
+
+/* a rail item can carry both its count and the "something is picked" dot */
+.rail-cnt + .rail-dot { margin-left: 7px; }
+
+/* Library: head of the cosmetics section — its own select-all, count and bulk switch,
+   mirroring .lib-listhead above the mods */
+.lib-section-head {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 18px; padding: 0 4px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.lib-section-head .lib-selectall {
+  font-family: var(--font-head); font-size: 13.5px; font-weight: 700;
+  color: var(--primary-soft);
+}
+.lib-section-head .lib-selectall .ms { font-size: 16px; }
+.lib-section-cnt { color: var(--text-faint); font-size: 11.5px; margin-right: auto; }
