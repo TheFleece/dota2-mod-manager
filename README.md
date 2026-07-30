@@ -107,6 +107,7 @@ Releases build automatically: push a `v*` tag and GitHub Actions compiles the in
   and the Dota 2 modding community. This app is a desktop client for their catalog.
   Each mod card in the app credits its author.
 - Community tools (VPKMerge, Background Changer, Compiler, ItemsFix) belong to their authors.
+- Installer code signing by [SignPath Foundation](https://signpath.org/) (application pending).
 
 ## License
 
