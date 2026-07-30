@@ -129,7 +129,9 @@
     </div>
   </div>
 
+  <!-- i18n stays a classic script: it publishes L/tr on window and everything else,
+       including the modules below, reads them from there. -->
   <script src="i18n.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

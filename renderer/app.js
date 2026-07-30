@@ -1,99 +1,9 @@
 /* Dota 2 Mod Manager — renderer */
 'use strict';
 
-const RAW_BASE = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main';
+import { RAW_BASE, CAT_RU, CAT_ICON, COSMETIC_SLOTS, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, SORTS, FILTER_DEFAULTS, freshFilters, PANEL_DEFAULTS, PANEL_LIMITS, PANEL_ZOOM_LIMITS } from './core/constants.js';
+import { esc, fmtMB, fmtDate, plural } from './ui/format.js';
 
-const CAT_RU = {
-  heroes: 'Герои', 'item-effects': 'Эффекты предметов', 'hero-items': 'Предметы героев',
-  backgrounds: 'Фоны меню', cursors: 'Курсоры', 'mega-kill': 'Мега-килл', shaders: 'Шейдеры',
-  couriers: 'Курьеры', terrains: 'Ландшафты', creeps: 'Крипы', trees: 'Деревья', river: 'Река',
-  'ti-bp-effects': 'Паки эффектов', emblems: 'Эмблемы', 'creep-deny': 'Денай крипов',
-  music: 'Музыка', 'hero-sounds': 'Звуки героев', sounds: 'Звуки', 'ranged-attack': 'Дальние атаки',
-  other: 'Разное', ranks: 'Ранги', 'item-icons': 'Иконки предметов', 'versus-screens': 'Экраны Versus',
-  announcers: 'Анонсеры', wards: 'Варды', pedestal: 'Пьедесталы', huds: 'HUD',
-  herofx: 'Эффекты героев', pings: 'Пинги', packs: 'Паки', optimization: 'Оптимизация',
-  tormentor: 'Торментор', 'high-five': 'High Five', ancient: 'Древние', roshan: 'Рошан',
-  towers: 'Башни', fonts: 'Шрифты', sites: 'Сайты', guides: 'Гайды', news: 'Новости',
-  imported: 'Импортированный',
-};
-
-const CAT_ICON = {
-  all: 'apps', heroes: 'person', 'hero-items': 'swords', herofx: 'auto_fix_high',
-  'hero-sounds': 'record_voice_over', terrains: 'landscape', trees: 'forest', river: 'water',
-  creeps: 'bug_report', towers: 'cell_tower', roshan: 'skull', ancient: 'castle',
-  tormentor: 'deployed_code', wards: 'visibility', couriers: 'pets', pedestal: 'podium',
-  'creep-deny': 'block', shaders: 'palette', 'ti-bp-effects': 'auto_awesome',
-  'item-effects': 'bolt', 'ranged-attack': 'my_location', 'high-five': 'waving_hand',
-  backgrounds: 'wallpaper', huds: 'dashboard', emblems: 'military_tech',
-  'versus-screens': 'compare_arrows', 'item-icons': 'category', ranks: 'workspace_premium',
-  pings: 'notifications_active', cursors: 'arrow_selector_tool', fonts: 'text_fields',
-  announcers: 'mic', 'mega-kill': 'campaign', music: 'music_note', sounds: 'volume_up',
-  packs: 'inventory_2', optimization: 'speed', other: 'widgets', guides: 'menu_book',
-  sites: 'language', tools: 'build', news: 'newspaper',
-};
-
-// Free cosmetics: each is a slot in the game's own item schema (see src/schema.js), read
-// live from the installed game — so a slot Valve adds later just shows up. This only maps
-// the ones we know a nice label/icon for; an unknown one still works, titled from its id.
-const COSMETIC_SLOTS = {
-  weather: { label: 'Погода', icon: 'rainy' },
-  terrain: { label: 'Ландшафт', icon: 'terrain' },
-  hud_skin: { label: 'Интерфейс игры', icon: 'dashboard' },
-  loading_screen: { label: 'Экран загрузки', icon: 'image' },
-  versus_screen: { label: 'Экран противостояния', icon: 'compare_arrows' },
-  courier: { label: 'Курьер', icon: 'pets' },
-  ward: { label: 'Варды', icon: 'visibility' },
-  radiantcreeps: { label: 'Крипы Света', icon: 'groups' },
-  direcreeps: { label: 'Крипы Тьмы', icon: 'groups' },
-  radiantsiegecreeps: { label: 'Осадные Света', icon: 'shield' },
-  diresiegecreeps: { label: 'Осадные Тьмы', icon: 'shield' },
-  radianttowers: { label: 'Башни Света', icon: 'castle' },
-  diretowers: { label: 'Башни Тьмы', icon: 'castle' },
-  music: { label: 'Музыка', icon: 'music_note' },
-  announcer: { label: 'Комментатор', icon: 'campaign' },
-  mega_kills: { label: 'Мега-килл', icon: 'record_voice_over' },
-  streak_effect: { label: 'Серия убийств', icon: 'local_fire_department' },
-};
-const COSMETIC_PREFIX = 'cosmetic:';
-function cosmeticMeta(slot) {
-  return COSMETIC_SLOTS[slot] || { label: slot.replace(/_/g, ' '), icon: 'auto_awesome' };
-}
-
-// rail sections: [label, [categoryIds]]
-const RAIL_SECTIONS = [
-  ['Герои', ['heroes', 'hero-items', 'herofx', 'hero-sounds']],
-  ['Мир', ['terrains', 'trees', 'river', 'creeps', 'towers', 'roshan', 'ancient', 'tormentor', 'wards', 'couriers', 'pedestal', 'creep-deny']],
-  ['Эффекты', ['shaders', 'ti-bp-effects', 'item-effects', 'ranged-attack', 'high-five']],
-  ['Интерфейс', ['backgrounds', 'huds', 'emblems', 'versus-screens', 'item-icons', 'ranks', 'pings', 'cursors', 'fonts']],
-  ['Звук', ['announcers', 'mega-kill', 'music', 'sounds']],
-  ['Прочее', ['packs', 'optimization', 'other', 'guides', 'sites']],
-];
-
-const CATALOG_EXCLUDE = ['tools', 'news'];
-
-const SORTS = [
-  { key: 'default', label: 'По умолчанию' },
-  { key: 'date', label: 'Сначала новые' },
-  { key: 'name', label: 'По имени А-Я' },
-  { key: 'name-desc', label: 'По имени Я-А' },
-];
-
-// What the toolbar above a grid holds. Mods and free cosmetics share it, so "Установленные"
-// and "Избранное" mean the same thing wherever they are — and switching category resets it.
-const FILTER_DEFAULTS = { sort: 'default', tags: new Set(), installedOnly: false, favOnly: false, group: '', hero: '' };
-const freshFilters = () => ({ ...FILTER_DEFAULTS, tags: new Set() });
-
-// Chrome panels the user can resize, scale and fold away: the title bar, the status bar and
-// the category rail. Everything lives in CSS variables (see "Panel grips").
-// Two independent knobs each: the grip drags its size, Ctrl + wheel over it sets its own
-// zoom. Neither follows the content scale — scaling the catalog leaves the chrome alone.
-const PANEL_DEFAULTS = {
-  topH: 48, bottomH: 50, railW: 218,
-  topZoom: 1, bottomZoom: 1, railZoom: 1,
-  topFolded: false, bottomFolded: false, railFolded: false,
-};
-const PANEL_LIMITS = { topH: [34, 88], bottomH: [36, 96], railW: [148, 400] };
-const PANEL_ZOOM_LIMITS = [0.6, 1.8];
 
 const state = {
   view: 'catalog',
@@ -417,27 +327,6 @@ function favButtonHtml(cat, name) {
     aria-label="${on ? L`Убрать из избранного` : L`В избранное`}"><span class="ms">${on ? 'favorite' : 'favorite_border'}</span></button>`;
 }
 
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-function fmtMB(bytes) { return (bytes / 1024 / 1024).toFixed(1); }
-
-function fmtDate(unix) {
-  if (!unix) return '';
-  return new Date(unix * 1000).toLocaleDateString(window.i18nLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function plural(n, one, few, many) {
-  if (window.I18N_LANG === 'en') {
-    const pair = window.EN_PLURAL[many];
-    return pair ? (n === 1 ? pair[0] : pair[1]) : many;
-  }
-  const m10 = n % 10, m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return one;
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-  return many;
-}
 
 function toast(msg, type = 'ok', ms = 4000) {
   const el = document.createElement('div');
