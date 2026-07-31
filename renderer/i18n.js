@@ -176,6 +176,8 @@ const EN = {
   'Установленные': 'Installed',
   'Смотреть превью': 'Watch preview',
   'Установлен': 'Installed',
+  // the first look of a mod has no name of its own in the catalog
+  'Обычный': 'Default',
   'Пак': 'Pack',
   'Свой': 'Custom',
   'Ссылка': 'Link',

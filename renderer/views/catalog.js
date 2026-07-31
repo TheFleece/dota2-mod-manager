@@ -842,6 +842,30 @@ document.addEventListener('keydown', (e) => {
 
 const LINK_LABEL = { preview: 'Превью', source: 'Источник', author: 'Автор', bug: 'Баг', guide: 'Гайд' };
 
+// A style's colour comes from the catalog and goes into a custom property, so it has to be
+// a colour and nothing else. Two mods ship a gradient there rather than a hex, which is why
+// this passes anything a colour or gradient is made of and stops at the characters that
+// would end the declaration and start another one.
+function cssColor(v) {
+  const s = String(v || '').trim();
+  return /^[#\w(),.%\s-]+$/.test(s) ? s : 'transparent';
+}
+
+// A style button is painted in the colour it stands for and writes its name across it, so
+// the name has to survive the colour. The catalog's palette runs from #42322f to #ffea65,
+// which no single ink survives - so the ink is picked from how light the fill is. The two
+// gradient fills are half light and half black, where neither ink works across the whole
+// button: those get a veil over the colour and white on top of that.
+function styleInk(color) {
+  const s = String(color || '');
+  if (/gradient/i.test(s)) return 'veiled';
+  const hex = (s.match(/#[0-9a-f]{6}/i) || [])[0];
+  if (!hex) return '';
+  const n = parseInt(hex.slice(1), 16);
+  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+  return lum > 0.5 ? 'on-light' : '';
+}
+
 // A pack's `mods` entry is usually a mod-name string, but the catalog also ships
 // entries shaped like { name, style } — treat both, or the modal crashes on open.
 function packMemberName(entry) {
@@ -912,8 +936,8 @@ function drawModal() {
       ${styles ? `
         <div class="style-row">
           ${styles.map((s, i) => `
-            <button class="style-btn ${i === styleIdx ? 'active' : ''}" data-style="${i}">
-              ${s.color ? `<span class="swatch" style="background:${esc(s.color)}"></span>` : ''}${esc(s.label)}
+            <button class="style-btn ${styleInk(s.color)} ${i === styleIdx ? 'active' : ''}" data-style="${i}" style="--c:${cssColor(s.color)}">
+              ${esc(s.label || tr('Обычный'))}
             </button>`).join('')}
         </div>` : ''}
       ${isPack ? `

@@ -56,24 +56,36 @@
   color: var(--text-muted);
   font-size: 12px;
 }
-.style-row { display: flex; flex-wrap: wrap; gap: 7px; }
+/* Which look of this mod gets installed. The button is painted in the colour of the look it
+   stands for and writes its name across it: colour alone cannot tell Retro from Retro v2,
+   two greens a shade apart, and that name is all the catalog knows about a variant. The ink
+   is chosen in the renderer from how light the fill is (see styleInk) - the palette runs
+   from near-black browns to pale gold, so no single ink survives all of it. The one not
+   chosen is the unpicked state: colour held back, full strength once it is yours. */
+.style-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .style-btn {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-muted);
-  border-radius: var(--radius-xs);
-  padding: 6px 13px;
-  font-size: 12.5px;
-  display: inline-flex; align-items: center; gap: 7px;
-  transition: all 0.18s var(--ease);
+  background: var(--c, var(--surface));
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  display: inline-flex; align-items: center;
+  /* Held back, not dimmed out: the ring is what says which one is picked. Taking this any
+     lower darkens the fill under the ink until the palest reds fall under 4.5:1 - measured,
+     Anniversary and Crimson were at 3.4 and 3.8 when this was 0.62. */
+  opacity: 0.85;
+  transition: opacity 0.18s var(--ease), transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
 }
-.style-btn:hover { border-color: var(--border-strong); color: var(--text); }
-.style-btn .swatch { width: 10px; height: 10px; border-radius: 50%; }
+/* a light fill takes dark ink; a two-stop gradient takes a veil and keeps white */
+.style-btn.on-light { color: #17131f; }
+.style-btn.veiled { background-image: linear-gradient(rgba(8, 6, 14, 0.45), rgba(8, 6, 14, 0.45)), var(--c); }
+.style-btn:hover { opacity: 0.95; }
+.style-btn:active { transform: scale(0.97); }
 .style-btn.active {
-  border-color: var(--primary);
-  color: var(--primary-soft);
-  background: var(--primary-dim);
-  box-shadow: 0 0 14px rgba(139, 111, 240, 0.2);
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--surface-solid), 0 0 0 3px var(--text), 0 4px 16px rgba(5, 3, 12, 0.5);
 }
 .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .modal-links { display: flex; gap: 8px; flex-wrap: wrap; }
