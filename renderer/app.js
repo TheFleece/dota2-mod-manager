@@ -11,6 +11,7 @@ import { toast } from './ui/toast.js';
 import { registerView, render, switchView } from './core/router.js';
 import { keyOf, matchLabel, applyInstalled, pickedIn, refreshInstalledIndex } from './core/installed.js';
 import { catName, catIcon } from './core/categories.js';
+import { refreshPatchState, paintMasterSwitch, refreshMasterSwitch, paintSafeModeSwitch } from './ui/statusbar.js';
 import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons } from './ui/cosmetic-icons.js';
 import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec } from './core/records.js';
 import { catalogPreviewUrl, recPreviewUrl, thumbHtml, wikiFallbackKey, fallbackThumbHtml, libThumbHtml, extThumbHtml, catalogPreviewFor } from './ui/thumb.js';
@@ -397,12 +398,6 @@ function filterCosmetics(list) {
   return out;
 }
 
-// Small, and only fetched where it's actually shown: the safe-mode switch's warning dot
-// and the Library's schema-conflict banner (see paintSafeModeSwitch / renderLibrary).
-async function refreshPatchState() {
-  state.patchState = await window.api.patch.state();
-  paintSafeModeSwitch();
-}
 
 // ---------- catalog data helpers ----------
 
@@ -599,22 +594,6 @@ function paintAccount() {
   });
 }
 
-function paintMasterSwitch() {
-  const btn = $('#modsMasterBtn');
-  if (!btn) return;
-  const on = !state.masterOff;
-  btn.classList.toggle('on', on);
-  btn.setAttribute('aria-checked', String(on));
-  $('#modsMasterState').textContent = on ? L`вкл` : L`выкл`;
-}
-
-async function refreshMasterSwitch() {
-  try {
-    const r = await window.api.mods.masterState();
-    state.masterOff = !!r.off;
-  } catch { state.masterOff = false; }
-  paintMasterSwitch();
-}
 
 $('#modsMasterBtn')?.addEventListener('click', async () => {
   const btn = $('#modsMasterBtn');
@@ -626,29 +605,9 @@ $('#modsMasterBtn')?.addEventListener('click', async () => {
   state.masterOff = !enable;
   paintMasterSwitch();
   toast(enable ? L`Моды включены` : L`Моды выключены — игра запустится ванильной`);
-  if (state.view === 'library') renderLibrary();
+  if (state.view === 'library') render();
 });
 
-// ---------- safe mode (item-schema patch) ----------
-//
-// Off (safe, default) leaves the game untouched; on registers game/dota_mods in
-// gameinfo_branchspecific.gi and re-signs it in dota.signatures, which is what lets Dota
-// read the item-schema effects mods carry and the free cosmetics catalog. See src/patcher.js.
-
-function paintSafeModeSwitch() {
-  const btn = $('#safeModeBtn');
-  if (!btn) return;
-  const safe = !state.settings?.schemaPatch;
-  btn.classList.toggle('on', safe);
-  btn.setAttribute('aria-checked', String(safe));
-  $('#safeModeState').textContent = safe ? L`вкл` : L`выкл`;
-  btn.querySelector('.safe-switch-icon').textContent = safe ? 'shield' : 'shield_moon';
-  // something needs attention: the patch fell off, the schema is stale, two mods want the
-  // same item, or another patcher is already in gameinfo — a dot, checked only when unsafe
-  const st = state.patchState;
-  const trouble = !safe && st && (st.stale || !st.patched || !st.signed || (st.conflicts || []).length || st.foreign);
-  btn.classList.toggle('trouble', !!trouble);
-}
 
 $('#safeModeBtn')?.addEventListener('click', async () => {
   const btn = $('#safeModeBtn');
@@ -2247,7 +2206,7 @@ async function handleImportResult(r) {
     toast(L`${parts} ${plural(parts, 'файл склеен', 'файла склеены', 'файлов склеены')} в ${merged.length} ${plural(merged.length, 'мод', 'мода', 'модов')}`);
   }
   await refreshInstalledIndex();
-  if (state.view === 'library') renderLibrary();
+  if (state.view === 'library') render();
 }
 
 // drag & drop of .vpk files anywhere in the window -> import

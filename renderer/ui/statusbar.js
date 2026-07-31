@@ -1,0 +1,54 @@
+/* The two switches in the status bar, and the state behind them.
+ *
+ * Master mods on or off, and safe mode. Any screen that changes what is installed has to
+ * ask these to redraw, so the painting lives apart from the buttons: the click handlers
+ * stay with the rest of the shell wiring in app.js, because turning safe mode off also
+ * reloads the cosmetic slots and the catalog rail, and none of that belongs here.
+ */
+import { state } from '../core/store.js';
+import { $ } from '../core/dom.js';
+
+// Small, and only fetched where it's actually shown: the safe-mode switch's warning dot
+// and the Library's schema-conflict banner (see paintSafeModeSwitch / renderLibrary).
+export async function refreshPatchState() {
+  state.patchState = await window.api.patch.state();
+  paintSafeModeSwitch();
+}
+
+export function paintMasterSwitch() {
+  const btn = $('#modsMasterBtn');
+  if (!btn) return;
+  const on = !state.masterOff;
+  btn.classList.toggle('on', on);
+  btn.setAttribute('aria-checked', String(on));
+  $('#modsMasterState').textContent = on ? L`вкл` : L`выкл`;
+}
+
+export async function refreshMasterSwitch() {
+  try {
+    const r = await window.api.mods.masterState();
+    state.masterOff = !!r.off;
+  } catch { state.masterOff = false; }
+  paintMasterSwitch();
+}
+
+// ---------- safe mode (item-schema patch) ----------
+//
+// Off (safe, default) leaves the game untouched; on registers game/dota_mods in
+// gameinfo_branchspecific.gi and re-signs it in dota.signatures, which is what lets Dota
+// read the item-schema effects mods carry and the free cosmetics catalog. See src/patcher.js.
+
+export function paintSafeModeSwitch() {
+  const btn = $('#safeModeBtn');
+  if (!btn) return;
+  const safe = !state.settings?.schemaPatch;
+  btn.classList.toggle('on', safe);
+  btn.setAttribute('aria-checked', String(safe));
+  $('#safeModeState').textContent = safe ? L`вкл` : L`выкл`;
+  btn.querySelector('.safe-switch-icon').textContent = safe ? 'shield' : 'shield_moon';
+  // something needs attention: the patch fell off, the schema is stale, two mods want the
+  // same item, or another patcher is already in gameinfo — a dot, checked only when unsafe
+  const st = state.patchState;
+  const trouble = !safe && st && (st.stale || !st.patched || !st.signed || (st.conflicts || []).length || st.foreign);
+  btn.classList.toggle('trouble', !!trouble);
+}
