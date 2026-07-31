@@ -633,6 +633,10 @@ function cardHtml(m, i, { cat: withCat = false, date: withDate = false } = {}) {
   const installed = isInstalled(cat, m);
   const isPack = m.type === 'pack';
   const external = !installTarget(m) && !m.styles && !isPack;
+  // What the mod changes, on the card rather than only in the modal: scrolling a category is
+  // how people read the catalog, and turning a filter on to find out whether something has
+  // effects is not reading. The upstream site labels them the same way.
+  const tags = Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => k).slice(0, 3);
   const author = m.author || m.sender;
   // built up rather than left as an empty row: a grid that shows none of these would
   // otherwise hold a line of nothing open under every name
@@ -652,6 +656,7 @@ function cardHtml(m, i, { cat: withCat = false, date: withDate = false } = {}) {
           ${isPack ? `<span class="mtag">${L`Пак · ${(m.mods || []).length}`}</span>` : ''}
           ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
           ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
+          ${tags.map((t) => `<span class="mtag soft">${esc(tagLabel(cat, t))}</span>`).join('')}
         </div>
         ${playable ? `
           <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="${L`Смотреть превью`}">

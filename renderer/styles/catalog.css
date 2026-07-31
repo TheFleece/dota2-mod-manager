@@ -340,3 +340,17 @@
    specific and still win; they never used to, because this was an inline size. */
 .noimg .ms { font-size: var(--icon-xl); }
 
+
+/* What a mod changes sits a step below what the app has done with it: the first is scanned
+   while scrolling a category, the second is acted on. Same information, less shouting - and
+   the card opens into a full picture where all of it is spelled out anyway. */
+.mtag.soft {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  padding: 3px 8px;
+  color: var(--text-muted);
+  border-color: transparent;
+  background: rgba(14, 12, 20, 0.6);
+}
