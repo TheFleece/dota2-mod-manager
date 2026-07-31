@@ -60,7 +60,17 @@ const EN = {
   // ---------- group / link labels ----------
   'Все герои': 'All heroes', 'Все предметы': 'All items', 'Все крипы': 'All creeps',
   'Все башни': 'All towers', 'Все типы': 'All types', 'Все группы': 'All groups',
-  'Все категории': 'All categories',
+  'Все категории': 'All categories', 'Все слоты': 'All slots',
+
+  // ---------- tags: what a mod changes, and which slot an item goes in ----------
+  // The catalog ships these in English; these are our own words for them. 'Эффекты' and
+  // 'Звуки' are already above as category names, with the same English.
+  'Иконки': 'Icons', 'Аниме': 'Anime', '18+': '18+',
+  'Видео': 'Video', 'Картинка': 'Image', 'Плохое качество': 'Poor quality',
+  'Мета': 'Meta', 'Статистика': 'Stats', 'Развлечения': 'Fun', 'Исходный код': 'Source code',
+  'Оружие': 'Weapon', 'Наплечники': 'Shoulders', 'Голова': 'Head', 'Руки': 'Arms',
+  'Броня': 'Armor', 'Спина': 'Back', 'Ездовое': 'Mount', 'Щит': 'Shield',
+  'Тотем': 'Totem', 'Волосы': 'Hair',
   'Избранное': 'Favorites',
   'В избранное': 'Add to favorites',
   'Убрать из избранного': 'Remove from favorites',

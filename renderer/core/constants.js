@@ -84,7 +84,7 @@ export const SORTS = [
 
 // What the toolbar above a grid holds. Mods and free cosmetics share it, so "Установленные"
 // and "Избранное" mean the same thing wherever they are — and switching category resets it.
-export const FILTER_DEFAULTS = { sort: 'default', tags: new Set(), installedOnly: false, favOnly: false, group: '', hero: '' };
+export const FILTER_DEFAULTS = { sort: 'default', tags: new Set(), installedOnly: false, favOnly: false, group: '', hero: '', slot: '' };
 export const freshFilters = () => ({ ...FILTER_DEFAULTS, tags: new Set() });
 
 // Chrome panels the user can resize, scale and fold away: the title bar, the status bar and

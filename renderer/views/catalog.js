@@ -266,6 +266,9 @@ function applyFilters(mods, catForInstalled) {
   if (f.tags.size) {
     out = out.filter((m) => [...f.tags].every((t) => m.tags?.[t]));
   }
+  if (f.slot) {
+    out = out.filter((m) => Object.entries(m.tags || {}).some(([k, v]) => v && canonTag(k) === f.slot));
+  }
   if (f.installedOnly) {
     out = out.filter((m) => isInstalled(m._cat || catForInstalled, m));
   }
@@ -511,6 +514,7 @@ function renderSearchResults() {
 function renderCategory(categoryId) {
   const all = categoryMods(categoryId).map((m) => ({ ...m, _cat: categoryId }));
   const tags = collectTags(all);
+  const slots = collectSlots(all, categoryId);
   // hero dropdowns are long enough that catalog order is useless — sort them A-Z
   const groups = isGrouped(categoryId) ? collectGroups(all) : [];
   if (categoryId === 'hero-items') groups.sort((a, b) => a.localeCompare(b));
@@ -544,7 +548,7 @@ function renderCategory(categoryId) {
     <div class="view-header">
       <h1 class="view-title">${esc(catName(categoryId))}</h1>
     </div>
-    ${toolbarHtml(mods.length, { tags, groups, heroes, categoryId, installable })}
+    ${toolbarHtml(mods.length, { tags, slots, groups, heroes, categoryId, installable })}
     <div class="grid" id="modGrid">${gridHtml}</div>
   `; });
   bindToolbar();
@@ -555,27 +559,21 @@ function renderCategory(categoryId) {
 
 const GROUP_LABEL = { 'hero-items': 'Все герои', 'item-effects': 'Все предметы', creeps: 'Все крипы', towers: 'Все башни', 'creep-deny': 'Все типы' };
 
-// How many tags a category may show before the rest fold away. Tags come from the catalog
-// and a busy category has a dozen; laid out in full they were a second toolbar under the
-// first, all of it the same weight as the controls that matter on every screen.
-const TAGS_SHOWN = 6;
-let tagsOpen = false;
 
 // Is the list in front of you shorter than the category itself? That, and only that, is when
 // a number of results is worth printing: it answers "did that chip do anything". Sorting is
 // not narrowing - the same mods come back in another order - so it does not count.
 function narrowed() {
   const f = filters;
-  return !!(f.tags.size || f.installedOnly || f.favOnly || f.group || f.hero || state.search.trim());
+  return !!(f.tags.size || f.slot || f.installedOnly || f.favOnly || f.group || f.hero || state.search.trim());
 }
 
 // Two lines, on purpose. The top one is how to look at the category - what order, whose
-// heroes, and the two answers about your own library - and it is the same everywhere. Tags
-// belong to this category alone, so they sit under it, quieter, and the tail folds away.
-function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categoryId = null, installable = true, fav = true }) {
+// heroes, which slot, and the two answers about your own library - and it is the same
+// everywhere. Tags belong to this category alone, so they sit under it, quieter. Nothing
+// folds any more: the longest row left is four chips, now that slots are a dropdown.
+function toolbarHtml(resultCount, { tags = [], slots = [], groups = [], heroes = [], categoryId = null, installable = true, fav = true }) {
   const f = filters;
-  const shown = tagsOpen ? tags : tags.slice(0, TAGS_SHOWN);
-  const rest = tags.length - shown.length;
   return `
     <div class="toolbar">
       <div class="tb-line">
@@ -601,6 +599,14 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
               ${groups.map((g) => `<option value="${esc(g)}" ${f.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
             </select>
           </div>` : ''}
+        ${slots.length ? `
+          <div class="select-wrap">
+            <span class="ms">checkroom</span>
+            <select id="slotSelect">
+              <option value="">${L`Все слоты`}</option>
+              ${slots.map((s) => `<option value="${esc(s)}" ${f.slot === s ? 'selected' : ''}>${esc(tagLabel(categoryId, s))}</option>`).join('')}
+            </select>
+          </div>` : ''}
         ${installable || fav ? '<div class="sep"></div>' : ''}
         ${installable ? `
         <button class="fchip ${f.installedOnly ? 'active' : ''}" id="installedChip">
@@ -614,12 +620,10 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
       </div>
       ${tags.length ? `
         <div class="tb-line tb-tags">
-          ${shown.map(([tag, cnt]) => `
+          ${tags.map((tag) => `
             <button class="fchip ${f.tags.has(tag) ? 'active' : ''}" data-tag="${esc(tag)}">
-              ${esc(tagLabel(categoryId, tag))}<span class="fchip-count">${cnt}</span>
+              ${esc(tagLabel(categoryId, tag))}
             </button>`).join('')}
-          ${rest > 0 ? `<button class="fchip ghost" id="moreTags">${L`ещё ${rest}`}</button>` : ''}
-          ${tagsOpen && tags.length > TAGS_SHOWN ? `<button class="fchip ghost" id="moreTags">${L`свернуть`}</button>` : ''}
         </div>` : ''}
     </div>`;
 }
@@ -635,6 +639,10 @@ function bindToolbar() {
   });
   $('#heroSelect')?.addEventListener('change', (e) => {
     filters.hero = e.target.value;
+    renderCatalog();
+  });
+  $('#slotSelect')?.addEventListener('change', (e) => {
+    filters.slot = e.target.value;
     renderCatalog();
   });
   $('#installedChip')?.addEventListener('click', () => {
@@ -653,10 +661,6 @@ function bindToolbar() {
       renderCatalog();
     });
   });
-  $('#moreTags')?.addEventListener('click', () => {
-    tagsOpen = !tagsOpen;
-    renderCatalog();
-  });
 }
 
 // --- cards ---
@@ -673,8 +677,11 @@ function cardHtml(m, i, { cat: withCat = false, date: withDate = false } = {}) {
   const external = !installTarget(m) && !m.styles && !isPack;
   // What the mod changes, on the card rather than only in the modal: scrolling a category is
   // how people read the catalog, and turning a filter on to find out whether something has
-  // effects is not reading. The upstream site labels them the same way.
-  const tags = Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => k).slice(0, 3);
+  // effects is not reading. Effects and icons come before the slot the item sits in - three
+  // fit, and what a mod does is what the eye is after while scrolling.
+  const tags = [...new Set(Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => canonTag(k)))]
+    .sort((a, b) => (SLOT_TAGS.has(a) ? 1 : 0) - (SLOT_TAGS.has(b) ? 1 : 0))
+    .slice(0, 3);
   const author = m.author || m.sender;
   // built up rather than left as an empty row: a grid that shows none of these would
   // otherwise hold a line of nothing open under every name

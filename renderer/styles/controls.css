@@ -87,7 +87,6 @@
   border-top: 1px solid var(--border);
 }
 .tb-tags .fchip { font-size: var(--text-xs); padding: 5px 12px; }
-.fchip.ghost { border-style: dashed; color: var(--text-faint); }
 .tb-line .sep { width: 1px; height: 20px; background: var(--border); margin: 0 var(--space-1); }
 .tb-line .count {
   margin-left: auto;
