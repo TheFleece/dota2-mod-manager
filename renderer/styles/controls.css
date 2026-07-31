@@ -63,20 +63,33 @@
 .input::placeholder { color: var(--text-faint); }
 
 /* ============ Toolbar (filters/sort) ============ */
+/* Two lines that are not equals. The first is the same on every category - order, whose
+   heroes, and the two questions about your own library - and it reads as one row. Tags
+   belong to this category alone and sit under a rule, quieter, so the eye can skip them. */
 .toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-4);
   padding: 11px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   backdrop-filter: blur(14px);
 }
-.toolbar .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
-.toolbar .count {
+.tb-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.tb-tags {
+  gap: var(--space-1);
+  margin-top: 11px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+}
+.tb-tags .fchip { font-size: var(--text-xs); padding: 5px 12px; }
+.fchip.ghost { border-style: dashed; color: var(--text-faint); }
+.tb-line .sep { width: 1px; height: 20px; background: var(--border); margin: 0 var(--space-1); }
+.tb-line .count {
   margin-left: auto;
   font-size: 12px;
   color: var(--text-faint);

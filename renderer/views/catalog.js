@@ -368,7 +368,7 @@ function renderFavorites() {
     ${all.length ? `
       ${cosAll.length ? `<div class="section-h"><span class="ms">extension</span>${L`Моды`}</div>` : ''}
       <div class="grid" id="modGrid">
-        ${mods.length ? mods.map((m, i) => cardHtml(m, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
+        ${mods.length ? mods.map((m, i) => cardHtml(m, i, { cat: true })).join('') : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
       </div>` : ''}
     ${cosAll.length ? `
       <div class="section-h spaced"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
@@ -402,7 +402,7 @@ function renderHome() {
     </div>
     ${recent.length ? `
       <div class="section-h"><span class="ms">new_releases</span>${L`Недавно добавленные`}</div>
-      <div class="recent-row">${recent.map((m, i) => cardHtml(m, i, true)).join('')}</div>` : ''}
+      <div class="recent-row">${recent.map((m, i) => cardHtml(m, i, { cat: true, date: true })).join('')}</div>` : ''}
     <div class="section-h"><span class="ms">apps</span>${L`Категории`}</div>
     <div class="cat-tiles">
       ${cats.map((c, i) => {
@@ -464,7 +464,7 @@ function renderSearchResults() {
     ${!mods.length && !cos.length ? `<div class="empty-note">${L`Ничего не найдено`}</div>` : ''}
     ${mods.length ? `
       ${cos.length ? `<div class="section-h"><span class="ms">extension</span>${L`Моды`}</div>` : ''}
-      <div class="grid" id="modGrid">${mods.map((m, i) => cardHtml(m, i, true)).join('')}</div>` : ''}
+      <div class="grid" id="modGrid">${mods.map((m, i) => cardHtml(m, i, { cat: true })).join('')}</div>` : ''}
     ${cos.length ? `
       <div class="section-h spaced"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
       <div class="grid" id="cosGrid">${shownCos.map(({ slot, o }, i) => cosmeticCardHtml(slot, o, i, true)).join('')}</div>
@@ -525,47 +525,64 @@ function renderCategory(categoryId) {
 
 const GROUP_LABEL = { 'hero-items': 'Все герои', 'item-effects': 'Все предметы', creeps: 'Все крипы', towers: 'Все башни', 'creep-deny': 'Все типы' };
 
+// How many tags a category may show before the rest fold away. Tags come from the catalog
+// and a busy category has a dozen; laid out in full they were a second toolbar under the
+// first, all of it the same weight as the controls that matter on every screen.
+const TAGS_SHOWN = 6;
+let tagsOpen = false;
+
+// Two lines, on purpose. The top one is how to look at the category - what order, whose
+// heroes, and the two answers about your own library - and it is the same everywhere. Tags
+// belong to this category alone, so they sit under it, quieter, and the tail folds away.
 function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categoryId = null, installable = true, fav = true }) {
   const f = filters;
+  const shown = tagsOpen ? tags : tags.slice(0, TAGS_SHOWN);
+  const rest = tags.length - shown.length;
   return `
     <div class="toolbar">
-      <div class="select-wrap">
-        <span class="ms">sort</span>
-        <select id="sortSelect">
-          ${SORTS.map((s) => `<option value="${s.key}" ${f.sort === s.key ? 'selected' : ''}>${esc(tr(s.label))}</option>`).join('')}
-        </select>
+      <div class="tb-line">
+        <div class="select-wrap">
+          <span class="ms">sort</span>
+          <select id="sortSelect">
+            ${SORTS.map((s) => `<option value="${s.key}" ${f.sort === s.key ? 'selected' : ''}>${esc(tr(s.label))}</option>`).join('')}
+          </select>
+        </div>
+        ${heroes.length ? `
+          <div class="select-wrap">
+            <span class="ms">person</span>
+            <select id="heroSelect">
+              <option value="">${L`Все герои`}</option>
+              ${heroes.map((h) => `<option value="${esc(h)}" ${f.hero === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}
+            </select>
+          </div>` : ''}
+        ${groups.length ? `
+          <div class="select-wrap">
+            <span class="ms">${categoryId === 'hero-items' ? 'person' : catIcon(categoryId) || 'group'}</span>
+            <select id="groupSelect">
+              <option value="">${esc(tr(GROUP_LABEL[categoryId] || 'Все группы'))}</option>
+              ${groups.map((g) => `<option value="${esc(g)}" ${f.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
+            </select>
+          </div>` : ''}
+        ${installable || fav ? '<div class="sep"></div>' : ''}
+        ${installable ? `
+        <button class="fchip ${f.installedOnly ? 'active' : ''}" id="installedChip">
+          <span class="ms">check_circle</span>${L`Установленные`}
+        </button>` : ''}
+        ${fav ? `
+        <button class="fchip ${f.favOnly ? 'active' : ''}" id="favChip">
+          <span class="ms">favorite</span>${L`Избранное`}
+        </button>` : ''}
+        <span class="count">${resultCount} ${plural(resultCount, 'результат', 'результата', 'результатов')}</span>
       </div>
-      ${heroes.length ? `
-        <div class="select-wrap">
-          <span class="ms">person</span>
-          <select id="heroSelect">
-            <option value="">${L`Все герои`}</option>
-            ${heroes.map((h) => `<option value="${esc(h)}" ${f.hero === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}
-          </select>
+      ${tags.length ? `
+        <div class="tb-line tb-tags">
+          ${shown.map(([tag, cnt]) => `
+            <button class="fchip ${f.tags.has(tag) ? 'active' : ''}" data-tag="${esc(tag)}">
+              ${esc(tagLabel(categoryId, tag))}<span class="fchip-count">${cnt}</span>
+            </button>`).join('')}
+          ${rest > 0 ? `<button class="fchip ghost" id="moreTags">${L`ещё ${rest}`}</button>` : ''}
+          ${tagsOpen && tags.length > TAGS_SHOWN ? `<button class="fchip ghost" id="moreTags">${L`свернуть`}</button>` : ''}
         </div>` : ''}
-      ${groups.length ? `
-        <div class="select-wrap">
-          <span class="ms">${categoryId === 'hero-items' ? 'person' : catIcon(categoryId) || 'group'}</span>
-          <select id="groupSelect">
-            <option value="">${esc(tr(GROUP_LABEL[categoryId] || 'Все группы'))}</option>
-            ${groups.map((g) => `<option value="${esc(g)}" ${f.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
-          </select>
-        </div>` : ''}
-      ${installable || fav ? '<div class="sep"></div>' : ''}
-      ${installable ? `
-      <button class="fchip ${f.installedOnly ? 'active' : ''}" id="installedChip">
-        <span class="ms">check_circle</span>${L`Установленные`}
-      </button>` : ''}
-      ${fav ? `
-      <button class="fchip ${f.favOnly ? 'active' : ''}" id="favChip">
-        <span class="ms">favorite</span>${L`Избранное`}
-      </button>` : ''}
-      ${tags.length ? '<div class="sep"></div>' : ''}
-      ${tags.map(([tag, cnt]) => `
-        <button class="fchip ${f.tags.has(tag) ? 'active' : ''}" data-tag="${esc(tag)}">
-          ${esc(tagLabel(categoryId, tag))}<span class="fchip-count">${cnt}</span>
-        </button>`).join('')}
-      <span class="count">${resultCount} ${plural(resultCount, 'результат', 'результата', 'результатов')}</span>
     </div>`;
 }
 
@@ -598,18 +615,32 @@ function bindToolbar() {
       renderCatalog();
     });
   });
+  $('#moreTags')?.addEventListener('click', () => {
+    tagsOpen = !tagsOpen;
+    renderCatalog();
+  });
 }
 
 // --- cards ---
 
-function cardHtml(m, i, withCat = false) {
+// A card is its picture. Everything else on it has to earn the room it takes, so what shows
+// depends on the list: a grid inside one category needs neither the category's own name nor
+// a date every mod in it shares, while the "recently added" strip is about exactly that date
+// and a search result has to say where it was found.
+function cardHtml(m, i, { cat: withCat = false, date: withDate = false } = {}) {
   const cat = m._cat;
   const prev = previewUrl(cat, m.preview || (m.styles?.[0]?.preview));
   const installed = isInstalled(cat, m);
   const isPack = m.type === 'pack';
   const external = !installTarget(m) && !m.styles && !isPack;
-  const tags = Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => k).slice(0, 3);
   const author = m.author || m.sender;
+  // built up rather than left as an empty row: a grid that shows none of these would
+  // otherwise hold a line of nothing open under every name
+  const meta = [
+    withCat ? `<span>${esc(catName(cat))}</span>` : '',
+    withDate && m.meta?.date ? `<span>${fmtDate(m.meta.date)}</span>` : '',
+    author ? `<span class="author-chip"><span class="ms">person</span>${esc(author)}</span>` : '',
+  ].join('');
   const playable = modPreviewMedia(cat, m);
   return `
     <div class="card" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
@@ -621,7 +652,6 @@ function cardHtml(m, i, withCat = false) {
           ${isPack ? `<span class="mtag">${L`Пак · ${(m.mods || []).length}`}</span>` : ''}
           ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
           ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
-          ${tags.map((t) => `<span class="mtag">${esc(tagLabel(cat, t))}</span>`).join('')}
         </div>
         ${playable ? `
           <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="${L`Смотреть превью`}">
@@ -634,11 +664,7 @@ function cardHtml(m, i, withCat = false) {
       </div>
       <div class="card-body">
         <div class="card-name">${esc(m.name)}</div>
-        <div class="card-meta">
-          ${withCat ? `<span>${esc(catName(cat))}</span>` : ''}
-          ${m.meta?.date ? `<span>${fmtDate(m.meta.date)}</span>` : ''}
-          ${author ? `<span class="author-chip"><span class="ms">person</span>${esc(author)}</span>` : ''}
-        </div>
+        ${meta ? `<div class="card-meta">${meta}</div>` : ''}
       </div>
     </div>`;
 }

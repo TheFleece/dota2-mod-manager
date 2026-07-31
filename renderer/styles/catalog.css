@@ -1,14 +1,9 @@
 /* ============ Home (all categories) ============ */
-.home-hero { margin: 6px 0 22px; }
-.home-hero h1 {
-  font-size: 30px;
-  font-weight: 800;
-  background: linear-gradient(90deg, var(--text), var(--primary-soft));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.home-hero p { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+/* The same weight as every other view title. It used to be a 30px gradient, which made the
+   loudest thing on the catalog a line telling the user which app they had open. */
+.home-hero { margin: 6px 0 var(--space-5); }
+.home-hero h1 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
+.home-hero p { color: var(--text-muted); font-size: var(--text-sm); margin-top: var(--space-1); }
 
 .recent-row {
   display: grid;
@@ -25,7 +20,7 @@
 
 .cat-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 14px;
 }
 .cat-tile {
@@ -34,7 +29,7 @@
   overflow: hidden;
   border: 1px solid var(--border);
   cursor: pointer;
-  aspect-ratio: 16 / 8.5;
+  aspect-ratio: 16 / 9;
   background: var(--surface-solid);
   transition: transform 0.25s var(--ease), border-color 0.25s, box-shadow 0.25s var(--ease);
   animation: cardIn 0.4s var(--ease) both;
@@ -55,7 +50,10 @@
 .cat-tile .ct-shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 30%, rgba(4, 4, 8, 0.92) 100%);
+  /* The upstream artwork has the category name painted into it in English, and we draw our
+     own label over the same tile. Weighting the shade lets ours win instead of the two
+     names competing at the bottom of a small picture. */
+  background: linear-gradient(180deg, rgba(4, 4, 8, 0.1) 0%, rgba(4, 4, 8, 0.55) 55%, rgba(4, 4, 8, 0.96) 100%);
 }
 .cat-tile .ct-label {
   position: absolute;
@@ -66,7 +64,7 @@
   align-items: baseline;
   gap: 8px;
 }
-.cat-tile .ct-name { font-family: var(--font-head); font-weight: 700; font-size: 16px; }
+.cat-tile .ct-name { font-family: var(--font-head); font-weight: 700; font-size: var(--text-sm); }
 .cat-tile .ct-cnt { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 .section-h {
@@ -85,7 +83,7 @@
 /* ============ Mod grid ============ */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(222px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 14px;
 }
 .group-title {
@@ -341,3 +339,4 @@
 /* The stand-in glyph for a missing picture. The card and cosmetic-modal rules above are more
    specific and still win; they never used to, because this was an inline size. */
 .noimg .ms { font-size: var(--icon-xl); }
+
