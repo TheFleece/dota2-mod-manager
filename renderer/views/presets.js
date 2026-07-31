@@ -13,6 +13,7 @@ import { refreshInstalledIndex } from '../core/installed.js';
 import { esc, fmtMB, plural } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
 import { confirmDialog, promptDialog } from '../ui/dialog.js';
+import { paint } from '../ui/transitions.js';
 
 const viewRoot = $('#view-root');
 
@@ -133,7 +134,7 @@ export async function renderPresets() {
   const { installed } = await window.api.mods.list();
   const byId = new Map(installed.map((m) => [m.id, m]));
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
     <div class="view-intro">
       ${L`Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.`}
@@ -146,7 +147,7 @@ export async function renderPresets() {
     <div id="presetList">
       ${presets.length ? '' : `<div class="empty-note">${L`Пресетов пока нет`}</div>`}
     </div>
-  `;
+  `; });
 
   const list = $('#presetList');
   presets.forEach((p, i) => {

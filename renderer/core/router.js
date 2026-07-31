@@ -8,6 +8,7 @@
  */
 import { state } from './store.js';
 import { $ } from './dom.js';
+import { screenChanging } from '../ui/transitions.js';
 
 const screens = new Map();
 
@@ -33,5 +34,8 @@ export function switchView(view) {
   // a scrolled-away tab must not stay out of sight once it is the active one
   document.querySelector('.tb-tab.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   window.api.presence.view(view); // what Discord shows the user is doing
+  // The screen animates in when it paints, not now: it may have to fetch first, and a
+  // transition started here would hold the old picture on screen for the whole wait.
+  screenChanging();
   render();
 }

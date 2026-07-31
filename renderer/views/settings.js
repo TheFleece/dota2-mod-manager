@@ -20,6 +20,7 @@ import { refreshSidebarStatus } from '../ui/statusbar.js';
 import { clampScale, currentScalePct, paintScale, applyScalePct, clampPanelZoom, paintPanels, savePanels } from '../ui/chrome.js';
 import { applyLanguage } from '../ui/language.js';
 import { loadCatalog } from './catalog.js';
+import { paint } from '../ui/transitions.js';
 
 const viewRoot = $('#view-root');
 
@@ -70,7 +71,7 @@ export async function renderSettings() {
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
 
     <div class="settings-block">
@@ -264,7 +265,7 @@ export async function renderSettings() {
         <button class="btn btn-sm" id="whatsNewBtn"><span class="ms">auto_awesome</span>${L`Что нового`}</button>
       </div>
     </div>
-  `;
+  `; });
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
   $('#whatsNewBtn').addEventListener('click', () => showWhatsNew({ force: true }));
   $('#diagExportBtn').addEventListener('click', async () => {

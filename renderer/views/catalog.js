@@ -22,6 +22,7 @@ import { previewUrl, isMedia, resolveUrl, mediaHtml } from '../ui/media.js';
 import { openPlayer } from '../ui/player.js';
 import { thumbHtml } from '../ui/thumb.js';
 import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons, cosmeticIcon, cosmeticIconKnown } from '../ui/cosmetic-icons.js';
+import { paint, morph } from '../ui/transitions.js';
 
 const viewRoot = $('#view-root');
 
@@ -322,15 +323,15 @@ function renderRail() {
 
 function renderCatalog() {
   if (!state.catalog) {
-    viewRoot.innerHTML = `<div class="empty-note">${L`Загрузка каталога…`}</div>`;
+    paint(() => { viewRoot.innerHTML = `<div class="empty-note">${L`Загрузка каталога…`}</div>`; });
     return;
   }
   if (state.catalog.error) {
-    viewRoot.innerHTML = `
+    paint(() => { viewRoot.innerHTML = `
       <div class="empty-note">
         ${L`Не удалось загрузить каталог: ${esc(state.catalog.error)}`}<br><br>
         <button class="btn btn-primary" id="retryCat">${L`Повторить`}</button>
-      </div>`;
+      </div>`; });
     $('#retryCat').addEventListener('click', () => loadCatalog(true));
     return;
   }
@@ -357,7 +358,7 @@ function renderFavorites() {
   const installable = all.some(canBeInstalled) || cosAll.length > 0;
   const empty = !all.length && !cosAll.length;
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Избранное`}</h1>
       <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}${cosAll.length ? ` · ${cosAll.length} ${plural(cosAll.length, 'косметика', 'косметики', 'косметик')}` : ''}</span>
@@ -374,7 +375,7 @@ function renderFavorites() {
       <div class="grid" id="cosGrid">
         ${cos.length ? cos.map(({ slot, o }, i) => cosmeticCardHtml(slot, o, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
       </div>` : ''}
-  `;
+  `; });
   if (!empty) bindToolbar();
   bindCards($('#modGrid'), mods);
   bindCosmeticCards($('#cosGrid'));
@@ -394,7 +395,7 @@ function renderHome() {
     .filter(Boolean)
     .slice(0, 12);
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="home-hero">
       <h1>${L`Моды для Dota 2`}</h1>
       <p>${L`${cats.reduce((n, c) => n + categoryMods(c.id).length, 0)} модов в ${cats.length} категориях · каталог Dota2PornFx`}${state.catalog.fetchedAt ? L` · обновлён ${new Date(state.catalog.fetchedAt).toLocaleDateString(window.i18nLocale())}` : ''}</p>
@@ -417,7 +418,7 @@ function renderHome() {
         </div>`;
       }).join('')}
     </div>
-  `;
+  `; });
 
   viewRoot.querySelectorAll('.cat-tile').forEach((t) => {
     t.addEventListener('click', () => {
@@ -454,7 +455,7 @@ function renderSearchResults() {
   const cos = filterCosmetics(cosAll);
   const shownCos = cos.slice(0, COS_SEARCH_LIMIT);
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Поиск:`} <span class="accent">${esc(state.search.trim())}</span></h1>
       <span class="view-sub">${mods.length} ${plural(mods.length, 'мод', 'мода', 'модов')}${cos.length ? ` · ${cos.length} ${plural(cos.length, 'косметика', 'косметики', 'косметик')}` : ''}</span>
@@ -468,7 +469,7 @@ function renderSearchResults() {
       <div class="section-h spaced"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
       <div class="grid" id="cosGrid">${shownCos.map(({ slot, o }, i) => cosmeticCardHtml(slot, o, i, true)).join('')}</div>
       ${cos.length > shownCos.length ? `<div class="search-more">${L`…и ещё ${cos.length - shownCos.length} — уточни запрос`}</div>` : ''}` : ''}
-  `;
+  `; });
   bindToolbar();
   bindCards($('#modGrid'), mods);
   bindCosmeticCards($('#cosGrid'));
@@ -508,14 +509,14 @@ function renderCategory(categoryId) {
     gridHtml = mods.map((m, i) => cardHtml(m, i)).join('');
   }
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${esc(catName(categoryId))}</h1>
       <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}</span>
     </div>
     ${toolbarHtml(mods.length, { tags, groups, heroes, categoryId, installable })}
     <div class="grid" id="modGrid">${gridHtml}</div>
-  `;
+  `; });
   bindToolbar();
   bindCards(viewRoot, mods);
 }
@@ -657,7 +658,7 @@ function bindCards(root, modsList) {
         const [cat, name] = key.split('|');
         target = findModByName(cat, name);
       }
-      if (target) openModModal(target._cat, target);
+      if (target) openModModal(target._cat, target, card);
     });
     const v = card.querySelector('video[data-hoverplay]');
     if (v) {
@@ -724,18 +725,36 @@ function refreshCardBadges() {
 
 let modalState = null;
 
-function openModModal(categoryId, mod) {
+// The card's picture is the same picture the modal opens with, so it travels rather than
+// being replaced: the card grows into the modal and shrinks back into the card it came from.
+// `from` is the card that was clicked, when there is one - a modal reached any other way
+// simply fades.
+// The picture the card shows is the picture the modal opens with, so it travels instead of
+// being replaced. Kept as the element rather than a lookup: the grid can be rebuilt while
+// the modal is open, and a card that is no longer on the page simply fades instead.
+let modalOrigin = null;
+
+function openModModal(categoryId, mod, from) {
   cosModalState = null; // the two share one overlay
   modalState = { categoryId, mod, styleIdx: 0 };
-  drawModal();
-  $('#modalOverlay').classList.remove('hidden');
+  modalOrigin = from?.querySelector('.card-media') || null;
+  morph(modalOrigin, () => {
+    drawModal();
+    $('#modalOverlay').classList.remove('hidden');
+    return $('#modalContent .modal-media');
+  });
 }
 
 function closeModal() {
-  $('#modalOverlay').classList.add('hidden');
-  $('#modalContent').innerHTML = '';
-  modalState = null;
-  cosModalState = null;
+  const back = modalOrigin && document.body.contains(modalOrigin) ? modalOrigin : null;
+  modalOrigin = null;
+  morph($('#modalContent .modal-media'), () => {
+    $('#modalOverlay').classList.add('hidden');
+    $('#modalContent').innerHTML = '';
+    modalState = null;
+    cosModalState = null;
+    return back;
+  });
 }
 
 $('#modalOverlay').addEventListener('click', (e) => {
@@ -1032,7 +1051,7 @@ function bindCosmeticCards(root) {
   if (!root) return;
   root.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
   root.querySelectorAll('.card[data-cos]').forEach((card) => {
-    card.addEventListener('click', () => openCosmeticModal(card.dataset.cos, card.dataset.cosId));
+    card.addEventListener('click', () => openCosmeticModal(card.dataset.cos, card.dataset.cosId, card));
   });
   paintCosmeticIcons(root);
   return watchCosmeticIcons(root, null);
@@ -1056,13 +1075,17 @@ function refreshCosmeticBadges() {
 
 let cosModalState = null;
 
-function openCosmeticModal(slot, itemId) {
+function openCosmeticModal(slot, itemId, from) {
   const o = findCosmetic(slot, itemId);
   if (!o) return;
   modalState = null;
   cosModalState = { slot, o };
-  drawCosmeticModal();
-  $('#modalOverlay').classList.remove('hidden');
+  modalOrigin = from?.querySelector('.card-media') || null;
+  morph(modalOrigin, () => {
+    drawCosmeticModal();
+    $('#modalOverlay').classList.remove('hidden');
+    return $('#modalContent .modal-media');
+  });
   // the picture may not have been fetched yet if the card was never scrolled into view
   if (!cosmeticIconKnown(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
 }
@@ -1138,13 +1161,13 @@ async function pickCosmetic(slot, o, remove) {
 
 async function renderCosmeticCategory(slot) {
   const meta = cosmeticMeta(slot);
-  viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`;
+  paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
   if (!state.cosmeticSlots) await refreshCosmeticSlots();
   if (state.activeCategory !== COSMETIC_PREFIX + slot) return; // moved on while reading
 
   const data = (state.cosmeticSlots || []).find((s) => s.slot === slot);
   if (!data) {
-    viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`;
+    paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`; });
     return;
   }
 
@@ -1170,7 +1193,7 @@ async function renderCosmeticCategory(slot) {
     io = bindCosmeticCards(grid);
   };
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${esc(tr(meta.label))}</h1>
       <span class="view-sub">${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>
@@ -1188,7 +1211,7 @@ async function renderCosmeticCategory(slot) {
       <button class="fchip ${f.favOnly ? 'active' : ''}" id="cosFavChip"><span class="ms">favorite</span>${L`Избранное`}</button>
       <span class="count" id="cosCount"></span>
     </div>
-    <div class="grid" id="cosGrid"></div>`;
+    <div class="grid" id="cosGrid"></div>`; });
 
   $('#cosSort').addEventListener('change', (e) => { f.sort = e.target.value; paintGrid(); });
   $('#cosSearch').addEventListener('input', (e) => { cosSearch = e.target.value; paintGrid(); });

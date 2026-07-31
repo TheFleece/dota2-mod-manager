@@ -23,6 +23,7 @@ import { isVideo } from '../ui/media.js';
 import { recPreviewUrl, fallbackThumbHtml, libThumbHtml, extThumbHtml, catalogPreviewFor } from '../ui/thumb.js';
 import { refreshPatchState, paintMasterSwitch } from '../ui/statusbar.js';
 import { paintCosmeticIcons, watchCosmeticIcons } from '../ui/cosmetic-icons.js';
+import { paint } from '../ui/transitions.js';
 
 const viewRoot = $('#view-root');
 
@@ -432,7 +433,7 @@ export async function renderLibrary() {
   slotCount = ordered.length;
   ordered.forEach((r, i) => { r.slot = slotOf(r); r.slotIndex = i; });
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Библиотека`}</h1></div>
     ${masterOff ? `
       <div class="lib-banner off">
@@ -509,7 +510,7 @@ export async function renderLibrary() {
       </div>
       <button class="bulk-close" id="bulkClear" aria-label="${L`Сбросить выбор`}" title="${L`Сбросить выбор`}"><span class="ms">close</span></button>
     </div>
-  `;
+  `; });
 
   paintLibraryList();
   bindLibrary(external);

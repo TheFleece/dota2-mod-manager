@@ -8,6 +8,7 @@ import { $ } from '../core/dom.js';
 import { state } from '../core/store.js';
 import { registerView } from '../core/router.js';
 import { esc } from '../ui/format.js';
+import { paint } from '../ui/transitions.js';
 
 const viewRoot = $('#view-root');
 
@@ -28,7 +29,7 @@ function renderGuideSteps(steps) {
 
 export function renderGuides() {
   const guides = state.catalog?.guides || {};
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Гайды`}</h1></div>
     <div class="view-intro">
       ${L`Гайды из репозитория Dota2PornFx. Менеджер делает бóльшую часть шагов автоматически — гайды пригодятся для ручной установки и решения проблем.`}
@@ -51,7 +52,7 @@ export function renderGuides() {
         </div>
       </div>`;
     }).join('')}
-  `;
+  `; });
 
   viewRoot.querySelectorAll('.guide-title').forEach((t) => {
     t.addEventListener('click', () => t.closest('.guide-card').classList.toggle('open'));

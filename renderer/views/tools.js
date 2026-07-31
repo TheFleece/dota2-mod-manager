@@ -10,6 +10,7 @@ import { state } from '../core/store.js';
 import { registerView, switchView } from '../core/router.js';
 import { esc } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
+import { paint } from '../ui/transitions.js';
 
 const viewRoot = $('#view-root');
 
@@ -20,7 +21,7 @@ export async function renderTools() {
   const { installed } = await window.api.mods.list();
   const toolRecs = new Map(installed.filter((m) => m.categoryId === 'tools').map((m) => [m.name, m]));
 
-  viewRoot.innerHTML = `
+  paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Инструменты`}</h1></div>
     <div class="tool-grid">
       ${tools.map((t, i) => {
@@ -41,7 +42,7 @@ export async function renderTools() {
         </div>`;
       }).join('')}
     </div>
-  `;
+  `; });
 
   viewRoot.querySelectorAll('[data-get]').forEach((b) => {
     b.addEventListener('click', async () => {

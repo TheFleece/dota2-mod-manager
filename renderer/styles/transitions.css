@@ -1,0 +1,56 @@
+/* ============ View transitions ============
+   The browser animates one state of the window into the next; this file says how. See
+   ui/transitions.js for when. Motion durations come from the tokens, so the reduced-motion
+   media query already shortens them to nothing - and the module skips the transition
+   outright in that case, since an instant crossfade is still a crossfade. */
+
+/* ---- Moving between screens ----
+   Scoped to the class the module sets, so opening a modal does not slide the whole window:
+   that transition falls back to the browser's own quiet crossfade. */
+.vt-screen::view-transition-old(root) {
+  animation: screenOut var(--dur-fast) var(--ease-in) both;
+}
+.vt-screen::view-transition-new(root) {
+  animation: screenIn var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes screenOut {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+/* The chrome is not part of the screen and must not travel with it. Naming these captures
+   them apart from the view; their content is unchanged, so they simply hold still. */
+#titlebar { view-transition-name: chrome-top; }
+#statusbar { view-transition-name: chrome-bottom; }
+
+.vt-screen::view-transition-group(chrome-top),
+.vt-screen::view-transition-group(chrome-bottom),
+.vt-screen::view-transition-old(chrome-top),
+.vt-screen::view-transition-new(chrome-top),
+.vt-screen::view-transition-old(chrome-bottom),
+.vt-screen::view-transition-new(chrome-bottom) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* ---- A card opening into its modal ----
+   Both carry the same name for the length of the transition, so the browser moves one box
+   into the other rather than fading between two pictures in different places. The pictures
+   themselves cross over inside that moving box. */
+::view-transition-group(morph-subject) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease-out);
+}
+::view-transition-old(morph-subject),
+::view-transition-new(morph-subject) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease-out);
+  /* The two pictures are the same picture at different sizes; letting them blend would show
+     a ghost of the smaller one over the larger. */
+  mix-blend-mode: normal;
+  height: 100%;
+  object-fit: cover;
+}
