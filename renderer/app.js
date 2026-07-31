@@ -9,6 +9,8 @@ import { previewUrl, isVideo, isAudio, isMedia, resolveUrl, mediaHtml } from './
 import { state } from './core/store.js';
 import { toast } from './ui/toast.js';
 import { registerView, render, switchView } from './core/router.js';
+import { keyOf, matchLabel, applyInstalled, pickedIn, refreshInstalledIndex } from './core/installed.js';
+import { catName, catIcon } from './core/categories.js';
 import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec } from './core/records.js';
 import { catalogPreviewUrl, recPreviewUrl, thumbHtml, wikiFallbackKey, fallbackThumbHtml, libThumbHtml, extThumbHtml, catalogPreviewFor } from './ui/thumb.js';
 
@@ -333,39 +335,6 @@ function modPreviewMedia(categoryId, mod) {
 // ---------- built-in media player ----------
 
 
-function keyOf(categoryId, name, styleLabel) {
-  return `${categoryId}|${name}|${styleLabel || ''}`;
-}
-
-// label for a fingerprint match (array of catalog identities that share the content)
-function matchLabel(matches) {
-  return matches.map((m) => m.name + (m.styleLabel ? ` · ${m.styleLabel}` : '')).join(' / ');
-}
-
-// refresh the catalog "installed" lookup + the library tab counter from a list
-function applyInstalled(installed) {
-  state.installedIndex.clear();
-  state.cosmeticPicks.clear();
-  for (const rec of installed) {
-    state.installedIndex.set(keyOf(rec.categoryId, rec.name, rec.styleLabel), rec);
-    // What is live in a cosmetic slot is read from the records themselves, not from the
-    // slot list: the option lists only change when the game does, while a pick can be
-    // deleted or switched off from the Library at any moment.
-    if (rec.categoryId === 'cosmetic' && rec.slot && rec.enabled !== false) state.cosmeticPicks.set(rec.slot, rec);
-  }
-  $('#libCount').textContent = installed.length || '';
-}
-
-// the record that currently dresses a cosmetic slot, if any
-function pickedIn(slot) {
-  return state.cosmeticPicks.get(slot) || null;
-}
-
-async function refreshInstalledIndex() {
-  const { installed } = await window.api.mods.list();
-  applyInstalled(installed);
-}
-
 // Every cosmetic slot the game's schema exposes, with its options and current pick. Not
 // folded into refreshInstalledIndex(): the option lists run to a couple hundred KB and
 // most of the app's actions (toggling a regular mod, searching the catalog) never need
@@ -490,16 +459,6 @@ function buildModIndex() {
   }
 }
 
-function catName(id) {
-  if (id === 'all') return tr('Все категории');
-  if (id.startsWith(COSMETIC_PREFIX)) return tr(cosmeticMeta(id.slice(COSMETIC_PREFIX.length)).label);
-  return tr(CAT_RU[id]) || state.catalog?.constants?.translations?.[id] || id;
-}
-
-function catIcon(id) {
-  if (id.startsWith(COSMETIC_PREFIX)) return cosmeticMeta(id.slice(COSMETIC_PREFIX.length)).icon;
-  return CAT_ICON[id] || 'extension';
-}
 
 function installTarget(mod) {
   const f = mod.file;
