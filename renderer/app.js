@@ -12,7 +12,7 @@ import { registerView, render, switchView } from './core/router.js';
 import { keyOf, pickedIn, refreshInstalledIndex } from './core/installed.js';
 import { catName, catIcon } from './core/categories.js';
 import { refreshPatchState, paintMasterSwitch, refreshMasterSwitch } from './ui/statusbar.js';
-import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons } from './ui/cosmetic-icons.js';
+import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons, cosmeticIcon, cosmeticIconKnown } from './ui/cosmetic-icons.js';
 import { thumbHtml } from './ui/thumb.js';
 // The Library registers itself on import; a dropped file is the one thing outside it that
 // has to reach in, because a mod can be dropped onto any screen.
@@ -1738,7 +1738,7 @@ async function handlePresetImport(r) {
 // a picture, a favourite star, and an "Установлен" badge on whichever one is live.
 function cosmeticCardHtml(slot, o, i, withCat = false) {
   const cat = COSMETIC_PREFIX + slot;
-  const icon = cosIconCache.get(o.name);
+  const icon = cosmeticIcon(o.name);
   const picked = pickedIn(slot)?.itemId === o.id;
   return `
     <div class="card" data-cos="${esc(slot)}" data-cos-id="${esc(o.id)}" style="--i:${Math.min(i, 28)}">
@@ -1793,7 +1793,7 @@ function openCosmeticModal(slot, itemId) {
   drawCosmeticModal();
   $('#modalOverlay').classList.remove('hidden');
   // the picture may not have been fetched yet if the card was never scrolled into view
-  if (!cosIconCache.has(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
+  if (!cosmeticIconKnown(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
 }
 
 function drawCosmeticModal() {
@@ -1802,7 +1802,7 @@ function drawCosmeticModal() {
   const data = slotData(slot);
   const live = pickedIn(slot);
   const isLive = live?.itemId === o.id;
-  const icon = cosIconCache.get(o.name);
+  const icon = cosmeticIcon(o.name);
   const busy = state.installing.has(COSMETIC_PREFIX + slot + '|' + o.id);
 
   $('#modalContent').innerHTML = `

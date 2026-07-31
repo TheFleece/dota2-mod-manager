@@ -14,6 +14,11 @@ import { esc } from './format.js';
 // the tiles that scroll into view and fetches them in small batches.
 const cosIconCache = new Map();
 
+// Readers for everyone else. The cache stays private: a picture is either known or it is
+// not, and nothing outside this file has any business putting one in.
+export const cosmeticIcon = (name) => cosIconCache.get(name);
+export const cosmeticIconKnown = (name) => cosIconCache.has(name);
+
 export async function loadCosmeticIcons(names, onEach) {
   const want = [...new Set(names)].filter((n) => n && !cosIconCache.has(n));
   for (let i = 0; i < want.length; i += 24) {

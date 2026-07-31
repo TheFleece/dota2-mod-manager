@@ -9,6 +9,7 @@ import { state } from '../core/store.js';
 import { isCursorRec } from '../core/records.js';
 import { esc } from './format.js';
 import { previewUrl, isVideo, isMedia, mediaHtml } from './media.js';
+import { cosmeticIcon, cosmeticIconKnown } from './cosmetic-icons.js';
 
 // The catalog's own picture for a mod, by the name it is filed under. Styles have one each,
 // so the record's file (or its style label) says which of them is this one's.
@@ -60,8 +61,8 @@ export function wikiFallbackKey(rec) {
 // already known client-side, or a placeholder icon with the data-name the list's own
 // IntersectionObserver picks up for free (see watchCosmeticIcons) once it scrolls into view.
 export function fallbackThumbHtml(key, icon, cls) {
-  if (cosIconCache.has(key)) {
-    const cached = cosIconCache.get(key);
+  if (cosmeticIconKnown(key)) {
+    const cached = cosmeticIcon(key);
     return cached ? `<img class="${cls}" src="${esc(cached)}" loading="lazy" alt="">` : `<div class="${cls}"></div>`;
   }
   return `<div class="${cls}" data-name="${esc(key)}"><span class="ms" style="font-size:18px;color:var(--text-faint)">${icon}</span></div>`;
