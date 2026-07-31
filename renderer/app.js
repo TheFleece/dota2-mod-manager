@@ -11,6 +11,7 @@ import { toast } from './ui/toast.js';
 import { registerView, render, switchView } from './core/router.js';
 import { keyOf, matchLabel, applyInstalled, pickedIn, refreshInstalledIndex } from './core/installed.js';
 import { catName, catIcon } from './core/categories.js';
+import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons } from './ui/cosmetic-icons.js';
 import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec } from './core/records.js';
 import { catalogPreviewUrl, recPreviewUrl, thumbHtml, wikiFallbackKey, fallbackThumbHtml, libThumbHtml, extThumbHtml, catalogPreviewFor } from './ui/thumb.js';
 
@@ -2618,56 +2619,6 @@ async function handlePresetImport(r) {
 // ===== Cosmetics: free looks taken from the game's own item schema, browsed as a catalog
 // category like any other (see COSMETIC_SLOTS / cosmeticMeta near the top of the file) =====
 
-// Item pictures come from the main process as data URIs (src/icons.js). A slot can hold two
-// thousand items, so only what is actually on screen is ever asked for: an observer collects
-// the tiles that scroll into view and fetches them in small batches.
-const cosIconCache = new Map();
-
-async function loadCosmeticIcons(names, onEach) {
-  const want = [...new Set(names)].filter((n) => n && !cosIconCache.has(n));
-  for (let i = 0; i < want.length; i += 24) {
-    const chunk = want.slice(i, i + 24);
-    const got = await window.api.cosmetics.icons(chunk);
-    for (const n of chunk) cosIconCache.set(n, got[n] || null);
-    onEach(chunk);
-  }
-}
-
-// Fill every tile whose picture is already known.
-function paintCosmeticIcons(root) {
-  for (const el of root.querySelectorAll('.card-thumb[data-name], .lib-thumb[data-name]')) {
-    const src = cosIconCache.get(el.dataset.name);
-    if (src && !el.querySelector('img')) el.innerHTML = `<img src="${esc(src)}" alt="" loading="lazy">`;
-  }
-}
-
-/**
- * Watch a scrolling container and fetch pictures for tiles as they appear.
- * @returns {IntersectionObserver} caller disconnects it when the view goes away
- */
-function watchCosmeticIcons(root, scroller) {
-  let queue = new Set();
-  let timer = null;
-  const flush = async () => {
-    timer = null;
-    const names = [...queue];
-    queue = new Set();
-    if (!names.length) return;
-    await loadCosmeticIcons(names, () => paintCosmeticIcons(root));
-  };
-  const io = new IntersectionObserver((entries) => {
-    for (const en of entries) {
-      if (!en.isIntersecting) continue;
-      const name = en.target.dataset.name;
-      io.unobserve(en.target);
-      if (name && !cosIconCache.has(name)) queue.add(name);
-      else if (name) paintCosmeticIcons(root);
-    }
-    if (queue.size && !timer) timer = setTimeout(flush, 80);
-  }, { root: scroller || null, rootMargin: '200px' });
-  for (const el of root.querySelectorAll('.card-thumb[data-name], .lib-thumb[data-name]')) io.observe(el);
-  return io;
-}
 
 // One card per look, styled exactly like a catalog mod card (same .card/.grid classes):
 // a picture, a favourite star, and an "Установлен" badge on whichever one is live.
