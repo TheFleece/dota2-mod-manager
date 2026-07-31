@@ -36,6 +36,15 @@ export function pickedIn(slot) {
   return state.cosmeticPicks.get(slot) || null;
 }
 
+// Every cosmetic slot the game's schema exposes, with its options and current pick. Not
+// folded into refreshInstalledIndex(): the option lists run to a couple hundred KB and
+// most of the app's actions (toggling a regular mod, searching the catalog) never need
+// them, so this is fetched only where a cosmetic pick could actually have changed.
+export async function refreshCosmeticSlots() {
+  const { slots } = await window.api.cosmetics.slots();
+  state.cosmeticSlots = slots || [];
+}
+
 export async function refreshInstalledIndex() {
   const { installed } = await window.api.mods.list();
   applyInstalled(installed);

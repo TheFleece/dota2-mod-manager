@@ -12,7 +12,7 @@
  * so a getter pair would let any module write any field exactly as it can now, only with
  * more ceremony; the honest fix was shrinking what is shared, not dressing it up.
  */
-import { freshFilters, PANEL_DEFAULTS } from './constants.js';
+import { PANEL_DEFAULTS } from './constants.js';
 
 export const state = {
   view: 'catalog',
@@ -20,13 +20,10 @@ export const state = {
   cosmeticSlots: null,     // free-cosmetics slots from the game's own schema (safe mode off)
   patchState: null,        // src/patcher.js + schema-service state: patched/signed/conflicts/foreign
   settings: null,
-  activeCategory: 'all',
-  search: '',
-  cosSearch: '',           // search inside one cosmetic slot (its list can run to thousands)
-  filters: freshFilters(),
+  activeCategory: 'all',   // written by the shell too: safe mode can retire the open category
+  search: '',              // the title-bar search box, which belongs to the window
   installedIndex: new Map(),
   cosmeticPicks: new Map(), // slot -> live library record for it (rebuilt from mods:list)
-  installing: new Set(),
   modIndex: new Map(),
   masterOff: false,        // mods master switch state (all mods disabled at once)
   favorites: new Set(),    // starred catalog mods, as "<categoryId>|<name>" keys
@@ -35,8 +32,6 @@ export const state = {
   panels: { ...PANEL_DEFAULTS },
 };
 
-/* Fields marked below move out with the screen that owns them, as each one is extracted:
- *   cosSearch                 -> views/cosmetics.js
- *   gameLangOpen, scaleOpen   -> views/settings.js
- * Until then they sit here so the split stays reviewable one screen at a time. The
- * Library's four have already gone this way, along with the two it never declared. */
+/* Two fields still sit here that belong to one screen - gameLangOpen and scaleOpen, both
+ * Settings - and they go the same way when it is extracted. Everything else above is read
+ * from several places for real. */
