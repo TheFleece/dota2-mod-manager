@@ -52,3 +52,18 @@ export function paintSafeModeSwitch() {
   const trouble = !safe && st && (st.stale || !st.patched || !st.signed || (st.conflicts || []).length || st.foreign);
   btn.classList.toggle('trouble', !!trouble);
 }
+
+// The left of the bar: whether Dota was found, and which folder the mods are going into.
+export async function refreshSidebarStatus() {
+  const s = await window.api.settings.get();
+  state.settings = s;
+  const dotEl = $('#dotaStatusDot');
+  const txtEl = $('#dotaStatusText');
+  if (s.dotaPathValid) {
+    dotEl.className = 'dot ok';
+    txtEl.textContent = L`Dota 2 подключена · моды в dota_${s.langSuffix}`;
+  } else {
+    dotEl.className = 'dot bad';
+    txtEl.textContent = L`Dota 2 не найдена — укажи путь в настройках`;
+  }
+}
