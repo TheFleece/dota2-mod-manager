@@ -294,3 +294,7 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+
+/* A confirm box holding a list rather than a sentence. */
+.confirm-box.wide { max-width: 460px; width: 90vw; }
+.prompt-input { margin: var(--space-4) 0 var(--space-1); width: 100%; }

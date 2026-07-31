@@ -101,7 +101,7 @@ export function promptDialog(message, { placeholder = '', value = '', okLabel = 
     overlay.innerHTML = `
       <div class="confirm-box">
         <div class="confirm-msg">${esc(message)}</div>
-        <input class="input" id="promptInput" placeholder="${esc(placeholder)}" value="${esc(value)}" style="margin:14px 0 4px;width:100%">
+        <input class="input prompt-input" id="promptInput" placeholder="${esc(placeholder)}" value="${esc(value)}">
         <div class="confirm-actions">
           <button class="btn" data-c="no">${L`Отмена`}</button>
           <button class="btn btn-primary" data-c="yes">${esc(okLabel)}</button>

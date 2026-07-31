@@ -23,7 +23,7 @@ export function resolveUrl(url) {
 
 export function mediaHtml(url, { hoverPlay = false, autoplay = false, controls = false, fallbackIcon = 'image' } = {}) {
   if (!url) {
-    return `<div class="noimg"><span class="ms" style="font-size:36px">${esc(fallbackIcon)}</span></div>`;
+    return `<div class="noimg"><span class="ms">${esc(fallbackIcon)}</span></div>`;
   }
   if (isVideo(url)) {
     // preload="metadata" shows the first frame instead of a black box

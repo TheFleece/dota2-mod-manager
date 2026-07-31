@@ -59,8 +59,8 @@ function shareDialog(plan) {
               </label>`).join('')}
           </div>` : ''}
         ${gone ? `<div class="share-line muted"><span class="ms">block</span><div>${gone} ${plural(gone, 'мод не получится передать', 'мода не получится передать', 'модов не получится передать')}</div></div>` : ''}
-        <input class="input" id="shareAuthor" placeholder="${L`Твой ник (необязательно)`}" maxlength="80" style="margin-top:12px" value="${esc(state.settings?.account?.username || '')}">
-        <input class="input" id="shareNote" placeholder="${L`Пара слов о сборке (необязательно)`}" maxlength="200" style="margin-top:8px">
+        <input class="input" id="shareAuthor" placeholder="${L`Твой ник (необязательно)`}" maxlength="80" value="${esc(state.settings?.account?.username || '')}">
+        <input class="input" id="shareNote" placeholder="${L`Пара слов о сборке (необязательно)`}" maxlength="200">
         <div class="share-total">${L`Размер файла:`} <b id="shareSize"></b></div>
         <div class="confirm-actions">
           <button class="btn" data-c="no">${L`Отмена`}</button>
@@ -118,7 +118,7 @@ function sharedPresetCardHtml(p) {
     <div class="preset-head">
       <div class="preset-name">${esc(p.name)}</div>
       <span class="lib-tag">${L`получен`}${p.source?.author ? ` · ${esc(p.source.author)}` : ''}</span>
-      <span style="font-size:12px;color:var(--text-muted)">${total} ${plural(total, 'мод', 'мода', 'модов')}</span>
+      <span class="text-meta">${total} ${plural(total, 'мод', 'мода', 'модов')}</span>
       <button class="btn btn-sm btn-primary" data-resolve="${p.id}"><span class="ms">download</span>${L`Установить`}</button>
       <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
     </div>
@@ -135,7 +135,7 @@ export async function renderPresets() {
 
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
-    <div style="color:var(--text-muted);font-size:13px;margin-bottom:14px">
+    <div class="view-intro">
       ${L`Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.`}
     </div>
     <div class="preset-new">
@@ -166,7 +166,7 @@ export async function renderPresets() {
       card.innerHTML = `
         <div class="preset-head">
           <div class="preset-name">${esc(p.name)}</div>
-          <span style="font-size:12px;color:var(--text-muted)">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
+          <span class="text-meta">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
           <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
           <button class="btn btn-sm" data-pupd="${p.id}" title="${L`Перезаписать пресет тем, что включено сейчас`}"><span class="ms">save</span>${L`Обновить`}</button>
           <button class="btn btn-sm btn-icon" data-pren="${p.id}" title="${L`Переименовать`}" aria-label="${L`Переименовать`}"><span class="ms">edit</span></button>

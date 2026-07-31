@@ -55,3 +55,6 @@
   background: rgba(74, 222, 128, 0.12);
   border-color: rgba(74, 222, 128, 0.45);
 }
+
+/* The optional name and note under the size breakdown. */
+.share-box .input { margin-top: var(--space-2); }

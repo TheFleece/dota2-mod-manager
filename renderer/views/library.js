@@ -69,7 +69,7 @@ function memberRowHtml(rec, m, masterOff) {
       <input type="checkbox" class="lib-check" data-check="${esc(key)}" ${sel ? 'checked' : ''} aria-label="${L`Выбрать мод в паке`}">
       ${thumb}
       <div class="member-info">
-        <div class="member-name">${esc(m.name)}${m.styleLabel ? ` <span style="color:var(--primary-soft)">(${esc(m.styleLabel)})</span>` : ''}</div>
+        <div class="member-name">${esc(m.name)}${m.styleLabel ? ` <span class="lib-style-label">(${esc(m.styleLabel)})</span>` : ''}</div>
         <div class="member-meta">${esc(m.info || catName(m.categoryId))}</div>
       </div>
       <div class="member-actions">
@@ -156,12 +156,12 @@ function normalRowHtml(rec, i, masterOff) {
   const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
   return `
     <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
-      ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span style="width:18px;flex-shrink:0"></span>'}
+      ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span class="lib-check-gap"></span>'}
       ${cosmetic
-        ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms" style="font-size:20px;color:var(--text-faint)">${cosmeticMeta(rec.slot).icon}</span></div>`
+        ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${cosmeticMeta(rec.slot).icon}</span></div>`
         : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span style="color:var(--primary-soft);font-size:12px">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}</div>
         <div class="lib-meta">
           <span>${esc(catLabel)}</span>
           ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
@@ -170,7 +170,7 @@ function normalRowHtml(rec, i, masterOff) {
       </div>
       <div class="lib-actions">
         ${isFontRec(rec)
-          ? `<span style="font-size:11.5px;color:var(--text-muted)">${L`всегда активен`}</span>`
+          ? `<span class="text-meta">${L`всегда активен`}</span>`
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : cosmetic ? `title="${L`На один слот — только одна активная косметика`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
         ${orderBtnsHtml(rec)}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
@@ -329,7 +329,7 @@ function pickModsDialog(candidates, { title = L`Выбери моды`, okLabel 
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML = `
-      <div class="confirm-box" style="max-width:460px;width:90vw">
+      <div class="confirm-box wide">
         <div class="confirm-msg">${esc(title)}</div>
         <div class="pick-head">
           <label class="lib-selectall"><input type="checkbox" class="lib-check" id="pickSelAll">${L`Выбрать всё`}</label>
@@ -490,13 +490,13 @@ export async function renderLibrary() {
       </div>` : ''}
     <div class="lib-list" id="libList"></div>
     ${external.length ? `
-      <div class="section-h" style="margin-top:26px"><span class="ms">folder_zip</span>${L`Внешние файлы в папке модов`}</div>
-      <div style="color:var(--text-muted);font-size:12.5px;margin-bottom:10px">
+      <div class="section-h spaced"><span class="ms">folder_zip</span>${L`Внешние файлы в папке модов`}</div>
+      <div class="view-intro">
         ${L`Моды, положенные в папку мимо менеджера. «Принять» берёт файл в библиотеку — с превью, переключателем и всем остальным.`}
         ${extDupes ? ` <b>${extDupes}</b> ${plural(extDupes, 'из них — копия уже установленного мода', 'из них — копии уже установленных модов', 'из них — копии уже установленных модов')}.` : ''}
       </div>
       <div class="lib-list" id="extList"></div>` : ''}
-    <div style="height:72px"></div>
+    <div class="bulk-bar-gap"></div>
     <div class="bulk-bar" id="bulkBar">
       <span class="bulk-count"><b id="bulkCount">0</b> ${L`выбрано`}</span>
       <div class="bulk-actions">

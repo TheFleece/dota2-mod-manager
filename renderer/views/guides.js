@@ -30,7 +30,7 @@ export function renderGuides() {
   const guides = state.catalog?.guides || {};
   viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Гайды`}</h1></div>
-    <div style="color:var(--text-muted);font-size:13px;margin-bottom:16px">
+    <div class="view-intro">
       ${L`Гайды из репозитория Dota2PornFx. Менеджер делает бóльшую часть шагов автоматически — гайды пригодятся для ручной установки и решения проблем.`}
     </div>
     ${Object.entries(guides).map(([id, g]) => {

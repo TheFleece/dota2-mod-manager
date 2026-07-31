@@ -105,3 +105,25 @@ input, select { font-family: inherit; }
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ============ Text roles ============
+   A size and a colour together, so a template never has to name either. These replaced 59
+   inline style attributes; what is still inline is per-element data (a stagger index, a
+   category's own colour), not a styling decision. */
+.text-meta { font-size: var(--text-xs); color: var(--text-muted); }
+.text-accent { color: var(--primary-soft); }
+/* Digits that sit in a column or change in place, so the row stops jittering. */
+.num { font-variant-numeric: tabular-nums; }
+.grow { flex: 1; }
+
+/* The line under a view title that says what the screen is for. */
+.view-intro {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+/* The glyph standing in for a picture that is missing or not fetched yet. */
+.thumb-glyph { font-size: var(--icon-md); color: var(--text-faint); }
+/* An icon riding inside a line of text rather than sitting in a control. */
+.ms.ms-xs { font-size: var(--icon-xs); }

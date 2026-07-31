@@ -56,3 +56,28 @@
 .settings-adv[open] > summary::before { transform: rotate(180deg); }
 .settings-adv > summary:hover { color: var(--primary-soft); }
 .settings-adv .settings-row:first-of-type { margin-top: 12px; }
+
+/* ============ Settings: the page's own roles ============ */
+/* Blocks arrive one after another. The index is the same --i the card grids use, rather
+   than a delay written out on each block. */
+.settings-block { animation-delay: calc(var(--i, 0) * 30ms); }
+
+/* The muted line under a control explaining what it does. */
+.settings-hint {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+.settings-row + .settings-hint { margin-top: var(--space-2); }
+/* A row that starts a new thought rather than continuing the last one. */
+.settings-row.spaced { margin-top: var(--space-4); }
+
+.settings-label .ms {
+  font-size: var(--icon-sm);
+  vertical-align: -3px;
+  margin-right: var(--space-1);
+  color: var(--text-faint);
+}
+.settings-link { color: var(--primary-soft); cursor: pointer; font-size: var(--text-sm); }
+.settings-block .modal-note { margin-top: var(--space-3); }
+.settings-block .modal-note .btn { margin-left: var(--space-2); }

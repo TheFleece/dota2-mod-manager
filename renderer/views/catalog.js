@@ -370,7 +370,7 @@ function renderFavorites() {
         ${mods.length ? mods.map((m, i) => cardHtml(m, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
       </div>` : ''}
     ${cosAll.length ? `
-      <div class="section-h" style="margin-top:26px"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
+      <div class="section-h spaced"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
       <div class="grid" id="cosGrid">
         ${cos.length ? cos.map(({ slot, o }, i) => cosmeticCardHtml(slot, o, i, true)).join('') : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
       </div>` : ''}
@@ -465,7 +465,7 @@ function renderSearchResults() {
       ${cos.length ? `<div class="section-h"><span class="ms">extension</span>${L`Моды`}</div>` : ''}
       <div class="grid" id="modGrid">${mods.map((m, i) => cardHtml(m, i, true)).join('')}</div>` : ''}
     ${cos.length ? `
-      <div class="section-h" style="margin-top:26px"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
+      <div class="section-h spaced"><span class="ms">auto_awesome</span>${L`Косметика`}</div>
       <div class="grid" id="cosGrid">${shownCos.map(({ slot, o }, i) => cosmeticCardHtml(slot, o, i, true)).join('')}</div>
       ${cos.length > shownCos.length ? `<div class="search-more">${L`…и ещё ${cos.length - shownCos.length} — уточни запрос`}</div>` : ''}` : ''}
   `;
@@ -562,7 +562,7 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
       ${tags.length ? '<div class="sep"></div>' : ''}
       ${tags.map(([tag, cnt]) => `
         <button class="fchip ${f.tags.has(tag) ? 'active' : ''}" data-tag="${esc(tag)}">
-          ${esc(tagLabel(categoryId, tag))}<span style="opacity:.55">${cnt}</span>
+          ${esc(tagLabel(categoryId, tag))}<span class="fchip-count">${cnt}</span>
         </button>`).join('')}
       <span class="count">${resultCount} ${plural(resultCount, 'результат', 'результата', 'результатов')}</span>
     </div>`;
@@ -811,7 +811,7 @@ function drawModal() {
         ${mod.meta?.date ? `<span>· ${fmtDate(mod.meta.date)}</span>` : ''}
         ${authorName ? `
           <button class="author-chip ${authorHref ? 'clickable' : ''}" id="authorChip" ${authorHref ? '' : 'disabled'}>
-            <span class="ms">person</span>${esc(authorName)}${authorHref ? '<span class="ms" style="font-size:11px">open_in_new</span>' : ''}
+            <span class="ms">person</span>${esc(authorName)}${authorHref ? '<span class="ms ms-xs">open_in_new</span>' : ''}
           </button>` : ''}
       </div>
       ${styles ? `

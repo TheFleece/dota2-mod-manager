@@ -79,16 +79,16 @@ export async function renderSettings() {
         <span class="settings-label">${L`Язык`}</span>
         <div class="select-wrap">
           <span class="ms">translate</span>
-          <select class="input" id="uiLangSelect" style="padding-left:30px">
+          <select class="input" id="uiLangSelect">
             <option value="en" ${s.uiLang === 'en' ? 'selected' : ''}>English</option>
             <option value="ru" ${s.uiLang === 'ru' ? 'selected' : ''}>Русский</option>
           </select>
         </div>
       </div>
-      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+      <div class="settings-hint">
         ${L`Один переключатель на всё: язык приложения, текст в самой Dota и её озвучку (за языком озвучки следует папка модов). Dota при этом должна быть закрыта — иначе она перезапишет настройку при выходе.`}
       </div>
-      <div class="settings-row" style="margin-top:14px">
+      <div class="settings-row spaced">
         <span class="settings-label">${L`Масштаб всего`}</span>
         <div class="scale-ctl">
           <button class="btn btn-sm scale-step" id="masterDown" aria-label="${L`Мельче`}"><span class="ms">remove</span></button>
@@ -98,7 +98,7 @@ export async function renderSettings() {
           <button class="btn btn-sm" id="masterReset">${L`Сбросить всё`}</button>
         </div>
       </div>
-      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+      <div class="settings-hint">
         ${L`Двигает содержимое и панели сразу. Ниже каждый масштаб можно задать по отдельности. Те же клавиши: Ctrl + и Ctrl − меняют содержимое, Ctrl + колесо над панелью — эту панель, Ctrl 0 возвращает 100%. За границу панели можно потянуть, чтобы изменить её размер.`}
       </div>
       <details class="settings-adv" ${scaleOpen ? 'open' : ''} id="scaleAdv">
@@ -110,7 +110,7 @@ export async function renderSettings() {
           { id: 'Bottom', label: L`Нижняя панель`, icon: 'bottom_panel_open', value: Math.round(pz.bottomZoom * 100), min: 60, max: 180 },
         ].map((row) => `
         <div class="settings-row">
-          <span class="settings-label"><span class="ms" style="font-size:16px;vertical-align:-3px;margin-right:6px;color:var(--text-faint)">${row.icon}</span>${row.label}</span>
+          <span class="settings-label"><span class="ms">${row.icon}</span>${row.label}</span>
           <div class="scale-ctl">
             <input type="range" class="scale-range" id="zoom${row.id}" min="${row.min}" max="${row.max}" step="5" value="${row.value}" aria-label="${esc(row.label)}">
             <span class="scale-val" id="zoom${row.id}Val">${row.value}%</span>
@@ -124,7 +124,7 @@ export async function renderSettings() {
           <span class="settings-label">${L`Текст`}</span>
           <div class="select-wrap">
             <span class="ms">translate</span>
-            <select class="input" id="gameTextLang" style="padding-left:30px">
+            <select class="input" id="gameTextLang">
               ${gameLangOptions(gl.languages, gl.uiLanguage || 'english')}
             </select>
           </div>
@@ -133,37 +133,37 @@ export async function renderSettings() {
           <span class="settings-label">${L`Озвучка`}</span>
           <div class="select-wrap">
             <span class="ms">campaign</span>
-            <select class="input" id="gameAudioLang" style="padding-left:30px">
+            <select class="input" id="gameAudioLang">
               ${gameLangOptions(gl.languages, s.langSuffix)}
             </select>
           </div>
         </div>
         <div class="settings-row">
           <button class="btn btn-sm btn-primary" id="applyGameLang">${L`Применить`}</button>
-          <span style="font-size:12.5px;color:var(--text-muted)" id="gameLangHint"></span>
+          <span class="settings-hint" id="gameLangHint"></span>
         </div>
-        <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+        <div class="settings-hint">
           ${L`Dota хранит эти языки отдельно: моды подхватываются из папки языка озвучки, а текст на них не влияет. Отсюда, например, английский интерфейс игры при русской озвучке.`}
         </div>
       </details>
     </div>
 
-    <div class="settings-block" style="animation-delay:50ms">
+    <div class="settings-block" style="--i:1">
       <h3>Discord</h3>
       <div class="settings-row">
         <span class="settings-label">${L`Показывать в Discord, что ты в Mod Manager`}</span>
         <button class="toggle ${s.discordPresence === false ? '' : 'on'}" id="presenceToggle" role="switch"
                 aria-checked="${s.discordPresence !== false}" aria-label="${L`Показывать в Discord, что ты в Mod Manager`}"></button>
       </div>
-      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+      <div class="settings-hint">
         ${L`Друзья увидят «Играет в Dota 2 Mod Manager», текущую вкладку и сколько модов включено. В самом Discord это работает, только если включено «Отображать текущую активность как статус».`}
       </div>
     </div>
 
-    <div class="settings-block" style="animation-delay:60ms">
+    <div class="settings-block" style="--i:2">
       <h3>${L`Путь к Dota 2`}</h3>
       <div class="settings-row">
-        <span class="mono" style="flex:1">${esc(s.dotaGamePath || L`не найден`)}</span>
+        <span class="mono grow">${esc(s.dotaGamePath || L`не найден`)}</span>
         <span class="dot ${s.dotaPathValid ? 'ok' : 'bad'}"></span>
       </div>
       <div class="settings-row">
@@ -172,11 +172,11 @@ export async function renderSettings() {
       </div>
     </div>
 
-    <div class="settings-block" style="animation-delay:120ms">
+    <div class="settings-block" style="--i:3">
       <h3>${L`Папка модов`}</h3>
       <div class="settings-row">
         <span class="settings-label">${L`Куда ставятся моды`}</span>
-        <span class="mono" style="flex:1">dota_${esc(s.langSuffix)}</span>
+        <span class="mono grow">dota_${esc(s.langSuffix)}</span>
         <span class="dot ${gl.selfMade ? 'bad' : 'ok'}"></span>
       </div>
       <div class="settings-row">
@@ -189,45 +189,45 @@ export async function renderSettings() {
         <span class="settings-label">${L`Языковая папка`}</span>
         <div class="select-wrap">
           <span class="ms">folder</span>
-          <select class="input" id="langSelect" style="padding-left:30px">
+          <select class="input" id="langSelect">
             ${langOptions(s, gl)}
           </select>
         </div>
       </div>` : ''}
-      <div style="font-size:12.5px;color:var(--text-muted);margin-top:8px">
+      <div class="settings-hint">
         ${L`Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.`}
       </div>
-      <div class="modal-note" style="margin-top:10px">
+      <div class="modal-note">
         <b>${L`Английский интерфейс`}</b>${L`: открой «Задать языки Dota по отдельности» в блоке «Интерфейс», поставь Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.`}
       </div>
       ${gl.selfMade ? `
-      <div class="modal-note warn" style="margin-top:10px">
+      <div class="modal-note warn">
         <b>${L`Папку dota_${s.langSuffix} создаёт приложение`}</b>${L`: Valve её не поставляет, и гарантии, что игра её смонтирует, нет. Если моды не появились в игре — выбери в настройках Dota другой Audio Language, например Russian.`}
       </div>` : ''}
       ${(gl.stranded || []).map((f) => `
-      <div class="modal-note warn" style="margin-top:10px">
+      <div class="modal-note warn">
         <b>${L`Папка dota_${f.suffix} больше не работает`}</b>${L`: в ней ${f.modFiles} ${plural(f.modFiles, 'мод', 'мода', 'модов')}, игра их не видит.`}
-        <button class="btn btn-sm" data-move-from="${esc(f.suffix)}" style="margin-left:8px">${L`Перенести сюда`}</button>
+        <button class="btn btn-sm" data-move-from="${esc(f.suffix)}">${L`Перенести сюда`}</button>
       </div>`).join('')}
       ${s.minifyDetected ? `
-      <div class="modal-note" style="margin-top:10px">
-        <b>${L`Обнаружен Minify`}</b>${L` (папка `}<code style="background:none;color:var(--primary-soft)">dota_minify</code>${L` рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.`}
+      <div class="modal-note">
+        <b>${L`Обнаружен Minify`}</b>${L` (папка `}<code class="text-accent">dota_minify</code>${L` рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.`}
       </div>` : ''}
     </div>
 
-    <div class="settings-block" style="animation-delay:180ms">
+    <div class="settings-block" style="--i:4">
       <h3>${L`Кэш загрузок`}</h3>
       <div class="settings-row">
         <span class="settings-label">${L`Размер`}</span>
-        <span style="font-variant-numeric:tabular-nums">${fmtMB(cacheSize)} MB</span>
+        <span class="num">${fmtMB(cacheSize)} MB</span>
         <button class="btn btn-sm" id="clearCacheBtn">${L`Очистить`}</button>
       </div>
-      <div style="font-size:12.5px;color:var(--text-muted)">
+      <div class="settings-hint">
         ${L`Скачанные архивы модов. Нужны для быстрой переустановки — удаление ничего не сломает.`}
       </div>
     </div>
 
-    <div class="settings-block" style="animation-delay:240ms">
+    <div class="settings-block" style="--i:5">
       <h3>${L`Каталог`}</h3>
       <div class="settings-row">
         <span class="settings-label">${L`Обновлён`}</span>
@@ -236,28 +236,28 @@ export async function renderSettings() {
       </div>
       <div class="settings-row">
         <span class="settings-label">${L`Источник`}</span>
-        <a style="color:var(--primary-soft);cursor:pointer;font-size:12.5px" id="srcLink">github.com/h6rd/Dota2PornFxWeb</a>
+        <a class="settings-link" id="srcLink">github.com/h6rd/Dota2PornFxWeb</a>
       </div>
     </div>
 
-    <div class="settings-block" style="animation-delay:270ms">
+    <div class="settings-block" style="--i:6">
       <h3>${L`Диагностика`}</h3>
-      <div style="font-size:12.5px;color:var(--text-muted)">
+      <div class="settings-hint">
         ${L`Один файл с путём и настройками Dota, списком модов, состоянием патча и последними записями журнала приложения — без личных данных, кроме имени в Discord, если ты вошёл. Пришли его вместо скриншотов, если что-то не работает.`}
       </div>
-      <div class="settings-row" style="margin-top:10px">
+      <div class="settings-row spaced">
         <button class="btn btn-sm" id="diagExportBtn"><span class="ms">bug_report</span>${L`Экспортировать отчёт`}</button>
       </div>
     </div>
 
-    <div class="settings-block" style="animation-delay:300ms">
+    <div class="settings-block" style="--i:7">
       <h3>${L`О программе`}</h3>
       <div class="settings-row">
         <span class="settings-label">${L`Версия`}</span>
-        <span style="font-variant-numeric:tabular-nums">v${esc(appVersion)}</span>
-        <a style="color:var(--primary-soft);cursor:pointer;font-size:12.5px" id="repoLink">github.com/TheFleece/dota2-mod-manager</a>
+        <span class="num">v${esc(appVersion)}</span>
+        <a class="settings-link" id="repoLink">github.com/TheFleece/dota2-mod-manager</a>
       </div>
-      <div style="font-size:12.5px;color:var(--text-muted)">
+      <div class="settings-hint">
         ${L`Обновления скачиваются автоматически из GitHub Releases — когда новая версия готова, появится кнопка установки.`}
       </div>
       <div class="settings-row">

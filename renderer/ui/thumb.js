@@ -65,7 +65,7 @@ export function fallbackThumbHtml(key, icon, cls) {
     const cached = cosmeticIcon(key);
     return cached ? `<img class="${cls}" src="${esc(cached)}" loading="lazy" alt="">` : `<div class="${cls}"></div>`;
   }
-  return `<div class="${cls}" data-name="${esc(key)}"><span class="ms" style="font-size:18px;color:var(--text-faint)">${icon}</span></div>`;
+  return `<div class="${cls}" data-name="${esc(key)}"><span class="ms thumb-glyph">${icon}</span></div>`;
 }
 
 // thumbHtml, with the wiki-picture fallback layered on for a record with no picture of its
@@ -84,13 +84,13 @@ export function libThumbHtml(rec, cls) {
 export function extThumbHtml(f) {
   const cls = 'lib-thumb';
   if (f.kind === 'cursor') return fallbackThumbHtml('generic:cursor', 'arrow_selector_tool', cls);
-  if (f.kind === 'font') return `<div class="${cls}"><span class="ms" style="font-size:18px;color:var(--text-faint)">text_fields</span></div>`;
+  if (f.kind === 'font') return `<div class="${cls}"><span class="ms thumb-glyph">text_fields</span></div>`;
   const cp = catalogPreviewFor(f.match);
   if (cp) return thumbHtml(cls, previewUrl(f.match[0].categoryId, cp));
   const heroes = f.heroNames || [];
   if (heroes.length === 1) return fallbackThumbHtml('hero:' + heroes[0], 'person', cls);
   if (heroes.length > 1) return fallbackThumbHtml('generic:pack', 'auto_awesome', cls);
-  return `<div class="${cls}"><span class="ms" style="font-size:18px;color:var(--text-faint)">folder_zip</span></div>`;
+  return `<div class="${cls}"><span class="ms thumb-glyph">folder_zip</span></div>`;
 }
 
 // catalog thumbnail for a fingerprint match, resolved from the loaded catalog index

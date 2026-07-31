@@ -122,10 +122,13 @@
      figure, but small icon buttons still have to reach it via padding. */
   --hit-min: 32px;
 
-  /* ---------- Icons ---------- */
+  /* ---------- Icons ----------
+     xs rides inside a line of text, xl stands in for a whole picture. */
+  --icon-xs: 12px;
   --icon-sm: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
+  --icon-xl: 32px;
 
   /* ---------- Motion ----------
      Entering uses ease-out, leaving uses ease-in and is shorter, so dismissing

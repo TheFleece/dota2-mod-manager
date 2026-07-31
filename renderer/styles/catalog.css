@@ -333,3 +333,11 @@
 }
 .lib-section-head .lib-selectall .ms { font-size: 16px; }
 .lib-section-cnt { color: var(--text-faint); font-size: 11.5px; margin-right: auto; }
+
+/* A second section on the same screen wants air above it. */
+.section-h.spaced { margin-top: var(--space-6); }
+/* The count riding inside a filter chip, quieter than the tag it belongs to. */
+.fchip-count { opacity: 0.55; }
+/* The stand-in glyph for a missing picture. The card and cosmetic-modal rules above are more
+   specific and still win; they never used to, because this was an inline size. */
+.noimg .ms { font-size: var(--icon-xl); }

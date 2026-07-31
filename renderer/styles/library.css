@@ -308,3 +308,10 @@ input:-webkit-autofill, input:-webkit-autofill:focus {
 .pack-save-row .input { flex: 1; border-radius: 999px; padding: 8px 16px; }
 
 .mtag.custom { color: var(--warning); border-color: rgba(252, 211, 77, 0.4); }
+
+/* A style's name inside a row's title, quieter than the mod it belongs to. */
+.lib-style-label { font-size: var(--text-xs); color: var(--primary-soft); }
+/* Rows without a tick box still line up with the ones that have one. */
+.lib-check-gap { width: 18px; flex-shrink: 0; }
+/* Room under the last row so the floating bulk bar never covers it. */
+.bulk-bar-gap { height: 72px; }
