@@ -27,11 +27,8 @@ export const state = {
   modIndex: new Map(),
   masterOff: false,        // mods master switch state (all mods disabled at once)
   favorites: new Set(),    // starred catalog mods, as "<categoryId>|<name>" keys
-  gameLangOpen: false,     // Settings: the per-language Dota block is unfolded
-  scaleOpen: false,        // Settings: the per-part scale block is unfolded
   panels: { ...PANEL_DEFAULTS },
 };
 
-/* Two fields still sit here that belong to one screen - gameLangOpen and scaleOpen, both
- * Settings - and they go the same way when it is extracted. Everything else above is read
- * from several places for real. */
+/* Every field above is now read from more than one module. The eleven that were not have
+ * gone to the screens that owned them, which is what this file was being shrunk towards. */
