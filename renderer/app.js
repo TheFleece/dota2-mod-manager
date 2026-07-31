@@ -8,10 +8,21 @@ import { notesHtml, whatsNewDialog, showWhatsNew, confirmDialog, promptDialog } 
 import { previewUrl, isVideo, isAudio, isMedia, resolveUrl, mediaHtml } from './ui/media.js';
 import { state } from './core/store.js';
 import { toast } from './ui/toast.js';
+import { registerView, render, switchView } from './core/router.js';
 import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec } from './core/records.js';
 import { catalogPreviewUrl, recPreviewUrl, thumbHtml, wikiFallbackKey, fallbackThumbHtml, libThumbHtml, extThumbHtml, catalogPreviewFor } from './ui/thumb.js';
 
 const viewRoot = $('#view-root');
+
+// Screens tell the router how to draw themselves instead of the router knowing them, so a
+// screen can move into its own module without anything else being edited. Declarations
+// hoist, so this reads before the functions it names. Each line moves out with its screen.
+registerView('catalog', () => renderCatalog());
+registerView('library', () => renderLibrary());
+registerView('presets', () => renderPresets());
+registerView('tools', () => renderTools());
+registerView('guides', () => renderGuides());
+registerView('settings', () => renderSettings());
 
 // A crash the user can't explain is the hardest kind to fix from a support chat. Both land
 // in the app's own log (see main.js diag:rendererError / src/diagnostics.js), so "it broke"
@@ -581,19 +592,6 @@ document.querySelectorAll('.tb-tab').forEach((btn) => {
   btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
 
-function switchView(view) {
-  document.querySelectorAll('.tb-tab').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
-  state.view = view;
-  const railOff = view !== 'catalog';
-  $('#catRail').classList.toggle('hidden', railOff);
-  $('#gripRail').classList.toggle('hidden', railOff); // nothing to resize without the rail
-  document.body.classList.toggle('rail-off', railOff || !!state.panels.railFolded);
-  // a scrolled-away tab must not stay out of sight once it is the active one
-  document.querySelector('.tb-tab.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
-  window.api.presence.view(view); // what Discord shows the user is doing
-  render();
-}
-
 $('#openModsFolderBtn').addEventListener('click', async () => {
   const r = await window.api.misc.openLangFolder();
   if (r.error) toast(r.error, 'error');
@@ -736,17 +734,6 @@ $('#clearSearch').addEventListener('click', () => {
 });
 
 // ---------- views ----------
-
-function render() {
-  switch (state.view) {
-    case 'catalog': return renderCatalog();
-    case 'library': return renderLibrary();
-    case 'presets': return renderPresets();
-    case 'tools': return renderTools();
-    case 'guides': return renderGuides();
-    case 'settings': return renderSettings();
-  }
-}
 
 // ===== Category rail =====
 
