@@ -256,7 +256,6 @@
 }
 .view-title { font-size: 24px; font-weight: 800; }
 .view-title .accent { color: var(--primary-soft); }
-.view-sub { color: var(--text-muted); font-size: 12.5px; }
 .view-header .spacer { flex: 1; }
 
 /* ============ Status bar ============ */
@@ -278,16 +277,6 @@
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
 .dot.ok { background: var(--success); box-shadow: 0 0 8px rgba(52, 211, 153, 0.5); }
 .dot.bad { background: var(--danger); }
-.status-link {
-  border: none;
-  background: none;
-  color: var(--text-faint);
-  font-size: 11.5px;
-  transition: color 0.15s;
-  -webkit-app-region: no-drag;
-}
-.status-link:hover { color: var(--primary-soft); }
-
 /* launch + master-mods controls (status bar, right cluster) */
 .sb-right { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-shrink: 0; padding-left: 8px; }
 

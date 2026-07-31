@@ -21,6 +21,7 @@ const stillness = window.matchMedia('(prefers-reduced-motion: reduce)');
 // The router says a screen change is coming; the next paint spends it.
 let running = 0;
 let armed = false;
+let morphing = 0;
 
 /** Called by the router when the user asked for a different screen. */
 export function screenChanging() {
@@ -51,6 +52,10 @@ export function paint(update) {
  * same for the length of the transition, so the browser moves one into the other instead of
  * crossfading them. A name may only be on one element at a time, hence the cleanup.
  *
+ * One box travels, so pass the whole window rather than the picture inside it. A window that
+ * plays its own entrance while its picture flies in from the card reads as two things
+ * happening at once - the class here is what turns those entrances off for the flight.
+ *
  * @param {Element|null} from element the new thing comes out of (null just animates in)
  * @param {() => (Element|null|undefined)} update makes the change, returns what it landed on
  */
@@ -59,6 +64,8 @@ export function morph(from, update) {
   const NAME = 'morph-subject';
   if (from) from.style.viewTransitionName = NAME;
   let to = null;
+  morphing++;
+  document.documentElement.classList.add('vt-morph');
   const vt = document.startViewTransition(() => {
     to = update() || null;
     if (from) from.style.viewTransitionName = '';
@@ -67,5 +74,6 @@ export function morph(from, update) {
   vt.finished.finally(() => {
     if (to) to.style.viewTransitionName = '';
     if (from) from.style.viewTransitionName = '';
+    if (--morphing === 0) document.documentElement.classList.remove('vt-morph');
   });
 }

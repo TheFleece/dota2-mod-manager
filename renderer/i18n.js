@@ -124,7 +124,8 @@ const EN = {
   'Серия убийств': 'Kill streak',
   'Поиск модов…': 'Search mods…', 'Очистить': 'Clear', 'Свернуть': 'Minimize',
   'Развернуть': 'Maximize', 'Закрыть': 'Close', 'Поиск Dota 2…': 'Looking for Dota 2…',
-  'Открыть папку модов': 'Open mods folder', 'Играть': 'Play',
+  'Папка модов': 'Mods folder', 'Играть': 'Play',
+  'Открыть папку, куда ставятся моды': 'Open the folder the mods are installed into',
   'Включить/выключить все моды сразу (для запуска ванильной игры)':
     'Turn all mods on/off at once (to launch the vanilla game)',
   'Запустить Dota 2 через Steam с твоими параметрами запуска':
@@ -157,9 +158,6 @@ const EN = {
   'Загрузка каталога…': 'Loading catalog…',
   'Не удалось загрузить каталог: {0}': 'Could not load the catalog: {0}',
   'Повторить': 'Retry',
-  'Моды для Dota 2': 'Mods for Dota 2',
-  '{0} модов в {1} категориях · каталог Dota2PornFx': '{0} mods in {1} categories · Dota2PornFx catalog',
-  ' · обновлён {0}': ' · updated {0}',
   'Недавно добавленные': 'Recently added',
   'Категории': 'Categories',
   'Поиск:': 'Search:',
@@ -168,7 +166,7 @@ const EN = {
   'Установленные': 'Installed',
   'Смотреть превью': 'Watch preview',
   'Установлен': 'Installed',
-  'Пак · {0}': 'Pack · {0}',
+  'Пак': 'Pack',
   'Свой': 'Custom',
   'Ссылка': 'Link',
 
@@ -512,7 +510,7 @@ const EN = {
   'Язык переключён на Русский': 'Language switched to Russian',
 
   // ---------- status bar ----------
-  'Dota 2 подключена · моды в dota_{0}': 'Dota 2 connected · mods in dota_{0}',
+  'Dota 2 подключена': 'Dota 2 connected',
   'Dota 2 не найдена — укажи путь в настройках': 'Dota 2 not found — set the path in Settings',
 
   // ---------- what's new ----------

@@ -1,10 +1,7 @@
 /* ============ Home (all categories) ============ */
-/* The same weight as every other view title. It used to be a 30px gradient, which made the
-   loudest thing on the catalog a line telling the user which app they had open. */
-.home-hero { margin: 6px 0 var(--space-5); }
-.home-hero h1 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
-.home-hero p { color: var(--text-muted); font-size: var(--text-sm); margin-top: var(--space-1); }
-
+/* No heading of its own. It was a title naming the app over a line counting the catalog,
+   and both were answered elsewhere: the tab strip says Каталог, Settings says when the
+   catalog was last fetched. The screen now opens on mods. */
 .recent-row {
   display: grid;
   grid-auto-flow: column;
@@ -65,7 +62,6 @@
   gap: 8px;
 }
 .cat-tile .ct-name { font-family: var(--font-head); font-weight: 700; font-size: var(--text-sm); }
-.cat-tile .ct-cnt { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 .section-h {
   font-family: var(--font-head);
@@ -314,9 +310,6 @@
 
 /* "…and N more" under a search grid that was cut short */
 .search-more { color: var(--text-faint); font-size: 12.5px; padding: 14px 2px 0; text-align: center; }
-
-/* a rail item can carry both its count and the "something is picked" dot */
-.rail-cnt + .rail-dot { margin-left: 7px; }
 
 /* Library: head of the cosmetics section — its own select-all, count and bulk switch,
    mirroring .lib-listhead above the mods */

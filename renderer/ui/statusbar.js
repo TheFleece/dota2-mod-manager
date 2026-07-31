@@ -53,7 +53,9 @@ export function paintSafeModeSwitch() {
   btn.classList.toggle('trouble', !!trouble);
 }
 
-// The left of the bar: whether Dota was found, and which folder the mods are going into.
+// The left of the bar: whether Dota was found. Which folder inside the game the mods land in
+// is the app's business, not the user's - the full path is in Settings and in a diagnostics
+// report, which is where somebody actually chasing a problem goes.
 export async function refreshSidebarStatus() {
   const s = await window.api.settings.get();
   state.settings = s;
@@ -61,7 +63,7 @@ export async function refreshSidebarStatus() {
   const txtEl = $('#dotaStatusText');
   if (s.dotaPathValid) {
     dotEl.className = 'dot ok';
-    txtEl.textContent = L`Dota 2 подключена · моды в dota_${s.langSuffix}`;
+    txtEl.textContent = L`Dota 2 подключена`;
   } else {
     dotEl.className = 'dot bad';
     txtEl.textContent = L`Dota 2 не найдена — укажи путь в настройках`;

@@ -176,9 +176,34 @@ function installTarget(mod) {
   return null;
 }
 
+/* Tags in the catalog answer two different questions, and only one of them is a filter you
+ * flip. "What does this mod change" - effects, icons, sounds - can be true at once and stays
+ * a chip. The rest of hero-items names the slot the item sits in: one answer at a time out of
+ * fourteen, which as chips was a second toolbar under the first, six of them finding one mod
+ * each. Heroes are already a dropdown for the same reason. */
+const SLOT_TAGS = new Set(['weapon', 'shoulders', 'head', 'arms', 'arm', 'armor', 'back', 'mount', 'shield', 'totem', 'hair']);
+// the catalog spells one slot both ways
+const TAG_ALIAS = { arm: 'arms' };
+export const canonTag = (t) => TAG_ALIAS[t] || t;
+
+// Our own words for what the catalog ships in English. Keys are Russian, like everywhere
+// else in the app, so tr() carries them into English by the same table as the rest.
+const TAG_WORD = {
+  effects: 'Эффекты', icons: 'Иконки', sounds: 'Звуки', anime: 'Аниме', adult: '18+',
+  video: 'Видео', image: 'Картинка', lowres: 'Плохое качество',
+  meta: 'Мета', stats: 'Статистика', fun: 'Развлечения', 'source-code': 'Исходный код',
+  weapon: 'Оружие', shoulders: 'Наплечники', head: 'Голова', arms: 'Руки', armor: 'Броня',
+  back: 'Спина', mount: 'Ездовое', shield: 'Щит', totem: 'Тотем', hair: 'Волосы',
+};
+
 function tagLabel(categoryId, tag) {
+  const known = TAG_WORD[canonTag(tag)];
+  if (known) return tr(known);
+  // a tag we have never seen: the catalog's own label if it has one, else the raw key, and
+  // either way it starts with a capital rather than looking like a leftover id
   const cfg = state.catalog?.constants?.TAG_CONFIGS?.[categoryId];
-  return cfg?.map?.[tag] || tag;
+  const raw = String(cfg?.map?.[tag] || tag);
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
 function isInstalled(categoryId, m) {
@@ -193,14 +218,27 @@ function canBeInstalled(m) {
 
 // ---------- filtering / sorting ----------
 
+// Chips: what the mod changes, commonest first. A chip that finds one mod today is kept -
+// the catalog grows, and "which courier has effects" is worth asking even of a list of one.
 function collectTags(mods) {
   const tags = new Map(); // tag -> count
   for (const m of mods) {
     for (const [k, v] of Object.entries(m.tags || {})) {
-      if (v) tags.set(k, (tags.get(k) || 0) + 1);
+      if (v && !SLOT_TAGS.has(k)) tags.set(k, (tags.get(k) || 0) + 1);
     }
   }
-  return [...tags.entries()].sort((a, b) => b[1] - a[1]);
+  return [...tags.entries()].sort((a, b) => b[1] - a[1]).map(([tag]) => tag);
+}
+
+// The dropdown beside it: which slot the item goes in, A-Z by the word the user reads.
+function collectSlots(mods, categoryId) {
+  const seen = new Set();
+  for (const m of mods) {
+    for (const [k, v] of Object.entries(m.tags || {})) {
+      if (v && SLOT_TAGS.has(k)) seen.add(canonTag(k));
+    }
+  }
+  return [...seen].sort((a, b) => tagLabel(categoryId, a).localeCompare(tagLabel(categoryId, b)));
 }
 
 function collectGroups(mods) {
@@ -284,7 +322,6 @@ function renderRail() {
       html += `
         <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
           <span class="ms">${catIcon(id)}</span>${esc(catName(id))}
-          <span class="rail-cnt">${categoryMods(id).length}</span>
         </button>`;
     }
   }
@@ -298,7 +335,6 @@ function renderRail() {
       html += `
         <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
           <span class="ms">${catIcon(id)}</span>${esc(catName(id))}
-          <span class="rail-cnt">${s.options.length}</span>
           ${pickedIn(s.slot) ? '<span class="rail-dot"></span>' : ''}
         </button>`;
     }
@@ -361,7 +397,6 @@ function renderFavorites() {
   paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Избранное`}</h1>
-      <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}${cosAll.length ? ` · ${cosAll.length} ${plural(cosAll.length, 'косметика', 'косметики', 'косметик')}` : ''}</span>
     </div>
     ${empty ? '' : toolbarHtml(mods.length + cos.length, { installable, fav: false })}
     ${empty ? `<div class="empty-note">${L`Здесь пусто — жми на сердечко у мода в каталоге`}</div>` : ''}
@@ -395,11 +430,9 @@ function renderHome() {
     .filter(Boolean)
     .slice(0, 12);
 
+  // No heading over any of it: the window says Каталог in the tab strip, and a title
+  // repeating that would push the first mods below the fold to say nothing.
   paint(() => { viewRoot.innerHTML = `
-    <div class="home-hero">
-      <h1>${L`Моды для Dota 2`}</h1>
-      <p>${L`${cats.reduce((n, c) => n + categoryMods(c.id).length, 0)} модов в ${cats.length} категориях · каталог Dota2PornFx`}${state.catalog.fetchedAt ? L` · обновлён ${new Date(state.catalog.fetchedAt).toLocaleDateString(window.i18nLocale())}` : ''}</p>
-    </div>
     ${recent.length ? `
       <div class="section-h"><span class="ms">new_releases</span>${L`Недавно добавленные`}</div>
       <div class="recent-row">${recent.map((m, i) => cardHtml(m, i, { cat: true, date: true })).join('')}</div>` : ''}
@@ -413,7 +446,6 @@ function renderHome() {
           <div class="ct-shade"></div>
           <div class="ct-label">
             <span class="ct-name">${esc(catName(c.id))}</span>
-            <span class="ct-cnt">${categoryMods(c.id).length}</span>
           </div>
         </div>`;
       }).join('')}
@@ -458,7 +490,6 @@ function renderSearchResults() {
   paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Поиск:`} <span class="accent">${esc(state.search.trim())}</span></h1>
-      <span class="view-sub">${mods.length} ${plural(mods.length, 'мод', 'мода', 'модов')}${cos.length ? ` · ${cos.length} ${plural(cos.length, 'косметика', 'косметики', 'косметик')}` : ''}</span>
     </div>
     ${toolbarHtml(mods.length + cos.length, { tags: [], groups: [], installable })}
     ${!mods.length && !cos.length ? `<div class="empty-note">${L`Ничего не найдено`}</div>` : ''}
@@ -512,7 +543,6 @@ function renderCategory(categoryId) {
   paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${esc(catName(categoryId))}</h1>
-      <span class="view-sub">${all.length} ${plural(all.length, 'мод', 'мода', 'модов')}</span>
     </div>
     ${toolbarHtml(mods.length, { tags, groups, heroes, categoryId, installable })}
     <div class="grid" id="modGrid">${gridHtml}</div>
@@ -530,6 +560,14 @@ const GROUP_LABEL = { 'hero-items': 'Все герои', 'item-effects': 'Все
 // first, all of it the same weight as the controls that matter on every screen.
 const TAGS_SHOWN = 6;
 let tagsOpen = false;
+
+// Is the list in front of you shorter than the category itself? That, and only that, is when
+// a number of results is worth printing: it answers "did that chip do anything". Sorting is
+// not narrowing - the same mods come back in another order - so it does not count.
+function narrowed() {
+  const f = filters;
+  return !!(f.tags.size || f.installedOnly || f.favOnly || f.group || f.hero || state.search.trim());
+}
 
 // Two lines, on purpose. The top one is how to look at the category - what order, whose
 // heroes, and the two answers about your own library - and it is the same everywhere. Tags
@@ -572,7 +610,7 @@ function toolbarHtml(resultCount, { tags = [], groups = [], heroes = [], categor
         <button class="fchip ${f.favOnly ? 'active' : ''}" id="favChip">
           <span class="ms">favorite</span>${L`Избранное`}
         </button>` : ''}
-        <span class="count">${resultCount} ${plural(resultCount, 'результат', 'результата', 'результатов')}</span>
+        ${narrowed() ? `<span class="count">${resultCount} ${plural(resultCount, 'результат', 'результата', 'результатов')}</span>` : ''}
       </div>
       ${tags.length ? `
         <div class="tb-line tb-tags">
@@ -653,7 +691,7 @@ function cardHtml(m, i, { cat: withCat = false, date: withDate = false } = {}) {
         ${favButtonHtml(cat, m.name)}
         <div class="media-tags">
           ${installed ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}
-          ${isPack ? `<span class="mtag">${L`Пак · ${(m.mods || []).length}`}</span>` : ''}
+          ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}
           ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
           ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
           ${tags.map((t) => `<span class="mtag soft">${esc(tagLabel(cat, t))}</span>`).join('')}
@@ -772,14 +810,14 @@ function openModModal(categoryId, mod, from) {
   morph(modalOrigin, () => {
     drawModal();
     $('#modalOverlay').classList.remove('hidden');
-    return $('#modalContent .modal-media');
+    return $('#modalContent');
   });
 }
 
 function closeModal() {
   const back = modalOrigin && document.body.contains(modalOrigin) ? modalOrigin : null;
   modalOrigin = null;
-  morph($('#modalContent .modal-media'), () => {
+  morph($('#modalOverlay').classList.contains('hidden') ? null : $('#modalContent'), () => {
     $('#modalOverlay').classList.add('hidden');
     $('#modalContent').innerHTML = '';
     modalState = null;
@@ -1115,7 +1153,7 @@ function openCosmeticModal(slot, itemId, from) {
   morph(modalOrigin, () => {
     drawCosmeticModal();
     $('#modalOverlay').classList.remove('hidden');
-    return $('#modalContent .modal-media');
+    return $('#modalContent');
   });
   // the picture may not have been fetched yet if the card was never scrolled into view
   if (!cosmeticIconKnown(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
@@ -1215,7 +1253,11 @@ async function renderCosmeticCategory(slot) {
   const paintGrid = () => {
     const list = filtered();
     const shown = list.slice(0, 400); // search narrows the rest; nobody scrolls past this
-    $('#cosCount').textContent = `${list.length} ${plural(list.length, 'результат', 'результата', 'результатов')}`;
+    // same rule as the mod grid: a number only once the list in front of you is a subset
+    const narrow = !!(cosSearch.trim() || f.installedOnly || f.favOnly);
+    $('#cosCount').textContent = narrow
+      ? `${list.length} ${plural(list.length, 'результат', 'результата', 'результатов')}`
+      : '';
     const grid = $('#cosGrid');
     grid.innerHTML = shown.length
       ? shown.map(({ o }, i) => cosmeticCardHtml(slot, o, i)).join('')
@@ -1227,7 +1269,6 @@ async function renderCosmeticCategory(slot) {
   paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${esc(tr(meta.label))}</h1>
-      <span class="view-sub">${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>
     </div>
     <div class="toolbar">
       <div class="select-wrap">
