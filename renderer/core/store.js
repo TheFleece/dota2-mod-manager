@@ -28,11 +28,7 @@ export const state = {
   cosmeticPicks: new Map(), // slot -> live library record for it (rebuilt from mods:list)
   installing: new Set(),
   modIndex: new Map(),
-  librarySel: new Set(),   // ids of library records ticked for bulk actions
-  libSearch: '',           // library-scoped search query
   masterOff: false,        // mods master switch state (all mods disabled at once)
-  packsOpen: new Set(),    // ids of expanded pack cards
-  slotCount: 0,            // mods occupying a numbered pak, so the order arrows know the ends
   favorites: new Set(),    // starred catalog mods, as "<categoryId>|<name>" keys
   gameLangOpen: false,     // Settings: the per-language Dota block is unfolded
   scaleOpen: false,        // Settings: the per-part scale block is unfolded
@@ -40,7 +36,7 @@ export const state = {
 };
 
 /* Fields marked below move out with the screen that owns them, as each one is extracted:
- *   librarySel, libSearch, packsOpen  -> views/library.js
- *   cosSearch                         -> views/cosmetics.js
- *   gameLangOpen, scaleOpen           -> views/settings.js
- * Until then they sit here so the split stays reviewable one screen at a time. */
+ *   cosSearch                 -> views/cosmetics.js
+ *   gameLangOpen, scaleOpen   -> views/settings.js
+ * Until then they sit here so the split stays reviewable one screen at a time. The
+ * Library's four have already gone this way, along with the two it never declared. */
