@@ -24,6 +24,11 @@ h1, h2, h3, h4 { font-family: var(--font-head); letter-spacing: 0.01em; }
 button { font-family: inherit; cursor: pointer; color: inherit; }
 input, select { font-family: inherit; }
 
+/* A picture in a window is a picture, not a file to carry around. Left draggable, holding
+   one and moving it started a native drag, and the window's own drop target answered it by
+   offering to import the mod picture the user had just picked up off its own card. */
+img, video { -webkit-user-drag: none; user-select: none; }
+
 .ms {
   font-family: 'Material Symbols Rounded';
   font-weight: normal;

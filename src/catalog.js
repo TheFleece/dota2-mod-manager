@@ -5,6 +5,40 @@ const path = require('path');
 const RAW_BASE = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main';
 const DATA_FILES = ['mods.json', 'constants.json', 'guides.json'];
 
+// Walk every mod in a mods.json, whatever shape its category is in: a plain array, or a
+// group list for the categories that are sorted by hero.
+function eachMod(modsData, fn) {
+  for (const category of Object.values(modsData || {})) {
+    if (!category) continue;
+    const lists = Array.isArray(category)
+      ? [category]
+      : Array.isArray(category.groups)
+        ? category.groups.map((g) => g.mods || [])
+        : [category.mods || []];
+    for (const list of lists) {
+      for (const mod of list) if (mod && typeof mod === 'object') fn(mod);
+    }
+  }
+}
+
+/**
+ * The catalog describes a mod's links two ways: a `links` array, and an older pair of fields
+ * on the mod itself. 32 mods still carry the old pair and 26 of those are previews - the
+ * whole TI battle-pass row - so a reader that knows only the array shows them with no
+ * preview at all. The site reads both; folding one into the other here means the rest of the
+ * app only ever sees the array. The cache on disk keeps whatever the author wrote.
+ */
+function normalizeCatalog(mods) {
+  eachMod(mods && mods.modsData, (mod) => {
+    if (!mod.linkType || !mod.linkUrl) return;
+    const link = { type: mod.linkType, url: mod.linkUrl };
+    if (mod.senderName) link.name = mod.senderName;
+    if (!Array.isArray(mod.links)) mod.links = [link];
+    else if (!mod.links.some((l) => l.type === link.type && l.url === link.url)) mod.links.push(link);
+  });
+  return mods;
+}
+
 class Catalog {
   constructor(userDataDir) {
     this.cacheDir = path.join(userDataDir, 'catalog-cache');
@@ -47,8 +81,9 @@ class Catalog {
     for (const name of DATA_FILES) {
       out[name.replace('.json', '')] = JSON.parse(fs.readFileSync(this.cachePath(name), 'utf-8'));
     }
+    normalizeCatalog(out.mods);
     return out;
   }
 }
 
-module.exports = { Catalog, RAW_BASE };
+module.exports = { Catalog, RAW_BASE, normalizeCatalog };

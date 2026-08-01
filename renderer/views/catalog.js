@@ -438,7 +438,7 @@ function renderHome() {
   paint(() => { viewRoot.innerHTML = `
     ${recent.length ? `
       <div class="section-h"><span class="ms">new_releases</span>${L`Недавно добавленные`}</div>
-      <div class="recent-row">${recent.map((m, i) => cardHtml(m, i, { cat: true, date: true })).join('')}</div>` : ''}
+      <div class="recent-row">${recent.map((m, i) => cardHtml(m, i, { cat: true })).join('')}</div>` : ''}
     <div class="section-h"><span class="ms">apps</span>${L`Категории`}</div>
     <div class="cat-tiles">
       ${cats.map((c, i) => {
@@ -667,9 +667,10 @@ function bindToolbar() {
 
 // A card is its picture. Everything else on it has to earn the room it takes, so what shows
 // depends on the list: a grid inside one category needs neither the category's own name nor
-// a date every mod in it shares, while the "recently added" strip is about exactly that date
-// and a search result has to say where it was found.
-function cardHtml(m, i, { cat: withCat = false, date: withDate = false } = {}) {
+// a date, while a search result and the "recently added" strip have to say where the mod
+// was found. Not even the recent strip prints its date - the strip's own heading already
+// says these are the new ones, and the modal has the date for anyone who wants it.
+function cardHtml(m, i, { cat: withCat = false } = {}) {
   const cat = m._cat;
   const prev = previewUrl(cat, m.preview || (m.styles?.[0]?.preview));
   const installed = isInstalled(cat, m);
@@ -687,7 +688,6 @@ function cardHtml(m, i, { cat: withCat = false, date: withDate = false } = {}) {
   // otherwise hold a line of nothing open under every name
   const meta = [
     withCat ? `<span>${esc(catName(cat))}</span>` : '',
-    withDate && m.meta?.date ? `<span>${fmtDate(m.meta.date)}</span>` : '',
     author ? `<span class="author-chip"><span class="ms">person</span>${esc(author)}</span>` : '',
   ].join('');
   const playable = modPreviewMedia(cat, m);
