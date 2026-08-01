@@ -385,13 +385,13 @@ function renderRail() {
 
 // ===== Catalog =====
 
-function renderCatalog() {
+async function renderCatalog() {
   if (!state.catalog) {
-    paint(() => { viewRoot.innerHTML = `<div class="empty-note">${L`Загрузка каталога…`}</div>`; });
+    await paint(() => { viewRoot.innerHTML = `<div class="empty-note">${L`Загрузка каталога…`}</div>`; });
     return;
   }
   if (state.catalog.error) {
-    paint(() => { viewRoot.innerHTML = `
+    await paint(() => { viewRoot.innerHTML = `
       <div class="empty-note">
         ${L`Не удалось загрузить каталог: ${esc(state.catalog.error)}`}<br><br>
         <button class="btn btn-primary" id="retryCat">${L`Повторить`}</button>
@@ -412,7 +412,7 @@ function renderCatalog() {
 
 // --- favorites ---
 
-function renderFavorites() {
+async function renderFavorites() {
   const all = favoriteMods();
   const mods = applyFilters(all);
   // starred looks live in the same list, kept in their own section: they install a slot of
@@ -422,7 +422,7 @@ function renderFavorites() {
   const installable = all.some(canBeInstalled) || cosAll.length > 0;
   const empty = !all.length && !cosAll.length;
 
-  paint(() => { viewRoot.innerHTML = `
+  await paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Избранное`}</h1>
     </div>
@@ -446,7 +446,7 @@ function renderFavorites() {
 
 // --- home (all categories) ---
 
-function renderHome() {
+async function renderHome() {
   const cats = visibleCategories();
   const recent = (state.catalog.mods.recentlyAddedMods || [])
     .map((r) => {
@@ -460,7 +460,7 @@ function renderHome() {
 
   // No heading over any of it: the window says Каталог in the tab strip, and a title
   // repeating that would push the first mods below the fold to say nothing.
-  paint(() => { viewRoot.innerHTML = `
+  await paint(() => { viewRoot.innerHTML = `
     ${recent.length ? `
       <div class="section-h"><span class="ms">new_releases</span>${L`Недавно добавленные`}</div>
       <div class="recent-row">${recent.map((m, i) => cardHtml(m, i, { cat: true })).join('')}</div>` : ''}
@@ -481,10 +481,10 @@ function renderHome() {
   `; });
 
   viewRoot.querySelectorAll('.cat-tile').forEach((t) => {
-    t.addEventListener('click', () => {
+    t.addEventListener('click', async () => {
       state.activeCategory = t.dataset.cat;
       filters = freshFilters();
-      renderCatalog();
+      await renderCatalog(); // the grid has to exist before it can be scrolled to the top
       $('#main').scrollTop = 0;
     });
   });
@@ -497,7 +497,7 @@ function renderHome() {
 // "loading" matches a couple of thousand of them
 const COS_SEARCH_LIMIT = 120;
 
-function renderSearchResults() {
+async function renderSearchResults() {
   const q = state.search.trim().toLowerCase();
   const cats = visibleCategories();
   let mods = [];
@@ -515,7 +515,7 @@ function renderSearchResults() {
   const cos = filterCosmetics(cosAll);
   const shownCos = cos.slice(0, COS_SEARCH_LIMIT);
 
-  paint(() => { viewRoot.innerHTML = `
+  await paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${L`Поиск:`} <span class="accent">${esc(state.search.trim())}</span></h1>
     </div>
@@ -536,7 +536,7 @@ function renderSearchResults() {
 
 // --- single category ---
 
-function renderCategory(categoryId) {
+async function renderCategory(categoryId) {
   const all = categoryMods(categoryId).map((m) => ({ ...m, _cat: categoryId }));
   // the one category the catalog leaves flat, and the only one where the eye is looking for
   // a hero rather than reading 463 names in a row
@@ -580,7 +580,7 @@ function renderCategory(categoryId) {
     gridHtml = mods.map((m, i) => cardHtml(m, i)).join('');
   }
 
-  paint(() => { viewRoot.innerHTML = `
+  await paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${esc(catName(categoryId))}</h1>
     </div>
@@ -1535,13 +1535,13 @@ async function pickCosmetic(slot, o, remove) {
 
 async function renderCosmeticCategory(slot) {
   const meta = cosmeticMeta(slot);
-  paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
+  await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
   if (!state.cosmeticSlots) await refreshCosmeticSlots();
   if (state.activeCategory !== COSMETIC_PREFIX + slot) return; // moved on while reading
 
   const data = (state.cosmeticSlots || []).find((s) => s.slot === slot);
   if (!data) {
-    paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`; });
+    await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`; });
     return;
   }
 
@@ -1571,7 +1571,7 @@ async function renderCosmeticCategory(slot) {
     io = bindCosmeticCards(grid);
   };
 
-  paint(() => { viewRoot.innerHTML = `
+  await paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${esc(tr(meta.label))}</h1>
     </div>

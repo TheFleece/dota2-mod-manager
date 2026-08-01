@@ -134,7 +134,7 @@ export async function renderPresets() {
   const { installed } = await window.api.mods.list();
   const byId = new Map(installed.map((m) => [m.id, m]));
 
-  paint(() => { viewRoot.innerHTML = `
+  await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
     <div class="view-intro">
       ${L`Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.`}

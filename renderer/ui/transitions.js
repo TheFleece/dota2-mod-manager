@@ -29,21 +29,33 @@ export function screenChanging() {
 
 /**
  * Run a DOM update, animated if it is the paint of a screen change.
+ *
+ * **Await it.** An animated paint hands the markup to the browser, which writes it a frame
+ * later, so until this promise settles the page still shows the old screen. A screen that
+ * goes looking for its own elements before then finds the ones it just replaced: its buttons
+ * are wired to markup nobody can click, and a list that renders into a container by id
+ * throws outright. Both went unnoticed for a while because a machine asking for reduced
+ * motion sends every paint down the synchronous branch, and that was the machine we tested on.
+ *
  * @param {() => void} update writes the new markup; must be synchronous
+ * @returns {Promise<void>} settles once the markup is on the page
  */
 export function paint(update) {
   const wanted = armed;
   armed = false;
-  if (!wanted || !supported || stillness.matches) { update(); return; }
+  if (!wanted || !supported || stillness.matches) { update(); return Promise.resolve(); }
   // Counted, not a plain flag: starting a transition abandons any transition still running,
   // and that one's cleanup would otherwise strip the class off the transition replacing it -
   // which is exactly what happens when somebody clicks two tabs in a row.
   running++;
   document.documentElement.classList.add('vt-screen');
   const vt = document.startViewTransition(update);
-  vt.finished.finally(() => {
+  // an abandoned transition rejects; that is a normal end here, not a fault to report
+  vt.finished.catch(() => {}).finally(() => {
     if (--running === 0) document.documentElement.classList.remove('vt-screen');
   });
+  // the update, not the animation: the screen carries on as soon as its markup exists
+  return vt.updateCallbackDone;
 }
 
 /* A mod's window used to grow out of the card it was clicked on, as one named box the
