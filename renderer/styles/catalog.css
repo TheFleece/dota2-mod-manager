@@ -147,21 +147,29 @@
   color: var(--text-faint);
 }
 /* What the mod changes, at the foot of the picture. It used to sit on top, which is where
-   the two buttons now live: a card has one busy corner, not two. The room on the right is
-   kept only when the looks are down there too - reserving it always pushed two chips onto
-   two lines on every card in the catalog. */
+   the two buttons now live: a card has one busy corner, not two.
+   One line, always. Wrapping looked like a bug rather than a second line: the row is pinned
+   to the bottom, so a second chip pushed the block up into the middle of the picture -
+   measured across the catalog, 30 of the 53 hero-item cards did it. A chip that will not fit
+   is trimmed with an ellipsis instead. The room kept on the right is the room the looks
+   actually take, counted in dots rather than guessed at. */
 .media-tags {
   position: absolute;
   bottom: 8px;
   left: 8px;
-  right: 8px;
+  right: calc(8px + var(--looks, 0) * 23px);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
   pointer-events: none;
+  overflow: hidden;
 }
-.media-tags.with-looks { right: 96px; }
 .mtag {
+  min-width: 0;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;

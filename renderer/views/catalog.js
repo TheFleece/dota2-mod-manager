@@ -794,11 +794,19 @@ function cardMediaHtml(cat, m) {
     : isInstalled(cat, m);
   const isPack = m.type === 'pack';
   const external = !installTarget(m) && !m.styles && !isPack;
-  // two rather than three when the looks are there too, so the bottom of a 190px picture
-  // does not have to hold a row of words and a row of dots side by side
+  // Two, not three. The row is one line now (see .media-tags), and a third chip only ever
+  // arrived to be cut off: a 190px picture holding the looks as well has room for about two
+  // words. Effects and icons come before the slot the item sits in - what a mod does is what
+  // the eye is after while scrolling, and the slot is a dropdown above the grid anyway.
+  const looks = m.styles ? Math.min(m.styles.length, 5) : 0;
+  // Пак / Свой / Ссылка stand in the same row and are about the mod itself, so they are
+  // counted first and the tags take what is left. Measured: the sites cards carry Ссылка and
+  // two tags, and all three came out with an ellipsis through them.
+  const badges = (isPack ? 1 : 0) + (m._custom ? 1 : 0) + (external ? 1 : 0);
+  const room = Math.max(0, (looks > 2 ? 1 : 2) - badges);
   const tags = [...new Set(Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => canonTag(k)))]
     .sort((a, b) => (SLOT_TAGS.has(a) ? 1 : 0) - (SLOT_TAGS.has(b) ? 1 : 0))
-    .slice(0, m.styles ? 2 : 3);
+    .slice(0, room);
   const playable = modPreviewMedia(cat, m);
   const entry = canQueue(cat, m) && !installed ? queueEntry(cat, m) : null;
   const queuedNow = entry && isQueued(entry.key);
@@ -817,7 +825,7 @@ function cardMediaHtml(cat, m) {
       <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="${L`Смотреть превью`}">
         <span class="ms">play_arrow</span>${L`Превью`}
       </button>` : ''}
-    <div class="media-tags ${m.styles ? 'with-looks' : ''}">
+    <div class="media-tags" style="--looks:${looks}">
       ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}
       ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
       ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
