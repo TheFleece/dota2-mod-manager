@@ -870,12 +870,8 @@ function bindCardMedia(card, cat, mod) {
   if (add && mod) {
     add.addEventListener('click', (e) => {
       e.stopPropagation();
-      const on = toggleQueued(queueEntry(cat, mod));
-      add.classList.toggle('on', on);
-      add.querySelector('.ms').textContent = on ? 'check' : 'add';
-      const label = on ? L`В списке установки` : L`Добавить в список`;
-      add.title = label;
-      add.setAttribute('aria-label', label);
+      // the list repaints every plus on screen, this one included
+      toggleQueued(queueEntry(cat, mod));
     });
   }
   card.querySelectorAll('[data-style-dot]').forEach((dot) => {
@@ -1253,7 +1249,11 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview, { batch 
   // Installing it here and now settles the question the list was holding open, so say that
   // before doing it rather than leaving a tick behind on a mod that is already in the game.
   if (!batch && isQueued(k)) {
-    const go = await confirmDialog(L`«${mod.name}» уже в списке установки. Поставить сейчас? Из списка он пропадёт.`);
+    const go = await confirmDialog(
+      L`«${mod.name}» уже в списке установки. Поставить сейчас? Из списка он пропадёт.`,
+      // nothing is being destroyed here, so neither the word nor the red button belongs
+      { okLabel: L`Установить`, danger: false },
+    );
     if (!go) return { cancelled: true };
     dropFromQueue(k);
   }

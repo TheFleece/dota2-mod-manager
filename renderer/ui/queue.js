@@ -51,10 +51,28 @@ export function clearQueue() {
 
 function paintBadge() {
   const btn = $('#queueBtn');
-  if (!btn) return;
-  btn.classList.toggle('has', items.size > 0);
-  $('#queueCount').textContent = items.size ? String(items.size) : '';
-  btn.disabled = items.size === 0;
+  if (btn) {
+    btn.classList.toggle('has', items.size > 0);
+    $('#queueCount').textContent = items.size ? String(items.size) : '';
+    btn.disabled = items.size === 0;
+  }
+  paintCards();
+}
+
+/* Every card on screen carries the answer to "is this one in the list", and the list can
+ * change from somewhere else entirely: emptied here, spent by installing, or dropped when a
+ * mod is installed on its own. One sweep after every change is what keeps the two from
+ * disagreeing - which they did, leaving ticks on cards after the list had been cleared. */
+function paintCards() {
+  document.querySelectorAll('[data-add]').forEach((btn) => {
+    const on = items.has(btn.dataset.add);
+    const label = on ? L`В списке установки` : L`Добавить в список`;
+    btn.classList.toggle('on', on);
+    const icon = btn.querySelector('.ms');
+    if (icon) icon.textContent = on ? 'check' : 'add';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  });
 }
 
 // Above this many rows the list is scrolled rather than read, and finding the one mod you
@@ -92,9 +110,6 @@ function bindRows() {
       $('#queueRows').innerHTML = rowsHtml();
       bindRows();
       paintFoot();
-      // the plus on that card is out of date now
-      const btn = document.querySelector(`[data-add="${CSS.escape(b.dataset.drop)}"]`);
-      if (btn) { btn.classList.remove('on'); btn.querySelector('.ms').textContent = 'add'; }
       if (!items.size) drawPanel();
     });
   });

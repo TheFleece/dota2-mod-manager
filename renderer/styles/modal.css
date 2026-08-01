@@ -1,12 +1,14 @@
 /* ============ Modal ============ */
 /* Opening a mod, on one clock:
      0ms   the dimming starts, 200ms long
-     0ms   the window starts, 250ms: it comes out of the card that was clicked, growing from
+     0ms   the window starts, 200ms: it comes out of the card that was clicked, growing from
            a third of its size into place
-     250ms the picture starts, 300ms, growing from a point at the centre of the window
-     550ms everything has landed
-   The window arrives first and the picture fills it afterwards, so the two are a sequence
-   rather than a race. Where the card was is passed in as --from-x / --from-y (see openFrom);
+     120ms the picture starts, 200ms, growing from a point at the centre of the window
+     320ms everything has landed
+   The picture used to wait for the window to stop before it began, and 550ms to open a mod
+   is a mod manager that feels slow - people press these forty times in a sitting. It starts
+   while the window is on its last fifth instead, which still reads as the window arriving
+   first, and everything is done in the time the picture alone used to take. Where the card was is passed in as --from-x / --from-y (see openFrom);
    with no card - a mod reached from a link - both are zero and the window simply grows in
    place. Leaving is a single 200ms fall: an exit as long as its entrance feels like the
    window is arguing about being closed. */
@@ -30,7 +32,7 @@
   max-height: calc(88vh / var(--content-zoom));
   overflow-y: auto;
   box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--md-primary) 8%, transparent);
-  animation: windowIn var(--dur-medium) var(--ease-decelerate) both;
+  animation: windowIn var(--dur-base) var(--ease-decelerate) both;
 }
 .closing .modal-content { animation: windowOut var(--dur-base) var(--ease-accelerate) both; }
 @keyframes modalIn {
@@ -59,7 +61,7 @@
    open a gap at the window's edge. */
 .modal-media img, .modal-media video {
   width: 100%; height: 100%; object-fit: cover; display: block;
-  animation: pictureIn var(--dur-medium-long) var(--ease-decelerate) var(--dur-medium) both;
+  animation: pictureIn var(--dur-base) var(--ease-decelerate) var(--dur-fast) both;
 }
 @keyframes pictureIn { from { opacity: 0; transform: scale(0.02); } }
 .modal-media::after {
@@ -371,7 +373,7 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
   flex-direction: column;
   overflow: hidden;
   box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--md-primary) 8%, transparent);
-  animation: windowIn var(--dur-medium) var(--ease-decelerate) both;
+  animation: windowIn var(--dur-base) var(--ease-decelerate) both;
 }
 .queue-head {
   display: flex;
