@@ -492,8 +492,8 @@ const EN = {
   'Не нашёл автоматически — укажи вручную': 'Not found automatically — set it manually',
   'Путь сохранён': 'Path saved',
   'Перенесено файлов: {0}': 'Moved {0} files',
-  'Моды перенесены в dota_{0}: игра больше не подхватывает папку dota_{1}':
-    'Mods moved to dota_{0}: the game no longer picks up the dota_{1} folder',
+  'Моды перенесены из dota_{0} в dota_{1}, озвучка Dota переключена на русскую. Перезапусти игру.':
+    'Mods moved from dota_{0} to dota_{1} and Dota’s audio language is now Russian. Restart the game.',
   'Скопировано в буфер': 'Copied to clipboard',
   'Кэш очищен': 'Cache cleared',
   'Язык переключён на English': 'Language switched to English',

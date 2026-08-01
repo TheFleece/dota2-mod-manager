@@ -305,9 +305,10 @@ window.api.update.onUpdate((evt) => {
   bindPanels();
   paintAccount();
 
-  // Dota's language change moved the mods folder under us at startup — say so once
+  // startup put the mods where the game will look for them, and pointed the game there —
+  // say so once, because the game has to be restarted before it reads the new folder
   if (cfg.langMigration) {
-    toast(L`Моды перенесены в dota_${cfg.langMigration.to}: игра больше не подхватывает папку dota_${cfg.langMigration.from}`, 'warn', 9000);
+    toast(L`Моды перенесены из dota_${cfg.langMigration.from} в dota_${cfg.langMigration.to}, озвучка Dota переключена на русскую. Перезапусти игру.`, 'warn', 9000);
   }
 
   await refreshSidebarStatus();
