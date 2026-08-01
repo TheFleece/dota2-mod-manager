@@ -23,7 +23,7 @@ import { openPlayer } from '../ui/player.js';
 import { thumbHtml } from '../ui/thumb.js';
 import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons, cosmeticIcon, cosmeticIconKnown } from '../ui/cosmetic-icons.js';
 import { paint } from '../ui/transitions.js';
-import { isQueued, toggleQueued, useInstaller } from '../ui/queue.js';
+import { isQueued, toggleQueued, dropFromQueue, useInstaller } from '../ui/queue.js';
 
 const viewRoot = $('#view-root');
 
@@ -775,7 +775,7 @@ function cardHtml(m, i, { cat: withCat = false } = {}) {
   ].join('');
   const playable = modPreviewMedia(cat, m);
   return `
-    <div class="card" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
+    <div class="card ${installed ? 'installed' : ''}" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">${cardMediaHtml(cat, m)}</div>
       <div class="card-body">
         <div class="card-name">${esc(m.name)}</div>
@@ -794,31 +794,35 @@ function cardMediaHtml(cat, m) {
     : isInstalled(cat, m);
   const isPack = m.type === 'pack';
   const external = !installTarget(m) && !m.styles && !isPack;
+  // two rather than three when the looks are there too, so the bottom of a 190px picture
+  // does not have to hold a row of words and a row of dots side by side
   const tags = [...new Set(Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => canonTag(k)))]
     .sort((a, b) => (SLOT_TAGS.has(a) ? 1 : 0) - (SLOT_TAGS.has(b) ? 1 : 0))
-    .slice(0, 3);
+    .slice(0, m.styles ? 2 : 3);
   const playable = modPreviewMedia(cat, m);
   const entry = canQueue(cat, m) && !installed ? queueEntry(cat, m) : null;
+  const queuedNow = entry && isQueued(entry.key);
   return `
     ${mediaHtml(prev, { hoverPlay: true, fallbackIcon: catIcon(cat) })}
-    ${favButtonHtml(cat, m.name)}
-    ${entry ? `
-      <button class="card-add ${isQueued(entry.key) ? 'on' : ''}" data-add="${esc(entry.key)}"
-              title="${isQueued(entry.key) ? L`В списке установки` : L`Добавить в список`}"
-              aria-label="${isQueued(entry.key) ? L`В списке установки` : L`Добавить в список`}">
-        <span class="ms">${isQueued(entry.key) ? 'check' : 'add'}</span>
-      </button>` : ''}
-    <div class="media-tags">
-      ${installed ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}
-      ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}
-      ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
-      ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
-      ${tags.map((t) => `<span class="mtag soft">${esc(tagLabel(cat, t))}</span>`).join('')}
+    <div class="card-actions">
+      ${favButtonHtml(cat, m.name)}
+      ${entry ? `
+        <button class="card-add ${queuedNow ? 'on' : ''}" data-add="${esc(entry.key)}"
+                title="${queuedNow ? L`В списке установки` : L`Добавить в список`}"
+                aria-label="${queuedNow ? L`В списке установки` : L`Добавить в список`}">
+          <span class="ms">${queuedNow ? 'check' : 'add'}</span>
+        </button>` : ''}
     </div>
     ${playable ? `
       <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="${L`Смотреть превью`}">
         <span class="ms">play_arrow</span>${L`Превью`}
       </button>` : ''}
+    <div class="media-tags ${m.styles ? 'with-looks' : ''}">
+      ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}
+      ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
+      ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
+      ${tags.map((t) => `<span class="mtag soft">${esc(tagLabel(cat, t))}</span>`).join('')}
+    </div>
     ${m.styles ? `
       <div class="media-swatches">
         ${m.styles.slice(0, 5).map((s, si) => `
@@ -836,7 +840,7 @@ function bindCards(root, modsList) {
     const [cat, name] = key.split('|');
     const mod = (modsList && modsList.find((m) => keyOf(m._cat, m.name, null) === key)) || findModByName(cat, name);
     card.addEventListener('click', () => {
-      if (mod) openModModal(mod._cat || cat, mod);
+      if (mod) openModModal(mod._cat || cat, mod, card);
     });
     bindCardMedia(card, cat, mod);
   });
@@ -926,12 +930,12 @@ function refreshCardBadges() {
     const installed = style
       ? state.installedIndex.has(keyOf(cat, mod.name, style.label))
       : isInstalled(cat, mod);
-    const badge = card.querySelector('.mtag.ok');
-    if (installed && !badge) {
-      card.querySelector('.media-tags')?.insertAdjacentHTML('afterbegin', `<span class="mtag ok">${L`Установлен`}</span>`);
-    } else if (!installed && badge) {
-      badge.remove();
-    }
+    if (card.classList.contains('installed') === installed) return;
+    // the whole card says it, so there is nothing to insert or remove - and an installed mod
+    // can no longer be queued, so the plus goes with it
+    card.classList.toggle('installed', installed);
+    card.querySelector('.card-media').innerHTML = cardMediaHtml(cat, mod);
+    bindCardMedia(card, cat, mod);
   });
 }
 
@@ -952,19 +956,36 @@ function exitMs() {
   return parseFloat(v) || 0;
 }
 
-function openModal(draw) {
+/* Where the window comes from. A window that appears in the middle no matter what was
+ * clicked is a window with no cause; one that grows out of the thing you pressed keeps the
+ * two connected, the way Windows does it. The panel is centred by the overlay, so the only
+ * thing the stylesheet needs is how far the card was from that centre. */
+function openFrom(el) {
+  const panel = $('#modalContent');
+  if (!el) {
+    panel.style.removeProperty('--from-x');
+    panel.style.removeProperty('--from-y');
+    return;
+  }
+  const r = el.getBoundingClientRect();
+  panel.style.setProperty('--from-x', `${Math.round(r.left + r.width / 2 - window.innerWidth / 2)}px`);
+  panel.style.setProperty('--from-y', `${Math.round(r.top + r.height / 2 - window.innerHeight / 2)}px`);
+}
+
+function openModal(draw, from) {
   const overlay = $('#modalOverlay');
   clearTimeout(closingTimer);
   overlay.classList.remove('closing');
   draw();
+  openFrom(from);
   overlay.classList.remove('hidden');
 }
 
-function openModModal(categoryId, mod) {
+function openModModal(categoryId, mod, from) {
   cosModalState = null; // the two share one overlay
   // opens on the look the card was showing, which is the one the user was just looking at
   modalState = { categoryId, mod, styleIdx: styleIndex(categoryId, mod) };
-  openModal(drawModal);
+  openModal(drawModal, from);
 }
 
 function closeModal() {
@@ -1222,12 +1243,19 @@ function drawModal() {
   });
 }
 
-async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
+async function doInstall(categoryId, mod, styleLabel, fileRef, preview, { batch = false } = {}) {
   const k = keyOf(categoryId, mod.name, styleLabel);
   if (installing.has(k)) return;
   if (!state.settings?.dotaPathValid && categoryId !== 'tools') {
     toast(L`Сначала укажи путь к Dota 2 в настройках`, 'warn');
     return;
+  }
+  // Installing it here and now settles the question the list was holding open, so say that
+  // before doing it rather than leaving a tick behind on a mod that is already in the game.
+  if (!batch && isQueued(k)) {
+    const go = await confirmDialog(L`«${mod.name}» уже в списке установки. Поставить сейчас? Из списка он пропадёт.`);
+    if (!go) return { cancelled: true };
+    dropFromQueue(k);
   }
   installing.add(k);
   if (modalState) drawModal();
@@ -1251,7 +1279,7 @@ async function installMany(entries) {
   for (const { categoryId, mod, styleLabel, fileRef, preview } of entries) {
     if (!fileRef || !/\.(vpk|zip)$/i.test(fileRef)) { skip++; continue; }
     if (state.installedIndex.has(keyOf(categoryId, mod.name, styleLabel))) { skip++; continue; }
-    const r = await doInstall(categoryId, mod, styleLabel, fileRef, preview);
+    const r = await doInstall(categoryId, mod, styleLabel, fileRef, preview, { batch: true });
     if (r?.ok) ok++;
     else if (r?.cancelled) skip++;
     else fail++;
@@ -1306,19 +1334,18 @@ useInstaller(async (list) => {
 
 
 // One card per look, styled exactly like a catalog mod card (same .card/.grid classes):
-// a picture, a favourite star, and an "Установлен" badge on whichever one is live.
+// a picture, a favourite star, and the same green edge on whichever one is live.
 function cosmeticCardHtml(slot, o, i, withCat = false) {
   const cat = COSMETIC_PREFIX + slot;
   const icon = cosmeticIcon(o.name);
   const picked = pickedIn(slot)?.itemId === o.id;
   return `
-    <div class="card" data-cos="${esc(slot)}" data-cos-id="${esc(o.id)}" style="--i:${Math.min(i, 28)}">
+    <div class="card ${picked ? 'installed' : ''}" data-cos="${esc(slot)}" data-cos-id="${esc(o.id)}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">
         <span class="card-thumb" data-name="${esc(o.name)}">${icon
           ? `<img src="${esc(icon)}" alt="" loading="lazy">`
           : `<div class="noimg"><span class="ms">${cosmeticMeta(slot).icon}</span></div>`}</span>
-        ${favButtonHtml(cat, o.name)}
-        <div class="media-tags">${picked ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}</div>
+        <div class="card-actions">${favButtonHtml(cat, o.name)}</div>
       </div>
       <div class="card-body">
         <div class="card-name">${esc(o.name)}</div>
@@ -1332,23 +1359,18 @@ function bindCosmeticCards(root) {
   if (!root) return;
   root.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
   root.querySelectorAll('.card[data-cos]').forEach((card) => {
-    card.addEventListener('click', () => openCosmeticModal(card.dataset.cos, card.dataset.cosId));
+    card.addEventListener('click', () => openCosmeticModal(card.dataset.cos, card.dataset.cosId, card));
   });
   paintCosmeticIcons(root);
   return watchCosmeticIcons(root, null);
 }
 
-// toggle the "Установлен" badge on visible cosmetic cards in place — same idea as
-// refreshCardBadges() for mods, so a pick never costs the grid its scroll position
+// mark the live look on visible cosmetic cards in place — same idea as refreshCardBadges()
+// for mods, so a pick never costs the grid its scroll position
 function refreshCosmeticBadges() {
   viewRoot.querySelectorAll('.card[data-cos]').forEach((card) => {
     const picked = pickedIn(card.dataset.cos)?.itemId === card.dataset.cosId;
-    const badge = card.querySelector('.mtag.ok');
-    if (picked && !badge) {
-      card.querySelector('.media-tags')?.insertAdjacentHTML('afterbegin', `<span class="mtag ok">${L`Установлен`}</span>`);
-    } else if (!picked && badge) {
-      badge.remove();
-    }
+    card.classList.toggle('installed', picked);
   });
 }
 
@@ -1356,12 +1378,12 @@ function refreshCosmeticBadges() {
 
 let cosModalState = null;
 
-function openCosmeticModal(slot, itemId) {
+function openCosmeticModal(slot, itemId, from) {
   const o = findCosmetic(slot, itemId);
   if (!o) return;
   modalState = null;
   cosModalState = { slot, o };
-  openModal(drawCosmeticModal);
+  openModal(drawCosmeticModal, from);
   // the picture may not have been fetched yet if the card was never scrolled into view
   if (!cosmeticIconKnown(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
 }

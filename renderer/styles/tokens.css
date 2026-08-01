@@ -50,6 +50,9 @@
   --text-faint: color-mix(in srgb, var(--md-on-surface-variant) 62%, transparent);
 
   --success: #4ade80;
+  /* "this one is already in your game" - the one colour that stays put while the window
+     changes hero, because it is a state rather than a mood */
+  --installed: #2bffa3;
   --danger: var(--md-error);
   --warning: #fcd34d;
 

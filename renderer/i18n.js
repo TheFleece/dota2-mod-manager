@@ -142,6 +142,9 @@ const EN = {
   'Добавить в список': 'Add to the install list',
   'В списке установки': 'In the install list',
   'Установить всё ({0})': 'Install all ({0})',
+  'Найти в списке…': 'Find in the list…',
+  '«{0}» уже в списке установки. Поставить сейчас? Из списка он пропадёт.':
+    '«{0}» is already in the install list. Install it now? It will leave the list.',
   'Пусто. Жми плюс на карточке мода, чтобы собрать список.':
     'Empty. Press the plus on a mod to start a list.',
   'Список: установлено {0}{1}{2}': 'List: {0} installed{1}{2}',

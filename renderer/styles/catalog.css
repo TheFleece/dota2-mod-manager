@@ -146,9 +146,13 @@
   display: flex; align-items: center; justify-content: center;
   color: var(--text-faint);
 }
+/* What the mod changes, at the foot of the picture. It used to sit on top, which is where
+   the two buttons now live: a card has one busy corner, not two. The room on the right is
+   kept only when the looks are down there too - reserving it always pushed two chips onto
+   two lines on every card in the catalog. */
 .media-tags {
   position: absolute;
-  top: 8px;
+  bottom: 8px;
   left: 8px;
   right: 8px;
   display: flex;
@@ -156,6 +160,7 @@
   gap: 4px;
   pointer-events: none;
 }
+.media-tags.with-looks { right: 96px; }
 .mtag {
   font-size: 10px;
   font-weight: 700;
@@ -168,13 +173,27 @@
   color: var(--primary-soft);
   border: 1px solid color-mix(in srgb, var(--md-primary) 28%, transparent);
 }
-.mtag.ok { color: var(--success); border-color: rgba(74, 222, 128, 0.4); }
+/* Installed is the state of the whole mod, so it is the state of the whole card: a green
+   edge and a glow that survives being scrolled past at speed. It used to be a chip reading
+   УСТАНОВЛЕН among the chips describing what the mod changes - one more thing to read in a
+   corner that already had three. The green is fixed rather than themed: it means the same
+   thing under every hero, and none of the eight palettes owns it. */
+.card.installed {
+  border-color: var(--installed);
+  box-shadow: 0 0 0 1px var(--installed), 0 0 20px color-mix(in srgb, var(--installed) 30%, transparent);
+}
+.card.installed:hover {
+  border-color: var(--installed);
+  box-shadow: 0 14px 40px rgba(5, 3, 12, 0.55), 0 0 0 1px var(--installed),
+    0 0 30px color-mix(in srgb, var(--installed) 45%, transparent);
+}
+.card.installed .card-body { background: color-mix(in srgb, var(--installed) 7%, transparent); }
 /* The looks a mod comes in, switchable without opening it. They used to be decoration - four
    dots saying "this one has colours" - and the only way to see a colour was to open the mod
    and come back. Now they are the control they looked like. */
 .media-swatches {
   position: absolute;
-  bottom: 8px;
+  bottom: 10px;
   right: 8px;
   display: flex;
   gap: 5px;
@@ -237,7 +256,7 @@
 /* ============ Preview badge on cards ============ */
 .mtag-play {
   position: absolute;
-  bottom: 8px;
+  top: 8px;
   left: 8px;
   display: inline-flex;
   align-items: center;
@@ -264,13 +283,11 @@
   color: #fff;
 }
 
-/* Put this mod in the list to install. Beside the star rather than under it: both are ways
-   of saying "this one", and both live on the picture where the deciding happens. Quiet until
-   the card is under the cursor, loud once the mod is actually in the list. */
+/* Put this mod in the list to install. It shares the corner with the star: both are ways of
+   saying "this one", and both belong on the picture, where the deciding happens. Quiet until
+   the card is under the cursor, and loud from then on once the mod is actually in the list.
+   The shift that makes room for the star is in the .card-actions rules further down. */
 .card-add {
-  position: absolute;
-  top: 8px;
-  right: 44px;
   z-index: 3;
   width: 30px;
   height: 30px;
@@ -283,14 +300,11 @@
   backdrop-filter: blur(10px);
   color: var(--primary-soft);
   opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard),
-    color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 }
-.card:hover .card-add, .card-add:focus-visible { opacity: 1; }
-.card-add:hover { transform: scale(1.08); border-color: var(--primary); }
+.card:hover .card-add, .card-add:focus-visible, .card-add.on { opacity: 1; }
+.card-add:hover { border-color: var(--primary); background: var(--primary-dim); }
 .card-add .ms { font-size: 18px; }
 .card-add.on {
-  opacity: 1;
   background: var(--primary);
   border-color: transparent;
   color: var(--on-primary);
@@ -298,9 +312,6 @@
 
 /* ============ Favorites (star on cards / in the modal) ============ */
 .fav-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
   z-index: 3;
   width: 30px;
   height: 30px;
@@ -322,8 +333,27 @@
 .fav-btn .ms { font-size: 17px; }
 /* the icon font ships a FILL axis — a starred mod gets the solid heart */
 .fav-btn.on .ms, .rail-item.fav .ms { font-variation-settings: 'FILL' 1; }
-/* keep the tag row clear of the star */
-.card-media .media-tags { padding-right: 34px; }
+/* The two buttons share one corner and take turns holding it. Without the cursor, whatever
+   is true of the mod stands there: the tick if it is in the install list, the heart if it is
+   starred, both if both. Bring the cursor in and the heart takes the corner while the tick
+   steps aside to make room, which is the same movement in reverse when the cursor leaves. */
+.card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+}
+.card-actions .fav-btn, .card-actions .card-add {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.card-actions .card-add { transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-spring), background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard); }
+/* room for the heart: it appears on hover, and it is already there on a starred mod */
+.card:hover .card-actions .card-add,
+.card-actions .fav-btn.on ~ .card-add { transform: translateX(-36px); }
+.card:hover .card-actions .card-add.on,
+.card-actions .fav-btn.on ~ .card-add.on { transform: translateX(-36px); }
 /* in the modal the star sits beside the title and is always visible */
 .modal-title-row .fav-btn {
   position: static;

@@ -120,6 +120,32 @@ function createWindow() {
               await new Promise((r) => setTimeout(r, 700));
             }
           }
+          if (process.env.MM_HOVER) {
+            // dev-only: park the pointer over a selector (or "x,y") so the shot shows the
+            // hover state. Half of what a card does only exists under the cursor, and a
+            // screenshot of the resting state cannot show a control that slides on hover.
+            const spec = process.env.MM_HOVER;
+            let point = null;
+            if (/^\d+\s*,\s*\d+$/.test(spec)) {
+              const [x, y] = spec.split(',').map(Number);
+              point = { x, y };
+            } else {
+              point = await win.webContents.executeJavaScript(`(() => {
+                const el = document.querySelector(${JSON.stringify(spec)});
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+              })()`);
+            }
+            if (point) {
+              // two moves: the first lands, the second keeps the pointer there after any
+              // relayout the first one caused
+              win.webContents.sendInputEvent({ type: 'mouseMove', x: point.x, y: point.y });
+              await new Promise((r) => setTimeout(r, 250));
+              win.webContents.sendInputEvent({ type: 'mouseMove', x: point.x, y: point.y });
+              await new Promise((r) => setTimeout(r, 600));
+            }
+          }
           if (process.env.MM_DRAG) {
             // dev-only: press, move, release — "x1,y1,x2,y2" (drags a grip, swipes a strip)
             const [x1, y1, x2, y2] = process.env.MM_DRAG.split(',').map(Number);

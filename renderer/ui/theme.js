@@ -32,10 +32,32 @@ export function applyTheme(name) {
 
 export function initTheme() {
   applyTheme(state.settings?.theme);
-  $('#themeMascot')?.addEventListener('click', () => {
+  const mascot = $('#themeMascot');
+  mascot?.addEventListener('click', () => {
+    if (mascot.classList.contains('spinning')) return;
     const now = document.documentElement.dataset.theme;
     const next = THEMES[(THEMES.indexOf(now) + 1) % THEMES.length];
-    applyTheme(next);
-    window.api.settings.set('theme', next);
+    // The hero turns away and the new one turns back: the window changes colour at the point
+    // of the spin where the face is smallest, so the two look like one event rather than a
+    // recolour with a spin thrown over it. Same trick the catalog's own site uses.
+    mascot.classList.add('spinning');
+    let swapped = false;
+    const swap = () => {
+      if (swapped) return;
+      swapped = true;
+      applyTheme(next);
+      window.api.settings.set('theme', next);
+    };
+    setTimeout(swap, spinMs() / 2);
+    mascot.addEventListener('animationend', () => {
+      mascot.classList.remove('spinning');
+      swap();
+    }, { once: true });
   });
+}
+
+// the length of the spin, read from the stylesheet so the two cannot drift apart
+function spinMs() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--dur-medium-long');
+  return parseFloat(v) || 0;
 }

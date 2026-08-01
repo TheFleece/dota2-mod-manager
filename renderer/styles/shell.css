@@ -65,6 +65,15 @@
 .tb-mascot img { width: 22px; height: 22px; display: block; }
 .tb-mascot:hover { transform: scale(1.18) rotate(-6deg); }
 .tb-mascot:active { transform: scale(0.94); }
+/* The hero turns away and the new one turns back. The window changes colour at the halfway
+   point, where the face is smallest, so the recolour and the spin read as one event. */
+.tb-mascot.spinning { animation: mascotSpin var(--dur-medium-long) var(--ease-standard); }
+.tb-mascot.spinning:hover { transform: none; }
+@keyframes mascotSpin {
+  0% { transform: rotate(0) scale(1); }
+  50% { transform: rotate(180deg) scale(0.4); }
+  100% { transform: rotate(360deg) scale(1); }
+}
 .tb-mascot:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* the nav gives way before the window buttons do: at a high UI scale the bar runs out of
