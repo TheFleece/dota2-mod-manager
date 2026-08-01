@@ -24,6 +24,7 @@ import { recPreviewUrl, fallbackThumbHtml, libThumbHtml, extThumbHtml, catalogPr
 import { refreshPatchState, paintMasterSwitch } from '../ui/statusbar.js';
 import { paintCosmeticIcons, watchCosmeticIcons } from '../ui/cosmetic-icons.js';
 import { paint } from '../ui/transitions.js';
+import { bindContextMenu } from '../ui/menu.js';
 
 const viewRoot = $('#view-root');
 
@@ -95,15 +96,10 @@ function packRowHtml(rec, i, masterOff) {
         <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">${L`Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}`}</span></div>
         <div class="lib-meta">
           <span>${L`${onCount} из ${members.length} включено`}</span>
-          <span>${langDir ? esc(langDir.relPath) : L`пусто`}</span>
         </div>
       </div>
       <div class="lib-actions">
         <button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить пак целиком`}" ${masterOff ? 'disabled' : ''}></button>
-        ${orderBtnsHtml(rec)}
-        <button class="btn btn-sm" data-addto="${esc(rec.id)}" title="${L`Добавить моды в пак`}"><span class="ms">add</span>${L`Добавить`}</button>
-        <button class="btn btn-sm" data-disband="${esc(rec.id)}" title="${L`Разобрать пак обратно на отдельные моды`}"><span class="ms">call_split</span>${L`Разобрать`}</button>
-        ${langDir ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить пак одним .vpk файлом (войдут включённые моды)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
         <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">${L`Удалить`}</button>
       </div>
     </div>
@@ -119,22 +115,27 @@ function slotOf(rec) {
   return dir ? Number(dir.relPath.slice(3, dir.relPath.indexOf('_'))) : null;
 }
 
-// Arrows that move a mod through the load order. The game mounts pakNN_dir.vpk in numeric
-// order and the first copy of a shared file wins, so moving a mod up is the whole mechanism
-// behind "wear these arms over that set".
-//
-// The app used to work this out by itself: compare what every mod ships, decide who covers
-// whom, put a "covered" badge on the loser. It was wrong far too often — two mods touching
-// one stock file are not fighting over anything — and being told a working mod is covered
-// is worse than being told nothing at all. The order is shown, the arrows are here, and
-// which mod wins is a call only the person looking at the game can make.
-function orderBtnsHtml(rec) {
-  if (rec.slotIndex == null) return '';
-  return `
-    <span class="lib-order">
-      <button class="btn btn-sm btn-icon" data-up="${esc(rec.id)}" ${rec.slotIndex === 0 ? 'disabled' : ''} title="${L`Загружать раньше: при общих файлах победит этот мод`}" aria-label="${L`Выше в порядке загрузки`}"><span class="ms">keyboard_arrow_up</span></button>
-      <button class="btn btn-sm btn-icon" data-down="${esc(rec.id)}" ${rec.slotIndex === slotCount - 1 ? 'disabled' : ''} title="${L`Загружать позже`}" aria-label="${L`Ниже в порядке загрузки`}"><span class="ms">keyboard_arrow_down</span></button>
-    </span>`;
+/* What a pack can do beyond going on and off. Same rule as a mod row: the switch and the
+ * delete are on the row, the rest is a right-click away. */
+function packMenuItems(rec) {
+  const langDir = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+  const ordered = rec.slotIndex != null;
+  return [
+    { label: L`Добавить моды в пак`, icon: 'add', onPick: () => addToPack(rec.id) },
+    { label: L`Разобрать на отдельные моды`, icon: 'call_split', onPick: () => disbandPack(rec.id) },
+    langDir && { label: L`Сохранить одним файлом`, icon: 'save', onPick: () => exportRecord(rec.id) },
+    ordered && { separator: true },
+    ordered && {
+      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.slotIndex === 0,
+      onPick: () => moveRecord(rec.id, -1),
+    },
+    ordered && {
+      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.slotIndex === slotCount - 1,
+      onPick: () => moveRecord(rec.id, 1),
+    },
+    { separator: true },
+    { label: L`Удалить`, icon: 'delete', danger: true, onPick: () => deleteRecord(rec.id) },
+  ].filter(Boolean);
 }
 
 // Mods that carry item-schema changes: their model installs like any other, but the
@@ -153,7 +154,6 @@ function normalRowHtml(rec, i, masterOff) {
   // own preview, else the catalog's for the same mod, else a recognised hero's own portrait
   // (see libThumbHtml); a cosmetic pick's picture is fetched lazily by the same loader the
   // catalog cards use
-  const fileNames = rec.files.filter((f) => f.root === 'lang').map((f) => f.relPath);
   const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
   return `
     <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
@@ -163,25 +163,113 @@ function normalRowHtml(rec, i, masterOff) {
         : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}</div>
-        <div class="lib-meta">
-          <span>${esc(catLabel)}</span>
-          ${fileNames.length ? `<span>${esc(fileNames.slice(0, 3).join(', '))}${fileNames.length > 3 ? '…' : ''}</span>` : ''}
-          <span>${new Date(rec.installedAt).toLocaleDateString(window.i18nLocale())}</span>
-        </div>
+        <div class="lib-meta"><span>${esc(catLabel)}</span></div>
       </div>
       <div class="lib-actions">
         ${isFontRec(rec)
           ? `<span class="text-meta">${L`всегда активен`}</span>`
           : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : cosmetic ? `title="${L`На один слот — только одна активная косметика`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
-        ${orderBtnsHtml(rec)}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
-        ${rec.subjects >= 2 ? `<button class="btn btn-sm" data-split="${esc(rec.id)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
-        ${isCursorRec(rec)
-          ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить курсор архивом (для отправки или на память)`}"><span class="ms">save</span>${L`Экспорт`}</button>`
-          : rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath)) ? `<button class="btn btn-sm" data-export="${esc(rec.id)}" title="${L`Сохранить мод одним .vpk файлом (для отправки автору каталога)`}"><span class="ms">save</span>${L`Экспорт`}</button>` : ''}
         <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">${L`Удалить`}</button>
       </div>
     </div>`;
+}
+
+/* What the row does not print. The load order, exporting a mod as one file and taking a
+ * multi-hero mod apart are all real, and all rare: on the row they were three buttons every
+ * mod carried so that a few could use them. Right-click reaches them without the list having
+ * to advertise them. The order stays available for every mod rather than only for the ones
+ * the app thinks are in conflict - which files actually cover which is a call for the person
+ * looking at the game (see the note on orderBtnsHtml). */
+function rowMenuItems(rec) {
+  const exportable = isCursorRec(rec) || rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+  const ordered = rec.slotIndex != null;
+  return [
+    ordered && {
+      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.slotIndex === 0,
+      onPick: () => moveRecord(rec.id, -1),
+    },
+    ordered && {
+      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.slotIndex === slotCount - 1,
+      onPick: () => moveRecord(rec.id, 1),
+    },
+    ordered && { separator: true },
+    exportable && {
+      label: isCursorRec(rec) ? L`Сохранить курсор архивом` : L`Сохранить одним файлом`,
+      icon: 'save', onPick: () => exportRecord(rec.id),
+    },
+    rec.subjects >= 2 && { label: L`Разобрать по героям`, icon: 'call_split', onPick: () => splitRecord(rec.id) },
+    { separator: true },
+    { label: L`Удалить`, icon: 'delete', danger: true, onPick: () => deleteRecord(rec.id) },
+  ].filter(Boolean);
+}
+
+/* The actions a row offers, as functions rather than as click handlers, because the row and
+ * its menu both need them. Each one ends by redrawing: the load order, the pack a mod sits
+ * in and what is on disk are all things a neighbouring row can be showing too. */
+const recById = (id) => libRecords.find((r) => r.id === id);
+const reDraw = async () => { await refreshInstalledIndex(); renderLibrary(); };
+
+async function moveRecord(id, dir) {
+  const r = await window.api.mods.move(id, dir);
+  if (r.error) toast(r.error, 'error', 6000);
+  reDraw();
+}
+
+async function exportRecord(id) {
+  const rec = recById(id);
+  if (!rec) return;
+  toast(L`Собираю «${rec.name}» в один файл…`);
+  const r = await window.api.mods.exportSingle(id);
+  if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
+  else if (r.ok) toast(L`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
+}
+
+async function splitRecord(id) {
+  const rec = recById(id);
+  if (!rec) return;
+  if (!await confirmDialog(
+    L`Разбить «${rec.name}» на отдельные моды по героям? Исходный файл заменится на отдельные, каждый можно будет включать и удалять по отдельности.`,
+    { okLabel: L`Разобрать` },
+  )) return;
+  const r = await window.api.mods.splitMod(id);
+  if (r.error) toast(r.error, 'error', 6000);
+  else toast(L`Разобрано на ${r.count}: ${r.names.join(', ')}`, 'ok', 6000);
+  reDraw();
+}
+
+async function addToPack(id) {
+  const ids = await pickModsDialog(standalonePackable(), { title: L`Добавить моды в пак`, okLabel: L`Добавить` });
+  if (!ids) return;
+  const r = await window.api.packs.addMembers(id, ids);
+  if (r.error) toast(r.error, 'error', 6000);
+  else toast(L`Добавлено в пак: ${r.added}`);
+  reDraw();
+}
+
+async function disbandPack(id) {
+  const rec = recById(id);
+  if (!rec) return;
+  if (!await confirmDialog(
+    L`Разобрать пак «${rec.name}» на отдельные моды? Каждый мод снова займёт свой слот.`,
+    { okLabel: L`Разобрать` },
+  )) return;
+  const r = await window.api.packs.disband(id);
+  if (r.error) toast(r.error, 'error', 6000);
+  else toast(L`Разобрано на ${r.count}: ${r.names.slice(0, 4).join(', ')}${r.names.length > 4 ? '…' : ''}`, 'ok', 6000);
+  reDraw();
+}
+
+async function deleteRecord(id) {
+  const rec = recById(id);
+  if (!rec) return;
+  if (!await confirmDialog(rec.kind === 'pack'
+    ? L`Удалить пак «${rec.name}» со всеми модами внутри?`
+    : L`Удалить «${rec.name}»?`)) return;
+  const r = await window.api.mods.remove(id);
+  if (r.error) toast(r.error, 'error');
+  else toast(L`${rec.name} удалён`);
+  reDraw();
 }
 
 // selection keys: a plain record id, or "m:<packId>:<memberId>" for a pack member
@@ -468,7 +556,7 @@ export async function renderLibrary() {
   ordered.forEach((r, i) => { r.slot = slotOf(r); r.slotIndex = i; });
 
   await paint(() => { viewRoot.innerHTML = `
-    <div class="view-header"><h1 class="view-title">${L`Библиотека`}</h1></div>
+    <div class="view-header"><h1 class="view-title">${L`Мои моды`}</h1></div>
     ${masterOff ? `
       <div class="lib-banner off">
         <span class="ms">bolt</span>
@@ -507,14 +595,13 @@ export async function renderLibrary() {
     <div class="lib-toolbar">
       <div class="lib-search">
         <span class="ms">search</span>
-        <input id="libSearch" placeholder="${L`Поиск в библиотеке…`}" value="${esc(libSearch)}" spellcheck="false" autocomplete="off">
+        <input id="libSearch" placeholder="${L`Поиск среди своих модов…`}" value="${esc(libSearch)}" spellcheck="false" autocomplete="off">
         <button class="lib-search-clear ${libSearch ? 'show' : ''}" id="libSearchClear" aria-label="${L`Очистить`}"><span class="ms">close</span></button>
       </div>
       <span class="lib-stats">${installedAll.length} ${plural(installedAll.length, 'мод', 'мода', 'модов')} · ${enabledCount} ${L`вкл`} · ${slots}/${slotCeil} ${plural(slots, 'слот', 'слота', 'слотов')}</span>
       <div class="lib-toolbar-actions">
         <button class="btn btn-sm" id="importVpkBtn"><span class="ms">upload_file</span>${L`Импорт VPK`}</button>
         <button class="btn btn-sm" id="importFolderBtn" title="${L`Импортировать все .vpk из папки — например из распакованного пака Dota 2 Skinchanger`}"><span class="ms">drive_folder_upload</span>${L`Импорт папки`}</button>
-        <button class="btn btn-sm" id="openFolderBtn2"><span class="ms">folder_open</span>${L`Папка модов`}</button>
       </div>
     </div>
     ${installedAll.some((r) => !isCosmeticRec(r)) ? `
@@ -528,7 +615,7 @@ export async function renderLibrary() {
     ${external.length ? `
       <div class="section-h spaced"><span class="ms">folder_zip</span>${L`Внешние файлы в папке модов`}</div>
       <div class="view-intro">
-        ${L`Моды, положенные в папку мимо менеджера. «Принять» берёт файл в библиотеку — с превью, переключателем и всем остальным.`}
+        ${L`Моды, положенные в папку мимо менеджера. «Принять» берёт файл к себе — с превью, переключателем и всем остальным.`}
         ${extDupes ? ` <b>${extDupes}</b> ${plural(extDupes, 'из них — копия уже установленного мода', 'из них — копии уже установленных модов', 'из них — копии уже установленных модов')}.` : ''}
       </div>
       <div class="lib-list" id="extList"></div>` : ''}
@@ -668,6 +755,15 @@ async function bindLibrary(external) {
     updateBulkBar();
   });
 
+  // ----- the rest of what a row can do (right-click) -----
+  if (libList) {
+    bindContextMenu(libList, '.lib-row[data-row]', (row) => {
+      const rec = byId(row.dataset.row);
+      if (!rec) return null;
+      return rec.kind === 'pack' ? packMenuItems(rec) : rowMenuItems(rec);
+    });
+  }
+
   // ----- row / pack / member actions (delegated) -----
   libList?.addEventListener('click', async (e) => {
     if (e.target.closest('#disableAllCos')) {
@@ -678,17 +774,8 @@ async function bindLibrary(external) {
       reRender();
       return;
     }
-    const el = e.target.closest('[data-expand],[data-id],[data-mtoggle],[data-mremove],[data-addto],[data-disband],[data-del],[data-export],[data-adopt],[data-split],[data-up],[data-down]');
+    const el = e.target.closest('[data-expand],[data-id],[data-mtoggle],[data-mremove],[data-del],[data-adopt]');
     if (!el) return;
-
-    const moveId = el.dataset.up || el.dataset.down;
-    if (moveId) {
-      el.disabled = true;
-      const r = await window.api.mods.move(moveId, el.dataset.up ? -1 : 1);
-      if (r.error) toast(r.error, 'error', 6000);
-      reRender();
-      return;
-    }
 
     if (el.dataset.expand !== undefined && el.dataset.expand) {
       const id = el.dataset.expand;
@@ -728,42 +815,8 @@ async function bindLibrary(external) {
       reRender();
       return;
     }
-    if (el.dataset.addto) {
-      const ids = await pickModsDialog(standalonePackable(), { title: L`Добавить моды в пак`, okLabel: L`Добавить` });
-      if (!ids) return;
-      const r = await window.api.packs.addMembers(el.dataset.addto, ids);
-      if (r.error) toast(r.error, 'error', 6000);
-      else toast(L`Добавлено в пак: ${r.added}`);
-      reRender();
-      return;
-    }
-    if (el.dataset.disband) {
-      const rec = byId(el.dataset.disband);
-      if (!await confirmDialog(L`Разобрать пак «${rec.name}» на отдельные моды? Каждый мод снова займёт свой слот.`, { okLabel: L`Разобрать` })) return;
-      const r = await window.api.packs.disband(el.dataset.disband);
-      if (r.error) toast(r.error, 'error', 6000);
-      else toast(L`Разобрано на ${r.count}: ${r.names.slice(0, 4).join(', ')}${r.names.length > 4 ? '…' : ''}`, 'ok', 6000);
-      reRender();
-      return;
-    }
     if (el.dataset.del) {
-      const rec = byId(el.dataset.del);
-      if (!await confirmDialog(rec.kind === 'pack' ? L`Удалить пак «${rec.name}» со всеми модами внутри?` : L`Удалить «${rec.name}»?`)) return;
-      const r = await window.api.mods.remove(rec.id);
-      if (r.error) toast(r.error, 'error');
-      else toast(L`${rec.name} удалён`);
-      reRender();
-      return;
-    }
-    if (el.dataset.export) {
-      const rec = byId(el.dataset.export);
-      el.disabled = true;
-      const prev = el.innerHTML;
-      el.innerHTML = `<span class="ms">hourglass_empty</span>${L`Собираю…`}`;
-      const r = await window.api.mods.exportSingle(rec.id);
-      el.disabled = false; el.innerHTML = prev;
-      if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
-      else if (r.ok) toast(L`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
+      deleteRecord(el.dataset.del);
       return;
     }
     if (el.dataset.adopt) {
@@ -792,7 +845,6 @@ async function bindLibrary(external) {
   $('#disableAllBtn')?.addEventListener('click', () => bulkToggle(libRecords || [], false));
   $('#importVpkBtn')?.addEventListener('click', async () => handleImportResult(await window.api.mods.importDialog()));
   $('#importFolderBtn')?.addEventListener('click', async () => handleImportResult(await window.api.mods.importFolderDialog()));
-  $('#openFolderBtn2')?.addEventListener('click', () => window.api.misc.openLangFolder());
 
   if (external.length) {
     const extList = $('#extList');
@@ -821,7 +873,7 @@ async function bindLibrary(external) {
         </div>
         <div class="lib-actions">
           ${simple ? '' : `<button class="toggle ${f.enabled ? 'on' : ''}" data-ext="${esc(f.key)}" role="switch" aria-checked="${f.enabled}"></button>`}
-          ${f.duplicateOf ? '' : `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="${f.match ? L`Привязать к каталогу и управлять как обычным модом` : L`Взять файл в библиотеку — дальше как у обычного мода`}"><span class="ms">library_add_check</span>${L`Принять`}</button>`}
+          ${f.duplicateOf ? '' : `<button class="btn btn-sm btn-primary" data-adopt="${esc(f.key)}" title="${f.match ? L`Привязать к каталогу и управлять как обычным модом` : L`Взять файл к себе — дальше как у обычного мода`}"><span class="ms">library_add_check</span>${L`Принять`}</button>`}
           ${f.subjects >= 2 ? `<button class="btn btn-sm" data-extsplit="${esc(f.key)}" title="${L`Разбить на отдельные моды по героям`}"><span class="ms">call_split</span>${L`Разобрать`}</button>` : ''}
           ${simple ? '' : `<button class="btn btn-sm btn-danger" data-extdel="${esc(f.key)}">${L`Удалить`}</button>`}
         </div>
@@ -850,7 +902,7 @@ async function bindLibrary(external) {
           : f.kind === 'font' ? await window.api.mods.adoptFont(f.name, prev)
           : await window.api.mods.adoptExternal(f.key, prev);
         if (r.error) toast(r.error, 'error', 6000);
-        else toast(r.matched === false ? L`«${r.name}» в библиотеке` : L`«${r.name}» принят из каталога`, 'ok');
+        else toast(r.matched === false ? L`«${r.name}» принят` : L`«${r.name}» принят из каталога`, 'ok');
         await refreshInstalledIndex();
         renderLibrary();
       });

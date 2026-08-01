@@ -117,10 +117,6 @@ const EN = {
   'Выбрать всю косметику': 'Select every look',
   'Вернуть все слоты к тому, что даёт игра': 'Put every slot back to what the game gives',
   'Косметика выключена — слоты снова как в игре': 'Cosmetics off — the slots are the game’s own again',
-  'Этот вид сейчас стоит в слоте «{0}». Убрать — вернуть то, что даёт игра; включить обратно можно в Библиотеке.':
-    'This look is what the «{0}» slot wears now. Removing it puts the game’s own back; you can switch it on again from the Library.',
-  'На один слот — только одна активная косметика: этот вид заменит «{0}». Прошлый выбор останется в Библиотеке выключенным.':
-    'One slot, one active look: this one replaces «{0}». The previous pick stays in the Library, switched off.',
   'Косметика подставляется в схему предметов игры — файлы модов она не трогает, и её видно только тебе.':
     'A look is spliced into the game’s item schema — it touches no mod files, and only you can see it.',
   '…и ещё {0} — уточни запрос': '…and {0} more — narrow the search',
@@ -210,8 +206,6 @@ const EN = {
   'Открыть ссылку': 'Open link',
   'Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.':
     'The font is installed into the game files (game\\dota\\panorama\\fonts) — no launch option needed. Originals are backed up automatically.',
-  'Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически. Включать и выключать его можно в Библиотеке, но активным может быть только один курсор: новый выключит предыдущий.':
-    'The cursor is installed into game\\dota\\resource\\cursor — no launch option needed. Originals are backed up automatically. You can switch it on and off in the Library, but only one cursor can be active: a new one turns the previous one off.',
   'Введи название пака': 'Enter a pack name',
   'В паке не осталось модов': 'No mods left in the pack',
   'Пак «{0}» сохранён — он появился в категории Паки': 'Pack «{0}» saved — it appears in the Packs category',
@@ -237,8 +231,6 @@ const EN = {
   '{0} из {1} включено': '{0} of {1} enabled',
   'пусто': 'empty',
   'Включить/выключить пак целиком': 'Enable/disable whole pack',
-  'Добавить моды в пак': 'Add mods to pack',
-  'Разобрать пак обратно на отдельные моды': 'Disband the pack back into separate mods',
   'Разобрать': 'Split',
 
   // ---------- library: normal rows ----------
@@ -252,13 +244,6 @@ const EN = {
     'Cursors cannot go into a pak — they live in resource\\cursor, not in a pak file',
   'Привязать к каталогу': 'Adopt into the catalog',
   'Привязать': 'Adopt',
-  'Разбить на отдельные моды по героям': 'Split into separate mods by hero',
-  'Сохранить мод одним .vpk файлом (для отправки автору каталога)':
-    'Save the mod as a single .vpk (to send to the catalog author)',
-  'Сохранить курсор архивом (для отправки или на память)':
-    'Save the cursor set as an archive (to pass on or to keep)',
-  'Сохранить пак одним .vpk файлом (войдут включённые моды)':
-    'Save the pack as a single .vpk (the mods that are on go in)',
   'Экспорт': 'Export',
   'Привязано: {0}': 'Adopted: {0}',
 
@@ -319,7 +304,6 @@ const EN = {
   'Разобрано на {0}: {1}': 'Split into {0}: {1}',
   'Разобрано на {0}: {1}{2}': 'Split into {0}: {1}{2}',
   'Удалить пак «{0}» со всеми модами внутри?': 'Delete pack «{0}» with all mods inside?',
-  'Собираю…': 'Building…',
   '{0} сохранён одним файлом ({1} MB)': '{0} saved as a single file ({1} MB)',
   'Привязан к каталогу: «{0}»': 'Adopted into the catalog: «{0}»',
   'Разбить «{0}» на отдельные моды по героям? Исходный файл заменится на отдельные, каждый можно будет включать и удалять по отдельности.':
@@ -356,10 +340,7 @@ const EN = {
   'Не удалось прочитать перетащенную папку': 'Could not read the dropped folder',
 
   // ---------- load order ----------
-  'Загружать раньше: при общих файлах победит этот мод': 'Load earlier: on a shared file this mod wins',
   'Загружать позже': 'Load later',
-  'Выше в порядке загрузки': 'Earlier in the load order',
-  'Ниже в порядке загрузки': 'Later in the load order',
   'Файл игры не совпадает с подписью Dota': "A game file does not match Dota's own signature",
   '. Пока так, клиент может не пускать в матчмейкинг — и моды тут ни при чём. Приложение не смогло восстановить оригинал само: проверь целостность файлов Dota 2 через Steam, это чинит за минуту.':
     ". While that is true the client can refuse to matchmake, and mods have nothing to do with it. The app could not restore the original itself: verify Dota 2's files through Steam, it takes a minute.",
@@ -447,6 +428,29 @@ const EN = {
 
   // ---------- help ----------
   'Помощь': 'Help', 'Вики': 'Wiki',
+
+  // ---------- my mods ----------
+  'Мои моды': 'My mods',
+  'Поиск среди своих модов…': 'Search your mods…',
+  'Моды, положенные в папку мимо менеджера. «Принять» берёт файл к себе — с превью, переключателем и всем остальным.':
+    'Mods dropped into the folder without the manager. “Take it” adopts the file — preview, switch and all.',
+  'Взять файл к себе — дальше как у обычного мода': 'Adopt the file: from then on it behaves like any other mod',
+  '«{0}» принят': '«{0}» adopted',
+  'Загружать раньше': 'Load earlier',
+  'Загружать позже': 'Load later',
+  'Сохранить одним файлом': 'Save as one file',
+  'Сохранить курсор архивом': 'Save the cursor as an archive',
+  'Разобрать по героям': 'Split by hero',
+  'Разбить на отдельные моды по героям': 'Split into one mod per hero',
+  'Разобрать на отдельные моды': 'Split into separate mods',
+  'Добавить моды в пак': 'Add mods to the pack',
+  'Собираю «{0}» в один файл…': 'Building «{0}» into one file…',
+  'Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически. Включать и выключать его можно в «Моих модах», но активным может быть только один курсор: новый выключит предыдущий.':
+    'The cursor is installed into game\\dota\\resource\\cursor — no launch option needed. Originals are backed up automatically. You can switch it on and off in My mods, but only one cursor can be active: a new one turns the previous one off.',
+  'Этот вид сейчас стоит в слоте «{0}». Убрать — вернуть то, что даёт игра; включить обратно можно в «Моих модах».':
+    'This look currently fills the «{0}» slot. Removing it puts back what the game gives; you can switch it on again in My mods.',
+  'На один слот — только одна активная косметика: этот вид заменит «{0}». Прошлый выбор останется в «Моих модах» выключенным.':
+    'One slot, one active look: this one replaces «{0}». The previous pick stays in My mods, switched off.',
 
   // ---------- settings ----------
   'Масштаб': 'Scale',

@@ -196,3 +196,47 @@
 }
 .scale-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
 .scale-range:focus-visible { border-color: color-mix(in srgb, var(--md-primary) 50%, transparent); }
+
+/* ============ Context menu ============
+   What a row can do beyond its switch (see ui/menu.js). Lives on the body rather than in the
+   row, so it is never clipped by a list that scrolls, and it borrows the same surface, radius
+   and shadow as the help menu in the title bar - one kind of floating panel, not two. */
+.ctx-menu {
+  position: fixed;
+  z-index: var(--z-toast);
+  min-width: 208px;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-3);
+  animation: ctxIn var(--dur-fast) var(--ease-decelerate);
+}
+@keyframes ctxIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ctx-item .ms { font-size: var(--icon-md); color: var(--primary-soft); flex-shrink: 0; }
+.ctx-item:hover:not(:disabled) { background: var(--state-hover); color: var(--text); }
+.ctx-item:disabled { opacity: var(--disabled-opacity); cursor: default; }
+.ctx-item.danger { color: var(--danger); }
+.ctx-item.danger .ms { color: var(--danger); }
+.ctx-item.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.ctx-sep { height: 1px; margin: var(--space-1) var(--space-2); background: var(--border); }
