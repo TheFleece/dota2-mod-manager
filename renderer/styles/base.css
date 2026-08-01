@@ -67,25 +67,19 @@ img, video { -webkit-user-drag: none; user-select: none; }
   filter: blur(110px);
   opacity: 0.16;
 }
+/* They used to drift, forever, on a 26 and a 32 second loop. Two 640px circles under a 110px
+   blur cannot be moved without being drawn again, and they sit under everything - measured
+   while scrolling a category of 463 mods, that alone was the difference between 10 long
+   frames and 74. They keep the colour of the room and stopped moving. */
 .blob-a {
   background: var(--md-accent);
   top: -180px;
   right: -120px;
-  animation: drift-a 26s ease-in-out infinite alternate;
 }
 .blob-b {
   background: var(--md-primary-container);
   bottom: -220px;
   left: -160px;
-  animation: drift-b 32s ease-in-out infinite alternate;
-}
-@keyframes drift-a {
-  from { transform: translate(0, 0) scale(1); }
-  to { transform: translate(-110px, 90px) scale(1.15); }
-}
-@keyframes drift-b {
-  from { transform: translate(0, 0) scale(1); }
-  to { transform: translate(130px, -70px) scale(0.9); }
 }
 
 /* ============ Body ============ */

@@ -254,6 +254,27 @@ function collectGroups(mods) {
   return out;
 }
 
+/* Heroes arrives as one flat list of 463 mods and the eye reads it as heroes: 462 of them
+ * carry a hero's name, 121 heroes in all, three mods each on average, and one mod names
+ * nobody. Hero items are grouped this way by the catalog itself - this does the same for the
+ * category that is not, from the same list of names the filter above it uses.
+ *
+ * Cached because it is 127 patterns against 463 names on every draw otherwise. */
+let heroPatterns = null;
+const heroByName = new Map();
+
+function heroOf(name) {
+  if (heroByName.has(name)) return heroByName.get(name);
+  if (!heroPatterns) {
+    heroPatterns = (state.catalog?.constants?.HEROES_LIST || [])
+      .map((h) => [h, new RegExp(`\\b${h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')]);
+  }
+  const hit = heroPatterns.find(([, re]) => re.test(name));
+  const hero = hit ? hit[0] : '';
+  heroByName.set(name, hero);
+  return hero;
+}
+
 function heroMatches(hero, name) {
   const re = new RegExp(`\\b${hero.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
   return re.test(name);
@@ -514,6 +535,10 @@ function renderSearchResults() {
 
 function renderCategory(categoryId) {
   const all = categoryMods(categoryId).map((m) => ({ ...m, _cat: categoryId }));
+  // the one category the catalog leaves flat, and the only one where the eye is looking for
+  // a hero rather than reading 463 names in a row
+  const byHero = categoryId === 'heroes';
+  if (byHero) for (const m of all) m._group = heroOf(m.name);
   const tags = collectTags(all);
   const slots = collectSlots(all, categoryId);
   // hero dropdowns are long enough that catalog order is useless — sort them A-Z
@@ -527,7 +552,14 @@ function renderCategory(categoryId) {
   const mods = applyFilters(all, categoryId);
   const installable = all.some(canBeInstalled);
 
-  const grouped = isGrouped(categoryId) && !filters.group && filters.sort === 'default';
+  // Picking one hero out of the dropdown already answers the question the headings answer,
+  // so the grid stops repeating it.
+  const grouped = (isGrouped(categoryId) || byHero) && !filters.group && !filters.hero && filters.sort === 'default';
+  // hero groups are ours rather than the catalog's, so the order is ours to make: A-Z, with
+  // the mod that names no hero at the end rather than in the middle of the alphabet
+  if (grouped && byHero) {
+    mods.sort((a, b) => (a._group ? 0 : 1) - (b._group ? 0 : 1) || a._group.localeCompare(b._group));
+  }
 
   let gridHtml = '';
   if (!mods.length) {
@@ -536,7 +568,7 @@ function renderCategory(categoryId) {
     let lastGroup = null;
     mods.forEach((m, i) => {
       if (m._group !== lastGroup) {
-        gridHtml += `<div class="group-title">${esc(m._group)}</div>`;
+        gridHtml += `<div class="group-title">${esc(m._group || tr('Прочее'))}</div>`;
         lastGroup = m._group;
       }
       gridHtml += cardHtml(m, i);
