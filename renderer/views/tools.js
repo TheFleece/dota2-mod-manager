@@ -2,15 +2,15 @@
  *
  * A short list because it is somebody else's software - VPK editors, model viewers and the
  * like. The app downloads one, unpacks it and opens the folder; running it is the user's
- * business, and a tool with a guide sends them to the Guides screen through the router
- * rather than drawing it here.
+ * business, and the guide that explains it opens on the card itself.
  */
 import { $ } from '../core/dom.js';
 import { state } from '../core/store.js';
-import { registerView, switchView } from '../core/router.js';
+import { registerView } from '../core/router.js';
 import { esc } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
 import { paint } from '../ui/transitions.js';
+import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 
 const viewRoot = $('#view-root');
 
@@ -37,8 +37,8 @@ export async function renderTools() {
                  <button class="btn btn-sm btn-danger" data-tdel="${rec.id}">${L`Удалить`}</button>`
               : `<button class="btn btn-sm btn-primary" data-get="${i}"><span class="ms">download</span>${L`Скачать`}</button>`)
               : (t.file ? `<button class="btn btn-sm" data-url="${esc(t.file)}"><span class="ms">open_in_new</span>${L`Открыть сайт`}</button>` : '')}
-            ${t.guideId && state.catalog?.guides?.[t.guideId] ? `<button class="btn btn-sm btn-ghost" data-guide="${esc(t.guideId)}">${L`Гайд`}</button>` : ''}
           </div>
+          ${modGuidesHtml(t)}
         </div>`;
       }).join('')}
     </div>
@@ -73,13 +73,5 @@ export async function renderTools() {
   viewRoot.querySelectorAll('[data-url]').forEach((b) => {
     b.addEventListener('click', () => window.api.misc.openExternal(b.dataset.url));
   });
-  viewRoot.querySelectorAll('[data-guide]').forEach((b) => {
-    b.addEventListener('click', () => {
-      switchView('guides');
-      setTimeout(() => {
-        const el = document.querySelector(`[data-guide="${b.dataset.guide}"]`);
-        if (el) { el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth' }); }
-      }, 80);
-    });
-  });
+  bindGuides(viewRoot);
 }

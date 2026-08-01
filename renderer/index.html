@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="styles/controls.css">
   <link rel="stylesheet" href="styles/catalog.css">
   <link rel="stylesheet" href="styles/modal.css">
+  <link rel="stylesheet" href="styles/guide.css">
   <link rel="stylesheet" href="styles/library.css">
   <link rel="stylesheet" href="styles/presets.css">
   <link rel="stylesheet" href="styles/settings.css">
@@ -49,9 +50,16 @@
         <button class="tb-tab" data-view="library" data-i18n="Библиотека">Library<span class="tb-badge" id="libCount"></span></button>
         <button class="tb-tab" data-view="presets" data-i18n="Пресеты">Presets</button>
         <button class="tb-tab" data-view="tools" data-i18n="Инструменты">Tools</button>
-        <button class="tb-tab" data-view="guides" data-i18n="Гайды">Guides</button>
         <button class="tb-tab" data-view="settings" data-i18n="Настройки">Settings</button>
       </nav>
+
+      <!-- Where a stuck user goes: the catalog's wiki, in their language, and its Discord.
+           The guides themselves now sit inside the mod they explain. -->
+      <div class="tb-help">
+        <button class="tb-help-btn" id="helpBtn" title="Help" data-i18n-title="Помощь"
+                aria-haspopup="menu" aria-expanded="false"><span class="ms">help</span></button>
+        <div class="tb-menu hidden" id="helpMenu" role="menu"></div>
+      </div>
 
       <div class="tb-spacer"></div>
 

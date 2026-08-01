@@ -192,6 +192,15 @@ function createWindow() {
               await new Promise((r) => setTimeout(r, 2500));
             }
           }
+          if (process.env.MM_EVAL) {
+            // dev-only: read the finished DOM and write the answer beside the screenshot.
+            // A picture cannot say whether a fold opened with the right text in the right
+            // language, and that is exactly the kind of thing that ships broken.
+            const out = await win.webContents.executeJavaScript(`(async () => {
+              ${process.env.MM_EVAL}
+            })()`);
+            fs.writeFileSync(`${process.env.MM_SHOT}.eval.json`, JSON.stringify(out, null, 1));
+          }
           await new Promise((r) => setTimeout(r, 500));
           const img = await win.webContents.capturePage();
           fs.writeFileSync(process.env.MM_SHOT, img.toPNG());

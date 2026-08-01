@@ -75,6 +75,20 @@ export const RAIL_SECTIONS = [
 
 export const CATALOG_EXCLUDE = ['tools', 'news'];
 
+/* A guide the catalog wrote and hung on nothing. "weather" explains the Patcher tool, whose
+ * own guideId points at the safety warning instead, so with the guides screen gone it would
+ * be unreachable. This hands an orphan to the mod that needs it, keyed by the guide the mod
+ * already names. The other five orphans stay dropped: two are for Linux and three are
+ * general how-tos the wiki covers. */
+export const GUIDE_ALSO = { warning: ['weather'] };
+
+/* Where a stuck user goes. Both are in the catalog's own "news" entries, which is what the
+ * help menu reads - these are the fallback for a first run with no catalog yet. */
+export const HELP_LINKS = {
+  wiki: 'https://d2pfxwiki.pages.dev/',
+  discord: 'https://discord.gg/PBvG8D9MxT',
+};
+
 export const SORTS = [
   { key: 'default', label: 'По умолчанию' },
   { key: 'date', label: 'Сначала новые' },

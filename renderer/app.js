@@ -24,11 +24,11 @@ import { applyContentZoom, readPanels, bindPanels } from './ui/chrome.js';
 import { applyStaticI18n, showLanguagePicker } from './ui/language.js';
 import { initTheme } from './ui/theme.js';
 import { initQueue } from './ui/queue.js';
+import { bindHelp } from './ui/help.js';
 import { handleImportResult } from './views/library.js';
 import { loadCatalog } from './views/catalog.js';
 import { handlePresetImport } from './views/presets.js';
 import './views/tools.js';
-import './views/guides.js';
 import './views/settings.js';
 
 // A crash the user can't explain is the hardest kind to fix from a support chat. Both land
@@ -57,6 +57,8 @@ window.api.win.onMaximized((maxed) => {
 document.querySelectorAll('.tb-tab').forEach((btn) => {
   btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
+
+bindHelp();
 
 $('#openModsFolderBtn').addEventListener('click', async () => {
   const r = await window.api.misc.openLangFolder();

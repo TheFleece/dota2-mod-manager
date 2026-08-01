@@ -12,7 +12,7 @@
 import { $ } from '../core/dom.js';
 import { RAW_BASE, COSMETIC_SLOTS, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, SORTS, freshFilters } from '../core/constants.js';
 import { state } from '../core/store.js';
-import { registerView, render, switchView } from '../core/router.js';
+import { registerView, render } from '../core/router.js';
 import { keyOf, pickedIn, refreshInstalledIndex, refreshCosmeticSlots } from '../core/installed.js';
 import { catName, catIcon } from '../core/categories.js';
 import { esc, fmtDate, plural } from '../ui/format.js';
@@ -24,6 +24,7 @@ import { thumbHtml } from '../ui/thumb.js';
 import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons, cosmeticIcon, cosmeticIconKnown } from '../ui/cosmetic-icons.js';
 import { paint } from '../ui/transitions.js';
 import { isQueued, toggleQueued, dropFromQueue, useInstaller } from '../ui/queue.js';
+import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 
 const viewRoot = $('#view-root');
 
@@ -1059,7 +1060,8 @@ function drawModal() {
   const styleLabel = styles ? cur.label : null;
   const installedRec = state.installedIndex.get(keyOf(categoryId, mod.name, styleLabel));
   const busy = installing.has(keyOf(categoryId, mod.name, styleLabel));
-  const guide = mod.guideId && state.catalog?.guides?.[mod.guideId];
+  // What the catalog wrote about this mod reads here rather than on a screen of its own
+  const guides = modGuidesHtml(mod);
 
   const links = mod.links || [];
   const playable = modPreviewMedia(categoryId, mod);
@@ -1141,9 +1143,9 @@ function drawModal() {
           : `<button class="btn btn-primary" id="installBtn" ${busy ? 'disabled' : ''}><span class="ms">download</span>${busy ? L`Установка…` : L`Установить`}</button>`) : ''}
         ${!isPack && !target && mod.file ? `<button class="btn" id="openLinkBtn"><span class="ms">open_in_new</span>${L`Открыть ссылку`}</button>` : ''}
       </div>
-      ${otherLinks.length || guide ? `
+      ${guides}
+      ${otherLinks.length ? `
         <div class="modal-links">
-          ${guide ? `<button class="btn btn-sm" id="modalGuideLink"><span class="ms">menu_book</span>${L`Гайд: ${esc(guide.title)}`}</button>` : ''}
           ${otherLinks.map((l) => `<button class="btn btn-sm" data-link="${links.indexOf(l)}"><span class="ms">open_in_new</span>${esc(tr(LINK_LABEL[l.type] || l.type || 'Ссылка'))}</button>`).join('')}
         </div>` : ''}
       ${categoryId === 'fonts' ? `<div class="modal-note">${L`Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.`}</div>` : ''}
@@ -1227,17 +1229,7 @@ function drawModal() {
   if (packBtn) packBtn.addEventListener('click', () => installPack(mod));
   const openLinkBtn = $('#openLinkBtn');
   if (openLinkBtn) openLinkBtn.addEventListener('click', () => window.api.misc.openExternal(mod.file));
-  const guideLink = $('#modalGuideLink');
-  if (guideLink) {
-    guideLink.addEventListener('click', () => {
-      closeModal();
-      switchView('guides');
-      setTimeout(() => {
-        const el = document.querySelector(`[data-guide="${mod.guideId}"]`);
-        if (el) { el.classList.add('open'); el.scrollIntoView({ behavior: 'smooth' }); }
-      }, 80);
-    });
-  }
+  bindGuides($('#modalContent'));
   otherLinks.forEach((l) => {
     const a = document.querySelector(`[data-link="${links.indexOf(l)}"]`);
     if (a) a.addEventListener('click', () => {

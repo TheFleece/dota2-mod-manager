@@ -134,6 +134,64 @@
 }
 .tb-badge:empty { display: none; }
 
+/* Help, standing where the Guides tab used to. Not a tab: it leaves the app instead of
+   changing what is showing, so it reads as a mark rather than a place. */
+.tb-help { position: relative; flex-shrink: 0; -webkit-app-region: no-drag; }
+.tb-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--hit-min);
+  height: var(--hit-min);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.tb-help-btn .ms { font-size: var(--icon-md); }
+.tb-help-btn:hover { color: var(--text); background: var(--state-hover); }
+.tb-help-btn[aria-expanded='true'] { color: var(--text); background: var(--state-active); }
+.tb-help-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.tb-menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: var(--z-overlay);
+  min-width: 176px;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-3);
+  animation: tbMenuIn var(--dur-fast) var(--ease-decelerate);
+}
+@keyframes tbMenuIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.tb-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.tb-menu-item:hover { background: var(--state-hover); color: var(--text); }
+.tb-menu-item .ms { font-size: var(--icon-md); color: var(--primary-soft); }
+.tb-menu-out { margin-left: auto; font-size: var(--icon-sm) !important; color: var(--text-faint) !important; }
+
 .tb-spacer { flex: 1; }
 
 .tb-search {
@@ -431,6 +489,7 @@ body.top-folded #toasts { top: calc(30px * var(--top-zoom) + 8px); }
    window it is the only place left to move or close the app from. */
 body.top-folded #titlebar { height: 30px; }
 body.top-folded #tbNav,
+body.top-folded .tb-help,
 body.top-folded .tb-search,
 body.top-folded .tb-account,
 body.top-folded .tb-spacer { display: none; }

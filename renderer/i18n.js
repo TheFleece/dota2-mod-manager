@@ -208,7 +208,6 @@ const EN = {
   'Установить пак ({0})': 'Install pack ({0})',
   'Установка…': 'Installing…', 'Установить': 'Install',
   'Открыть ссылку': 'Open link',
-  'Гайд: {0}': 'Guide: {0}',
   'Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.':
     'The font is installed into the game files (game\\dota\\panorama\\fonts) — no launch option needed. Originals are backed up automatically.',
   'Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически. Включать и выключать его можно в Библиотеке, но активным может быть только один курсор: новый выключит предыдущий.':
@@ -447,9 +446,8 @@ const EN = {
   'Запустить': 'Run', 'Папка': 'Folder', 'Скачать': 'Download', 'Открыть сайт': 'Open site',
   'Скачивание…': 'Downloading…', '{0} готов': '{0} ready',
 
-  // ---------- guides ----------
-  'Гайды из репозитория Dota2PornFx. Менеджер делает бóльшую часть шагов автоматически — гайды пригодятся для ручной установки и решения проблем.':
-    'Guides from the Dota2PornFx repository. The manager does most of the steps for you — the guides help with manual installs and troubleshooting.',
+  // ---------- help ----------
+  'Помощь': 'Help', 'Вики': 'Wiki',
 
   // ---------- settings ----------
   'Путь к Dota 2': 'Dota 2 path',
