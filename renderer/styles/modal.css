@@ -1,14 +1,24 @@
 /* ============ Modal ============ */
+/* Opening a mod, on one clock:
+     0ms  the dimming starts, 200ms long
+     0ms  the window starts, 250ms, growing the last 4% and fading in
+     120ms the picture starts, 300ms, settling out of a slight zoom
+     420ms everything has landed
+   The picture begins while the frame is still moving and ends after it has stopped, so it
+   reads as one thing arriving rather than two. Leaving is a single 200ms fall: an exit that
+   takes as long as an entrance feels like the window is arguing. */
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(3, 3, 6, 0.7);
   display: flex; align-items: center; justify-content: center;
   z-index: 100;
   backdrop-filter: blur(8px);
-  /* No entrance of its own: opening a mod is one movement, and transitions.css owns it. */
+  animation: fadeIn var(--dur-base) var(--ease-standard) both;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .modal-overlay.hidden { display: none; }
+.modal-overlay.closing { animation: fadeOut var(--dur-base) var(--ease-accelerate) both; }
+@keyframes fadeOut { to { opacity: 0; } }
 .modal-content {
   background: var(--surface-solid);
   border: 1px solid var(--border-strong);
@@ -17,13 +27,24 @@
   max-height: calc(88vh / var(--content-zoom));
   overflow-y: auto;
   box-shadow: var(--shadow), 0 0 60px rgba(139, 111, 240, 0.08);
+  animation: windowIn var(--dur-medium) var(--ease-decelerate) both;
 }
+.closing .modal-content { animation: windowOut var(--dur-base) var(--ease-accelerate) both; }
 @keyframes modalIn {
   from { opacity: 0; transform: scale(0.95) translateY(12px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
-.modal-media { aspect-ratio: 16 / 9; background: var(--bg-elev); position: relative; }
-.modal-media img, .modal-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+@keyframes windowIn { from { opacity: 0; transform: scale(0.96); } }
+@keyframes windowOut { to { opacity: 0; transform: scale(0.97); } }
+
+.modal-media { aspect-ratio: 16 / 9; background: var(--bg-elev); position: relative; overflow: hidden; }
+/* The picture, not its frame: scaling the frame would open a gap at the window's edge on
+   the way in, and the frame is the thing that is supposed to be standing still by then. */
+.modal-media img, .modal-media video {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  animation: pictureIn var(--dur-medium-long) var(--ease-decelerate) var(--dur-fast) both;
+}
+@keyframes pictureIn { from { opacity: 0; transform: scale(1.06); } }
 .modal-media::after {
   content: '';
   position: absolute;

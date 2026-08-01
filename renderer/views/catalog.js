@@ -22,7 +22,7 @@ import { previewUrl, isMedia, resolveUrl, mediaHtml } from '../ui/media.js';
 import { openPlayer } from '../ui/player.js';
 import { thumbHtml } from '../ui/thumb.js';
 import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons, cosmeticIcon, cosmeticIconKnown } from '../ui/cosmetic-icons.js';
-import { paint, morph } from '../ui/transitions.js';
+import { paint } from '../ui/transitions.js';
 
 const viewRoot = $('#view-root');
 
@@ -734,7 +734,7 @@ function bindCards(root, modsList) {
         const [cat, name] = key.split('|');
         target = findModByName(cat, name);
       }
-      if (target) openModModal(target._cat, target, card);
+      if (target) openModModal(target._cat, target);
     });
     const v = card.querySelector('video[data-hoverplay]');
     if (v) {
@@ -805,32 +805,47 @@ let modalState = null;
 // being replaced: the card grows into the modal and shrinks back into the card it came from.
 // `from` is the card that was clicked, when there is one - a modal reached any other way
 // simply fades.
-// The picture the card shows is the picture the modal opens with, so it travels instead of
-// being replaced. Kept as the element rather than a lookup: the grid can be rebuilt while
-// the modal is open, and a card that is no longer on the page simply fades instead.
-let modalOrigin = null;
+// The window opens where windows open, in the middle, and the picture arrives inside it. It
+// used to fly out of the card it was clicked on, which meant the picture was travelling on
+// its own clock while the window did something else, and it read as two things at once.
+// Timings live in modal.css; the only number needed here is when the exit is over.
+let closingTimer = null;
 
-function openModModal(categoryId, mod, from) {
+// read rather than repeated, so the stylesheet stays the one place the tempo is set - and so
+// the system's reduced-motion setting, which flattens it to 1ms, is honoured for free
+function exitMs() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--dur-base');
+  return parseFloat(v) || 0;
+}
+
+function openModal(draw) {
+  const overlay = $('#modalOverlay');
+  clearTimeout(closingTimer);
+  overlay.classList.remove('closing');
+  draw();
+  overlay.classList.remove('hidden');
+}
+
+function openModModal(categoryId, mod) {
   cosModalState = null; // the two share one overlay
   modalState = { categoryId, mod, styleIdx: 0 };
-  modalOrigin = from?.querySelector('.card-media') || null;
-  morph(modalOrigin, () => {
-    drawModal();
-    $('#modalOverlay').classList.remove('hidden');
-    return $('#modalContent');
-  });
+  openModal(drawModal);
 }
 
 function closeModal() {
-  const back = modalOrigin && document.body.contains(modalOrigin) ? modalOrigin : null;
-  modalOrigin = null;
-  morph($('#modalOverlay').classList.contains('hidden') ? null : $('#modalContent'), () => {
-    $('#modalOverlay').classList.add('hidden');
+  const overlay = $('#modalOverlay');
+  if (overlay.classList.contains('hidden')) return;
+  overlay.classList.add('closing');
+  clearTimeout(closingTimer);
+  closingTimer = setTimeout(() => {
+    // reopened while it was falling: that pass owns the overlay now
+    if (!overlay.classList.contains('closing')) return;
+    overlay.classList.add('hidden');
+    overlay.classList.remove('closing');
     $('#modalContent').innerHTML = '';
     modalState = null;
     cosModalState = null;
-    return back;
-  });
+  }, exitMs());
 }
 
 $('#modalOverlay').addEventListener('click', (e) => {
@@ -1151,7 +1166,7 @@ function bindCosmeticCards(root) {
   if (!root) return;
   root.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
   root.querySelectorAll('.card[data-cos]').forEach((card) => {
-    card.addEventListener('click', () => openCosmeticModal(card.dataset.cos, card.dataset.cosId, card));
+    card.addEventListener('click', () => openCosmeticModal(card.dataset.cos, card.dataset.cosId));
   });
   paintCosmeticIcons(root);
   return watchCosmeticIcons(root, null);
@@ -1175,17 +1190,12 @@ function refreshCosmeticBadges() {
 
 let cosModalState = null;
 
-function openCosmeticModal(slot, itemId, from) {
+function openCosmeticModal(slot, itemId) {
   const o = findCosmetic(slot, itemId);
   if (!o) return;
   modalState = null;
   cosModalState = { slot, o };
-  modalOrigin = from?.querySelector('.card-media') || null;
-  morph(modalOrigin, () => {
-    drawCosmeticModal();
-    $('#modalOverlay').classList.remove('hidden');
-    return $('#modalContent');
-  });
+  openModal(drawCosmeticModal);
   // the picture may not have been fetched yet if the card was never scrolled into view
   if (!cosmeticIconKnown(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
 }

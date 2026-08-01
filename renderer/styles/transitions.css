@@ -36,40 +36,5 @@
   mix-blend-mode: normal;
 }
 
-/* ---- A card opening into its window ----
-   One movement, and everything on screen is on its clock. The card's picture and the window
-   it becomes carry the same name, so they are a single box that grows: the picture the user
-   clicked is the top of the window it lands in, and the rest of the window develops inside
-   that box on the way. What this replaced was three animations at once - the picture flying
-   on one curve, the panel scaling up from its own centre on another, the dimming on a third
-   - which is exactly why the picture looked detached from the window. */
-::view-transition-group(morph-subject) {
-  animation-duration: var(--dur-slow);
-  animation-timing-function: var(--ease-out);
-}
-::view-transition-old(morph-subject),
-::view-transition-new(morph-subject) {
-  animation-duration: var(--dur-slow);
-  animation-timing-function: var(--ease-out);
-  /* The two are the same picture at different sizes; letting them blend would show a ghost
-     of the smaller one over the larger. Anchored to the top because that is where the
-     window keeps its picture, so the two line up for the whole flight. */
-  mix-blend-mode: normal;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-}
-/* The window's own face is held back until the box is nearly there: a full panel of text
-   scaled up from thumbnail size is a blur, and the picture is what the user is following. */
-::view-transition-old(morph-subject) { animation-name: morphFrom; }
-::view-transition-new(morph-subject) { animation-name: morphTo; }
-@keyframes morphFrom { from, 40% { opacity: 1; } to { opacity: 0; } }
-@keyframes morphTo { from, 40% { opacity: 0; } to { opacity: 1; } }
-
-/* Everything else - the page behind, the dimming over it - is one crossfade on the same
-   clock. The old picture is held rather than faded out, so nothing dips to empty midway. */
-.vt-morph::view-transition-old(root) { animation: none; }
-.vt-morph::view-transition-new(root) {
-  animation: morphVeil var(--dur-slow) var(--ease-out) both;
-}
-@keyframes morphVeil { from { opacity: 0; } to { opacity: 1; } }
+/* Opening a mod is not here any more: a window that grows out of its card is one movement in
+   theory and two on screen. It is plain CSS on one clock now - see the top of modal.css. */
