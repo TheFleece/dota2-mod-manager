@@ -172,6 +172,37 @@
 .tb-search-clear:hover { color: var(--text); }
 .tb-search-clear .ms { font-size: 14px; }
 
+/* How many mods are waiting to be installed. Disabled and grey until there are any: a count
+   of nothing is not worth a button, but the button has to be findable before it is needed. */
+.tb-queue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  margin-left: 10px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-faint);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+.tb-queue .ms { font-size: 18px; }
+.tb-queue:disabled { cursor: default; }
+.tb-queue.has {
+  color: var(--primary-soft);
+  border-color: color-mix(in srgb, var(--md-primary) 45%, transparent);
+  background: var(--primary-dim);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--md-primary) 22%, transparent);
+}
+.tb-queue.has:hover { border-color: var(--primary); }
+.tb-queue-count:empty { display: none; }
+
 /* Discord account, between the search and the window buttons */
 .tb-account { display: flex; align-items: center; margin-left: 10px; -webkit-app-region: no-drag; }
 .tb-account:empty { display: none; }

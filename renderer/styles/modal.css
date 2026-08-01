@@ -77,36 +77,45 @@
   color: var(--text-muted);
   font-size: 12px;
 }
-/* Which look of this mod gets installed. The button is painted in the colour of the look it
-   stands for and writes its name across it: colour alone cannot tell Retro from Retro v2,
-   two greens a shade apart, and that name is all the catalog knows about a variant. The ink
-   is chosen in the renderer from how light the fill is (see styleInk) - the palette runs
-   from near-black browns to pale gold, so no single ink survives all of it. The one not
-   chosen is the unpicked state: colour held back, full strength once it is yours. */
+/* Which look gets installed. Filled in its own colour, these shouted louder than Install and
+   read as four things to press; the colour is a label, not a call to action. So the colour
+   is now the outline and a low wash behind the name, which also lets it glow a little in the
+   dark theme instead of sitting there as a slab. The name stays because colour alone cannot
+   tell Retro from Retro v2, two greens a shade apart, and the name is all the catalog knows
+   about a variant. The same looks are dots on the card, where the picture does the talking. */
 .style-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .style-btn {
-  background: var(--c, var(--surface));
-  border: 1px solid transparent;
+  --wash: color-mix(in srgb, var(--c, var(--md-primary)) 14%, transparent);
+  background: var(--wash);
+  border: 1px solid color-mix(in srgb, var(--c, var(--md-primary)) 55%, transparent);
   border-radius: 999px;
-  color: #fff;
-  padding: 8px 16px;
+  color: var(--text-muted);
+  padding: 7px 15px;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  display: inline-flex; align-items: center;
-  /* Held back, not dimmed out: the ring is what says which one is picked. Taking this any
-     lower darkens the fill under the ink until the palest reds fall under 4.5:1 - measured,
-     Anniversary and Crimson were at 3.4 and 3.8 when this was 0.62. */
-  opacity: 0.85;
-  transition: opacity 0.18s var(--ease), transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
 }
-/* a light fill takes dark ink; a two-stop gradient takes a veil and keeps white */
-.style-btn.on-light { color: #17131f; }
-.style-btn.veiled { background-image: linear-gradient(rgba(8, 6, 14, 0.45), rgba(8, 6, 14, 0.45)), var(--c); }
-.style-btn:hover { opacity: 0.95; }
+/* the colour itself, as a mark rather than a field */
+.style-btn::before {
+  content: '';
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--c, var(--md-primary));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c, var(--md-primary)) 70%, transparent);
+  flex-shrink: 0;
+}
+.style-btn:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--c, var(--md-primary)) 80%, transparent);
+}
 .style-btn:active { transform: scale(0.97); }
 .style-btn.active {
-  opacity: 1;
-  box-shadow: 0 0 0 2px var(--surface-solid), 0 0 0 3px var(--text), 0 4px 16px rgba(5, 3, 12, 0.5);
+  color: var(--text);
+  background: color-mix(in srgb, var(--c, var(--md-primary)) 22%, transparent);
+  border-color: var(--c, var(--md-primary));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c, var(--md-primary)) 32%, transparent);
 }
 .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .modal-links { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -330,3 +339,79 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
 /* A confirm box holding a list rather than a sentence. */
 .confirm-box.wide { max-width: 460px; width: 90vw; }
 .prompt-input { margin: var(--space-4) 0 var(--space-1); width: 100%; }
+
+/* ============ Install list ============ */
+/* The same window shape as a mod's, because it is the same kind of thing: something that
+   opened over the catalog and will close again. Rows are the mod as the grid showed it -
+   picture, name, where it came from - so the list reads as the cards you pressed. */
+.queue-panel {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  width: min(520px, calc(92vw / var(--content-zoom)));
+  max-height: calc(84vh / var(--content-zoom));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--md-primary) 8%, transparent);
+  animation: windowIn var(--dur-medium) var(--ease-decelerate) both;
+}
+.queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+.queue-head h2 { font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.queue-x {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  line-height: 0;
+  padding: var(--space-1);
+  border-radius: 50%;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.queue-x:hover { color: var(--text); background: var(--surface-hover); }
+.queue-list { overflow-y: auto; padding: var(--space-2) var(--space-3); }
+.queue-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.queue-row:hover { background: var(--surface); }
+.queue-thumb {
+  width: 64px;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-elev);
+}
+.queue-thumb img, .queue-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.queue-info { flex: 1; min-width: 0; }
+.queue-name { font-weight: var(--weight-semibold); font-size: var(--text-sm); }
+.queue-cat { color: var(--text-faint); font-size: var(--text-xs); }
+.queue-drop {
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  line-height: 0;
+  padding: var(--space-1);
+  border-radius: 50%;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.queue-drop:hover { color: var(--danger); background: var(--surface-hover); }
+.queue-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5) var(--space-4);
+  border-top: 1px solid var(--border);
+}

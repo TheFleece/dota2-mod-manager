@@ -23,6 +23,7 @@ import { openPlayer } from '../ui/player.js';
 import { thumbHtml } from '../ui/thumb.js';
 import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons, cosmeticIcon, cosmeticIconKnown } from '../ui/cosmetic-icons.js';
 import { paint } from '../ui/transitions.js';
+import { isQueued, toggleQueued, useInstaller } from '../ui/queue.js';
 
 const viewRoot = $('#view-root');
 
@@ -665,6 +666,52 @@ function bindToolbar() {
 
 // --- cards ---
 
+/* Which look of a mod the grid is showing. Picked on the card itself, because that is where
+ * the question comes up: scrolling past a mod in three colours, the one you want to see is
+ * not always the one the catalog lists first, and opening the window to find out is a detour.
+ * The site this catalog comes from works the same way and keeps the choice; here it lasts the
+ * session, which is as long as a grid does. */
+const pickedStyle = new Map(); // "cat|name" -> index
+
+const styleKey = (cat, name) => `${cat}|${name}`;
+
+function styleIndex(cat, mod) {
+  const i = pickedStyle.get(styleKey(cat, mod.name)) || 0;
+  return mod.styles && i < mod.styles.length ? i : 0;
+}
+
+/** The look the card is standing on: its own file, picture and name inside the catalog. */
+function shownStyle(cat, mod) {
+  return mod.styles ? mod.styles[styleIndex(cat, mod)] : null;
+}
+
+/* Which mods can go in the install list. Guides and tools are not mods, a pack is a list
+ * already, and two categories only allow a handful of theirs - all of which the catalog says
+ * itself in addToCartRules, the same rules its own site follows. */
+function canQueue(cat, mod) {
+  const rules = state.catalog?.constants?.addToCartRules || {};
+  if ((rules.hiddenCategories || []).includes(cat)) return false;
+  if (mod.type === 'guide' || mod.type === 'pack') return false;
+  const allowed = rules.allowedMods?.[cat];
+  if (allowed && !allowed.some((n) => String(n).toLowerCase() === mod.name.toLowerCase())) return false;
+  return canBeInstalled(mod);
+}
+
+/** What the list needs to know about a mod: the look on show, not the mod in general. */
+function queueEntry(cat, mod) {
+  const style = shownStyle(cat, mod);
+  return {
+    key: keyOf(cat, mod.name, style?.label || null),
+    cat,
+    catName: catName(cat),
+    name: mod.name,
+    label: style?.label || null,
+    title: style?.label ? `${mod.name} · ${style.label}` : mod.name,
+    file: style?.file || mod.file,
+    preview: previewUrl(cat, style?.preview || mod.preview),
+  };
+}
+
 // A card is its picture. Everything else on it has to earn the room it takes, so what shows
 // depends on the list: a grid inside one category needs neither the category's own name nor
 // a date, while a search result and the "recently added" strip have to say where the mod
@@ -672,8 +719,12 @@ function bindToolbar() {
 // says these are the new ones, and the modal has the date for anyone who wants it.
 function cardHtml(m, i, { cat: withCat = false } = {}) {
   const cat = m._cat;
-  const prev = previewUrl(cat, m.preview || (m.styles?.[0]?.preview));
-  const installed = isInstalled(cat, m);
+  const style = shownStyle(cat, m);
+  const prev = previewUrl(cat, style?.preview || m.preview);
+  // the badge answers for the look on show, not for "one of these is installed somewhere"
+  const installed = style
+    ? state.installedIndex.has(keyOf(cat, m.name, style.label))
+    : isInstalled(cat, m);
   const isPack = m.type === 'pack';
   const external = !installTarget(m) && !m.styles && !isPack;
   // What the mod changes, on the card rather than only in the modal: scrolling a category is
@@ -693,25 +744,7 @@ function cardHtml(m, i, { cat: withCat = false } = {}) {
   const playable = modPreviewMedia(cat, m);
   return `
     <div class="card" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
-      <div class="card-media">
-        ${mediaHtml(prev, { hoverPlay: true, fallbackIcon: catIcon(cat) })}
-        ${favButtonHtml(cat, m.name)}
-        <div class="media-tags">
-          ${installed ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}
-          ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}
-          ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
-          ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
-          ${tags.map((t) => `<span class="mtag soft">${esc(tagLabel(cat, t))}</span>`).join('')}
-        </div>
-        ${playable ? `
-          <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="${L`Смотреть превью`}">
-            <span class="ms">play_arrow</span>${L`Превью`}
-          </button>` : ''}
-        ${m.styles ? `
-          <div class="media-swatches">
-            ${m.styles.slice(0, 5).map((s) => `<span class="swatch-dot" style="background:${esc(s.color || '#a78bfa')}"></span>`).join('')}
-          </div>` : ''}
-      </div>
+      <div class="card-media">${cardMediaHtml(cat, m)}</div>
       <div class="card-body">
         <div class="card-name">${esc(m.name)}</div>
         ${meta ? `<div class="card-meta">${meta}</div>` : ''}
@@ -719,35 +752,105 @@ function cardHtml(m, i, { cat: withCat = false } = {}) {
     </div>`;
 }
 
+// Everything inside the picture. Split out because switching a look redraws exactly this and
+// nothing else: rebuilding the grid would restart every card's entrance and lose the scroll.
+function cardMediaHtml(cat, m) {
+  const style = shownStyle(cat, m);
+  const prev = previewUrl(cat, style?.preview || m.preview);
+  const installed = style
+    ? state.installedIndex.has(keyOf(cat, m.name, style.label))
+    : isInstalled(cat, m);
+  const isPack = m.type === 'pack';
+  const external = !installTarget(m) && !m.styles && !isPack;
+  const tags = [...new Set(Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => canonTag(k)))]
+    .sort((a, b) => (SLOT_TAGS.has(a) ? 1 : 0) - (SLOT_TAGS.has(b) ? 1 : 0))
+    .slice(0, 3);
+  const playable = modPreviewMedia(cat, m);
+  const entry = canQueue(cat, m) && !installed ? queueEntry(cat, m) : null;
+  return `
+    ${mediaHtml(prev, { hoverPlay: true, fallbackIcon: catIcon(cat) })}
+    ${favButtonHtml(cat, m.name)}
+    ${entry ? `
+      <button class="card-add ${isQueued(entry.key) ? 'on' : ''}" data-add="${esc(entry.key)}"
+              title="${isQueued(entry.key) ? L`В списке установки` : L`Добавить в список`}"
+              aria-label="${isQueued(entry.key) ? L`В списке установки` : L`Добавить в список`}">
+        <span class="ms">${isQueued(entry.key) ? 'check' : 'add'}</span>
+      </button>` : ''}
+    <div class="media-tags">
+      ${installed ? `<span class="mtag ok">${L`Установлен`}</span>` : ''}
+      ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}
+      ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
+      ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
+      ${tags.map((t) => `<span class="mtag soft">${esc(tagLabel(cat, t))}</span>`).join('')}
+    </div>
+    ${playable ? `
+      <button class="mtag-play" data-play="${esc(playable)}" data-title="${esc(m.name)}" aria-label="${L`Смотреть превью`}">
+        <span class="ms">play_arrow</span>${L`Превью`}
+      </button>` : ''}
+    ${m.styles ? `
+      <div class="media-swatches">
+        ${m.styles.slice(0, 5).map((s, si) => `
+          <button class="swatch-dot ${si === styleIndex(cat, m) ? 'active' : ''}" data-style-dot="${si}"
+                  style="background:${cssColor(s.color)}"
+                  title="${esc(s.label || tr('Обычный'))}"
+                  aria-label="${esc(s.label || tr('Обычный'))}"></button>`).join('')}
+      </div>` : ''}`;
+}
+
 function bindCards(root, modsList) {
   if (!root) return;
-  root.querySelectorAll('.card .fav-btn').forEach((btn) => bindFavButton(btn));
   root.querySelectorAll('.card[data-key]').forEach((card) => {
+    const key = card.dataset.key;
+    const [cat, name] = key.split('|');
+    const mod = (modsList && modsList.find((m) => keyOf(m._cat, m.name, null) === key)) || findModByName(cat, name);
     card.addEventListener('click', () => {
-      const key = card.dataset.key;
-      // find the mod by key among provided list or global index
-      let target = null;
-      if (modsList) {
-        target = modsList.find((m) => keyOf(m._cat, m.name, null) === key);
-      }
-      if (!target) {
-        const [cat, name] = key.split('|');
-        target = findModByName(cat, name);
-      }
-      if (target) openModModal(target._cat, target);
+      if (mod) openModModal(mod._cat || cat, mod);
     });
-    const v = card.querySelector('video[data-hoverplay]');
-    if (v) {
-      card.addEventListener('mouseenter', () => { v.play().catch(() => {}); });
-      card.addEventListener('mouseleave', () => { v.pause(); });
-    }
-    const playBtn = card.querySelector('.mtag-play');
-    if (playBtn) {
-      playBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openPlayer(playBtn.dataset.play, playBtn.dataset.title);
-      });
-    }
+    bindCardMedia(card, cat, mod);
+  });
+}
+
+// The controls that live on the picture, bound to one card. Called again after a look is
+// switched, because that redraws the picture and everything standing on it.
+function bindCardMedia(card, cat, mod) {
+  const fav = card.querySelector('.fav-btn');
+  if (fav) bindFavButton(fav);
+
+  // on the video itself rather than the card: the picture is redrawn when a look is switched
+  // and its listeners go with it, where a listener on the card would pile up
+  const v = card.querySelector('video[data-hoverplay]');
+  if (v) {
+    v.addEventListener('mouseenter', () => { v.play().catch(() => {}); });
+    v.addEventListener('mouseleave', () => { v.pause(); });
+  }
+  const playBtn = card.querySelector('.mtag-play');
+  if (playBtn) {
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPlayer(playBtn.dataset.play, playBtn.dataset.title);
+    });
+  }
+  const add = card.querySelector('.card-add');
+  if (add && mod) {
+    add.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const on = toggleQueued(queueEntry(cat, mod));
+      add.classList.toggle('on', on);
+      add.querySelector('.ms').textContent = on ? 'check' : 'add';
+      const label = on ? L`В списке установки` : L`Добавить в список`;
+      add.title = label;
+      add.setAttribute('aria-label', label);
+    });
+  }
+  card.querySelectorAll('[data-style-dot]').forEach((dot) => {
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!mod) return;
+      pickedStyle.set(styleKey(cat, mod.name), Number(dot.dataset.styleDot));
+      const media = card.querySelector('.card-media');
+      media.innerHTML = cardMediaHtml(cat, mod);
+      bindCardMedia(card, cat, mod);
+    });
   });
 }
 
@@ -787,7 +890,10 @@ function refreshCardBadges() {
     const [cat, name] = card.dataset.key.split('|');
     const mod = findModByName(cat, name);
     if (!mod) return;
-    const installed = isInstalled(cat, mod);
+    const style = shownStyle(cat, mod);
+    const installed = style
+      ? state.installedIndex.has(keyOf(cat, mod.name, style.label))
+      : isInstalled(cat, mod);
     const badge = card.querySelector('.mtag.ok');
     if (installed && !badge) {
       card.querySelector('.media-tags')?.insertAdjacentHTML('afterbegin', `<span class="mtag ok">${L`Установлен`}</span>`);
@@ -801,10 +907,6 @@ function refreshCardBadges() {
 
 let modalState = null;
 
-// The card's picture is the same picture the modal opens with, so it travels rather than
-// being replaced: the card grows into the modal and shrinks back into the card it came from.
-// `from` is the card that was clicked, when there is one - a modal reached any other way
-// simply fades.
 // The window opens where windows open, in the middle, and the picture arrives inside it. It
 // used to fly out of the card it was clicked on, which meant the picture was travelling on
 // its own clock while the window did something else, and it read as two things at once.
@@ -828,7 +930,8 @@ function openModal(draw) {
 
 function openModModal(categoryId, mod) {
   cosModalState = null; // the two share one overlay
-  modalState = { categoryId, mod, styleIdx: 0 };
+  // opens on the look the card was showing, which is the one the user was just looking at
+  modalState = { categoryId, mod, styleIdx: styleIndex(categoryId, mod) };
   openModal(drawModal);
 }
 
@@ -866,19 +969,14 @@ function cssColor(v) {
   return /^[#\w(),.%\s-]+$/.test(s) ? s : 'transparent';
 }
 
-// A style button is painted in the colour it stands for and writes its name across it, so
-// the name has to survive the colour. The catalog's palette runs from #42322f to #ffea65,
-// which no single ink survives - so the ink is picked from how light the fill is. The two
-// gradient fills are half light and half black, where neither ink works across the whole
-// button: those get a veil over the colour and white on top of that.
-function styleInk(color) {
-  const s = String(color || '');
-  if (/gradient/i.test(s)) return 'veiled';
-  const hex = (s.match(/#[0-9a-f]{6}/i) || [])[0];
-  if (!hex) return '';
-  const n = parseInt(hex.slice(1), 16);
-  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
-  return lum > 0.5 ? 'on-light' : '';
+// Washes, rings and glows are mixed from the look's colour, and a mix needs a colour rather
+// than a picture: two mods ship a two-stop gradient there. Its first stop stands in for the
+// whole thing wherever a flat value is required; the dot on the card keeps the gradient.
+function flatColor(v) {
+  const s = String(v || '');
+  const hex = (s.match(/#[0-9a-f]{3,8}\b/i) || [])[0];
+  if (hex) return hex;
+  return /gradient|[;{}]/i.test(s) || !s.trim() ? 'var(--md-primary)' : cssColor(s);
 }
 
 // A pack's `mods` entry is usually a mod-name string, but the catalog also ships
@@ -951,7 +1049,7 @@ function drawModal() {
       ${styles ? `
         <div class="style-row">
           ${styles.map((s, i) => `
-            <button class="style-btn ${styleInk(s.color)} ${i === styleIdx ? 'active' : ''}" data-style="${i}" style="--c:${cssColor(s.color)}">
+            <button class="style-btn ${i === styleIdx ? 'active' : ''}" data-style="${i}" style="--c:${flatColor(s.color)}">
               ${esc(s.label || tr('Обычный'))}
             </button>`).join('')}
         </div>` : ''}
@@ -1046,6 +1144,8 @@ function drawModal() {
   document.querySelectorAll('.style-btn').forEach((b) => {
     b.addEventListener('click', () => {
       modalState.styleIdx = Number(b.dataset.style);
+      // the card behind the window is showing a look too; they agree from here on
+      pickedStyle.set(styleKey(categoryId, mod.name), modalState.styleIdx);
       drawModal();
     });
   });
@@ -1110,30 +1210,64 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview) {
   return r;
 }
 
-async function installPack(pack) {
-  const excluded = modalState?.packExcluded || new Set();
-  const names = (pack.mods || []).map(packMemberName).filter((n) => n && !excluded.has(n));
-  closeModal();
+/* Install a list of mods one after another and report once at the end. Two things use this:
+ * a pack from the catalog, and the list the user built themselves. Sequential on purpose -
+ * these are downloads into the same folder, and a mod's pak slot depends on what is already
+ * there, so they cannot be raced. */
+async function installMany(entries) {
   let ok = 0, fail = 0, skip = 0;
-  for (const name of names) {
-    const hit = state.modIndex.get(name.toLowerCase());
-    if (!hit) { skip++; continue; }
-    const { categoryId, mod } = hit;
-    // a mod with styles keeps everything per style — its file, its label and its picture
-    const style = mod.file ? null : mod.styles?.[0];
-    const fileRef = mod.file || style?.file;
-    const styleLabel = style?.label || null;
+  for (const { categoryId, mod, styleLabel, fileRef, preview } of entries) {
     if (!fileRef || !/\.(vpk|zip)$/i.test(fileRef)) { skip++; continue; }
     if (state.installedIndex.has(keyOf(categoryId, mod.name, styleLabel))) { skip++; continue; }
-    const r = await doInstall(categoryId, mod, styleLabel, fileRef, style?.preview || mod.preview);
+    const r = await doInstall(categoryId, mod, styleLabel, fileRef, preview);
     if (r?.ok) ok++;
     else if (r?.cancelled) skip++;
     else fail++;
   }
-  toast(L`Пак «${pack.name}»: установлено ${ok}, пропущено ${skip}${fail ? L`, ошибок ${fail}` : ''}`, fail ? 'warn' : 'ok', 7000);
   await refreshInstalledIndex();
   render();
+  return { ok, skip, fail };
 }
+
+async function installPack(pack) {
+  const excluded = modalState?.packExcluded || new Set();
+  const names = (pack.mods || []).map(packMemberName).filter((n) => n && !excluded.has(n));
+  closeModal();
+  const entries = [];
+  let missing = 0;
+  for (const name of names) {
+    const hit = state.modIndex.get(name.toLowerCase());
+    if (!hit) { missing++; continue; }
+    const { categoryId, mod } = hit;
+    // a mod with styles keeps everything per style — its file, its label and its picture
+    const style = mod.file ? null : mod.styles?.[0];
+    entries.push({
+      categoryId,
+      mod,
+      styleLabel: style?.label || null,
+      fileRef: mod.file || style?.file,
+      preview: style?.preview || mod.preview,
+    });
+  }
+  const { ok, skip, fail } = await installMany(entries);
+  toast(L`Пак «${pack.name}»: установлено ${ok}, пропущено ${skip + missing}${fail ? L`, ошибок ${fail}` : ''}`, fail ? 'warn' : 'ok', 7000);
+}
+
+// The install list hands its contents back here, since this is where installing lives.
+useInstaller(async (list) => {
+  const entries = list
+    .map(({ cat, name, label, file, preview }) => {
+      const mod = findModByName(cat, name);
+      return mod ? { categoryId: cat, mod, styleLabel: label, fileRef: file, preview } : null;
+    })
+    .filter(Boolean);
+  const { ok, skip, fail } = await installMany(entries);
+  toast(
+    L`Список: установлено ${ok}${skip ? L`, пропущено ${skip}` : ''}${fail ? L`, ошибок ${fail}` : ''}`,
+    fail ? 'warn' : 'ok',
+    7000,
+  );
+});
 
 // ===== Cosmetics: free looks taken from the game's own item schema, browsed as a catalog
 // category like any other (see COSMETIC_SLOTS / cosmeticMeta near the top of the file) =====

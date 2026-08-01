@@ -159,20 +159,31 @@
   border: 1px solid color-mix(in srgb, var(--md-primary) 28%, transparent);
 }
 .mtag.ok { color: var(--success); border-color: rgba(74, 222, 128, 0.4); }
+/* The looks a mod comes in, switchable without opening it. They used to be decoration - four
+   dots saying "this one has colours" - and the only way to see a colour was to open the mod
+   and come back. Now they are the control they looked like. */
 .media-swatches {
   position: absolute;
   bottom: 8px;
   right: 8px;
   display: flex;
-  gap: 4px;
-  pointer-events: none;
+  gap: 5px;
+  z-index: 3;
 }
 .swatch-dot {
-  width: 13px; height: 13px;
+  width: 18px; height: 18px;
+  padding: 0;
   border-radius: 50%;
-  border: 2px solid rgba(10, 10, 16, 0.8);
+  border: none;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  opacity: 0.75;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: opacity 0.15s var(--ease-standard), outline-color 0.15s var(--ease-standard), transform 0.15s var(--ease-standard);
 }
+.swatch-dot:hover { opacity: 1; transform: scale(1.12); }
+.swatch-dot.active { opacity: 1; outline-color: var(--md-on-surface); }
+.swatch-dot:focus-visible { outline-color: var(--primary); }
 .card-body { padding: 11px 14px 13px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
 .card-name { font-weight: 700; font-size: 14.5px; line-height: 1.3; }
 .card-meta {
@@ -241,6 +252,38 @@
   box-shadow: 0 0 18px color-mix(in srgb, var(--md-primary) 40%, transparent);
   transform: translateY(-1px);
   color: #fff;
+}
+
+/* Put this mod in the list to install. Beside the star rather than under it: both are ways
+   of saying "this one", and both live on the picture where the deciding happens. Quiet until
+   the card is under the cursor, loud once the mod is actually in the list. */
+.card-add {
+  position: absolute;
+  top: 8px;
+  right: 44px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--md-primary) 28%, transparent);
+  border-radius: 999px;
+  background: rgba(14, 12, 20, 0.68);
+  backdrop-filter: blur(10px);
+  color: var(--primary-soft);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+}
+.card:hover .card-add, .card-add:focus-visible { opacity: 1; }
+.card-add:hover { transform: scale(1.08); border-color: var(--primary); }
+.card-add .ms { font-size: 18px; }
+.card-add.on {
+  opacity: 1;
+  background: var(--primary);
+  border-color: transparent;
+  color: var(--on-primary);
 }
 
 /* ============ Favorites (star on cards / in the modal) ============ */

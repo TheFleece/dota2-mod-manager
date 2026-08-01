@@ -136,6 +136,16 @@ const EN = {
   'Развернуть': 'Maximize', 'Закрыть': 'Close', 'Поиск Dota 2…': 'Looking for Dota 2…',
   'Папка модов': 'Mods folder', 'Играть': 'Play',
   'Сменить цвета': 'Change the colours',
+
+  // ---------- install list ----------
+  'Список установки': 'Install list',
+  'Добавить в список': 'Add to the install list',
+  'В списке установки': 'In the install list',
+  'Установить всё ({0})': 'Install all ({0})',
+  'Пусто. Жми плюс на карточке мода, чтобы собрать список.':
+    'Empty. Press the plus on a mod to start a list.',
+  'Список: установлено {0}{1}{2}': 'List: {0} installed{1}{2}',
+  ', пропущено {0}': ', {0} skipped',
   'Открыть папку, куда ставятся моды': 'Open the folder the mods are installed into',
   'Включить/выключить все моды сразу (для запуска ванильной игры)':
     'Turn all mods on/off at once (to launch the vanilla game)',

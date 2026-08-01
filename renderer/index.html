@@ -61,6 +61,12 @@
         <button id="clearSearch" class="tb-search-clear hidden" aria-label="Clear" data-i18n-aria="Очистить"><span class="ms">close</span></button>
       </div>
 
+      <!-- Mods picked out to install together -->
+      <button class="tb-queue" id="queueBtn" title="Install list" data-i18n-title="Список установки" disabled>
+        <span class="ms">playlist_add_check</span>
+        <span class="tb-queue-count" id="queueCount"></span>
+      </button>
+
       <!-- Discord account: filled in by the renderer, hidden when sign-in isn't configured -->
       <div class="tb-account" id="tbAccount"></div>
 
@@ -133,6 +139,11 @@
     <!-- Modal -->
     <div id="modalOverlay" class="modal-overlay hidden">
       <div id="modalContent" class="modal-content"></div>
+    </div>
+
+    <!-- The list of mods waiting to be installed together -->
+    <div id="queueOverlay" class="modal-overlay hidden">
+      <div id="queuePanel" class="queue-panel"></div>
     </div>
   </div>
 

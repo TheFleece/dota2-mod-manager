@@ -23,6 +23,7 @@ import { refreshPatchState, paintMasterSwitch, refreshMasterSwitch, refreshSideb
 import { applyContentZoom, readPanels, bindPanels } from './ui/chrome.js';
 import { applyStaticI18n, showLanguagePicker } from './ui/language.js';
 import { initTheme } from './ui/theme.js';
+import { initQueue } from './ui/queue.js';
 import { handleImportResult } from './views/library.js';
 import { loadCatalog } from './views/catalog.js';
 import { handlePresetImport } from './views/presets.js';
@@ -299,6 +300,7 @@ window.api.update.onUpdate((evt) => {
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();
   initTheme();
+  initQueue();
   bindPanels();
   paintAccount();
 
