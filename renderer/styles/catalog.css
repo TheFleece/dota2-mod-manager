@@ -232,6 +232,19 @@
   font-size: 11.5px;
   color: var(--text-faint);
 }
+/* A tool's line: what the card leads to on the left, what comes with the tool on the right.
+   Same shape the catalog's own site gives these cards. The pills sit here rather than on the
+   picture because a tool's picture is a screenshot of its window, and covering it explains
+   nothing. */
+.card-meta-split { flex-wrap: nowrap; justify-content: space-between; }
+.card-pills { display: flex; gap: 5px; min-width: 0; }
+.card-meta-split .mtag { backdrop-filter: none; background: var(--surface); }
+.card-meta-split .mtag.danger {
+  color: var(--warning);
+  background: rgba(251, 191, 36, 0.11);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
 .author-chip {
   display: inline-flex;
   align-items: center;

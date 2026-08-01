@@ -28,7 +28,9 @@ export function applyInstalled(installed) {
     // deleted or switched off from the Library at any moment.
     if (rec.categoryId === 'cosmetic' && rec.slot && rec.enabled !== false) state.cosmeticPicks.set(rec.slot, rec);
   }
-  $('#libCount').textContent = installed.length || '';
+  // tools live in the index so their card knows it has them, but they are not in the Library
+  // and must not be counted on its tab
+  $('#libCount').textContent = installed.filter((r) => r.categoryId !== 'tools').length || '';
 }
 
 // the record that currently dresses a cosmetic slot, if any

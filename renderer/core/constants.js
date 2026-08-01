@@ -18,7 +18,7 @@ export const CAT_RU = {
   herofx: 'Эффекты героев', pings: 'Пинги', packs: 'Паки', optimization: 'Оптимизация',
   tormentor: 'Торментор', 'high-five': 'High Five', ancient: 'Древние', roshan: 'Рошан',
   towers: 'Башни', fonts: 'Шрифты', sites: 'Сайты', guides: 'Гайды', news: 'Новости',
-  imported: 'Импортированный',
+  tools: 'Инструменты', imported: 'Импортированный',
 };
 
 export const CAT_ICON = {
@@ -70,10 +70,16 @@ export const RAIL_SECTIONS = [
   ['Эффекты', ['shaders', 'ti-bp-effects', 'item-effects', 'ranged-attack', 'high-five']],
   ['Интерфейс', ['backgrounds', 'huds', 'emblems', 'versus-screens', 'item-icons', 'ranks', 'pings', 'cursors', 'fonts']],
   ['Звук', ['announcers', 'mega-kill', 'music', 'sounds']],
-  ['Прочее', ['packs', 'optimization', 'other', 'guides', 'sites']],
+  ['Прочее', ['packs', 'optimization', 'other', 'tools', 'guides', 'sites']],
 ];
 
-export const CATALOG_EXCLUDE = ['tools', 'news'];
+export const CATALOG_EXCLUDE = ['news'];
+
+/* Tools we do not offer, for reasons of ours rather than the catalog's. The Linux build of
+ * Background Changer cannot run next to a Windows Dota, and this app's own installer has no
+ * business being downloaded by the running app - it updates itself. Matched by name because
+ * that is all the catalog gives us to match on. */
+export const TOOLS_HIDDEN = [/linux/i, /^dota 2 mod manager$/i];
 
 /* A guide the catalog wrote and hung on nothing. "weather" explains the Patcher tool, whose
  * own guideId points at the safety warning instead, so with the guides screen gone it would

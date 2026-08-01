@@ -402,10 +402,14 @@ async function combineSelection(ids) {
 
 export async function renderLibrary() {
   const res = await window.api.mods.list();
-  const installedAll = res.installed;
+  // A tool is not a mod: it sits in the app's own folder, the game never mounts it, and its
+  // switch here only ever moved a flag in the manifest (the installer skips files with
+  // root: 'tools'). Everything a tool needs is on its card in the catalog now. The index
+  // below still gets the full list - that is what tells the card it is already downloaded.
+  const installedAll = res.installed.filter((r) => r.categoryId !== 'tools');
   const externalAll = res.external || [];
   libRecords = installedAll;
-  applyInstalled(installedAll); // keep the tab counter + catalog badges in sync with the folder
+  applyInstalled(res.installed); // keep the tab counter + catalog badges in sync with the folder
   try { const ms = await window.api.mods.masterState(); state.masterOff = !!ms.off; } catch { state.masterOff = false; }
   paintMasterSwitch();
   const masterOff = state.masterOff;

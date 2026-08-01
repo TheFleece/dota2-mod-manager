@@ -10,7 +10,7 @@
  * which is why the mod index is built here: it is a reading of the same data.
  */
 import { $ } from '../core/dom.js';
-import { RAW_BASE, COSMETIC_SLOTS, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, SORTS, freshFilters } from '../core/constants.js';
+import { RAW_BASE, COSMETIC_SLOTS, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, TOOLS_HIDDEN, SORTS, freshFilters } from '../core/constants.js';
 import { state } from '../core/store.js';
 import { registerView, render } from '../core/router.js';
 import { keyOf, pickedIn, refreshInstalledIndex, refreshCosmeticSlots } from '../core/installed.js';
@@ -133,7 +133,9 @@ function categoryMods(categoryId) {
   const data = state.catalog?.mods?.modsData?.[categoryId];
   if (!data) return [];
   if (Array.isArray(data)) {
-    const mods = data.map((m) => ({ ...m, _group: null }));
+    const mods = data
+      .filter((m) => categoryId !== 'tools' || !TOOLS_HIDDEN.some((re) => re.test(m.name || '')))
+      .map((m) => ({ ...m, _group: null }));
     if (categoryId === 'packs') {
       for (const p of customPacks()) {
         mods.push({ name: p.name, type: 'pack', mods: p.mods, _group: null, _custom: true });
@@ -780,8 +782,40 @@ function cardHtml(m, i, { cat: withCat = false } = {}) {
       <div class="card-media">${cardMediaHtml(cat, m)}</div>
       <div class="card-body">
         <div class="card-name">${esc(m.name)}</div>
-        ${meta ? `<div class="card-meta">${meta}</div>` : ''}
+        ${cat === 'tools'
+          ? toolMetaHtml(m, installed)
+          : (meta ? `<div class="card-meta">${meta}</div>` : '')}
       </div>
+    </div>`;
+}
+
+/* A tool says different things than a mod, so its line under the name says them: what the
+ * card leads to on the left, and what comes with it on the right. This is the shape the
+ * catalog's own site gives these cards, and there is no reason for ours to differ - the
+ * pictures are the same pictures. An installed one drops the verb: the green frame and the
+ * tick have already answered it. */
+function toolMetaHtml(m, installed) {
+  // the catalog hangs its safety warning on the tool as a guide; the author paints that one
+  // red instead of calling it a guide, and it is the one thing worth reading before a download
+  const unsafe = m.guideId === 'warning';
+  const pills = [];
+  if (!unsafe && (m.links || []).some((l) => l.type === 'source-code')) {
+    pills.push(`<span class="mtag soft">${L`Исходники`}</span>`);
+  }
+  if (unsafe) pills.push(`<span class="mtag danger">${L`Небезопасно`}</span>`);
+  else if (m.guideId && state.catalog?.guides?.[m.guideId]) pills.push(`<span class="mtag soft">${L`Гайд`}</span>`);
+
+  /* One line, and 190px of it, so the pills are served first: a warning shortened to "НЕБЕЗ..."
+   * is worse than no warning at all. The warning takes the row on its own, and the verb goes
+   * as soon as two pills are there - the window repeats the verb in full and does not repeat
+   * the pills. Measured in both languages: Russian runs the longer of the two here. */
+  const verb = installed || pills.length > 1 || unsafe
+    ? '' : (installTarget(m) ? tr('Скачать') : tr('Открыть'));
+  if (!verb && !pills.length) return '';
+  return `
+    <div class="card-meta card-meta-split">
+      ${verb ? `<span>${esc(verb)}</span>` : ''}
+      ${pills.length ? `<span class="card-pills">${pills.join('')}</span>` : ''}
     </div>`;
 }
 
@@ -794,7 +828,9 @@ function cardMediaHtml(cat, m) {
     ? state.installedIndex.has(keyOf(cat, m.name, style.label))
     : isInstalled(cat, m);
   const isPack = m.type === 'pack';
-  const external = !installTarget(m) && !m.styles && !isPack;
+  // a tool that is only a link says so under its name, in the row that also carries its
+  // pills - saying it twice would cost the picture a chip for nothing
+  const external = !installTarget(m) && !m.styles && !isPack && cat !== 'tools';
   // Two, not three. The row is one line now (see .media-tags), and a third chip only ever
   // arrived to be cut off: a 190px picture holding the looks as well has room for about two
   // words. Effects and icons come before the slot the item sits in - what a mod does is what
@@ -1016,7 +1052,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModal();
 });
 
-const LINK_LABEL = { preview: 'Превью', source: 'Источник', author: 'Автор', bug: 'Баг', guide: 'Гайд' };
+const LINK_LABEL = {
+  preview: 'Превью', source: 'Источник', author: 'Автор', bug: 'Баг', guide: 'Гайд',
+  'source-code': 'Исходники',
+};
 
 // A style's colour comes from the catalog and goes into a custom property, so it has to be
 // a colour and nothing else. Two mods ship a gradient there rather than a hex, which is why
@@ -1043,6 +1082,26 @@ function packMemberName(entry) {
   return (typeof entry === 'string' ? entry : entry?.name || '').trim();
 }
 
+/* A tool is somebody else's program, so the window offers what you can do with a program
+ * rather than what you can do with a mod: fetch it, start it, open the folder it went into,
+ * throw it away. There is no switch anywhere - a tool sits in the app's own folder and the
+ * game never looks at it. */
+function toolActionsHtml(mod, rec, target, busy) {
+  if (rec) {
+    const relPath = rec.files?.[0]?.relPath || '';
+    return `
+      <button class="btn btn-primary" id="toolRunBtn" data-rel="${esc(relPath)}"><span class="ms">play_arrow</span>${L`Запустить`}</button>
+      <button class="btn" id="toolFolderBtn" data-rel="${esc(relPath)}"><span class="ms">folder_open</span>${L`Папка`}</button>
+      <button class="btn btn-danger" id="toolDeleteBtn"><span class="ms">delete</span>${L`Удалить`}</button>`;
+  }
+  if (target) {
+    return `<button class="btn btn-primary" id="installBtn" ${busy ? 'disabled' : ''}><span class="ms">download</span>${busy ? L`Скачивание…` : L`Скачать`}</button>`;
+  }
+  return mod.file
+    ? `<button class="btn" id="openLinkBtn"><span class="ms">open_in_new</span>${L`Открыть сайт`}</button>`
+    : '';
+}
+
 function packMembers(mod) {
   return (mod.mods || [])
     .map(packMemberName)
@@ -1057,6 +1116,7 @@ function drawModal() {
   const fileRef = styles ? cur.file : mod.file;
   const target = fileRef && /\.(vpk|zip)$/i.test(fileRef) ? fileRef : null;
   const isPack = mod.type === 'pack';
+  const isTool = categoryId === 'tools';
   const styleLabel = styles ? cur.label : null;
   const installedRec = state.installedIndex.get(keyOf(categoryId, mod.name, styleLabel));
   const busy = installing.has(keyOf(categoryId, mod.name, styleLabel));
@@ -1137,11 +1197,12 @@ function drawModal() {
           ${mod._custom ? `<button class="btn btn-sm btn-danger" id="packDeleteBtn">${L`Удалить пак`}</button>` : ''}
         </div>` : ''}
       <div class="modal-actions">
-        ${isPack ? `<button class="btn btn-primary" id="installPackBtn" ${activeCount ? '' : 'disabled'}><span class="ms">download</span>${L`Установить пак (${activeCount})`}</button>` : ''}
-        ${!isPack && target ? (installedRec
+        ${isTool ? toolActionsHtml(mod, installedRec, target, busy) : ''}
+        ${!isTool && isPack ? `<button class="btn btn-primary" id="installPackBtn" ${activeCount ? '' : 'disabled'}><span class="ms">download</span>${L`Установить пак (${activeCount})`}</button>` : ''}
+        ${!isTool && !isPack && target ? (installedRec
           ? `<button class="btn btn-danger" id="uninstallBtn"><span class="ms">delete</span>${L`Удалить`}</button>`
           : `<button class="btn btn-primary" id="installBtn" ${busy ? 'disabled' : ''}><span class="ms">download</span>${busy ? L`Установка…` : L`Установить`}</button>`) : ''}
-        ${!isPack && !target && mod.file ? `<button class="btn" id="openLinkBtn"><span class="ms">open_in_new</span>${L`Открыть ссылку`}</button>` : ''}
+        ${!isTool && !isPack && !target && mod.file ? `<button class="btn" id="openLinkBtn"><span class="ms">open_in_new</span>${L`Открыть ссылку`}</button>` : ''}
       </div>
       ${guides}
       ${otherLinks.length ? `
@@ -1227,6 +1288,20 @@ function drawModal() {
   }
   const packBtn = $('#installPackBtn');
   if (packBtn) packBtn.addEventListener('click', () => installPack(mod));
+  $('#toolRunBtn')?.addEventListener('click', async (e) => {
+    const r = await window.api.misc.runTool(e.currentTarget.dataset.rel);
+    if (r.error) toast(r.error, 'error');
+  });
+  $('#toolFolderBtn')?.addEventListener('click', (e) => window.api.misc.openToolsFolder(e.currentTarget.dataset.rel));
+  $('#toolDeleteBtn')?.addEventListener('click', async () => {
+    if (!await confirmDialog(L`Удалить «${mod.name}»?`)) return;
+    const r = await window.api.mods.remove(installedRec.id);
+    if (r.error) toast(r.error, 'error');
+    else toast(L`${mod.name} удалён`);
+    await refreshInstalledIndex();
+    refreshCardBadges();
+    drawModal();
+  });
   const openLinkBtn = $('#openLinkBtn');
   if (openLinkBtn) openLinkBtn.addEventListener('click', () => window.api.misc.openExternal(mod.file));
   bindGuides($('#modalContent'));
@@ -1263,7 +1338,8 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview, { batch 
   installing.delete(k);
   if (r.error && !r.already) toast(`${mod.name}: ${r.error}`, 'error', 6000);
   else if (r.replaced?.length) toast(L`${mod.name} установлен — «${r.replaced.join(', ')}» выключен: курсор в игре может быть только один`, 'warn', 7000);
-  else if (!r.error) toast(L`${mod.name} установлен`);
+  // a tool is not installed into anything: it is downloaded, unpacked and waiting in a folder
+  else if (!r.error) toast(categoryId === 'tools' ? L`${mod.name} готов` : L`${mod.name} установлен`);
   await refreshInstalledIndex();
   refreshCardBadges();
   if (modalState) drawModal();
