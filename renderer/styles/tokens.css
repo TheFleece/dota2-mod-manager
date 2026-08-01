@@ -15,29 +15,42 @@
    ============================================================================ */
 
 :root {
-  /* ---------- Palette (unchanged) ---------- */
-  --bg-deep: #0e0c14;
-  --bg-base: #16131f;
-  --bg-elev: #1d1a28;
-  --surface: rgba(255, 255, 255, 0.055);
-  --surface-hover: rgba(255, 255, 255, 0.095);
-  --surface-solid: #201c2c;
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.17);
+  /* ---------- Palette ----------
+     Not written here any more: every colour below is read off the theme in
+     themes.css, in Material 3's role names, because that is what the catalog's
+     own site is built on and what its eight hero palettes are expressed in.
+     Switching hero rewrites eight source values and the whole window follows.
 
-  --primary: #8b6ff0;
-  --primary-soft: #c4b5fd;
-  --primary-glow: rgba(139, 111, 240, 0.32);
-  --primary-dim: rgba(139, 111, 240, 0.17);
-  --accent: #fb7185;
-  --accent-glow: rgba(251, 113, 133, 0.28);
+     The names on the left are ours and stay - hundreds of rules refer to them,
+     and "the surface a card sits on" is a better thing for a stylesheet to ask
+     for than "container-high". Lavender is still what the app opens on: that is
+     the ursa theme, which is Material's own baseline purple. */
+  --bg-deep: color-mix(in srgb, var(--md-surface) 78%, #000);
+  --bg-base: var(--md-surface);
+  --bg-elev: var(--md-surface-low);
+  --surface: color-mix(in srgb, var(--md-on-surface) 6%, transparent);
+  --surface-hover: color-mix(in srgb, var(--md-on-surface) 11%, transparent);
+  --surface-solid: var(--md-surface-container);
+  --border: color-mix(in srgb, var(--md-outline) 26%, transparent);
+  --border-strong: color-mix(in srgb, var(--md-outline) 45%, transparent);
 
-  --text: #f1eff7;
-  --text-muted: #aaa6bb;
-  --text-faint: #746f87;
+  /* A fill and the ink that survives on it. In a dark Material theme the accent
+     is the light tone and its ink is dark - that is why a filled button here is
+     pale lavender with near-black text rather than saturated purple with white. */
+  --primary: var(--md-primary);
+  --on-primary: var(--md-on-primary);
+  --primary-soft: var(--md-primary);
+  --primary-glow: color-mix(in srgb, var(--md-primary) 30%, transparent);
+  --primary-dim: color-mix(in srgb, var(--md-primary) 16%, transparent);
+  --accent: var(--md-error);
+  --accent-glow: color-mix(in srgb, var(--md-error) 28%, transparent);
+
+  --text: var(--md-on-surface);
+  --text-muted: var(--md-on-surface-variant);
+  --text-faint: color-mix(in srgb, var(--md-on-surface-variant) 62%, transparent);
 
   --success: #4ade80;
-  --danger: #fb7185;
+  --danger: var(--md-error);
   --warning: #fcd34d;
 
   /* ---------- Spacing: 4px base, 7 steps ----------

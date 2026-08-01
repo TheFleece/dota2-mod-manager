@@ -68,13 +68,13 @@ img, video { -webkit-user-drag: none; user-select: none; }
   opacity: 0.16;
 }
 .blob-a {
-  background: #7c3aed;
+  background: var(--md-accent);
   top: -180px;
   right: -120px;
   animation: drift-a 26s ease-in-out infinite alternate;
 }
 .blob-b {
-  background: #4338ca;
+  background: var(--md-primary-container);
   bottom: -220px;
   left: -160px;
   animation: drift-b 32s ease-in-out infinite alternate;

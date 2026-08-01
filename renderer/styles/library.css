@@ -38,8 +38,8 @@
   padding: 2px 9px;
   border-radius: 999px;
   color: var(--primary-soft);
-  background: rgba(196, 181, 253, 0.12);
-  border: 1px solid rgba(196, 181, 253, 0.28);
+  background: color-mix(in srgb, var(--md-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--md-primary) 28%, transparent);
 }
 .lib-tag.match {
   color: var(--success);
@@ -50,7 +50,7 @@
 .lib-tag.schema {
   color: var(--primary-soft);
   background: var(--primary-dim);
-  border-color: rgba(139, 111, 240, 0.45);
+  border-color: color-mix(in srgb, var(--md-primary) 45%, transparent);
 }
 .lib-tag.schema.off {
   color: var(--warning);

@@ -21,25 +21,29 @@
 .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .btn .ms { font-size: 16px; }
 
+/* A filled button in a dark Material theme is the light accent carrying dark ink, not a
+   saturated block carrying white. It also means one button style covers all eight heroes:
+   the pair is defined per theme, so the ink is never left guessing. */
 .btn-primary {
-  background: linear-gradient(135deg, #9d84f5, var(--primary));
+  background: var(--primary);
   border-color: transparent;
-  color: #fff;
+  color: var(--on-primary);
   box-shadow: 0 6px 22px var(--primary-glow);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #ab95f7, #9d84f5);
+  background: color-mix(in srgb, var(--primary) 88%, #fff);
   box-shadow: 0 8px 30px var(--primary-glow);
   border-color: transparent;
 }
+.btn-primary .ms { color: inherit; }
 
 .btn-danger { color: var(--danger); }
 .btn-danger:hover { background: rgba(251, 113, 133, 0.13); border-color: var(--danger); box-shadow: 0 4px 18px rgba(251, 113, 133, 0.18); }
 
 .btn-danger-solid {
-  background: linear-gradient(135deg, #fb8a9b, var(--danger));
+  background: var(--danger);
   border-color: transparent;
-  color: #fff;
+  color: var(--md-on-error);
   box-shadow: 0 6px 22px var(--accent-glow);
 }
 .btn-danger-solid:hover { box-shadow: 0 8px 30px var(--accent-glow); border-color: transparent; }
@@ -120,7 +124,7 @@
   transition: border-color 0.2s, box-shadow 0.2s;
   max-width: 210px;
 }
-.select-wrap select:focus { box-shadow: 0 0 14px rgba(139, 111, 240, 0.18); }
+.select-wrap select:focus { box-shadow: 0 0 14px color-mix(in srgb, var(--md-primary) 18%, transparent); }
 .select-wrap select:hover { border-color: var(--border-strong); }
 .select-wrap select:focus { outline: none; border-color: var(--primary); }
 .select-wrap::after {
@@ -153,7 +157,7 @@
   background: var(--primary-dim);
   border-color: var(--primary);
   color: var(--primary-soft);
-  box-shadow: 0 0 18px rgba(139, 111, 240, 0.24);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--md-primary) 24%, transparent);
 }
 .fchip .ms { font-size: 13px; }
 
@@ -191,4 +195,4 @@
   transition: transform 0.15s var(--ease);
 }
 .scale-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
-.scale-range:focus-visible { border-color: rgba(196, 181, 253, 0.5); }
+.scale-range:focus-visible { border-color: color-mix(in srgb, var(--md-primary) 50%, transparent); }

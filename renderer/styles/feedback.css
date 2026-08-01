@@ -64,12 +64,12 @@
   gap: 12px;
   background: rgba(22, 19, 31, 0.94);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(196, 181, 253, 0.3);
+  border: 1px solid color-mix(in srgb, var(--md-primary) 30%, transparent);
   border-radius: var(--radius);
   padding: 13px 18px;
   font-size: 13.5px;
   z-index: 250;
-  box-shadow: var(--shadow), 0 0 40px rgba(139, 111, 240, 0.2);
+  box-shadow: var(--shadow), 0 0 40px color-mix(in srgb, var(--md-primary) 20%, transparent);
   animation: slideIn 0.35s var(--ease);
 }
 .update-bar .ms { color: var(--primary-soft); font-size: 22px; }
@@ -122,7 +122,7 @@ html[lang="ru"] body.dropping::after {
   border-radius: var(--radius);
   padding: 34px 30px 30px;
   text-align: center;
-  box-shadow: var(--shadow), 0 0 60px rgba(139, 111, 240, 0.18);
+  box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--md-primary) 18%, transparent);
   transform: translateY(10px) scale(0.98);
   transition: transform 0.28s var(--ease);
 }
@@ -137,7 +137,7 @@ html[lang="ru"] body.dropping::after {
   border-radius: 18px;
   color: var(--primary-soft);
   background: var(--primary-dim);
-  border: 1px solid rgba(196, 181, 253, 0.28);
+  border: 1px solid color-mix(in srgb, var(--md-primary) 28%, transparent);
 }
 .lang-pick-box h2 { font-size: 21px; font-weight: 800; margin-bottom: 6px; }
 .lang-pick-box > p { font-size: 12.5px; color: var(--text-muted); margin-bottom: 22px; }
@@ -156,7 +156,7 @@ html[lang="ru"] body.dropping::after {
 }
 .lang-pick-btn:hover {
   background: var(--primary-dim);
-  border-color: rgba(196, 181, 253, 0.4);
+  border-color: color-mix(in srgb, var(--md-primary) 40%, transparent);
   transform: translateY(-1px);
 }
 .lang-pick-btn:disabled { opacity: 0.5; pointer-events: none; }
@@ -173,8 +173,8 @@ html[lang="ru"] body.dropping::after {
   font-size: 14px;
   letter-spacing: 0.04em;
   color: var(--primary-soft);
-  background: rgba(139, 111, 240, 0.2);
-  border: 1px solid rgba(196, 181, 253, 0.25);
+  background: color-mix(in srgb, var(--md-primary) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--md-primary) 25%, transparent);
 }
 .lp-text { flex: 1; display: flex; flex-direction: column; line-height: 1.35; }
 .lp-text b { font-size: 15px; font-weight: 700; }

@@ -22,6 +22,7 @@ import { refreshInstalledIndex, refreshCosmeticSlots } from './core/installed.js
 import { refreshPatchState, paintMasterSwitch, refreshMasterSwitch, refreshSidebarStatus } from './ui/statusbar.js';
 import { applyContentZoom, readPanels, bindPanels } from './ui/chrome.js';
 import { applyStaticI18n, showLanguagePicker } from './ui/language.js';
+import { initTheme } from './ui/theme.js';
 import { handleImportResult } from './views/library.js';
 import { loadCatalog } from './views/catalog.js';
 import { handlePresetImport } from './views/presets.js';
@@ -297,6 +298,7 @@ window.api.update.onUpdate((evt) => {
   window.I18N_LANG = cfg.uiLang === 'ru' ? 'ru' : 'en';
   try { localStorage.setItem('uiLang', window.I18N_LANG); } catch { /* ignore */ }
   applyStaticI18n();
+  initTheme();
   bindPanels();
   paintAccount();
 

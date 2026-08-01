@@ -1,0 +1,169 @@
+/* ============ Themes ============
+   Eight heroes, eight palettes, the same eight the catalog's own site has - h6rd let us
+   bring them across along with the mascot that switches them (2026-08-01). The values are
+   his, in Material 3's own role names, because his site is built on Material 3 and this is
+   the vocabulary the rest of our tokens now read from (see tokens.css).
+
+   Only the dark half is here. His site has a light mode; this window does not, and a
+   half-finished light theme is worse than none. If it ever gets one, this is the file that
+   grows a `[data-lightness="light"]` twin per hero and nothing else has to change.
+
+   Roles, in the order they appear below:
+     primary            the accent - light on dark, so it reads as text and as a fill
+     on-primary         the ink that goes ON that fill, dark by design
+     primary-container  a muted block of the accent, for surfaces that lean brand
+     surface            the window's floor
+     surface-container* the steps above it: cards, panels, hovers
+     on-surface         body text; on-surface-variant, the quieter kind
+     outline            borders and dividers
+     error              trouble, the one role that is the same in every theme */
+
+:root {
+  /* trouble looks the same whichever hero the window is wearing */
+  --md-on-error: #690005;
+}
+
+:root,
+[data-theme='ursa'] {
+  --md-primary: #d0bcff;
+  --md-accent: #b190ff;
+  --md-on-primary: #220a32;
+  --md-primary-container: #4f378b;
+  --md-on-primary-container: #f4e7ff;
+  --md-secondary: #ccc2dc;
+  --md-surface: #141218;
+  --md-surface-low: #1d1b20;
+  --md-surface-container: #211f26;
+  --md-surface-high: #2b2930;
+  --md-surface-highest: #36343b;
+  --md-on-surface: #e6e0e9;
+  --md-on-surface-variant: #cac4d0;
+  --md-outline: #938f99;
+  --md-error: #ffb4ab;
+}
+
+[data-theme='brew'] {
+  --md-primary: #fac898;
+  --md-accent: #f8b774;
+  --md-on-primary: #3a1f00;
+  --md-primary-container: #5c3b00;
+  --md-on-primary-container: #ffddb7;
+  --md-secondary: #e6c6a4;
+  --md-surface: #14110f;
+  --md-surface-low: #201e1b;
+  --md-surface-container: #262421;
+  --md-surface-high: #302d2a;
+  --md-surface-highest: #3a3734;
+  --md-on-surface: #f2e6dc;
+  --md-on-surface-variant: #d9c4b1;
+  --md-outline: #9d8f84;
+  --md-error: #ffb4ab;
+}
+
+[data-theme='fura'] {
+  --md-primary: #b1f9a4;
+  --md-accent: #9bf38a;
+  --md-on-primary: #00390e;
+  --md-primary-container: #0a5d1d;
+  --md-on-primary-container: #c8ffc0;
+  --md-secondary: #a4f9c2;
+  --md-surface: #121511;
+  --md-surface-low: #181c17;
+  --md-surface-container: #1e221d;
+  --md-surface-high: #282c27;
+  --md-surface-highest: #323630;
+  --md-on-surface: #e0e4dd;
+  --md-on-surface-variant: #c4d0c0;
+  --md-outline: #8b9688;
+  --md-error: #ffb4ab;
+}
+
+[data-theme='storm'] {
+  --md-primary: #c7dbf0;
+  --md-accent: #b5d0ec;
+  --md-on-primary: #10283e;
+  --md-primary-container: #334b61;
+  --md-on-primary-container: #e9f3ff;
+  --md-secondary: #c8d9ea;
+  --md-surface: #13171a;
+  --md-surface-low: #191e22;
+  --md-surface-container: #1f2428;
+  --md-surface-high: #292e32;
+  --md-surface-highest: #34393d;
+  --md-on-surface: #e6ebef;
+  --md-on-surface-variant: #c9cdd1;
+  --md-outline: #959a9f;
+  --md-error: #ffb4ab;
+}
+
+[data-theme='invoker'] {
+  --md-primary: #ffffff;
+  --md-accent: #e0e0e0;
+  --md-on-primary: #000000;
+  --md-primary-container: #404040;
+  --md-on-primary-container: #ffffff;
+  --md-secondary: #cccccc;
+  --md-surface: #0e0e0e;
+  --md-surface-low: #1a1a1a;
+  --md-surface-container: #1e1e1e;
+  --md-surface-high: #2a2a2a;
+  --md-surface-highest: #363636;
+  --md-on-surface: #ffffff;
+  --md-on-surface-variant: #e0e0e0;
+  --md-outline: #7a7a7a;
+  --md-error: #ffb4ab;
+}
+
+[data-theme='meepo'] {
+  --md-primary: #ffb0c8;
+  --md-accent: #ff8fb3;
+  --md-on-primary: #5e0029;
+  --md-primary-container: #83003e;
+  --md-on-primary-container: #ffd9e3;
+  --md-secondary: #e5bdc7;
+  --md-surface: #191113;
+  --md-surface-low: #221a1d;
+  --md-surface-container: #272023;
+  --md-surface-high: #322a2d;
+  --md-surface-highest: #3d3437;
+  --md-on-surface: #f0dee5;
+  --md-on-surface-variant: #d6c2c8;
+  --md-outline: #9f8c92;
+  --md-error: #ffb4ab;
+}
+
+[data-theme='bh'] {
+  --md-primary: #f1d783;
+  --md-accent: #ebcc6d;
+  --md-on-primary: #3a2e00;
+  --md-primary-container: #574600;
+  --md-on-primary-container: #ffe8b8;
+  --md-secondary: #e0d0a0;
+  --md-surface: #15130f;
+  --md-surface-low: #1d1b18;
+  --md-surface-container: #242220;
+  --md-surface-high: #2e2c28;
+  --md-surface-highest: #383632;
+  --md-on-surface: #ebe6dc;
+  --md-on-surface-variant: #d2c9b5;
+  --md-outline: #9a9286;
+  --md-error: #ffb4ab;
+}
+
+[data-theme='axe'] {
+  --md-primary: #ffb4a9;
+  --md-accent: #ff897a;
+  --md-on-primary: #680003;
+  --md-primary-container: #930006;
+  --md-on-primary-container: #ffdad4;
+  --md-secondary: #e5bdb6;
+  --md-surface: #1a1110;
+  --md-surface-low: #231917;
+  --md-surface-container: #28201d;
+  --md-surface-high: #332a27;
+  --md-surface-highest: #3e3531;
+  --md-on-surface: #f1e0dc;
+  --md-on-surface-variant: #d8c2bd;
+  --md-outline: #a08c88;
+  --md-error: #ffb4ab;
+}

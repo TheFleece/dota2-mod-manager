@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block" rel="stylesheet">
   <!-- Order matters: tokens define the scales, base and shell set the ground
        rules, component files follow. Adding a file means adding it here. -->
+  <link rel="stylesheet" href="styles/themes.css">
   <link rel="stylesheet" href="styles/tokens.css">
   <link rel="stylesheet" href="styles/base.css">
   <link rel="stylesheet" href="styles/shell.css">
@@ -36,6 +37,11 @@
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l7 4v8l-7 8-7-8V6z"/><path d="M12 8v6"/><path d="M9 11h6"/></svg>
         <span class="tb-title">Mod Manager</span>
         <span class="tb-sub">Dota 2</span>
+        <!-- Click the hero to recolour the window. The catalog's own site does this beside
+             its logo and h6rd let us bring both the mascots and the idea across. -->
+        <button class="tb-mascot" id="themeMascot" title="Change the colours" data-i18n-title="Сменить цвета">
+          <img alt="" draggable="false">
+        </button>
       </div>
 
       <nav id="tbNav">

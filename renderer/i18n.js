@@ -135,6 +135,7 @@ const EN = {
   'Поиск модов…': 'Search mods…', 'Очистить': 'Clear', 'Свернуть': 'Minimize',
   'Развернуть': 'Maximize', 'Закрыть': 'Close', 'Поиск Dota 2…': 'Looking for Dota 2…',
   'Папка модов': 'Mods folder', 'Играть': 'Play',
+  'Сменить цвета': 'Change the colours',
   'Открыть папку, куда ставятся моды': 'Open the folder the mods are installed into',
   'Включить/выключить все моды сразу (для запуска ванильной игры)':
     'Turn all mods on/off at once (to launch the vanilla game)',

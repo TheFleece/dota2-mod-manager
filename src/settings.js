@@ -17,6 +17,10 @@ const DEFAULTS = {
   langPromptSeen: false,
   // zoom factor of the whole window (text and images alike), 0.7 - 1.6
   uiScale: 1,
+  // which hero the window is coloured after: ursa | brew | fura | storm | invoker | meepo |
+  // bh | axe. The catalog's own site has the same eight and switches them by clicking the
+  // mascot beside its logo; h6rd let us bring both across (see renderer/styles/themes.css).
+  theme: 'ursa',
   // catalog mods the user starred: "<categoryId>|<mod name>" keys
   favorites: [],
   // sizes and folded state of the title bar, status bar and category rail
