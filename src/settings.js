@@ -4,12 +4,12 @@ const path = require('path');
 
 const DEFAULTS = {
   dotaGamePath: null,
-  // folder mods are installed into: game/dota_<langSuffix>. Since Dota's 2026-07-24 update
-  // this must be the game's own audio language (see src/gamelang.js) — made-up folders like
-  // dota_123 are no longer mounted. Kept in sync automatically unless the user pins it.
+  // folder mods are installed into: game/dota_<langSuffix>. Always russian now — the engine
+  // mounts the folder named by Dota's audio language, and the app writes that language
+  // itself rather than asking (see keepRussianFolder in main.js). The value stays a setting
+  // because everything downstream reads it, and because an upgrade has to be able to see
+  // what the folder used to be.
   langSuffix: 'russian',
-  // follow the audio language read from the game instead of the value above
-  langSuffixAuto: true,
   // app UI language: "en" | "ru". English is the default until the user picks otherwise.
   uiLang: 'en',
   // one-time language picker: false for fresh installs AND for users updating from a

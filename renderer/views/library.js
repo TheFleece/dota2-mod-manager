@@ -400,8 +400,38 @@ async function combineSelection(ids) {
   renderLibrary();
 }
 
+/* Three things can put a mod somewhere the game will not look, and this is the screen where
+ * somebody notices - they came here because a mod they installed is not in the game. They
+ * used to be printed in Settings, under a heading about a folder the user is no longer asked
+ * to choose, which is a strange place to keep the news that nothing works. */
+function folderBannersHtml() {
+  const s = state.settings || {};
+  const gl = s.gameLang || {};
+  const stranded = gl.stranded || [];
+  return `
+    ${gl.mounted && gl.mounted !== gl.folder ? `
+      <div class="lib-banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body"><b>${L`Dota сейчас берёт файлы из папки dota_${gl.mounted}`}</b>${L`, а моды ставятся в dota_${gl.folder}. Закрой Dota и перезапусти менеджер — он переключит игру сам.`}</div>
+      </div>` : ''}
+    ${stranded.map((f) => `
+      <div class="lib-banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body"><b>${L`В папке dota_${f.suffix} лежат ${f.modFiles} ${plural(f.modFiles, 'мод', 'мода', 'модов')}`}</b>${L`, которые игра не видит.`}</div>
+        <button class="btn btn-sm btn-primary" data-move-from="${esc(f.suffix)}"><span class="ms">drive_file_move</span>${L`Перенести сюда`}</button>
+      </div>`).join('')}
+    ${s.minifyDetected ? `
+      <div class="lib-banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body"><b>${L`Рядом установлен Minify`}</b>${L`. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.`}</div>
+      </div>` : ''}`;
+}
+
 export async function renderLibrary() {
   const res = await window.api.mods.list();
+  // re-read rather than trust the boot copy: the banners above the list are about the folder
+  // on disk right now, and a mod can go missing between two visits to this screen
+  state.settings = await window.api.settings.get();
   // A tool is not a mod: it sits in the app's own folder, the game never mounts it, and its
   // switch here only ever moved a flag in the manifest (the installer skips files with
   // root: 'tools'). Everything a tool needs is on its card in the catalog now. The index
@@ -437,7 +467,7 @@ export async function renderLibrary() {
   slotCount = ordered.length;
   ordered.forEach((r, i) => { r.slot = slotOf(r); r.slotIndex = i; });
 
-  paint(() => { viewRoot.innerHTML = `
+  await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Библиотека`}</h1></div>
     ${masterOff ? `
       <div class="lib-banner off">
@@ -473,6 +503,7 @@ export async function renderLibrary() {
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`Файл игры не совпадает с подписью Dota`}</b>${L`. Пока так, клиент может не пускать в матчмейкинг — и моды тут ни при чём. Приложение не смогло восстановить оригинал само: проверь целостность файлов Dota 2 через Steam, это чинит за минуту.`}</div>
       </div>` : ''}
+    ${folderBannersHtml()}
     <div class="lib-toolbar">
       <div class="lib-search">
         <span class="ms">search</span>
@@ -599,6 +630,15 @@ async function bindLibrary(external) {
     reRender();
   });
   $('#adoptAllBtn')?.addEventListener('click', adoptAll);
+  viewRoot.querySelectorAll('[data-move-from]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const r = await window.api.settings.moveLangFiles(btn.dataset.moveFrom);
+      if (r?.error) toast(r.error, 'error');
+      else toast(L`Перенесено файлов: ${r.moved}`, 'ok');
+      await refreshInstalledIndex();
+      renderLibrary();
+    });
+  });
   $('#bulkAdopt')?.addEventListener('click', async () => {
     const recs = [...librarySel].filter((k) => !isMemberKey(k)).map(byId).filter((r) => r && r.match);
     if (!recs.length) return;

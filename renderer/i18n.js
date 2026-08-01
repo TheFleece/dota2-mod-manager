@@ -422,8 +422,6 @@ const EN = {
 
   // ---------- account ----------
   'Показывать в Discord, что ты в Mod Manager': 'Show in Discord that you are in Mod Manager',
-  'Друзья увидят «Играет в Dota 2 Mod Manager», текущую вкладку и сколько модов включено. В самом Discord это работает, только если включено «Отображать текущую активность как статус».':
-    'Friends will see «Playing Dota 2 Mod Manager», the tab you are on and how many mods are enabled. In Discord itself this only shows while «Display current activity as a status message» is on.',
   'Скопировано': 'Copied',
   'Войти': 'Sign in',
   'Вход нужен, чтобы подписывать свои сборки': 'Signing in puts your name on the builds you share',
@@ -451,81 +449,48 @@ const EN = {
   'Помощь': 'Help', 'Вики': 'Wiki',
 
   // ---------- settings ----------
+  'Масштаб': 'Scale',
+  'В самом Discord для этого включено «Отображать текущую активность как статус».':
+    'Discord itself needs “Display current activity as a status message” switched on.',
+  'Скачанные архивы, чтобы не качать повторно. Удаление ничего не сломает.':
+    'Downloaded archives, kept so nothing is fetched twice. Deleting them breaks nothing.',
+  'Путь к игре, список модов и последние записи журнала в одном файле. Пришли его, если что-то не работает.':
+    'The game path, the list of mods and the last log entries in one file. Send it when something is wrong.',
+
+  // ---------- library: where the mods went ----------
+  'Dota сейчас берёт файлы из папки dota_{0}': 'Dota is reading dota_{0} right now',
+  ', а моды ставятся в dota_{0}. Закрой Dota и перезапусти менеджер — он переключит игру сам.':
+    ', while mods are installed into dota_{0}. Close Dota and restart the manager: it switches the game over itself.',
+  'В папке dota_{0} лежат {1} {2}': 'The dota_{0} folder holds {1} {2}',
+  ', которые игра не видит.': ' the game cannot see.',
+  'Рядом установлен Minify': 'Minify is installed alongside',
+  '. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.':
+    '. If it installs into the same folder, their files overwrite each other: install with one of the two, not both.',
+  'Свернуть нижнюю панель': 'Hide the bottom bar',
   'Путь к Dota 2': 'Dota 2 path',
   'не найден': 'not found',
   'Найти автоматически': 'Auto-detect',
   'Указать вручную': 'Set manually',
   'Интерфейс': 'Interface',
   'Язык': 'Language',
-  'Один переключатель на всё: язык приложения, текст в самой Dota и её озвучку (за языком озвучки следует папка модов). Dota при этом должна быть закрыта — иначе она перезапишет настройку при выходе.':
-    'One switch for all of it: the language of this app, the text inside Dota and its voices (the mods folder follows the voice language). Dota has to be closed, or it overwrites the setting on exit.',
   'Масштаб': 'Scale',
-  'Масштаб всего': 'Scale of everything',
-  'Масштаб по частям': 'Scale part by part',
-  'Содержимое': 'Content',
-  'Верхняя панель': 'Top bar',
-  'Нижняя панель': 'Bottom bar',
-  'Список категорий': 'Category list',
   'Мельче': 'Smaller',
   'Крупнее': 'Bigger',
   'Сбросить': 'Reset',
-  'Сбросить всё': 'Reset all',
-  'Двигает содержимое и панели сразу. Ниже каждый масштаб можно задать по отдельности. Те же клавиши: Ctrl + и Ctrl − меняют содержимое, Ctrl + колесо над панелью — эту панель, Ctrl 0 возвращает 100%. За границу панели можно потянуть, чтобы изменить её размер.':
-    'Moves the content and the panels together. Below, each one can be set on its own. The same from the keyboard: Ctrl + and Ctrl − scale the content, Ctrl + wheel over a panel scales that panel, Ctrl 0 puts everything back to 100%. Drag a panel’s edge to resize it.',
-  'Задать языки Dota по отдельности': 'Set Dota’s languages separately',
-  'Текст': 'Text',
-  'Озвучка': 'Voice',
   'Применить': 'Apply',
-  'Dota хранит эти языки отдельно: моды подхватываются из папки языка озвучки, а текст на них не влияет. Отсюда, например, английский интерфейс игры при русской озвучке.':
-    'Dota keeps these two apart: mods load from the voice language’s folder, and the text setting has no say in it. That is how you get an English game interface with Russian voices.',
-  'Переключить и текст в самой Dota на {0}? Игра должна быть закрыта.':
-    'Switch the text inside Dota to {0} as well? The game has to be closed.',
-  'Переключить и саму Dota на {0}? Текст в игре станет {1}, моды переедут в папку dota_{2}{3}. Игра должна быть закрыта, после смены её надо перезапустить.':
-    'Switch Dota itself to {0} as well? The game text becomes {1} and the mods move to the dota_{2} folder{3}. The game has to be closed, and needs a restart afterwards.',
-  ', а озвучка останется английской — пак «{0}» не скачан':
-    ', while the voices stay English because the {0} pack is not downloaded',
-  'Переключить': 'Switch',
-  'Dota переключена: текст «{0}», моды в dota_{1}. Перезапусти Dota.':
-    'Dota switched: text {0}, mods in dota_{1}. Restart Dota.',
-  'Озвучка станет {0}': 'Voices will switch to {0}',
-  'Озвучка останется английской: пак «{0}» не скачан': 'Voices stay English: the {0} pack is not downloaded',
-  'Готово: текст «{0}», моды в dota_{1}. Перезапусти Dota.':
-    'Done: text {0}, mods in dota_{1}. Restart Dota.',
-  'Языковая папка': 'Language folder',
-  'Куда ставятся моды': 'Mods are installed to',
-  'Следовать языку озвучки Dota': 'Follow Dota’s audio language',
-  'Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.':
-    'Dota only mounts the folder of its own audio language, so made-up folders like dota_123 are no longer picked up. The -language option does nothing now — you can remove it from the Steam properties.',
-  'Английский интерфейс': 'English interface',
-  ': открой «Задать языки Dota по отдельности» в блоке «Интерфейс», поставь Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.':
-    ': open “Set Dota’s languages separately” in the Interface block, set Text to English and leave Voice on the language whose folder is already in use. The two are independent, so mods keep working.',
-  'Папку dota_{0} создаёт приложение': 'The dota_{0} folder is created by this app',
-  ': Valve её не поставляет, и гарантии, что игра её смонтирует, нет. Если моды не появились в игре — выбери в настройках Dota другой Audio Language, например Russian.':
-    ': Valve does not ship it, so there is no guarantee the game will mount it. If mods do not show up in game, pick a different Audio Language in Dota’s settings, Russian for example.',
-  'Папка dota_{0} больше не работает': 'The dota_{0} folder no longer works',
-  ': в ней {0} {1}, игра их не видит.': ': it holds {0} {1} the game cannot see.',
   'Перенести сюда': 'Move here',
-  'Обнаружен Minify': 'Minify detected',
-  ' (папка ': ' (the ',
-  ' рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.':
-    ' folder is next to it). If Minify installs mods into the same folder as the manager, their files will override each other — install mods through just one of them.',
   'Кэш загрузок': 'Download cache',
   'Размер': 'Size',
   'Очистить': 'Clear',
-  'Скачанные архивы модов. Нужны для быстрой переустановки — удаление ничего не сломает.':
-    'Downloaded mod archives. They speed up reinstalls — clearing them breaks nothing.',
   'Каталог': 'Catalog',
   'Обновлён': 'Updated',
   'Обновить сейчас': 'Refresh now',
   'Источник': 'Source',
   'О программе': 'About',
   'Версия': 'Version',
-  'Обновления скачиваются автоматически из GitHub Releases — когда новая версия готова, появится кнопка установки.':
-    'Updates download automatically from GitHub Releases — when a new version is ready, an install button appears.',
   'Dota 2 найдена: {0}': 'Dota 2 found: {0}',
   'Не нашёл автоматически — укажи вручную': 'Not found automatically — set it manually',
   'Путь сохранён': 'Path saved',
-  'Папка модов: dota_{0}': 'Mods folder: dota_{0}',
   'Перенесено файлов: {0}': 'Moved {0} files',
   'Моды перенесены в dota_{0}: игра больше не подхватывает папку dota_{1}':
     'Mods moved to dota_{0}: the game no longer picks up the dota_{1} folder',
@@ -556,8 +521,6 @@ const EN = {
 
   // ---------- diagnostics ----------
   'Диагностика': 'Diagnostics',
-  'Один файл с путём и настройками Dota, списком модов, состоянием патча и последними записями журнала приложения — без личных данных, кроме имени в Discord, если ты вошёл. Пришли его вместо скриншотов, если что-то не работает.':
-    "One file with Dota's path and settings, the mod list, patch state and the app's recent log entries — no personal data beyond your Discord name, if you're signed in. Send it instead of screenshots when something's broken.",
   'Экспортировать отчёт': 'Export report',
   'Отчёт сохранён': 'Report saved',
 };

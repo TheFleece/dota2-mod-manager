@@ -127,18 +127,24 @@ function detectLangSuffix(gamePath) {
 }
 
 /**
- * Set the game's two language settings. Dota reads boot.vcfg at startup, so this has to
- * happen while the game is closed. Existing keys are patched in place and anything else in
- * the file is left alone; a missing file gets Valve's own shape.
+ * Set the game's language settings. Dota reads boot.vcfg at startup, so this has to happen
+ * while the game is closed. Existing keys are patched in place and anything else in the file
+ * is left alone; a missing file gets Valve's own shape.
+ *
+ * Either setting may be left out, and the app leaves the text one out always: which language
+ * somebody reads the game in is their business, decided long before this app arrived. Only
+ * the audio language is ours to set, because it is what names the folder the engine mounts
+ * and therefore where a mod has to live.
  */
 function writeBootLanguages(gamePath, { ui, audio }) {
   const file = path.join(gamePath, 'dota', 'cfg', 'boot.vcfg');
   let text = null;
   try { text = fs.readFileSync(file, 'utf-8'); } catch { /* first write */ }
+  const pairs = [['UILanguage', ui], ['AudioLanguage', audio]].filter(([, v]) => v);
   if (!text || !/"boot"/i.test(text)) {
-    text = `"boot"\n{\n\t"UILanguage"\t\t"${ui}"\n\t"AudioLanguage"\t\t"${audio}"\n}\n`;
+    text = `"boot"\n{\n${pairs.map(([k, v]) => `\t"${k}"\t\t"${v}"\n`).join('')}}\n`;
   } else {
-    for (const [key, value] of [['UILanguage', ui], ['AudioLanguage', audio]]) {
+    for (const [key, value] of pairs) {
       const re = new RegExp(`("${key}"\\s*")[^"]*(")`, 'i');
       if (re.test(text)) text = text.replace(re, `$1${value}$2`);
       else text = text.replace(/\}\s*$/, `\t"${key}"\t\t"${value}"\n}\n`);

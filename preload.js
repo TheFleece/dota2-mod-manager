@@ -14,7 +14,6 @@ contextBridge.exposeInMainWorld('api', {
     detectDota: () => ipcRenderer.invoke('settings:detectDota'),
     browseDota: () => ipcRenderer.invoke('settings:browseDota'),
     moveLangFiles: (fromSuffix) => ipcRenderer.invoke('settings:moveLangFiles', fromSuffix),
-    setGameLanguages: (langs) => ipcRenderer.invoke('settings:setGameLanguages', langs),
   },
   ui: {
     setZoom: (factor) => ipcRenderer.invoke('ui:setZoom', factor),

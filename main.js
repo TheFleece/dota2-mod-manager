@@ -30,7 +30,11 @@ const { t } = i18n;
 let win;
 let settings, catalog, installer, library, fingerprints, presence, schemaService, icons;
 let presenceView = 'catalog';
-// set when startup moved mods to the folder the game actually mounts; the renderer
+// The one folder mods are installed into. Dota mounts the folder named by its audio
+// language, so the app sets that language rather than offering a choice of folders
+// (see keepRussianFolder).
+const LANG_FOLDER = 'russian';
+// set when startup moved mods into that folder from wherever they were; the renderer
 // picks it up once with settings:get and tells the user what happened
 let langMigration = null;
 
@@ -267,10 +271,9 @@ app.whenReady().then(async () => {
     if (found) settings.set('dotaGamePath', found);
   }
 
-  // point the library at the folder the game mounts now — Dota's 2026-07-24 update stopped
-  // mounting made-up language folders, so installs sitting in dota_123 have to move
+  // put the mods where the game will look for them, and make the game look there
   try {
-    syncLangFolder();
+    await keepRussianFolder();
   } catch (e) {
     diag('lang folder sync skipped: ' + e.message);
   }
@@ -957,18 +960,43 @@ function moveLangFolder(game, fromSuffix, toSuffix) {
   return moved;
 }
 
-// Follow the folder the game actually mounts (its audio language). This is what repairs
-// installs made before 2026-07-24, when a made-up folder like dota_123 still worked.
-function syncLangFolder() {
+/* Mods live in dota_russian, and the app is the one that arranges it.
+ *
+ * The engine mounts the folder named by Dota's audio language, so a mod folder is not a
+ * preference - it is a consequence of a setting somewhere else. Asking the user to keep the
+ * two in step was asking them to understand our filing system. Now there is one folder,
+ * always the same one, and the app writes the audio language that mounts it.
+ *
+ * The text language stays untouched. It is the one the user picked when they installed the
+ * game, and nothing about mods depends on it. Voices are not disturbed either unless Valve's
+ * Russian pack is actually downloaded: without it dota_russian mounts with our mods in it
+ * and the speech keeps coming from dota/pak01, which is English.
+ *
+ * Dota rewrites boot.vcfg when it exits, so a running game means we try again next launch.
+ */
+async function keepRussianFolder() {
   const game = settings.get('dotaGamePath');
-  if (!game || !settings.get('langSuffixAuto')) return;
-  const { suffix } = gamelang.detectLangSuffix(game);
-  const current = settings.get('langSuffix');
-  if (!suffix || suffix === current) return;
-  const moved = moveLangFolder(game, current, suffix);
-  settings.set('langSuffix', suffix);
-  if (moved) langMigration = { from: current, to: suffix, moved };
-  diag(`lang folder synced: dota_${current} -> dota_${suffix} (${moved} files)`);
+  if (!game) return;
+  const mounted = gamelang.detectLangSuffix(game).suffix;
+  if (mounted !== LANG_FOLDER) {
+    if (await dotaIsRunning()) {
+      diag(`audio language is ${mounted}, Dota is running - leaving boot.vcfg alone`);
+      return;
+    }
+    gamelang.writeBootLanguages(game, { audio: LANG_FOLDER });
+    diag(`audio language ${mounted} -> ${LANG_FOLDER}`);
+  }
+  gamelang.ensureLangFolder(game, LANG_FOLDER);
+  // whatever the mods were following before: our own last setting, and the folder the game
+  // was mounting until a moment ago
+  let moved = 0;
+  const from = new Set([settings.get('langSuffix'), mounted].filter((s) => s && s !== LANG_FOLDER));
+  for (const old of from) moved += moveLangFolder(game, old, LANG_FOLDER);
+  if (moved) {
+    langMigration = { from: [...from][0], to: LANG_FOLDER, moved };
+    diag(`mods moved into dota_${LANG_FOLDER}: ${moved} files from ${[...from].join(', ')}`);
+  }
+  settings.set('langSuffix', LANG_FOLDER);
 }
 
 function registerIpc() {
@@ -1014,9 +1042,7 @@ function registerIpc() {
     const game = settings.get('dotaGamePath');
     let minifyDetected = false;
     try { minifyDetected = !!game && fs.existsSync(path.join(game, 'dota_minify')); } catch { /* ignore */ }
-    const detected = game ? gamelang.detectLangSuffix(game) : { suffix: null, source: null, uiLanguage: null };
     const folders = gamelang.langFolders(game);
-    const active = settings.get('langSuffix');
     const migrated = langMigration;
     langMigration = null; // reported once
     return {
@@ -1024,17 +1050,14 @@ function registerIpc() {
       dotaPathValid: validateGamePath(game),
       minifyDetected,
       discordConfigured: discordAuth.isConfigured(),
+      // What is left of the language question, now that the folder is always dota_russian:
+      // whether the game agrees, and whether any mods are stranded outside it. Both are
+      // things to tell the user about, not things to ask them.
       gameLang: {
-        ...detected,
-        folders,
-        languages: gamelang.OFFICIAL_LANGUAGES,
-        // whether the voice pack for the folder in use is actually downloaded
-        voice: !!game && gamelang.voiceInstalled(game, active),
-        // Valve ships no dota_english (English voice lives in dota/pak01), so that folder
-        // is one we create ourselves and cannot promise the engine will mount
-        selfMade: !folders.some((f) => f.suffix === active && f.valveContent),
-        // mods left behind in a folder the game no longer mounts
-        stranded: folders.filter((f) => f.suffix !== active && !f.official && f.modFiles > 0)
+        mounted: game ? gamelang.detectLangSuffix(game).suffix : null,
+        folder: LANG_FOLDER,
+        // mods sitting in a folder the game does not mount
+        stranded: folders.filter((f) => f.suffix !== LANG_FOLDER && f.modFiles > 0)
           .map((f) => ({ suffix: f.suffix, modFiles: f.modFiles })),
       },
       langMigration: migrated,
@@ -1044,13 +1067,7 @@ function registerIpc() {
   ipcMain.handle('settings:set', (e, key, value) => {
     // keep main-process strings (dialogs, errors) in sync with the UI language
     if (key === 'uiLang') i18n.setLang(value);
-    // when the language folder changes, move installed mod files over
-    if (key === 'langSuffix' && value !== settings.get('langSuffix')) {
-      moveLangFolder(settings.get('dotaGamePath'), settings.get('langSuffix'), value);
-    }
     settings.set(key, value);
-    // pinning a folder by hand stops the automatic follow; releasing it re-syncs now
-    if (key === 'langSuffixAuto' && value) syncLangFolder();
     // the status text is localized, so a language change has to redraw it too
     if (key === 'discordPresence' || key === 'uiLang') applyPresenceSetting();
     return settings.all();
@@ -1080,33 +1097,13 @@ function registerIpc() {
     return { ok: true };
   });
 
-  // set Dota's own text/voice languages and take the mods along: the voice language decides
-  // which dota_<lang> folder the engine mounts, so it is also where mods have to live
-  ipcMain.handle('settings:setGameLanguages', async (e, { ui, audio }) => {
-    const game = settings.get('dotaGamePath');
-    if (!game) return { error: t('Путь к Dota 2 не задан') };
-    if (!gamelang.OFFICIAL_LANGUAGES.includes(ui) || !gamelang.OFFICIAL_LANGUAGES.includes(audio)) {
-      return { error: t('Dota не знает такого языка') };
-    }
-    if (await dotaIsRunning()) return { error: t('Сначала закрой Dota 2 — она перезапишет настройку при выходе') };
-    try {
-      gamelang.writeBootLanguages(game, { ui, audio });
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
-    const moved = moveLangFolder(game, settings.get('langSuffix'), audio);
-    gamelang.ensureLangFolder(game, audio);
-    settings.set('langSuffix', audio);
-    return { ok: true, moved, audio, ui, voice: gamelang.voiceInstalled(game, audio) };
-  });
-
-  // rescue mods sitting in a folder the game stopped mounting (our old dota_123, or another
-  // tool's dota_minify) by moving them into the folder that is live now
+  // rescue mods sitting in a folder the game does not mount (our old dota_123, another
+  // tool's dota_minify, or whatever the audio language used to be)
   ipcMain.handle('settings:moveLangFiles', (e, fromSuffix) => {
     const game = settings.get('dotaGamePath');
     if (!game) return { error: t('Путь к Dota 2 не задан') };
-    const moved = moveLangFolder(game, String(fromSuffix || ''), settings.get('langSuffix'));
-    return { moved, to: settings.get('langSuffix') };
+    const moved = moveLangFolder(game, String(fromSuffix || ''), LANG_FOLDER);
+    return { moved, to: LANG_FOLDER };
   });
 
   ipcMain.handle('settings:detectDota', async () => {

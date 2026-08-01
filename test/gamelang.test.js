@@ -150,6 +150,26 @@ test('writing the languages creates the file when the game never wrote one', (t)
   assert.deepEqual(gamelang.bootLanguages(game), { ui: 'ru', audio: 'russian' });
 });
 
+// The app sets the audio language and nothing else: the folder it names is where mods have
+// to live, while the language somebody reads the game in was their choice long before this.
+test('the audio language can be set without touching the text one', (t) => {
+  const game = fakeGame(t, {
+    boot: '"boot"\n{\n\t"UILanguage"\t\t"koreana"\n\t"AudioLanguage"\t\t"english"\n}\n',
+  });
+  gamelang.writeBootLanguages(game, { audio: 'russian' });
+
+  assert.deepEqual(gamelang.bootLanguages(game), { ui: 'koreana', audio: 'russian' });
+});
+
+test('setting only the audio language on a game that never booted writes just that', (t) => {
+  const game = fakeGame(t, {});
+  gamelang.writeBootLanguages(game, { audio: 'russian' });
+
+  const text = fs.readFileSync(path.join(game, 'dota', 'cfg', 'boot.vcfg'), 'utf-8');
+  assert.ok(!/UILanguage/i.test(text), 'no text language is invented for the user');
+  assert.deepEqual(gamelang.bootLanguages(game), { ui: null, audio: 'russian' });
+});
+
 test('creating a mod folder mirrors Valve and never overwrites an existing gameinfo', (t) => {
   const game = fakeGame(t, {});
 

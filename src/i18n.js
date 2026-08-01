@@ -95,9 +95,6 @@ const EN = {
   'gameinfo.gi: не найдены строки Game/Mod dota': 'gameinfo.gi: no "Game dota" / "Mod dota" lines',
   'gameinfo_branchspecific.gi: блок FileSystem не найден': 'gameinfo_branchspecific.gi: no FileSystem block',
   'gameinfo_branchspecific.gi: блок FileSystem не закрыт': 'gameinfo_branchspecific.gi: FileSystem block is not closed',
-  'Dota не знает такого языка': 'Dota does not know that language',
-  'Сначала закрой Dota 2 — она перезапишет настройку при выходе':
-    'Close Dota 2 first, it overwrites this setting on exit',
   'HTTP {0} — не удалось скачать {1}': 'HTTP {0} — could not download {1}',
   'Свободных слотов pakNN не осталось (10-99 заняты)': 'No free pakNN slots left (10-99 are taken)',
   'установка': 'installing',
