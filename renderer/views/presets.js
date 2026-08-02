@@ -14,6 +14,7 @@ import { esc, fmtMB, plural } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
 import { confirmDialog, promptDialog } from '../ui/dialog.js';
 import { paint } from '../ui/transitions.js';
+import { bindContextMenu } from '../ui/menu.js';
 
 const viewRoot = $('#view-root');
 
@@ -93,6 +94,60 @@ function shareDialog(plan) {
   });
 }
 
+/* One door to sharing, with both ways behind it and the difference between them stated
+ * rather than implied. A link is a few hundred characters and installs from the catalog on
+ * the other end; it cannot carry a mod the catalog does not have. The file carries anything,
+ * and can run to hundreds of megabytes. Two equal buttons on the card made that a guess -
+ * here the link is offered first, already made, and the file is one line below it.
+ */
+function shareSheet(preset, link) {
+  const skipped = link?.skipped || [];
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-box share-box">
+        <div class="share-title">${L`Поделиться пресетом «${preset.name}»`}</div>
+
+        <div class="share-way">
+          <div class="share-way-head"><span class="ms">link</span>${L`Ссылка`}</div>
+          ${link?.web ? `
+            <div class="share-copy">
+              <input class="input mono" id="shareUrl" readonly value="${esc(link.web)}">
+              <button class="btn btn-primary" id="shareCopyBtn"><span class="ms">content_copy</span>${L`Скопировать`}</button>
+            </div>
+            <div class="share-hint">${skipped.length
+              ? L`Донесёт ${link.count} из каталога. Свои моды (${skipped.length}) в неё не влезут — для них файл.`
+              : L`Открывается в менеджере и ставит моды из каталога.`}</div>` : `
+            <div class="share-hint">${L`В пресете только свои моды — ссылка их не донесёт.`}</div>`}
+        </div>
+
+        <div class="share-way">
+          <div class="share-way-head"><span class="ms">description</span>${L`Файл`}</div>
+          <button class="btn" id="shareFileBtn"><span class="ms">save</span>${L`Сохранить файлом…`}</button>
+          <div class="share-hint">${L`Донесёт и те моды, которых нет в каталоге. Дальше выберешь, что положить внутрь.`}</div>
+        </div>
+
+        <div class="confirm-actions">
+          <button class="btn" data-c="no">${L`Закрыть`}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const done = (v) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(null); });
+    overlay.querySelector('[data-c="no"]').addEventListener('click', () => done(null));
+    overlay.querySelector('#shareFileBtn').addEventListener('click', () => done('file'));
+    overlay.querySelector('#shareCopyBtn')?.addEventListener('click', (e) => {
+      navigator.clipboard.writeText(link.web);
+      overlay.querySelector('#shareUrl').select();
+      flashCopied(e.currentTarget);
+    });
+    const onKey = (e) => { if (e.key === 'Escape') done(null); };
+    document.addEventListener('keydown', onKey);
+  });
+}
+
 // Copy feedback in place of a dialog: the button goes green and says so for a few
 // seconds. The original markup is stashed on the element so a double click can't lose it.
 function flashCopied(btn) {
@@ -136,16 +191,18 @@ export async function renderPresets() {
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
-    <div class="view-intro">
-      ${L`Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.`}
-    </div>
     <div class="preset-new">
       <input class="input" id="presetName" placeholder="${L`Название пресета (напр. «Анимешный», «Минимал»)`}">
       <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>${L`Сохранить текущее состояние`}</button>
       <button class="btn" id="importPresetBtn"><span class="ms">upload_file</span>${L`Открыть .d2mm`}</button>
     </div>
     <div id="presetList">
-      ${presets.length ? '' : `<div class="empty-note">${L`Пресетов пока нет`}</div>`}
+      ${presets.length ? '' : `
+        <div class="empty-state">
+          <span class="ms">bookmarks</span>
+          <div class="empty-title">${L`Пресетов пока нет`}</div>
+          <div class="empty-body">${L`Пресет запоминает, какие моды включены: применил — эти включились, остальные выключились. Готовым можно поделиться ссылкой или файлом, а полученный .d2mm достаточно перетащить сюда.`}</div>
+        </div>`}
     </div>
   `; });
 
@@ -169,15 +226,9 @@ export async function renderPresets() {
           <div class="preset-name">${esc(p.name)}</div>
           <span class="text-meta">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
           <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
-          <button class="btn btn-sm" data-pupd="${p.id}" title="${L`Перезаписать пресет тем, что включено сейчас`}"><span class="ms">save</span>${L`Обновить`}</button>
-          <button class="btn btn-sm btn-icon" data-pren="${p.id}" title="${L`Переименовать`}" aria-label="${L`Переименовать`}"><span class="ms">edit</span></button>
-          <button class="btn btn-sm" data-link="${p.id}" title="${esc(linkTitle)}" ${link.count ? '' : 'disabled'}><span class="ms">link</span>${L`Ссылка`}</button>
-          <button class="btn btn-sm" data-share="${p.id}" title="${L`Сохранить пресет файлом — донесёт и свои моды тоже`}"><span class="ms">ios_share</span>${L`Файл`}</button>
-          <button class="btn btn-sm btn-danger" data-pdel="${p.id}">${L`Удалить`}</button>
+          <button class="btn btn-sm" data-share="${p.id}" title="${esc(linkTitle)}"><span class="ms">ios_share</span>${L`Поделиться`}</button>
         </div>
-        <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>
-        ${link.skipped.length && link.count ? `
-          <div class="preset-hint"><span class="ms">link_off</span>${L`Ссылкой не уедут: ${esc(link.skipped.slice(0, 4).join(', '))}${link.skipped.length > 4 ? '…' : ''} — их нет в каталоге. Отправь файлом, чтобы попали.`}</div>` : ''}`;
+        <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>`;
     }
     list.appendChild(card);
   });
@@ -199,39 +250,25 @@ export async function renderPresets() {
       refreshInstalledIndex();
     });
   });
-  list.querySelectorAll('[data-pupd]').forEach((b) => {
-    b.addEventListener('click', async () => {
-      const r = await window.api.presets.update(b.dataset.pupd);
-      if (r.error) { toast(r.error, 'error', 6000); return; }
-      toast(L`Пресет обновлён: ${r.count} ${plural(r.count, 'мод', 'мода', 'модов')}`, 'ok');
-      renderPresets();
-    });
-  });
-  list.querySelectorAll('[data-pren]').forEach((b) => {
-    b.addEventListener('click', async () => {
-      const cur = presets.find((p) => p.id === b.dataset.pren);
-      const name = await promptDialog(L`Новое название пресета`, { value: cur?.name || '', okLabel: L`Переименовать` });
-      if (!name) return;
-      const r = await window.api.presets.rename(b.dataset.pren, name);
-      if (r.error) { toast(r.error, 'error', 6000); return; }
-      renderPresets();
-    });
-  });
-  list.querySelectorAll('[data-link]').forEach((b) => {
-    b.addEventListener('click', async () => {
-      const r = await window.api.presets.shareLink(b.dataset.link);
-      if (r.error) { toast(r.error, 'warn', 7000); return; }
-      navigator.clipboard.writeText(r.web);
-      flashCopied(b);
-      // never let a partial link leave silently: the receiver would open a build missing
-      // mods and have no idea any were dropped
-      if (r.skipped?.length) {
-        toast(L`В ссылку вошли ${r.count} ${plural(r.count, 'мод', 'мода', 'модов')} из каталога. Свои моды (${r.skipped.length}) она не несёт — отправь файлом.`, 'warn', 8000);
-      }
-    });
+  // the rest of what a preset can do, one right-click away as everywhere else
+  bindContextMenu(list, '.preset-card:not(.shared)', (card) => {
+    const p = presets.find((x) => x.id === card.querySelector('[data-apply]')?.dataset.apply);
+    if (!p) return null;
+    return [
+      { label: L`Обновить по текущему состоянию`, icon: 'save', onPick: () => updatePreset(p.id) },
+      { label: L`Переименовать`, icon: 'edit', onPick: () => renamePreset(p) },
+      { separator: true },
+      { label: L`Удалить`, icon: 'delete', danger: true, onPick: () => deletePreset(p) },
+    ];
   });
   list.querySelectorAll('[data-share]').forEach((b) => {
     b.addEventListener('click', async () => {
+      const preset = presets.find((p) => p.id === b.dataset.share);
+      // the link is made up front: it is a local encode, and offering it already written
+      // beats a button that might turn out to have nothing to copy
+      const link = await window.api.presets.shareLink(b.dataset.share);
+      const pick = await shareSheet(preset, link.error ? null : link);
+      if (pick !== 'file') return;
       const plan = await window.api.presets.exportPlan(b.dataset.share);
       if (plan.error) { toast(plan.error, 'error', 6000); return; }
       if (!plan.entries.length) { toast(L`В пресете нет модов`, 'warn'); return; }
@@ -256,14 +293,33 @@ export async function renderPresets() {
       renderPresets();
     });
   });
+  // received presets keep their own delete button: the card is a decision to make, not a
+  // list entry, and the two answers to it are "install" and "no thanks"
   list.querySelectorAll('[data-pdel]').forEach((b) => {
-    b.addEventListener('click', async () => {
-      const p = presets.find((x) => x.id === b.dataset.pdel);
-      if (!await confirmDialog(L`Удалить пресет «${p?.name || ''}»?`)) return;
-      await window.api.presets.delete(b.dataset.pdel);
-      renderPresets();
-    });
+    b.addEventListener('click', () => deletePreset(presets.find((x) => x.id === b.dataset.pdel)));
   });
+}
+
+async function updatePreset(id) {
+  const r = await window.api.presets.update(id);
+  if (r.error) { toast(r.error, 'error', 6000); return; }
+  toast(L`Пресет обновлён: ${r.count} ${plural(r.count, 'мод', 'мода', 'модов')}`, 'ok');
+  renderPresets();
+}
+
+async function renamePreset(p) {
+  const name = await promptDialog(L`Новое название пресета`, { value: p.name || '', okLabel: L`Переименовать` });
+  if (!name) return;
+  const r = await window.api.presets.rename(p.id, name);
+  if (r.error) { toast(r.error, 'error', 6000); return; }
+  renderPresets();
+}
+
+async function deletePreset(p) {
+  if (!p) return;
+  if (!await confirmDialog(L`Удалить пресет «${p.name || ''}»?`)) return;
+  await window.api.presets.delete(p.id);
+  renderPresets();
 }
 
 export async function handlePresetImport(r) {

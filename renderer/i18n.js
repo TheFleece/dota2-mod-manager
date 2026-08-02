@@ -431,6 +431,20 @@ const EN = {
 
   // ---------- my mods ----------
   'Мои моды': 'My mods',
+
+  // ---------- presets: sharing ----------
+  'Поделиться': 'Share',
+  'Скопировать': 'Copy',
+  'Сохранить файлом…': 'Save as a file…',
+  'Обновить по текущему состоянию': 'Update from what is on now',
+  'Открывается в менеджере и ставит моды из каталога.': 'Opens in the manager and installs the mods from the catalog.',
+  'В пресете только свои моды — ссылка их не донесёт.': 'This preset holds only mods of your own, and a link cannot carry those.',
+  'Донесёт {0} из каталога. Свои моды ({1}) в неё не влезут — для них файл.':
+    'Carries {0} from the catalog. Mods of your own ({1}) do not fit in a link — use the file for those.',
+  'Донесёт и те моды, которых нет в каталоге. Дальше выберешь, что положить внутрь.':
+    'Carries the mods the catalog does not have. You pick what goes inside on the next step.',
+  'Пресет запоминает, какие моды включены: применил — эти включились, остальные выключились. Готовым можно поделиться ссылкой или файлом, а полученный .d2mm достаточно перетащить сюда.':
+    'A preset remembers which mods are on: apply it and those switch on while the rest switch off. Share a finished one as a link or a file, and drop a .d2mm you were sent anywhere in this window.',
   'Поиск среди своих модов…': 'Search your mods…',
   'Моды, положенные в папку мимо менеджера. «Принять» берёт файл к себе — с превью, переключателем и всем остальным.':
     'Mods dropped into the folder without the manager. “Take it” adopts the file — preview, switch and all.',

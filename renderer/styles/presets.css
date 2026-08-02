@@ -58,3 +58,39 @@
 
 /* The optional name and note under the size breakdown. */
 .share-box .input { margin-top: var(--space-2); }
+
+/* Sharing, one door with both ways behind it (see shareSheet). The link is written out and
+   ready to copy rather than promised by a button; the file sits below it because it is the
+   heavier answer and the rarer one. */
+.share-way {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+.share-way:first-of-type { border-top: 0; padding-top: var(--space-1); }
+.share-way-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--space-2);
+}
+.share-way-head .ms { font-size: var(--icon-md); color: var(--primary-soft); }
+.share-copy { display: flex; gap: var(--space-2); }
+.share-copy .input { flex: 1; min-width: 0; font-size: 12px; }
+.share-way .share-hint { margin-top: var(--space-2); }
+
+/* An empty screen is the one place with room to say what the screen is for. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-state > .ms { font-size: 44px; color: var(--text-faint); }
+.empty-title { font-family: var(--font-head); font-weight: 700; font-size: var(--text-md); color: var(--text); }
+.empty-body { max-width: 46ch; font-size: var(--text-sm); line-height: 1.5; }
