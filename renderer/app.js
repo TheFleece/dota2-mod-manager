@@ -25,6 +25,7 @@ import { applyStaticI18n, showLanguagePicker } from './ui/language.js';
 import { initTheme } from './ui/theme.js';
 import { initQueue } from './ui/queue.js';
 import { bindHelp } from './ui/help.js';
+import { bindHotkeys } from './ui/hotkeys.js';
 import { handleImportResult } from './views/library.js';
 import { loadCatalog } from './views/catalog.js';
 import { handlePresetImport } from './views/presets.js';
@@ -58,6 +59,10 @@ document.querySelectorAll('.tb-tab').forEach((btn) => {
 });
 
 bindHelp();
+bindHotkeys({
+  onSection: (view) => { if (state.view !== view) switchView(view); },
+  onRefresh: () => { toast(L`Обновляю каталог…`); loadCatalog(true); },
+});
 
 $('#openModsFolderBtn').addEventListener('click', async () => {
   const r = await window.api.misc.openLangFolder();
