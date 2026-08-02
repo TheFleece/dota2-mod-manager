@@ -1299,6 +1299,70 @@ class Installer {
     return out;
   }
 
+  /* ---------- after Steam's file check ----------
+   *
+   * Mods in the language folder are files Steam knows nothing about, so verifying the game
+   * files leaves them alone. Fonts and cursors are different: they overwrite files Valve
+   * ships, and a verify puts the originals back without telling anyone. The record still
+   * says the mod is on, the game says otherwise, and nothing in between says a word.
+   *
+   * A restored file is recognised by the backup taken when the mod was installed: if what is
+   * deployed is byte for byte the copy we set aside, the game's own file is back. A font
+   * file Valve does not ship has no backup and cannot be confused for one - and a verify
+   * would not have touched it either.
+   */
+  vanillaIsBack(f) {
+    if (f.root !== 'fonts' && f.root !== 'cursor') return false;
+    const deployed = path.join(this.rootAbs(f.root), f.relPath);
+    if (!fs.existsSync(deployed)) return true;
+    const backup = path.join(this.backupsDir, f.root, f.relPath);
+    if (!fs.existsSync(backup)) return false;
+    try {
+      return fs.readFileSync(deployed).equals(fs.readFileSync(backup));
+    } catch {
+      return false;
+    }
+  }
+
+  /** Installed records whose files the game has taken back. */
+  lostToVerify(records) {
+    if (!this.getGamePath()) return [];
+    return (records || []).filter((rec) => rec.enabled !== false
+      && (rec.files || []).some((f) => this.vanillaIsBack(f)));
+  }
+
+  /** The archive this mod was installed from, if it is still in the download cache. */
+  cachedArchive(categoryId, fileRef) {
+    if (!categoryId || !fileRef) return null;
+    try {
+      const name = decodeURIComponent(fileUrl(categoryId, fileRef).split('/').pop());
+      const p = path.join(this.downloadsDir, categoryId, name);
+      return fs.existsSync(p) && fs.statSync(p).size > 0 ? p : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Put one back without asking. A cursor set is kept in userData, so it goes straight back;
+   * a font has to come from the archive it arrived in, and if the download cache has been
+   * cleared there is nothing here to restore from - that one needs the network, which is
+   * not something to start behind the user's back at launch.
+   * @returns {'store'|'cache'|null} where it came from, or null if it could not be done
+   */
+  restoreDeployed(rec) {
+    const isCursor = (rec.files || []).some((f) => f.root === 'cursor');
+    if (isCursor && this.cursorFiles(rec.files).length && fs.existsSync(this.cursorStoreDir(rec.id))) {
+      this.deployCursor(rec.id, rec.files);
+      return 'store';
+    }
+    const local = this.cachedArchive(rec.categoryId, rec.fileRef);
+    if (!local) return null;
+    if (isCursor) this.installCursor(local, rec.name);
+    else this.installFonts(local, rec.name);
+    return 'cache';
+  }
+
   downloadCacheSize() {
     let total = 0;
     const walk = (dir) => {

@@ -34,6 +34,7 @@ const packsOpen = new Set();   // ids of packs folded open
 let libSearch = '';            // library-scoped search query
 let libRecords = [];           // records as of the last draw
 let libExternal = [];          // foreign files found in the mods folder
+let libStuck = [];             // fonts/cursors Steam took back that need downloading again
 let slotCount = 0;             // mods occupying a numbered pak, so the order arrows know the ends
 
 registerView('library', () => renderLibrary());
@@ -512,6 +513,12 @@ function folderBannersHtml() {
       <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`Рядом установлен Minify`}</b>${L`. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.`}</div>
+      </div>` : ''}
+    ${libStuck.length ? `
+      <div class="banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body"><b>${L`Проверка файлов Steam вернула оригиналы игры`}</b>${L`: ${esc(libStuck.map((x) => x.name).join(', '))}. Архива для установки уже нет — скачать заново?`}</div>
+        <button class="btn btn-sm btn-primary" id="reinstallStuckBtn"><span class="ms">download</span>${L`Поставить заново`}</button>
       </div>` : ''}`;
 }
 
@@ -526,6 +533,7 @@ export async function renderLibrary() {
   // below still gets the full list - that is what tells the card it is already downloaded.
   const installedAll = res.installed.filter((r) => r.categoryId !== 'tools');
   const externalAll = res.external || [];
+  libStuck = res.verifyStuck || [];
   libRecords = installedAll;
   applyInstalled(res.installed); // keep the tab counter + catalog badges in sync with the folder
   try { const ms = await window.api.mods.masterState(); state.masterOff = !!ms.off; } catch { state.masterOff = false; }
@@ -717,6 +725,22 @@ async function bindLibrary(external) {
     reRender();
   });
   $('#adoptAllBtn')?.addEventListener('click', adoptAll);
+  // the archive is gone from the cache, so putting these back means fetching them again -
+  // which is why it waits for a press instead of happening at launch
+  $('#reinstallStuckBtn')?.addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    for (const { id } of libStuck) {
+      const rec = libRecords.find((r) => r.id === id);
+      if (!rec) continue;
+      const r = await window.api.mods.install({
+        categoryId: rec.categoryId, name: rec.name, styleLabel: rec.styleLabel,
+        fileRef: rec.fileRef, preview: rec.preview,
+      });
+      if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
+    }
+    await refreshInstalledIndex();
+    renderLibrary();
+  });
   viewRoot.querySelectorAll('[data-move-from]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const r = await window.api.settings.moveLangFiles(btn.dataset.moveFrom);

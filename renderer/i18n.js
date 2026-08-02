@@ -493,6 +493,10 @@ const EN = {
   'В папке dota_{0} лежат {1} {2}': 'The dota_{0} folder holds {1} {2}',
   ', которые игра не видит.': ' the game cannot see.',
   'Рядом установлен Minify': 'Minify is installed alongside',
+  'Проверка файлов Steam вернула оригиналы игры': 'Steam’s file check put the game’s own files back',
+  ': {0}. Архива для установки уже нет — скачать заново?':
+    ': {0}. The archive they were installed from is no longer cached — download it again?',
+  'Поставить заново': 'Install again',
   '. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.':
     '. If it installs into the same folder, their files overwrite each other: install with one of the two, not both.',
   'Свернуть нижнюю панель': 'Hide the bottom bar',

@@ -37,6 +37,9 @@ const LANG_FOLDER = 'russian';
 // set when startup moved mods into that folder from wherever they were; the renderer
 // picks it up once with settings:get and tells the user what happened
 let langMigration = null;
+// fonts and cursors Steam's file check took back and the app could not put back on its own
+// (the archive they came in is no longer cached), reported by mods:list
+let verifyStuck = [];
 
 function sendProgress(evt) {
   if (win && !win.isDestroyed()) win.webContents.send('progress', evt);
@@ -325,6 +328,13 @@ app.whenReady().then(async () => {
     if (healed.error) diag('schema heal failed: ' + healed.error);
   } catch (e) {
     diag('schema heal skipped: ' + e.message);
+  }
+
+  // the same job for the two kinds of mod that overwrite files Valve ships
+  try {
+    restoreAfterVerify();
+  } catch (e) {
+    diag('restore after verify skipped: ' + e.message);
   }
 
   registerIpc();
@@ -1018,6 +1028,31 @@ function applyVoicePreference() {
   }
 }
 
+/* Put back what Steam's file check took away.
+ *
+ * Only fonts and cursors can be taken: they overwrite files Valve ships. What can be restored
+ * from what the app already holds is restored without a word - it is the state the user asked
+ * for, and they did not ask Steam to undo it. What would need downloading is left alone and
+ * reported instead: starting a download at launch because a file changed is not something to
+ * do behind somebody's back.
+ */
+function restoreAfterVerify() {
+  const lost = installer.lostToVerify(library.list());
+  if (!lost.length) return;
+  const stuck = [];
+  for (const rec of lost) {
+    try {
+      const from = installer.restoreDeployed(rec);
+      if (from) diag(`restored after verify: ${rec.name} (from ${from})`);
+      else stuck.push({ id: rec.id, name: rec.name });
+    } catch (err) {
+      diag(`restore failed for ${rec.name}: ${err.message}`);
+      stuck.push({ id: rec.id, name: rec.name });
+    }
+  }
+  verifyStuck = stuck;
+}
+
 function registerIpc() {
   // ----- window controls -----
   ipcMain.handle('win:minimize', () => win.minimize());
@@ -1337,7 +1372,7 @@ function registerIpc() {
       const { schema, ...rest } = rec;
       return { ...rest, schemaCount: schema.length, schemaLive: schemaOn };
     });
-    return { installed: listed, external, slots, slotCeil: 98 };
+    return { installed: listed, external, slots, slotCeil: 98, verifyStuck };
   });
 
   // ----- launch + master mods switch -----
