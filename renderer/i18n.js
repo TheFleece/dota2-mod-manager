@@ -387,7 +387,6 @@ const EN = {
   'Пресет обновлён: {0} {1}': 'Preset updated: {0} {1}',
 
   // ---------- preset links ----------
-  'Ссылка': 'Link',
   'Файл': 'File',
   'Сохранить пресет файлом — донесёт и свои моды тоже': 'Save the preset as a file — it carries your own mods too',
   'Скопировать короткую ссылку на пресет': 'Copy a short link to the preset',
@@ -442,7 +441,6 @@ const EN = {
   'Не нашёл автоматически — укажи папку вручную': 'No luck automatically — point at the folder yourself',
 
   // ---------- presets: sharing ----------
-  'Поделиться': 'Share',
   'Скопировать': 'Copy',
   'Сохранить файлом…': 'Save as a file…',
   'Обновить по текущему состоянию': 'Update from what is on now',
@@ -460,7 +458,6 @@ const EN = {
   'Взять файл к себе — дальше как у обычного мода': 'Adopt the file: from then on it behaves like any other mod',
   '«{0}» принят': '«{0}» adopted',
   'Загружать раньше': 'Load earlier',
-  'Загружать позже': 'Load later',
   'Сохранить одним файлом': 'Save as one file',
   'Сохранить курсор архивом': 'Save the cursor as an archive',
   'Разобрать по героям': 'Split by hero',
@@ -476,7 +473,12 @@ const EN = {
     'One slot, one active look: this one replaces «{0}». The previous pick stays in My mods, switched off.',
 
   // ---------- settings ----------
-  'Масштаб': 'Scale',
+  'Звук в игре': 'Game audio',
+  'Английские голоса': 'English voices',
+  'Русская озвучка выключается, моды остаются на месте. После переключения перезапусти Dota.':
+    'Turns the Russian voice-over off and leaves the mods where they are. Restart Dota afterwards.',
+  'Голоса в игре станут английскими — перезапусти Dota': 'The game will speak English — restart Dota',
+  'Русская озвучка вернулась — перезапусти Dota': 'The Russian voice-over is back — restart Dota',
   'В самом Discord для этого включено «Отображать текущую активность как статус».':
     'Discord itself needs “Display current activity as a status message” switched on.',
   'Скачанные архивы, чтобы не качать повторно. Удаление ничего не сломает.':

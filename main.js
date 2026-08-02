@@ -274,6 +274,7 @@ app.whenReady().then(async () => {
   // put the mods where the game will look for them, and make the game look there
   try {
     await keepRussianFolder();
+    applyVoicePreference();
   } catch (e) {
     diag('lang folder sync skipped: ' + e.message);
   }
@@ -999,6 +1000,24 @@ async function keepRussianFolder() {
   settings.set('langSuffix', LANG_FOLDER);
 }
 
+/* Whatever the user asked of the voices, applied to what is on disk now.
+ *
+ * Run on every launch, not only when the switch is touched: verifying the game files through
+ * Steam hands Valve's voice pack back without telling anyone, and the answer to "I want
+ * English voices" should not quietly expire because somebody checked their install.
+ */
+function applyVoicePreference() {
+  const game = settings.get('dotaGamePath');
+  if (!game) return 'absent';
+  try {
+    return gamelang.setVoiceEnabled(game, LANG_FOLDER, !settings.get('englishVoices'));
+  } catch (err) {
+    // Dota holds its paks open, so a running game means we try again next launch
+    diag('voice pack not switched: ' + err.message);
+    return gamelang.voiceState(game, LANG_FOLDER);
+  }
+}
+
 function registerIpc() {
   // ----- window controls -----
   ipcMain.handle('win:minimize', () => win.minimize());
@@ -1095,6 +1114,27 @@ function registerIpc() {
   ipcMain.handle('account:signOut', () => {
     settings.set('account', null);
     return { ok: true };
+  });
+
+  // ----- English voices (Valve's pak01 in or out of the mount) -----
+  ipcMain.handle('voice:state', () => {
+    const game = settings.get('dotaGamePath');
+    return {
+      state: game ? gamelang.voiceState(game, LANG_FOLDER) : 'absent',
+      english: !!settings.get('englishVoices'),
+    };
+  });
+
+  ipcMain.handle('voice:setEnabled', async (e, english) => {
+    const game = settings.get('dotaGamePath');
+    if (!game) return { error: t('Путь к Dota 2 не задан') };
+    if (await dotaIsRunning()) return { error: t('Сначала закрой Dota 2 — она держит файлы озвучки открытыми') };
+    settings.set('englishVoices', !!english);
+    try {
+      return { state: gamelang.setVoiceEnabled(game, LANG_FOLDER, !english), english: !!english };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
   });
 
   // rescue mods sitting in a folder the game does not mount (our old dota_123, another

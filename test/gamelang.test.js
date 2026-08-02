@@ -185,3 +185,61 @@ test('creating a mod folder mirrors Valve and never overwrites an existing gamei
   gamelang.ensureLangFolder(game, 'russian');
   assert.equal(fs.readFileSync(gi, 'utf-8'), 'hand edited', "Valve's own file is left as found");
 });
+
+// ---------- English voices with the mods left in place ----------
+// The mods live in dota_russian and stay there; what makes the speech Russian is Valve's own
+// voice pack inside that folder, so the switch moves the pack out of the mount and nothing else.
+
+test('the voice pack switches off and back on, and the mods are not touched', (t) => {
+  const game = fakeGame(t, {
+    folders: { dota_russian: ['pak01_dir.vpk', 'pak01_000.vpk', 'pak10_dir.vpk', 'gameinfo.gi'] },
+  });
+  const dir = path.join(game, 'dota_russian');
+
+  assert.equal(gamelang.voiceState(game, 'russian'), 'on');
+
+  assert.equal(gamelang.setVoiceEnabled(game, 'russian', false), 'off');
+  assert.equal(gamelang.voiceState(game, 'russian'), 'off');
+  assert.ok(!fs.existsSync(path.join(dir, 'pak01_dir.vpk')), 'the index is out of the mount');
+  assert.ok(fs.existsSync(path.join(dir, 'pak01_dir.vpk.voff')), 'and parked beside it');
+  assert.ok(fs.existsSync(path.join(dir, 'pak01_000.vpk')), 'the volumes are left alone');
+  assert.ok(fs.existsSync(path.join(dir, 'pak10_dir.vpk')), 'the mod is left alone');
+  assert.ok(fs.existsSync(path.join(dir, 'gameinfo.gi')), 'so is the layer definition');
+
+  assert.equal(gamelang.setVoiceEnabled(game, 'russian', true), 'on');
+  assert.ok(fs.existsSync(path.join(dir, 'pak01_dir.vpk')));
+  assert.ok(!fs.existsSync(path.join(dir, 'pak01_dir.vpk.voff')));
+});
+
+test('a language whose pack was never downloaded has nothing to switch', (t) => {
+  const game = fakeGame(t, { folders: { dota_russian: ['pak10_dir.vpk'] } });
+
+  assert.equal(gamelang.voiceState(game, 'russian'), 'absent');
+  assert.equal(gamelang.setVoiceEnabled(game, 'russian', false), 'absent');
+  assert.ok(!fs.existsSync(path.join(game, 'dota_russian', 'pak01_dir.vpk.voff')));
+});
+
+test('verifying the game files hands the pack back, and the setting still wins', (t) => {
+  const game = fakeGame(t, { folders: { dota_russian: ['pak01_dir.vpk'] } });
+  const dir = path.join(game, 'dota_russian');
+  gamelang.setVoiceEnabled(game, 'russian', false);
+
+  // Steam restores the original next to the one we parked
+  fs.writeFileSync(path.join(dir, 'pak01_dir.vpk'), 'freshly downloaded');
+
+  assert.equal(gamelang.setVoiceEnabled(game, 'russian', false), 'off');
+  assert.equal(fs.readFileSync(path.join(dir, 'pak01_dir.vpk.voff'), 'utf-8'), 'freshly downloaded',
+    'the file Steam restored is the one kept, ours is dropped');
+  assert.ok(!fs.existsSync(path.join(dir, 'pak01_dir.vpk')));
+});
+
+test('the pack restored by Steam is kept when the voices are wanted back', (t) => {
+  const game = fakeGame(t, { folders: { dota_russian: ['pak01_dir.vpk'] } });
+  const dir = path.join(game, 'dota_russian');
+  gamelang.setVoiceEnabled(game, 'russian', false);
+  fs.writeFileSync(path.join(dir, 'pak01_dir.vpk'), 'freshly downloaded');
+
+  assert.equal(gamelang.setVoiceEnabled(game, 'russian', true), 'on');
+  assert.equal(fs.readFileSync(path.join(dir, 'pak01_dir.vpk'), 'utf-8'), 'freshly downloaded');
+  assert.ok(!fs.existsSync(path.join(dir, 'pak01_dir.vpk.voff')), 'no duplicate is left behind');
+});

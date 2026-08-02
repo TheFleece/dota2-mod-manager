@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('api', {
     browseDota: () => ipcRenderer.invoke('settings:browseDota'),
     moveLangFiles: (fromSuffix) => ipcRenderer.invoke('settings:moveLangFiles', fromSuffix),
   },
+  voice: {
+    state: () => ipcRenderer.invoke('voice:state'),
+    setEnglish: (english) => ipcRenderer.invoke('voice:setEnabled', english),
+  },
   ui: {
     setZoom: (factor) => ipcRenderer.invoke('ui:setZoom', factor),
     onZoom: (cb) => ipcRenderer.on('ui:zoom', (e, factor) => cb(factor)),

@@ -37,6 +37,9 @@ export async function renderSettings() {
   const scalePct = Math.round((Number(s.uiScale) || 1) * 100);
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
+  // no Russian voice pack downloaded means the speech is already English: a switch with
+  // nothing to switch is not shown at all
+  const voice = await window.api.voice.state();
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
@@ -64,6 +67,17 @@ export async function renderSettings() {
         </div>
       </div>
     </div>
+
+    ${voice.state === 'absent' ? '' : `
+    <div class="settings-block" style="--i:1">
+      <h3>${L`Звук в игре`}</h3>
+      <div class="settings-row">
+        <span class="settings-label">${L`Английские голоса`}</span>
+        <button class="toggle ${voice.english ? 'on' : ''}" id="voiceToggle" role="switch"
+                aria-checked="${!!voice.english}" aria-label="${L`Английские голоса`}"></button>
+      </div>
+      <div class="settings-hint">${L`Русская озвучка выключается, моды остаются на месте. После переключения перезапусти Dota.`}</div>
+    </div>`}
 
     <div class="settings-block" style="--i:1">
       <h3>Discord</h3>
@@ -179,6 +193,17 @@ export async function renderSettings() {
     if (r?.path) toast(L`Путь сохранён`);
     renderSettings();
     refreshSidebarStatus();
+  });
+  $('#voiceToggle')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const on = !btn.classList.contains('on');
+    btn.disabled = true;
+    const r = await window.api.voice.setEnglish(on);
+    btn.disabled = false;
+    if (r?.error) { toast(r.error, 'error', 7000); return; }
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-checked', String(on));
+    toast(on ? L`Голоса в игре станут английскими — перезапусти Dota` : L`Русская озвучка вернулась — перезапусти Dota`, 'ok', 7000);
   });
   $('#presenceToggle')?.addEventListener('click', async (e) => {
     const on = !e.currentTarget.classList.contains('on');

@@ -10,6 +10,9 @@ const DEFAULTS = {
   // because everything downstream reads it, and because an upgrade has to be able to see
   // what the folder used to be.
   langSuffix: 'russian',
+  // speak English while the mods stay in the Russian folder: Valve's voice pack is moved out
+  // of the mount, nothing else changes (see setVoiceEnabled in src/gamelang.js)
+  englishVoices: false,
   // app UI language: "en" | "ru". English is the default until the user picks otherwise.
   uiLang: 'en',
   // one-time language picker: false for fresh installs AND for users updating from a
