@@ -24,6 +24,7 @@ import { thumbHtml } from '../ui/thumb.js';
 import { loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons, cosmeticIcon, cosmeticIconKnown } from '../ui/cosmetic-icons.js';
 import { paint } from '../ui/transitions.js';
 import { isQueued, toggleQueued, dropFromQueue, useInstaller } from '../ui/queue.js';
+import { refreshSidebarStatus } from '../ui/statusbar.js';
 import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 
 const viewRoot = $('#view-root');
@@ -403,11 +404,46 @@ async function renderCatalog() {
   renderRail();
 
   const searching = state.search.trim().length > 0;
-  if (searching) return renderSearchResults();
-  if (state.activeCategory === 'all') return renderHome();
-  if (state.activeCategory === 'favorites') return renderFavorites();
-  if (state.activeCategory.startsWith(COSMETIC_PREFIX)) return renderCosmeticCategory(state.activeCategory.slice(COSMETIC_PREFIX.length));
-  renderCategory(state.activeCategory);
+  if (searching) await renderSearchResults();
+  else if (state.activeCategory === 'all') await renderHome();
+  else if (state.activeCategory === 'favorites') await renderFavorites();
+  else if (state.activeCategory.startsWith(COSMETIC_PREFIX)) await renderCosmeticCategory(state.activeCategory.slice(COSMETIC_PREFIX.length));
+  else await renderCategory(state.activeCategory);
+  showNoGameBanner();
+}
+
+/* Without Dota there is a catalog and no way to install from it, and the only sign of that
+ * used to be a grey line in the status bar - the news arrived as a refusal, after the click.
+ * The banner says it before that, on whichever catalog screen the user is standing on, and
+ * carries the two answers with it so nobody has to go looking through Settings.
+ */
+function showNoGameBanner() {
+  if (state.settings?.dotaPathValid) return;
+  const el = document.createElement('div');
+  el.className = 'banner warn';
+  el.innerHTML = `
+    <span class="ms">warning</span>
+    <div class="banner-body"><b>${L`Dota 2 не найдена`}</b>${L` — моды ставить некуда. Проверь, что игра установлена, или укажи её папку вручную.`}</div>
+    <button class="btn btn-sm" id="findDotaBtn"><span class="ms">search</span>${L`Искать снова`}</button>
+    <button class="btn btn-sm btn-primary" id="pickDotaBtn"><span class="ms">folder_open</span>${L`Указать папку`}</button>`;
+  viewRoot.prepend(el);
+
+  const settled = async (found) => {
+    state.settings = await window.api.settings.get();
+    await refreshSidebarStatus();
+    if (found) toast(L`Dota 2 найдена — можно ставить моды`);
+    renderCatalog();
+  };
+  $('#findDotaBtn').addEventListener('click', async () => {
+    const found = await window.api.settings.detectDota();
+    if (!found) { toast(L`Не нашёл автоматически — укажи папку вручную`, 'warn'); return; }
+    settled(true);
+  });
+  $('#pickDotaBtn').addEventListener('click', async () => {
+    const r = await window.api.settings.browseDota();
+    if (r?.error) { toast(r.error, 'error', 6000); return; }
+    if (r?.path) settled(true);
+  });
 }
 
 // --- favorites ---

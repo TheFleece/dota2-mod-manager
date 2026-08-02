@@ -204,3 +204,22 @@ html[lang="ru"] body.dropping::after {
   font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
   background: var(--bg-elev); border-radius: 5px; padding: 1px 5px; color: var(--primary-soft);
 }
+
+/* ============ Banner ============
+   A line above a screen saying something the user has to know but did not ask about: mods
+   the game cannot see, a patcher already in the file, no Dota found at all. Shared, because
+   the news is not always about the screen it appears on. */
+.banner {
+  display: flex; align-items: center; gap: 11px;
+  border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px;
+  font-size: 13px; animation: cardIn 0.3s var(--ease) both;
+}
+.banner .ms { font-size: 20px; flex-shrink: 0; }
+.banner .banner-body { flex: 1; min-width: 0; }
+.banner .banner-body b { color: var(--text); }
+.banner.warn { background: rgba(251, 191, 36, 0.11); border: 1px solid rgba(251, 191, 36, 0.32); color: var(--text-muted); }
+.banner.warn .ms { color: var(--warning); }
+.banner.off { background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.3); color: var(--text-muted); }
+.banner.off .ms { color: var(--danger); }
+.banner.info { background: var(--primary-dim); border: 1px solid var(--primary); color: var(--text-muted); }
+.banner.info .ms { color: var(--primary-soft); }

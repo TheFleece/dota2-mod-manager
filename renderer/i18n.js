@@ -432,6 +432,15 @@ const EN = {
   // ---------- my mods ----------
   'Мои моды': 'My mods',
 
+  // ---------- no game found ----------
+  'Dota 2 не найдена': 'Dota 2 not found',
+  ' — моды ставить некуда. Проверь, что игра установлена, или укажи её папку вручную.':
+    ' — there is nowhere to install mods. Check that the game is installed, or point at its folder yourself.',
+  'Искать снова': 'Search again',
+  'Указать папку': 'Choose the folder',
+  'Dota 2 найдена — можно ставить моды': 'Dota 2 found — you can install mods now',
+  'Не нашёл автоматически — укажи папку вручную': 'No luck automatically — point at the folder yourself',
+
   // ---------- presets: sharing ----------
   'Поделиться': 'Share',
   'Скопировать': 'Copy',

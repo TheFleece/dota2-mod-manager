@@ -498,18 +498,18 @@ function folderBannersHtml() {
   const stranded = gl.stranded || [];
   return `
     ${gl.mounted && gl.mounted !== gl.folder ? `
-      <div class="lib-banner warn">
+      <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`Dota сейчас берёт файлы из папки dota_${gl.mounted}`}</b>${L`, а моды ставятся в dota_${gl.folder}. Закрой Dota и перезапусти менеджер — он переключит игру сам.`}</div>
       </div>` : ''}
     ${stranded.map((f) => `
-      <div class="lib-banner warn">
+      <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`В папке dota_${f.suffix} лежат ${f.modFiles} ${plural(f.modFiles, 'мод', 'мода', 'модов')}`}</b>${L`, которые игра не видит.`}</div>
         <button class="btn btn-sm btn-primary" data-move-from="${esc(f.suffix)}"><span class="ms">drive_file_move</span>${L`Перенести сюда`}</button>
       </div>`).join('')}
     ${s.minifyDetected ? `
-      <div class="lib-banner warn">
+      <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`Рядом установлен Minify`}</b>${L`. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.`}</div>
       </div>` : ''}`;
@@ -558,36 +558,36 @@ export async function renderLibrary() {
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Мои моды`}</h1></div>
     ${masterOff ? `
-      <div class="lib-banner off">
+      <div class="banner off">
         <span class="ms">bolt</span>
         <div class="banner-body"><b>${L`Моды выключены`}</b>${L` мастер-переключателем внизу справа — игра запустится ванильной. Включи, чтобы менять моды по отдельности.`}</div>
       </div>` : ''}
     ${matchedCount > 0 ? `
-      <div class="lib-banner info">
+      <div class="banner info">
         <span class="ms">library_add_check</span>
         <div class="banner-body"><b>${matchedCount}</b> ${plural(matchedCount, 'файл опознан', 'файла опознаны', 'файлов опознаны')}${L` как моды из каталога — привяжи, чтобы получить превью и управлять как обычными.`}</div>
         <button class="btn btn-sm btn-primary" id="adoptAllBtn"><span class="ms">library_add_check</span>${L`Привязать все`}</button>
       </div>` : ''}
     ${nearLimit && !masterOff ? `
-      <div class="lib-banner warn">
+      <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body">${L`Занято`} <b>${slots}</b>${L` из ${slotCeil} слотов. Игра не грузит больше ~99 отдельных паков — объедини моды в один, чтобы уместить больше.`}</div>
         <button class="btn btn-sm btn-primary" id="combineHintBtn"><span class="ms">merge</span>${L`Объединить`}</button>
       </div>` : ''}
     ${(state.patchState?.conflicts || []).length ? `
-      <div class="lib-banner warn">
+      <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body">
           <b>${L`Моды спорят за один предмет`}</b>: ${state.patchState.conflicts.slice(0, 3).map((c) => `«${esc(c.mods.join('» / «'))}»`).join(', ')}${state.patchState.conflicts.length > 3 ? ` ${L`и ещё ${state.patchState.conflicts.length - 3}`}` : ''}${L`. В таблицу попадёт правка того мода, что установлен последним — выключи лишний.`}
         </div>
       </div>` : ''}
     ${state.patchState?.foreign ? `
-      <div class="lib-banner warn">
+      <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`В gameinfo уже прописан другой патчер`}</b>: <code>${esc(state.patchState.foreign)}</code>${L`. Два патчера в одном файле уживаются плохо — включай наш только если тем не пользуешься.`}</div>
       </div>` : ''}
     ${state.patchState && state.patchState.vanillaOk === false ? `
-      <div class="lib-banner warn">
+      <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`Файл игры не совпадает с подписью Dota`}</b>${L`. Пока так, клиент может не пускать в матчмейкинг — и моды тут ни при чём. Приложение не смогло восстановить оригинал само: проверь целостность файлов Dota 2 через Steam, это чинит за минуту.`}</div>
       </div>` : ''}
