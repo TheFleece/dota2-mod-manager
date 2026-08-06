@@ -19,6 +19,10 @@ const path = require('path');
 const crypto = require('crypto');
 
 const RAW_HOST = 'https://raw.githubusercontent.com/';
+// Release assets (the Source 2 toolchain) live on github.com rather than the raw host, and
+// the same proxies serve them - measured 2026-08-07, all three answer with Range support.
+// jsDelivr does not do releases at all, which is why the two lists are not the same.
+const RELEASE_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/releases\/download\//;
 // After this many failures a host is stood down, and for this long. A mirror that is down
 // tends to be down for minutes, and asking it once per mod turns a 40-mod install into 40
 // timeouts before the first byte arrives.
@@ -75,11 +79,15 @@ function noteSuccess(host) {
  * @param {boolean} [opts.small] the file is JSON-sized, so size-capped mirrors may be used
  */
 function mirrorsFor(url, { small = false } = {}) {
-  if (!url.startsWith(RAW_HOST)) return [url];
+  const isRaw = url.startsWith(RAW_HOST);
+  const isRelease = RELEASE_RE.test(url);
+  if (!isRaw && !isRelease) return [url];
   const out = [];
   for (const m of MIRRORS) {
     if (m.smallOnly && !small) continue;
-    const mapped = m.map(url);
+    // a release asset is only reachable through the plain proxies, and github.com itself
+    if (isRelease && m.smallOnly) continue;
+    const mapped = isRelease && m.host === 'raw.githubusercontent.com' ? url : m.map(url);
     if (mapped) out.push(mapped);
   }
   return out;
