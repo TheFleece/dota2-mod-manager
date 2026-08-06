@@ -204,6 +204,16 @@ html[lang="ru"] body.dropping::after {
   font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
   background: var(--bg-elev); border-radius: 5px; padding: 1px 5px; color: var(--primary-soft);
 }
+/* Notices that came from the network rather than from a release: they sit above the notes,
+   marked off so nobody reads "Dota patched today" as part of a changelog. */
+.notes-notices { margin-bottom: var(--space-4); display: grid; gap: var(--space-2); }
+.notes-notice {
+  background: var(--bg-elev); border-left: 3px solid var(--primary-soft);
+  border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); color: var(--text);
+}
+.notes-notice.warn { border-left-color: var(--warning); }
+.notes-notice-date { color: var(--text-muted); margin-right: var(--space-2); font-variant-numeric: tabular-nums; }
+.notice-link { color: var(--primary-soft); }
 
 /* ============ Banner ============
    A line above a screen saying something the user has to know but did not ask about: mods

@@ -31,7 +31,23 @@ export function notesHtml(md) {
   return out.join('');
 }
 
-export function whatsNewDialog(version, md) {
+/* Anything the app was told from the network since it shipped, above the release notes.
+ * A notice is dismissed from its banner and stays here afterwards, which is where somebody
+ * goes when they half-remember a message about a Dota patch and want to read it again. */
+function noticesHtml(notices) {
+  if (!notices || !notices.length) return '';
+  return `
+    <div class="notes-notices">
+      ${notices.map((n) => `
+        <div class="notes-notice ${n.level === 'warn' ? 'warn' : ''}">
+          ${n.date ? `<span class="notes-notice-date">${esc(n.date)}</span>` : ''}
+          <span>${esc(n.text)}</span>
+          ${n.url ? ` <a href="#" class="notice-link" data-url="${esc(n.url)}">${L`Подробнее`}</a>` : ''}
+        </div>`).join('')}
+    </div>`;
+}
+
+export function whatsNewDialog(version, md, notices = []) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
@@ -44,7 +60,7 @@ export function whatsNewDialog(version, md) {
             <div class="notes-ver">${L`версия ${esc(version)}`}</div>
           </div>
         </div>
-        <div class="notes-body">${notesHtml(md)}</div>
+        <div class="notes-body">${noticesHtml(notices)}${notesHtml(md)}</div>
         <div class="confirm-actions">
           <button class="btn btn-primary" data-c="ok">${L`Понятно`}</button>
         </div>
@@ -53,6 +69,10 @@ export function whatsNewDialog(version, md) {
     const done = () => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(); };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) done(); });
     overlay.querySelector('[data-c="ok"]').addEventListener('click', done);
+    overlay.querySelectorAll('.notice-link').forEach((a) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.api.misc.openExternal(a.dataset.url);
+    }));
     const onKey = (e) => { if (e.key === 'Escape') done(); };
     document.addEventListener('keydown', onKey);
   });
@@ -64,7 +84,9 @@ export async function showWhatsNew({ force = false } = {}) {
   try { r = await window.api.update.notes(window.I18N_LANG); } catch { return; }
   if (!r || !r.notes) { if (force) toast(L`Для этой версии заметок нет`, 'warn'); return; }
   if (!force && !r.unseen) { window.api.update.notesSeen(); return; }
-  await whatsNewDialog(r.version, r.notes);
+  let notices = [];
+  try { notices = (await window.api.config.state()).notices || []; } catch { /* offline: the release notes alone */ }
+  await whatsNewDialog(r.version, r.notes, notices);
   window.api.update.notesSeen();
 }
 

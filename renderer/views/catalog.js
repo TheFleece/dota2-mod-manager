@@ -26,6 +26,7 @@ import { paint } from '../ui/transitions.js';
 import { isQueued, toggleQueued, dropFromQueue, useInstaller } from '../ui/queue.js';
 import { refreshSidebarStatus } from '../ui/statusbar.js';
 import { modGuidesHtml, bindGuides } from '../ui/guide.js';
+import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
 
 const viewRoot = $('#view-root');
 
@@ -402,6 +403,7 @@ async function renderCatalog() {
   }
 
   renderRail();
+  await refreshNotices();
 
   const searching = state.search.trim().length > 0;
   if (searching) await renderSearchResults();
@@ -409,7 +411,21 @@ async function renderCatalog() {
   else if (state.activeCategory === 'favorites') await renderFavorites();
   else if (state.activeCategory.startsWith(COSMETIC_PREFIX)) await renderCosmeticCategory(state.activeCategory.slice(COSMETIC_PREFIX.length));
   else await renderCategory(state.activeCategory);
+  // the no-game banner goes on last so it ends up on top: a user with no Dota has a more
+  // pressing problem than whatever the network wanted to say
+  showNoticeBanner();
   showNoGameBanner();
+}
+
+/* A notice that arrived from the network (see ui/notice.js). Prepended after the screen has
+ * drawn, the same way the no-game banner is, so no category screen has to know about it. */
+function showNoticeBanner() {
+  const html = noticeBannerHtml();
+  if (!html) return;
+  const holder = document.createElement('div');
+  holder.innerHTML = html;
+  viewRoot.prepend(holder.firstElementChild);
+  bindNotice(viewRoot, () => renderCatalog());
 }
 
 /* Without Dota there is a catalog and no way to install from it, and the only sign of that

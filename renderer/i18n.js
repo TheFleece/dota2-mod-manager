@@ -500,6 +500,9 @@ const EN = {
   '. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.':
     '. If it installs into the same folder, their files overwrite each other: install with one of the two, not both.',
 
+  // ---------- notices from the network ----------
+  'Подробнее': 'Read more',
+
   // ---------- Dota patched underneath the app ----------
   'Dota обновилась': 'Dota has updated',
   ', моды и настройки вернули на место': ', and your mods and settings are back in place',

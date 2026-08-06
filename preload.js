@@ -60,6 +60,11 @@ contextBridge.exposeInMainWorld('api', {
     repairSeen: () => ipcRenderer.invoke('patch:repairSeen'),
     onRepair: (cb) => ipcRenderer.on('patch-repair', (e, st) => cb(st)),
   },
+  // what the app was told from the network: features switched off, dated notices
+  config: {
+    state: () => ipcRenderer.invoke('config:state'),
+    noticeSeen: (id) => ipcRenderer.invoke('config:noticeSeen', id),
+  },
   cosmetics: {
     slots: () => ipcRenderer.invoke('cosmetics:slots'),
     icons: (names) => ipcRenderer.invoke('cosmetics:icons', names),

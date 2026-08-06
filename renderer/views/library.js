@@ -25,6 +25,7 @@ import { refreshPatchState, paintMasterSwitch } from '../ui/statusbar.js';
 import { paintCosmeticIcons, watchCosmeticIcons } from '../ui/cosmetic-icons.js';
 import { paint } from '../ui/transitions.js';
 import { bindContextMenu } from '../ui/menu.js';
+import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
 
 const viewRoot = $('#view-root');
 
@@ -575,6 +576,7 @@ export async function renderLibrary() {
   const externalAll = res.external || [];
   libStuck = res.verifyStuck || [];
   try { libRepair = await window.api.patch.repairState(); } catch { libRepair = { state: 'idle' }; }
+  await refreshNotices();
   libRecords = installedAll;
   applyInstalled(res.installed); // keep the tab counter + catalog badges in sync with the folder
   try { const ms = await window.api.mods.masterState(); state.masterOff = !!ms.off; } catch { state.masterOff = false; }
@@ -606,6 +608,7 @@ export async function renderLibrary() {
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Мои моды`}</h1></div>
+    ${noticeBannerHtml()}
     ${masterOff ? `
       <div class="banner off">
         <span class="ms">bolt</span>
@@ -765,6 +768,7 @@ async function bindLibrary(external) {
     toast(L`Вытащено из пака: ${total}`, 'ok');
     reRender();
   });
+  bindNotice(viewRoot, () => renderLibrary());
   $('#adoptAllBtn')?.addEventListener('click', adoptAll);
   // the archive is gone from the cache, so putting these back means fetching them again -
   // which is why it waits for a press instead of happening at launch

@@ -99,6 +99,7 @@ const EN = {
     'Close Dota 2 first: it holds the voice files open',
   'HTTP {0} — не удалось скачать {1}': 'HTTP {0} — could not download {1}',
   'Не удалось скачать {0}: {1}': 'Could not download {0}: {1}',
+  'Эта возможность временно отключена': 'This is switched off for now',
   'перекачиваю повреждённый файл': 'the cached file was damaged, downloading again',
   'Свободных слотов pakNN не осталось (10-99 заняты)': 'No free pakNN slots left (10-99 are taken)',
   'установка': 'installing',

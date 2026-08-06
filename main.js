@@ -21,6 +21,7 @@ const discordAuth = require('./src/discord-auth');
 const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const { createSchemaService } = require('./src/schema-service');
+const { createRemoteConfig } = require('./src/remote-config');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport } = require('./src/diagnostics');
@@ -29,7 +30,7 @@ const i18n = require('./src/i18n');
 const { t } = i18n;
 
 let win;
-let settings, catalog, installer, library, fingerprints, presence, schemaService, icons;
+let settings, catalog, installer, library, fingerprints, presence, schemaService, icons, remoteConfig;
 let presenceView = 'catalog';
 // The one folder mods are installed into. Dota mounts the folder named by its audio
 // language, so the app sets that language rather than offering a choice of folders
@@ -271,6 +272,10 @@ app.whenReady().then(async () => {
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
   schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });
+  // what the app can be told after it shipped: a feature switched off with a reason, and
+  // dated notices. Fire-and-forget, and everything it governs stays on until it says otherwise
+  remoteConfig = createRemoteConfig({ userDataDir: userData, appVersion: () => app.getVersion(), log: diag });
+  remoteConfig.refresh();
   // pictures for the cosmetics picker come through Electron's network stack (see src/icons.js)
   icons = new Icons(userData, net.fetch);
 
@@ -1266,6 +1271,8 @@ function registerIpc() {
   });
 
   ipcMain.handle('voice:setEnabled', async (e, english) => {
+    const stop = blocked('voice');
+    if (stop) return stop;
     const game = settings.get('dotaGamePath');
     if (!game) return { error: t('Путь к Dota 2 не задан') };
     if (await dotaIsRunning()) return { error: t('Сначала закрой Dota 2 — она держит файлы озвучки открытыми') };
@@ -1323,6 +1330,8 @@ function registerIpc() {
   // ----- install/manage -----
   ipcMain.handle('mods:install', async (e, payload) => {
     // payload: { categoryId, name, styleLabel, fileRef, preview }
+    const stop = blocked('install');
+    if (stop) return stop;
     try {
       const existing = library.findByKey(payload.categoryId, payload.name, payload.styleLabel);
       if (existing) return { error: t('Уже установлено'), already: true };
@@ -1499,6 +1508,30 @@ function registerIpc() {
 
   // ---------- item schema / search-path patch ----------
 
+  // ----- what the app was told from the network -----
+
+  // A switch is honoured here rather than in the renderer: this is the boundary an old
+  // window, a stale screen or a replayed click all have to come through.
+  const uiLang = () => (settings.get('uiLang') === 'ru' ? 'ru' : 'en');
+  const blocked = (name) => {
+    const f = remoteConfig.feature(name, uiLang());
+    return f.off ? { error: f.note || t('Эта возможность временно отключена') } : null;
+  };
+
+  ipcMain.handle('config:state', () => ({
+    features: Object.fromEntries(remoteConfig.SWITCHABLE.map((n) => [n, remoteConfig.feature(n, uiLang())])),
+    notices: remoteConfig.notices(uiLang()),
+    seen: settings.get('seenNotices') || [],
+  }));
+
+  ipcMain.handle('config:noticeSeen', (e, id) => {
+    const seen = new Set(settings.get('seenNotices') || []);
+    seen.add(String(id));
+    // an id list that only grows is a settings file that only grows
+    settings.set('seenNotices', [...seen].slice(-50));
+    return [...seen];
+  });
+
   ipcMain.handle('patch:state', () => schemaService.state());
 
   // what the app did about the last Dota patch (the banner in My mods asks on every visit;
@@ -1518,6 +1551,9 @@ function registerIpc() {
   // The one moment the app touches files of the game install: gated on an explicit yes,
   // reversible from the same switch, and every original is backed up in userData first.
   ipcMain.handle('patch:setEnabled', async (e, enabled) => {
+    // turning it OFF is always allowed: a switch that traps people in the state it broke is
+    // worse than the problem it was flipped for
+    if (enabled) { const stop = blocked('cosmetics'); if (stop) return stop; }
     if (!settings.get('dotaGamePath')) return { error: t('Путь к Dota 2 не задан') };
     // the game holds gameinfo open while it runs, so writing it would fail half-way
     if (await dotaIsRunning()) return { error: t('Закрой Dota 2 перед изменением файлов игры') };
@@ -1541,6 +1577,8 @@ function registerIpc() {
   // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
   // handle it (see touchesSchema above), this is only for the initial choice.
   ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName) => {
+    const stop = blocked('cosmetics');
+    if (stop) return stop;
     try {
       const rec = schemaService.pickCosmetic(slot, itemId, itemName);
       return { ok: true, record: rec };
