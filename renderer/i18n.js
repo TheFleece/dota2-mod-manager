@@ -503,6 +503,16 @@ const EN = {
   // ---------- notices from the network ----------
   'Подробнее': 'Read more',
 
+  // ---------- item pictures out of the game (the Source 2 toolchain) ----------
+  'Иконки из игры': 'Pictures from the game',
+  'Инструмент установлен': 'Tool installed',
+  'Инструмент не скачан': 'Tool not downloaded',
+  'Картинки предметов берутся из самой игры: точные, без интернета и без ожидания. Без инструмента они грузятся из вики — медленнее и не для всего есть. Удалить можно в любой момент.':
+    'Item pictures come out of the game itself: exact, offline, no waiting. Without the tool they load from a wiki, which is slower and does not cover everything. You can delete it at any time.',
+  'Скачиваю инструмент — это разово': 'Downloading the tool, once and for all',
+  'Готово — картинки теперь берутся из игры': 'Done, pictures now come from the game',
+  'Инструмент удалён — картинки снова из вики': 'Tool removed, pictures come from the wiki again',
+
   // ---------- Dota patched underneath the app ----------
   'Dota обновилась': 'Dota has updated',
   ', моды и настройки вернули на место': ', and your mods and settings are back in place',

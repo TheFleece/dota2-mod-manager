@@ -22,6 +22,8 @@ const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const { createSchemaService } = require('./src/schema-service');
 const { createRemoteConfig } = require('./src/remote-config');
+const { createToolchain } = require('./src/toolchain');
+const { createGameIcons } = require('./src/game-icons');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport } = require('./src/diagnostics');
@@ -31,6 +33,7 @@ const { t } = i18n;
 
 let win;
 let settings, catalog, installer, library, fingerprints, presence, schemaService, icons, remoteConfig;
+let toolchain, gameIcons;
 let presenceView = 'catalog';
 // The one folder mods are installed into. Dota mounts the folder named by its audio
 // language, so the app sets that language rather than offering a choice of folders
@@ -278,6 +281,14 @@ app.whenReady().then(async () => {
   remoteConfig.refresh();
   // pictures for the cosmetics picker come through Electron's network stack (see src/icons.js)
   icons = new Icons(userData, net.fetch);
+  // ...unless the Source 2 toolchain is here, in which case they come out of the game itself
+  toolchain = createToolchain({ userDataDir: userData, onProgress: sendProgress, log: diag });
+  gameIcons = createGameIcons({
+    userDataDir: userData,
+    toolchain,
+    getGamePath: () => settings.get('dotaGamePath'),
+    log: diag,
+  });
 
   // auto-detect dota on first run
   if (!validateGamePath(settings.get('dotaGamePath'))) {
@@ -1571,8 +1582,38 @@ function registerIpc() {
   ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
 
   // One picture per request, so opening a slot with 2000 items costs only what is on screen.
-  ipcMain.handle('cosmetics:icons', (e, names) =>
-    icons.getMany((Array.isArray(names) ? names : []).slice(0, 60)));
+  // The game's own pictures when the toolchain is here (exact, offline, no rate limit), the
+  // wiki for whatever is left. Both answer in the same shape, so the picker never knows.
+  ipcMain.handle('cosmetics:icons', async (e, names) => {
+    const wanted = (Array.isArray(names) ? names : []).slice(0, 60);
+    let fromGame = {};
+    try {
+      fromGame = await gameIcons.getMany(wanted);
+    } catch (err) {
+      diag('game icons failed, falling back to the wiki: ' + err.message);
+    }
+    const left = wanted.filter((n) => !fromGame[n]);
+    if (!left.length) return fromGame;
+    return { ...(await icons.getMany(left)), ...fromGame };
+  });
+
+  // ----- the Source 2 toolchain (Settings shows this) -----
+  ipcMain.handle('tools:state', () => ({ tools: toolchain.state(), iconCacheBytes: gameIcons.size() }));
+
+  ipcMain.handle('tools:install', async (e, name) => {
+    try {
+      await toolchain.ensure(String(name || 'vrf'));
+      return { ok: true, tools: toolchain.state() };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('tools:remove', (e, name) => {
+    toolchain.remove(String(name || 'vrf'));
+    gameIcons.clear(); // the pictures it produced are only reachable through it
+    return { ok: true, tools: toolchain.state() };
+  });
 
   // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
   // handle it (see touchesSchema above), this is only for the initial choice.

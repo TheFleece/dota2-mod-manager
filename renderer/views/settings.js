@@ -40,6 +40,9 @@ export async function renderSettings() {
   // no Russian voice pack downloaded means the speech is already English: a switch with
   // nothing to switch is not shown at all
   const voice = await window.api.voice.state();
+  // the Source 2 toolchain: shown as a size and a button, never downloaded on its own
+  let vrf = null;
+  try { vrf = (await window.api.tools.state()).tools.find((x) => x.name === 'vrf') || null; } catch { /* older build */ }
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
@@ -111,6 +114,19 @@ export async function renderSettings() {
       <div class="settings-hint">${L`Скачанные архивы, чтобы не качать повторно. Удаление ничего не сломает.`}</div>
     </div>
 
+    ${vrf ? `
+    <div class="settings-block" style="--i:4">
+      <h3>${L`Иконки из игры`}</h3>
+      <div class="settings-row">
+        <span class="settings-label">${vrf.ready ? L`Инструмент установлен` : L`Инструмент не скачан`}</span>
+        <span class="num">${vrf.ready ? `${fmtMB(vrf.installedBytes)} MB` : `${fmtMB(vrf.downloadBytes)} MB`}</span>
+        ${vrf.ready
+    ? `<button class="btn btn-sm" id="toolRemoveBtn">${L`Удалить`}</button>`
+    : `<button class="btn btn-sm btn-primary" id="toolInstallBtn"><span class="ms">download</span>${L`Скачать`}</button>`}
+      </div>
+      <div class="settings-hint">${L`Картинки предметов берутся из самой игры: точные, без интернета и без ожидания. Без инструмента они грузятся из вики — медленнее и не для всего есть. Удалить можно в любой момент.`}</div>
+    </div>` : ''}
+
     <div class="settings-block" style="--i:4">
       <h3>${L`Каталог`}</h3>
       <div class="settings-row">
@@ -145,6 +161,20 @@ export async function renderSettings() {
     </div>
   `; });
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
+  // 48 MB is a real download, so it says so and waits for the press
+  $('#toolInstallBtn')?.addEventListener('click', async (ev) => {
+    ev.currentTarget.disabled = true;
+    toast(L`Скачиваю инструмент — это разово`, 'ok', 5000);
+    const r = await window.api.tools.install('vrf');
+    if (r?.error) toast(r.error, 'error', 7000);
+    else toast(L`Готово — картинки теперь берутся из игры`);
+    renderSettings();
+  });
+  $('#toolRemoveBtn')?.addEventListener('click', async () => {
+    await window.api.tools.remove('vrf');
+    toast(L`Инструмент удалён — картинки снова из вики`);
+    renderSettings();
+  });
   $('#whatsNewBtn').addEventListener('click', () => showWhatsNew({ force: true }));
   $('#diagExportBtn').addEventListener('click', async () => {
     const r = await window.api.diag.export();

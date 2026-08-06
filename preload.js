@@ -60,6 +60,12 @@ contextBridge.exposeInMainWorld('api', {
     repairSeen: () => ipcRenderer.invoke('patch:repairSeen'),
     onRepair: (cb) => ipcRenderer.on('patch-repair', (e, st) => cb(st)),
   },
+  // the Source 2 toolchain: downloaded on request, never behind the user's back
+  tools: {
+    state: () => ipcRenderer.invoke('tools:state'),
+    install: (name) => ipcRenderer.invoke('tools:install', name),
+    remove: (name) => ipcRenderer.invoke('tools:remove', name),
+  },
   // what the app was told from the network: features switched off, dated notices
   config: {
     state: () => ipcRenderer.invoke('config:state'),
