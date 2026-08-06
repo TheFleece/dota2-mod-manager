@@ -1,0 +1,5 @@
+{
+  "_readme": "What the app reads after it has shipped: src/remote-config.js. Everything here is optional; an empty file means the app behaves exactly as built. Switch names the app honours: install, cosmetics, voice. A notice needs an id and text in at least one language; url must be https; minVersion/maxVersion are optional bounds on the app version it is meant for.",
+  "features": {},
+  "notices": []
+}
