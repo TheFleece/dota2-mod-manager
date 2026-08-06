@@ -23,6 +23,7 @@ const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
 const { ensureLangFolder } = require('./gamelang');
 const { openZip, safeJoin } = require('./safe-zip');
 const { FileTx } = require('./file-tx');
+const { downloadFile } = require('./net');
 const { t } = require('./i18n');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
@@ -113,36 +114,47 @@ class Installer {
 
   // ---------- download ----------
 
+  // What each downloaded archive hashed to, so a cached copy can be trusted and a mirror
+  // cannot hand over a different file under the same name.
+  downloadIndex() {
+    try { return JSON.parse(fs.readFileSync(path.join(this.downloadsDir, 'index.json'), 'utf-8')); } catch { return {}; }
+  }
+
+  rememberDownload(key, entry) {
+    const index = this.downloadIndex();
+    index[key] = entry;
+    try { fs.writeFileSync(path.join(this.downloadsDir, 'index.json'), JSON.stringify(index, null, 2)); } catch { /* the cache still works without it */ }
+  }
+
   async download(categoryId, fileRef, label) {
     const url = fileUrl(categoryId, fileRef);
     const safeName = decodeURIComponent(url.split('/').pop());
     const destDir = path.join(this.downloadsDir, categoryId);
     fs.mkdirSync(destDir, { recursive: true });
     const dest = path.join(destDir, safeName);
-    if (fs.existsSync(dest) && fs.statSync(dest).size > 0) return dest; // cached
+    const key = `${categoryId}/${safeName}`;
+    const known = this.downloadIndex()[key] || null;
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(t('HTTP {0} — не удалось скачать {1}', res.status, safeName));
-    const total = Number(res.headers.get('content-length')) || 0;
-    const tmp = dest + '.part';
-    const out = fs.createWriteStream(tmp);
-    let loaded = 0;
-    const reader = res.body.getReader();
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        loaded += value.length;
-        this.onProgress({ type: 'download', label: label || safeName, loaded, total });
-        await new Promise((resolve, reject) => {
-          out.write(Buffer.from(value), (err) => (err ? reject(err) : resolve()));
-        });
-      }
-    } finally {
-      await new Promise((resolve) => out.end(resolve));
+    if (fs.existsSync(dest) && fs.statSync(dest).size > 0) {
+      // A cached file is reused on its name alone, so a copy that was cut short by a crash
+      // or a full disk would be installed forever after. Its size is checked against what
+      // was recorded when it arrived; hashing 300 MB on every install is not worth it, and
+      // a truncated file is what actually happens.
+      if (!known || known.size === fs.statSync(dest).size) return dest;
+      this.onProgress({ type: 'stage', label: label || safeName, stage: t('перекачиваю повреждённый файл') });
+      fs.rmSync(dest, { force: true });
     }
-    fs.renameSync(tmp, dest);
-    return dest;
+
+    try {
+      const res = await downloadFile(url, dest, {
+        expectSha256: known ? known.sha256 : null,
+        onProgress: (loaded, total) => this.onProgress({ type: 'download', label: label || safeName, loaded, total }),
+      });
+      this.rememberDownload(key, { size: res.bytes, sha256: res.sha256, at: Date.now() });
+      return dest;
+    } catch (err) {
+      throw new Error(t('Не удалось скачать {0}: {1}', safeName, String(err.message || err)));
+    }
   }
 
   // ---------- pak allocation ----------

@@ -1,6 +1,7 @@
 // Catalog: fetch + cache mods.json / constants.json / guides.json from the Dota2PornFx repo
 const fs = require('fs');
 const path = require('path');
+const { fetchText } = require('./net');
 
 const RAW_BASE = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main';
 const DATA_FILES = ['mods.json', 'constants.json', 'guides.json'];
@@ -64,9 +65,9 @@ class Catalog {
 
   async refresh() {
     for (const name of DATA_FILES) {
-      const res = await fetch(`${RAW_BASE}/assets/data/${name}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status} while fetching ${name}`);
-      const text = await res.text();
+      // through the mirrors: this is the one fetch that has to work before the app can show
+      // anything at all, and raw.githubusercontent is not reachable everywhere
+      const text = await fetchText(`${RAW_BASE}/assets/data/${name}`);
       JSON.parse(text); // validate before persisting
       fs.writeFileSync(this.cachePath(name), text);
     }
