@@ -21,6 +21,7 @@ const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
   '(?:models/heroes|panorama)/\\d{8,}\\.vxml_c"?$',    // <steam id>.vxml_c watermark
 ].join('|') + ')');
 const { ensureLangFolder } = require('./gamelang');
+const { openZip, safeJoin } = require('./safe-zip');
 const { t } = require('./i18n');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
@@ -370,10 +371,9 @@ class Installer {
       return records;
     }
 
-    const zip = new AdmZip(local);
-    const kept = zip.getEntries().filter((entry) => {
-      if (entry.isDirectory) return false;
-      const lower = entry.entryName.replace(/\\/g, '/').toLowerCase();
+    const archive = openZip(local, { label: modName });
+    const kept = archive.files.filter((file) => {
+      const lower = file.path.toLowerCase();
       const baseName = lower.split('/').pop();
       return !!baseName && !lower.includes('!guide')
         && !/(^|\/)(guide\.txt|install\.bat|uninstall\.bat|readme[^/]*)$/i.test(lower);
@@ -384,13 +384,12 @@ class Installer {
     // reads by), so those keep their path.
     const isMapsPath = (l) => /(^|\/)maps\//.test(l);
     const pakPlan = this.planPakNames(
-      kept.map((e) => e.entryName.replace(/\\/g, '/'))
-        .filter((rel) => /\.vpk$/i.test(rel) && !isMapsPath(rel.toLowerCase())),
+      kept.map((f) => f.path).filter((rel) => /\.vpk$/i.test(rel) && !isMapsPath(rel.toLowerCase())),
       used, isPriority
     );
 
-    for (const entry of kept) {
-      const rel = entry.entryName.replace(/\\/g, '/');
+    for (const file of kept) {
+      const rel = file.path;
       const lower = rel.toLowerCase();
 
       if (isMapsPath(lower)) {
@@ -398,11 +397,11 @@ class Installer {
         const parts = rel.split('/');
         const mapsIdx = parts.findIndex((p) => p.toLowerCase() === 'maps');
         const relPath = parts.slice(mapsIdx).join('/');
-        this.writeInto(entry.getData(), path.join(lang, relPath));
+        this.writeInto(file.read(), safeJoin(lang, relPath));
         records.push({ root: 'lang', relPath });
       } else if (pakPlan.has(rel)) {
         const pakName = pakPlan.get(rel);
-        this.writeInto(entry.getData(), path.join(lang, pakName));
+        this.writeInto(file.read(), safeJoin(lang, pakName));
         records.push({ root: 'lang', relPath: pakName });
       } else {
         // any other payload file — preserve relative path inside lang folder,
@@ -410,7 +409,7 @@ class Installer {
         const parts = rel.split('/');
         const relPath = parts.length > 1 ? parts.slice(1).join('/') : rel;
         if (!relPath) continue;
-        this.writeInto(entry.getData(), path.join(lang, relPath));
+        this.writeInto(file.read(), safeJoin(lang, relPath));
         records.push({ root: 'lang', relPath });
       }
     }
@@ -424,23 +423,21 @@ class Installer {
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     const target = path.join(game, ...FONTS_SUBDIR);
     fs.mkdirSync(target, { recursive: true });
-    const zip = new AdmZip(localZip);
+    const archive = openZip(localZip, { label: modName });
     const records = [];
     const backupRoot = path.join(this.backupsDir, 'fonts');
-    for (const entry of zip.getEntries()) {
-      if (entry.isDirectory) continue;
-      const rel = entry.entryName.replace(/\\/g, '/');
-      const m = rel.match(/assets\/custom\/(.+)$/i);
+    for (const file of archive.files) {
+      const m = file.path.match(/assets\/custom\/(.+)$/i);
       if (!m) continue;
       const fname = m[1];
-      const destAbs = path.join(target, fname);
+      const destAbs = safeJoin(target, fname);
       // backup vanilla file once (first font mod that touches it)
-      const backupAbs = path.join(backupRoot, fname);
+      const backupAbs = safeJoin(backupRoot, fname);
       if (fs.existsSync(destAbs) && !fs.existsSync(backupAbs)) {
         fs.mkdirSync(path.dirname(backupAbs), { recursive: true });
         fs.copyFileSync(destAbs, backupAbs);
       }
-      this.writeInto(entry.getData(), destAbs);
+      this.writeInto(file.read(), destAbs);
       records.push({ root: 'fonts', relPath: fname });
     }
     if (!records.length) throw new Error(t('{0}: в архиве не найдено assets/custom', modName));
@@ -453,22 +450,20 @@ class Installer {
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     const target = path.join(game, ...CURSOR_SUBDIR);
     fs.mkdirSync(target, { recursive: true });
-    const zip = new AdmZip(localZip);
+    const archive = openZip(localZip, { label: modName });
     const records = [];
     const backupRoot = path.join(this.backupsDir, 'cursor');
-    for (const entry of zip.getEntries()) {
-      if (entry.isDirectory) continue;
-      const rel = entry.entryName.replace(/\\/g, '/');
-      const m = rel.match(/(?:^|\/)cursor\/(.+)$/i);
+    for (const file of archive.files) {
+      const m = file.path.match(/(?:^|\/)cursor\/(.+)$/i);
       if (!m) continue;
       const fname = m[1];
-      const destAbs = path.join(target, fname);
-      const backupAbs = path.join(backupRoot, fname);
+      const destAbs = safeJoin(target, fname);
+      const backupAbs = safeJoin(backupRoot, fname);
       if (fs.existsSync(destAbs) && !fs.existsSync(backupAbs)) {
         fs.mkdirSync(path.dirname(backupAbs), { recursive: true });
         fs.copyFileSync(destAbs, backupAbs);
       }
-      this.writeInto(entry.getData(), destAbs);
+      this.writeInto(file.read(), destAbs);
       records.push({ root: 'cursor', relPath: fname });
     }
     if (!records.length) throw new Error(t('{0}: в архиве не найдена папка cursor', modName));
@@ -479,7 +474,7 @@ class Installer {
     const dest = path.join(this.toolsDir, modName.replace(/[<>:"/\\|?*]/g, '_'));
     fs.mkdirSync(dest, { recursive: true });
     if (localZip.toLowerCase().endsWith('.zip')) {
-      new AdmZip(localZip).extractAllTo(dest, true);
+      openZip(localZip, { label: modName }).extractTo(dest);
     } else {
       this.copyInto(localZip, path.join(dest, path.basename(localZip)));
     }
@@ -733,13 +728,11 @@ class Installer {
         staged.push(tmp);
         let found = 0;
         try {
-          for (const entry of new AdmZip(src).getEntries()) {
-            if (entry.isDirectory) continue;
-            const rel = entry.entryName.replace(/\\/g, '/');
-            if (!/\.vpk$/i.test(rel) || rel.includes('..')) continue;
-            const dest = path.join(tmp, rel);
+          for (const file of openZip(src, { label }).files) {
+            if (!/\.vpk$/i.test(file.path)) continue;
+            const dest = safeJoin(tmp, file.path);
             fs.mkdirSync(path.dirname(dest), { recursive: true });
-            fs.writeFileSync(dest, entry.getData());
+            fs.writeFileSync(dest, file.read());
             files.push(dest);
             found++;
           }

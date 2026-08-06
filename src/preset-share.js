@@ -13,6 +13,7 @@
 // pattern-checked name, and the caller installs only after showing the user the contents.
 const fs = require('fs');
 const AdmZip = require('adm-zip');
+const { openZip } = require('./safe-zip');
 const { t } = require('./i18n');
 
 const FORMAT = 'dota2-mod-manager/preset';
@@ -113,18 +114,23 @@ function writePresetFile(outPath, manifest, entries) {
  * @returns {{ manifest: object, readMod: (file: string) => Buffer }}
  */
 function readPresetFile(filePath) {
-  let zip;
-  try { zip = new AdmZip(filePath); } catch { throw new Error(t('Файл не открывается как пресет')); }
-  const head = zip.getEntry(MANIFEST_NAME);
+  let archive;
+  // a refusal from safe-zip carries the reason the file was turned down and is kept as is;
+  // anything else means adm-zip could not make sense of the bytes at all
+  try { archive = openZip(filePath); } catch (err) {
+    if (err && err.safeZip) throw err;
+    throw new Error(t('Файл не открывается как пресет'));
+  }
+  const head = archive.get(MANIFEST_NAME);
   if (!head) throw new Error(t('Это не файл пресета Mod Manager'));
-  if (head.header.size > MAX_MANIFEST_BYTES) throw new Error(t('preset.json повреждён'));
+  if (head.size > MAX_MANIFEST_BYTES) throw new Error(t('preset.json повреждён'));
   let raw;
-  try { raw = JSON.parse(zip.readAsText(head, 'utf8')); } catch { throw new Error(t('preset.json повреждён')); }
+  try { raw = JSON.parse(head.read().toString('utf-8')); } catch { throw new Error(t('preset.json повреждён')); }
   const manifest = validateManifest(raw);
 
   // an embedded line whose payload isn't actually in the zip becomes a "missing" line,
   // so one broken entry costs its own mod and not the whole preset
-  const present = new Set(zip.getEntries().filter((e) => !e.isDirectory).map((e) => e.entryName.replace(/\\/g, '/')));
+  const present = new Set(archive.files.map((f) => f.path));
   const check = (e) => (e.kind === 'embedded' && !present.has(e.file)
     ? { kind: 'missing', name: e.name, reason: t('файла нет в архиве') }
     : e);
@@ -134,9 +140,9 @@ function readPresetFile(filePath) {
     manifest,
     readMod(file) {
       if (!MOD_FILE_RE.test(file)) throw new Error(t('Недопустимое имя файла в архиве'));
-      const entry = zip.getEntry(file);
+      const entry = archive.get(file);
       if (!entry) throw new Error(t('файла нет в архиве'));
-      return entry.getData();
+      return entry.read();
     },
   };
 }

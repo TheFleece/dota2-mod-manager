@@ -112,6 +112,15 @@ const EN = {
 
   'Пустой VPK': 'Empty VPK',
 
+  // ---- safe-zip.js (a foreign archive turned down) ----
+  'архив': 'archive',
+  '{0}: архив слишком большой': '{0}: the archive is too large',
+  '{0}: в архиве слишком много файлов': '{0}: too many files in the archive',
+  '{0}: файл в архиве слишком большой': '{0}: a file inside the archive is too large',
+  '{0}: архив распакуется в слишком большой объём': '{0}: the archive would unpack to too much data',
+  '{0}: архив сжат подозрительно плотно': '{0}: the archive is compressed suspiciously tight',
+  'Недопустимый путь в архиве: {0}': 'Bad path inside the archive: {0}',
+
   // ---- preset-share.js (.d2mm validation) ----
   'preset.json повреждён': 'preset.json is damaged',
   'Это не файл пресета Mod Manager': 'This is not a Mod Manager preset file',

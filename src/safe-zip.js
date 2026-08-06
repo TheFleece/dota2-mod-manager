@@ -1,0 +1,129 @@
+// The one door every foreign archive comes through.
+//
+// Nothing the app opens as a zip is its own: mods, cursors, fonts and tools come down from
+// the catalog's CDN, .d2mm presets travel between strangers over Discord, and the user can
+// drop any file on the window. A zip describes itself in its own headers, so a hostile one
+// can claim whatever it likes about what is inside — and until adm-zip 0.6.0 the library
+// believed the claim, allocating the declared uncompressed size before reading a byte
+// (GHSA-xcpc-8h2w-3j85: a few-KB file declares 4 GB and the app dies). That allocation is
+// gone upstream, but a genuine bomb — 4 MB that honestly unpack to 4 GB — still unpacks,
+// and an entry can still be named "../../../Windows/System32/x.dll". Both are stopped here.
+//
+// Callers get a flat list of files with forward-slash paths, already stripped of anything
+// that could escape a folder, and write through safeJoin so a name can never resolve
+// outside the folder it was meant for.
+const fs = require('fs');
+const path = require('path');
+const AdmZip = require('adm-zip');
+const { t } = require('./i18n');
+
+const MB = 1024 * 1024;
+
+// Measured against the 104 real archives on disk (catalog mods, fonts, cursors, packs),
+// not guessed: the heaviest zip is 64 MB, the largest single entry unpacks to 301 MB, the
+// fullest archive holds 111 files, and the tightest compression is 80x (cursor bitmaps).
+// Every limit sits several times above that, so a legitimate archive never meets one.
+// The ratio is only judged on entries big enough to matter — a 20 KB text file that packs
+// 500x is not a threat, and small assets compress hard all the time.
+const LIMITS = {
+  archiveBytes: 1024 * MB,   // adm-zip reads the whole file into memory before parsing
+  entries: 20000,
+  entryBytes: 768 * MB,
+  totalBytes: 2048 * MB,
+  ratio: 200,
+  ratioFloor: 1 * MB,
+};
+
+const toPosix = (name) => String(name).replace(/\\/g, '/');
+
+// Marked so a caller that turns "could not read this file" into its own wording can still
+// let a refusal through with its reason intact.
+function refuse(message) {
+  const err = new Error(message);
+  err.safeZip = true;
+  return err;
+}
+
+// An entry name is data, not a path we agreed to. Absolute names, drive letters and any
+// ".." segment are dropped before a caller ever sees them.
+function isUnsafeName(rel) {
+  if (!rel || rel.startsWith('/')) return true;
+  if (/^[a-z]:/i.test(rel)) return true;
+  return rel.split('/').some((part) => part === '..');
+}
+
+/**
+ * Join a path that came out of an archive to the folder it belongs in, refusing anything
+ * that resolves outside. Second lock after isUnsafeName: the first decides what to hand
+ * over, this one guards the actual write.
+ */
+function safeJoin(rootAbs, rel) {
+  const root = path.resolve(rootAbs);
+  const dest = path.resolve(root, rel);
+  if (dest !== root && !dest.startsWith(root + path.sep)) {
+    throw refuse(t('Недопустимый путь в архиве: {0}', rel));
+  }
+  return dest;
+}
+
+/**
+ * Open a foreign archive with every claim in it checked first.
+ * @param {string|Buffer} source        path on disk, or the bytes themselves
+ * @param {object} [opts]
+ * @param {string} [opts.label]         what to call the archive in an error the user reads
+ * @param {object} [opts.limits]        override the budgets (tests)
+ * @returns {{ label: string, files: Array<{path: string, size: number, read: () => Buffer}>,
+ *            get: (rel: string) => object|null, extractTo: (destRoot: string) => number }}
+ */
+function openZip(source, { label, limits } = {}) {
+  const lim = { ...LIMITS, ...(limits || {}) };
+  const name = label || (typeof source === 'string' ? path.basename(source) : t('архив'));
+  const tooBig = () => refuse(t('{0}: архив слишком большой', name));
+
+  if (typeof source === 'string') {
+    if (fs.statSync(source).size > lim.archiveBytes) throw tooBig();
+  } else if (source.length > lim.archiveBytes) {
+    throw tooBig();
+  }
+
+  const zip = new AdmZip(source);
+  const all = zip.getEntries();
+  if (all.length > lim.entries) throw refuse(t('{0}: в архиве слишком много файлов', name));
+
+  let total = 0;
+  const files = [];
+  for (const entry of all) {
+    if (entry.isDirectory) continue;
+    const size = entry.header.size;
+    const packed = entry.header.compressedSize;
+    if (size > lim.entryBytes) throw refuse(t('{0}: файл в архиве слишком большой', name));
+    total += size;
+    if (total > lim.totalBytes) throw refuse(t('{0}: архив распакуется в слишком большой объём', name));
+    if (size >= lim.ratioFloor && packed > 0 && size / packed > lim.ratio) {
+      throw refuse(t('{0}: архив сжат подозрительно плотно', name));
+    }
+    const rel = toPosix(entry.entryName);
+    if (isUnsafeName(rel)) continue; // never handed out, so it can never be written
+    files.push({ path: rel, size, read: () => entry.getData() });
+  }
+
+  return {
+    label: name,
+    files,
+    get(rel) {
+      const wanted = toPosix(rel);
+      return files.find((f) => f.path === wanted) || null;
+    },
+    // Unpack everything, keeping the archive's own layout under destRoot.
+    extractTo(destRoot) {
+      for (const file of files) {
+        const dest = safeJoin(destRoot, file.path);
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, file.read());
+      }
+      return files.length;
+    },
+  };
+}
+
+module.exports = { openZip, safeJoin, isUnsafeName, LIMITS };
