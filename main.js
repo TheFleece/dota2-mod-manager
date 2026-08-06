@@ -310,6 +310,14 @@ app.whenReady().then(async () => {
     diag('cursor reconcile skipped: ' + e.message);
   }
 
+  // finish what a killed process could not: a file a transaction had parked while it worked
+  try {
+    const swept = installer.sweepStaged();
+    if (swept.restored || swept.dropped) diag(`staged files: ${swept.restored} restored, ${swept.dropped} dropped`);
+  } catch (e) {
+    diag('staged sweep skipped: ' + e.message);
+  }
+
   // one-time sweep of mods installed before the schema engine existed: they still carry a
   // stale item table and a stale localization copy inside their VPK
   try {

@@ -114,10 +114,12 @@ function openZip(source, { label, limits } = {}) {
       const wanted = toPosix(rel);
       return files.find((f) => f.path === wanted) || null;
     },
-    // Unpack everything, keeping the archive's own layout under destRoot.
-    extractTo(destRoot) {
+    // Unpack everything, keeping the archive's own layout under destRoot. With a FileTx the
+    // whole unpack is one change: a tool that fails on its last file leaves nothing behind.
+    extractTo(destRoot, tx = null) {
       for (const file of files) {
         const dest = safeJoin(destRoot, file.path);
+        if (tx) { tx.write(dest, file.read()); continue; }
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.writeFileSync(dest, file.read());
       }
