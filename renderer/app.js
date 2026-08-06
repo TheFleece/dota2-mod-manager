@@ -290,6 +290,19 @@ window.api.update.onUpdate((evt) => {
   }
 });
 
+// ---------- Dota patched while the app was open ----------
+
+// The repair itself runs in the main process whether or not this window is looking; this
+// only decides how the user hears about it. On My mods that is the banner, so redraw and
+// let it speak; anywhere else a toast, because a patch that ate the mods is news wherever
+// you happen to be standing.
+window.api.patch.onRepair((st) => {
+  if (state.view === 'library') { render(); return; }
+  if (st.state === 'waiting') toast(L`Dota обновилась — вернём моды, как только закроешь игру`, 'warn', 8000);
+  else if (st.state === 'failed') toast(L`Dota обновилась, вернуть моды не вышло — загляни в «Мои моды»`, 'error', 8000);
+  else if (st.state === 'done') toast(L`Dota обновилась — моды на месте`, 'ok', 6000);
+});
+
 // ---------- boot ----------
 
 (async function boot() {

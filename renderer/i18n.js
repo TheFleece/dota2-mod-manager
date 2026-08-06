@@ -499,6 +499,24 @@ const EN = {
   'Поставить заново': 'Install again',
   '. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.':
     '. If it installs into the same folder, their files overwrite each other: install with one of the two, not both.',
+
+  // ---------- Dota patched underneath the app ----------
+  'Dota обновилась': 'Dota has updated',
+  ', моды и настройки вернули на место': ', and your mods and settings are back in place',
+  ', менять ничего не пришлось': ', and nothing needed changing',
+  '. Можно играть.': '. You are good to play.',
+  'Понятно': 'Got it',
+  'Dota обновилась, пока игра запущена': 'Dota updated while the game was running',
+  '. Моды в этой сессии не работают: файлы игры заняты. Закрой Dota — приложение вернёт всё само.':
+    '. Mods are off for this session because the game holds its files open. Close Dota and the app puts everything back on its own.',
+  'Я закрыл, повтори': 'I closed it, try again',
+  'Dota обновилась, вернуть моды не вышло': 'Dota updated and the mods could not be put back',
+  '. Закрой Dota и нажми «Повторить» — почти всегда дело в том, что игра держит файлы.':
+    '. Close Dota and press Try again: it is almost always the game holding its files.',
+  'Dota всё ещё запущена — закрой её полностью': 'Dota is still running, close it fully',
+  'Dota обновилась — вернём моды, как только закроешь игру': 'Dota has updated, the mods go back as soon as you close the game',
+  'Dota обновилась, вернуть моды не вышло — загляни в «Мои моды»': 'Dota has updated and the mods could not be put back, see My mods',
+  'Dota обновилась — моды на месте': 'Dota has updated, your mods are in place',
   'Свернуть нижнюю панель': 'Hide the bottom bar',
   'Путь к Dota 2': 'Dota 2 path',
   'не найден': 'not found',

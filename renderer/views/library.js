@@ -35,6 +35,7 @@ let libSearch = '';            // library-scoped search query
 let libRecords = [];           // records as of the last draw
 let libExternal = [];          // foreign files found in the mods folder
 let libStuck = [];             // fonts/cursors Steam took back that need downloading again
+let libRepair = { state: 'idle' }; // what the app did about the last Dota patch
 let slotCount = 0;             // mods occupying a numbered pak, so the order arrows know the ends
 
 registerView('library', () => renderLibrary());
@@ -519,7 +520,46 @@ function folderBannersHtml() {
         <span class="ms">warning</span>
         <div class="banner-body"><b>${L`Проверка файлов Steam вернула оригиналы игры`}</b>${L`: ${esc(libStuck.map((x) => x.name).join(', '))}. Архива для установки уже нет — скачать заново?`}</div>
         <button class="btn btn-sm btn-primary" id="reinstallStuckBtn"><span class="ms">download</span>${L`Поставить заново`}</button>
-      </div>` : ''}`;
+      </div>` : ''}
+    ${patchBannerHtml()}`;
+}
+
+/* What happened the last time Dota patched underneath us.
+ *
+ * Three things can be true and each reads differently to somebody who just wants to play:
+ * it is done (say so once and get out of the way), the game is open so nothing could be
+ * written yet (say what that means for this session), or it failed (say what went wrong,
+ * because the alternative is mods that silently do nothing). */
+function patchBannerHtml() {
+  const r = libRepair || {};
+  if (r.state === 'waiting') {
+    return `
+      <div class="banner warn">
+        <span class="ms">update</span>
+        <div class="banner-body"><b>${L`Dota обновилась, пока игра запущена`}</b>${L`. Моды в этой сессии не работают: файлы игры заняты. Закрой Dota — приложение вернёт всё само.`}</div>
+        <button class="btn btn-sm btn-primary" id="repairNowBtn"><span class="ms">refresh</span>${L`Я закрыл, повтори`}</button>
+      </div>`;
+  }
+  if (r.state === 'failed') {
+    return `
+      <div class="banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body"><b>${L`Dota обновилась, вернуть моды не вышло`}</b>${r.error ? `: <code>${esc(r.error)}</code>` : ''}${L`. Закрой Dota и нажми «Повторить» — почти всегда дело в том, что игра держит файлы.`}</div>
+        <button class="btn btn-sm btn-primary" id="repairNowBtn"><span class="ms">refresh</span>${L`Повторить`}</button>
+      </div>`;
+  }
+  if (r.state === 'done') {
+    const what = (r.healed || []).length
+      ? L`, моды и настройки вернули на место`
+      : L`, менять ничего не пришлось`;
+    return `
+      <div class="banner info">
+        <span class="ms">update</span>
+        <div class="banner-body"><b>${L`Dota обновилась`}</b>${what}${L`. Можно играть.`}</div>
+        <button class="btn btn-sm btn-ghost" id="repairSeenBtn">${L`Понятно`}</button>
+      </div>`;
+  }
+  return '';
 }
 
 export async function renderLibrary() {
@@ -534,6 +574,7 @@ export async function renderLibrary() {
   const installedAll = res.installed.filter((r) => r.categoryId !== 'tools');
   const externalAll = res.external || [];
   libStuck = res.verifyStuck || [];
+  try { libRepair = await window.api.patch.repairState(); } catch { libRepair = { state: 'idle' }; }
   libRecords = installedAll;
   applyInstalled(res.installed); // keep the tab counter + catalog badges in sync with the folder
   try { const ms = await window.api.mods.masterState(); state.masterOff = !!ms.off; } catch { state.masterOff = false; }
@@ -739,6 +780,18 @@ async function bindLibrary(external) {
       if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
     }
     await refreshInstalledIndex();
+    renderLibrary();
+  });
+  // "I closed the game, try again": the same repair the app runs on its own, on demand
+  $('#repairNowBtn')?.addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    libRepair = await window.api.patch.repairNow();
+    if (libRepair.state === 'waiting') toast(L`Dota всё ещё запущена — закрой её полностью`, 'warn', 6000);
+    await refreshInstalledIndex();
+    renderLibrary();
+  });
+  $('#repairSeenBtn')?.addEventListener('click', async () => {
+    libRepair = await window.api.patch.repairSeen();
     renderLibrary();
   });
   viewRoot.querySelectorAll('[data-move-from]').forEach((btn) => {

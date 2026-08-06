@@ -21,6 +21,7 @@ const discordAuth = require('./src/discord-auth');
 const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const { createSchemaService } = require('./src/schema-service');
+const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
@@ -40,6 +41,11 @@ let langMigration = null;
 // fonts and cursors Steam's file check took back and the app could not put back on its own
 // (the archive they came in is no longer cached), reported by mods:list
 let verifyStuck = [];
+// what the app did about the last Dota patch, shown as a banner in My mods:
+// { state: 'idle' | 'waiting' | 'done' | 'failed', healed: string[], error?, at }
+let patchRepair = { state: 'idle' };
+let patchWatcher = null;
+let repairTimer = null;
 
 function sendProgress(evt) {
   if (win && !win.isDestroyed()) win.webContents.send('progress', evt);
@@ -322,19 +328,37 @@ app.whenReady().then(async () => {
 
   // a Dota update overwrites the patched gameinfo and moves the item table: put both
   // back before the user gets a chance to launch the game with a half-applied setup
+  const startupHealed = [];
+  let startupError = null;
   try {
     const healed = schemaService.heal();
-    if (healed.healed && healed.healed.length) diag('schema healed: ' + healed.healed.join(','));
-    if (healed.error) diag('schema heal failed: ' + healed.error);
+    if (healed.healed && healed.healed.length) { startupHealed.push(...healed.healed); diag('schema healed: ' + healed.healed.join(',')); }
+    if (healed.error) { startupError = healed.error; diag('schema heal failed: ' + healed.error); }
   } catch (e) {
+    startupError = e.message;
     diag('schema heal skipped: ' + e.message);
   }
 
   // the same job for the two kinds of mod that overwrite files Valve ships
   try {
-    restoreAfterVerify();
+    if (restoreAfterVerify()) startupHealed.push('files');
   } catch (e) {
     diag('restore after verify skipped: ' + e.message);
+  }
+
+  // Did the game change while the app was closed? The repair for it has just run either
+  // way - this only decides whether the user is told about it, and hands the watcher the
+  // build to compare against.
+  try {
+    const stamp = gameStamp(settings.get('dotaGamePath'));
+    const known = settings.get('gameStamp');
+    if (stamp && known && stamp !== known) {
+      diag(`Dota changed while the app was closed: ${known} -> ${stamp}`);
+      patchRepair = { state: startupError ? 'failed' : 'done', healed: startupHealed, error: startupError, at: Date.now() };
+    }
+    if (stamp) settings.set('gameStamp', stamp);
+  } catch (e) {
+    diag('build check skipped: ' + e.message);
   }
 
   registerIpc();
@@ -348,6 +372,14 @@ app.whenReady().then(async () => {
   if (cold) win.webContents.once('did-finish-load', () => handleDeepLink(cold));
   applyPresenceSetting();
   setupAutoUpdate();
+
+  // and from here on, notice a patch the moment it lands rather than at the next start
+  patchWatcher = createPatchWatcher({
+    getGamePath: () => settings.get('dotaGamePath'),
+    onPatch: (evt) => repairAfterPatch(evt),
+    log: diag,
+  });
+  patchWatcher.start(settings.get('gameStamp'));
 }).catch((e) => diag('whenReady FAIL: ' + (e.stack || e)));
 
 // ---- auto-update via GitHub Releases (packaged builds only) ----
@@ -367,6 +399,10 @@ function setupAutoUpdate() {
 }
 
 app.on('window-all-closed', () => app.quit());
+app.on('before-quit', () => {
+  clearTimeout(repairTimer);
+  if (patchWatcher) patchWatcher.stop();
+});
 
 // ---------- d2mm:// links ----------
 
@@ -1038,12 +1074,13 @@ function applyVoicePreference() {
  */
 function restoreAfterVerify() {
   const lost = installer.lostToVerify(library.list());
-  if (!lost.length) return;
+  if (!lost.length) return 0;
   const stuck = [];
+  let restored = 0;
   for (const rec of lost) {
     try {
       const from = installer.restoreDeployed(rec);
-      if (from) diag(`restored after verify: ${rec.name} (from ${from})`);
+      if (from) { restored++; diag(`restored after verify: ${rec.name} (from ${from})`); }
       else stuck.push({ id: rec.id, name: rec.name });
     } catch (err) {
       diag(`restore failed for ${rec.name}: ${err.message}`);
@@ -1051,6 +1088,66 @@ function restoreAfterVerify() {
     }
   }
   verifyStuck = stuck;
+  return restored;
+}
+
+/* Everything the app puts back after the game changed underneath it.
+ *
+ * Not one line of the repair itself is new: heal() re-applies the search-path patch and
+ * rebuilds the item schema, restoreAfterVerify() puts fonts and cursors back, and
+ * applyVoicePreference() re-applies the voice choice. What 4.1 adds is when this runs and
+ * that somebody hears about it - before, it happened at startup and on our own Play button,
+ * while Steam patches the game in the background and most people press Play in Steam.
+ *
+ * Nothing is written while Dota is running. It holds gameinfo and its paks open, so a write
+ * would half-succeed, and the client has already read the files anyway. The app says it is
+ * waiting and tries again after the game exits.
+ */
+const REPAIR_RETRY_MS = 20000;
+
+function setPatchRepair(next) {
+  patchRepair = next;
+  if (win && !win.isDestroyed()) win.webContents.send('patch-repair', patchRepair);
+}
+
+async function repairAfterPatch(reason) {
+  const game = settings.get('dotaGamePath');
+  if (!game) return;
+  clearTimeout(repairTimer);
+  repairTimer = null;
+
+  if (await dotaIsRunning()) {
+    diag('Dota patched while the game is running - repair deferred');
+    setPatchRepair({ state: 'waiting', reason, at: Date.now() });
+    repairTimer = setTimeout(() => { repairAfterPatch(reason); }, REPAIR_RETRY_MS);
+    return;
+  }
+
+  const healed = [];
+  let error = null;
+  try {
+    const res = schemaService.heal();
+    if (res.healed) healed.push(...res.healed);
+    if (res.error) error = res.error;
+  } catch (err) {
+    error = String(err.message || err);
+  }
+  try {
+    if (restoreAfterVerify()) healed.push('files');
+  } catch (err) {
+    diag('restore after verify skipped: ' + err.message);
+  }
+  try {
+    applyVoicePreference();
+  } catch (err) {
+    diag('voice preference skipped: ' + err.message);
+  }
+
+  // remembered only now: a stamp stored before a failed repair would make the next start
+  // think there is nothing to fix
+  settings.set('gameStamp', gameStamp(game));
+  diag(`repair after patch: ${healed.join(',') || 'nothing to do'}${error ? ' error=' + error : ''}`);
+  setPatchRepair({ state: error ? 'failed' : 'done', healed, error, at: Date.now() });
 }
 
 function registerIpc() {
@@ -1183,7 +1280,11 @@ function registerIpc() {
 
   ipcMain.handle('settings:detectDota', async () => {
     const found = await findDotaGamePath();
-    if (found) settings.set('dotaGamePath', found);
+    if (found) {
+      settings.set('dotaGamePath', found);
+      // the watcher is holding handles on the folder that was current a moment ago
+      if (patchWatcher) patchWatcher.rearm();
+    }
     return found;
   });
 
@@ -1198,6 +1299,7 @@ function registerIpc() {
     if (!validateGamePath(p) && validateGamePath(path.join(p, 'game'))) p = path.join(p, 'game');
     if (!validateGamePath(p)) return { error: t('В этой папке не найдена Dota 2 (нет подпапки dota)') };
     settings.set('dotaGamePath', p);
+    if (patchWatcher) patchWatcher.rearm();
     return { path: p };
   });
 
@@ -1390,6 +1492,20 @@ function registerIpc() {
   // ---------- item schema / search-path patch ----------
 
   ipcMain.handle('patch:state', () => schemaService.state());
+
+  // what the app did about the last Dota patch (the banner in My mods asks on every visit;
+  // while the app is open it is pushed instead, see setPatchRepair)
+  ipcMain.handle('patch:repairState', () => patchRepair);
+  // "I closed the game, do it now" — the same path the retry timer takes
+  ipcMain.handle('patch:repairNow', async () => {
+    await repairAfterPatch('manual');
+    return patchRepair;
+  });
+  // the banner is news, not a state of the game: once it has been read it goes away
+  ipcMain.handle('patch:repairSeen', () => {
+    if (patchRepair.state === 'done' || patchRepair.state === 'failed') patchRepair = { state: 'idle' };
+    return patchRepair;
+  });
 
   // The one moment the app touches files of the game install: gated on an explicit yes,
   // reversible from the same switch, and every original is backed up in userData first.
