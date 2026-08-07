@@ -1,0 +1,97 @@
+---
+/**
+ * The shell every page sits in: head tags, header, footer.
+ *
+ * What it exists to get right is the part nobody sees. A two-language site that does not
+ * declare its pairs is two sites competing with each other in search results, so every page
+ * states its canonical address and both alternates, and x-default points at English.
+ */
+import { langFromUrl, useTranslations, pathIn, type Lang } from '../i18n/ui';
+import '../styles/site.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path without a language prefix, e.g. "/docs/quick-start/". */
+  path: string;
+}
+
+const { title, description, path } = Astro.props;
+const lang: Lang = langFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const site = Astro.site ?? new URL('https://dota2modmanager.com');
+const canonical = new URL(pathIn(lang, path), site).href;
+const alternates = [
+  { hreflang: 'en', href: new URL(pathIn('en', path), site).href },
+  { hreflang: 'ru', href: new URL(pathIn('ru', path), site).href },
+  { hreflang: 'x-default', href: new URL(pathIn('en', path), site).href },
+];
+const other: Lang = lang === 'ru' ? 'en' : 'ru';
+
+const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
+const DISCORD = 'https://discord.gg/dota2pornfx';
+const RELEASES = `${GITHUB}/releases/latest`;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={t('site.name')} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og.png', site).href} />
+    <meta property="og:locale" content={lang === 'ru' ? 'ru_RU' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#141218" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="topbar">
+      <div class="wrap bar">
+        <a class="brand" href={pathIn(lang, '/')}>
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>{t('site.name')}</span>
+        </a>
+        <nav class="nav" aria-label={t('nav.docs')}>
+          <a href={pathIn(lang, '/docs/')}>{t('nav.docs')}</a>
+          <a href={GITHUB} rel="noopener">{t('nav.github')}</a>
+          <a href={DISCORD} rel="noopener">{t('nav.discord')}</a>
+          <a class="lang" href={pathIn(other, path)} lang={other} hreflang={other}>{t('lang.switch')}</a>
+          <a class="cta" href={RELEASES} rel="noopener">{t('nav.download')}</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <p>
+          {t('foot.built')} <a href="https://github.com/TheFleece" rel="noopener">Mykhailo Lynnyk</a>.
+          <a href={GITHUB} rel="noopener">{t('foot.license')}</a>.
+        </p>
+        <p class="muted">{t('foot.unofficial')}</p>
+        <p class="muted">
+          <a href={pathIn(lang, '/privacy/')}>{t('foot.privacy')}</a> ·
+          <a href={pathIn(lang, '/terms/')}>{t('foot.terms')}</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

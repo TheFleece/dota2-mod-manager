@@ -1,6 +1,9 @@
 node_modules/
 dist/
 
+# Astro's generated types and content cache: rebuilt on every build.
+.astro/
+
 # Throwaway Dota tree and downloaded mods built by tools/sandbox.js. The list of what a
 # sandbox should hold travels with the repo in tools/sandbox-mods.json; the files do not.
 sandbox/

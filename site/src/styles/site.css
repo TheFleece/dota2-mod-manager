@@ -1,0 +1,139 @@
+/* The site wears the app's own colours.
+ *
+ * These are the values the window opens on - Material 3's baseline purple, the "ursa" theme
+ * in renderer/styles/themes.css. Someone who lands here and then installs the thing should
+ * not feel handed off to a different product, so the palette is copied rather than invented.
+ * There is no theme switching here: the site has one look, the app has eight. */
+:root {
+  --primary: #d0bcff;
+  --on-primary: #220a32;
+  --accent: #b190ff;
+  --surface: #141218;
+  --surface-low: #1d1b20;
+  --surface-container: #211f26;
+  --surface-high: #2b2930;
+  --text: #e6e0e9;
+  --text-dim: #cac4d0;
+  --text-faint: #938f99;
+  --outline: #49454f;
+  --border: color-mix(in srgb, var(--outline) 55%, transparent);
+
+  --radius-lg: 24px;
+  --radius: 16px;
+  --radius-sm: 12px;
+
+  --wrap: 1080px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: 16px/1.65 system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+.wrap { width: min(var(--wrap), 100%); margin: 0 auto; padding: 0 20px; }
+
+/* keyboard users get to the content without walking the whole nav */
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 10;
+  background: var(--primary); color: var(--on-primary);
+  padding: 10px 16px; border-radius: 0 0 var(--radius-sm) 0; font-weight: 600;
+}
+.skip:focus { left: 0; }
+
+:where(a, button):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---------- header ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.bar { display: flex; align-items: center; gap: 20px; height: 62px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; }
+.brand:hover { text-decoration: none; }
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: linear-gradient(140deg, var(--primary), var(--accent));
+}
+.nav { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nav a {
+  color: var(--text-dim); padding: 7px 12px; border-radius: 999px; font-size: 14.5px;
+}
+.nav a:hover { background: var(--surface-high); color: var(--text); text-decoration: none; }
+.nav .lang { color: var(--text-faint); }
+.nav .cta {
+  background: var(--primary); color: var(--on-primary); font-weight: 650;
+}
+.nav .cta:hover { background: #e0d0ff; color: var(--on-primary); }
+
+@media (max-width: 720px) {
+  .bar { height: auto; padding-block: 12px; flex-wrap: wrap; }
+  .nav { width: 100%; margin-left: 0; }
+}
+
+/* ---------- prose ---------- */
+h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 0.5em; }
+h1 { font-size: clamp(34px, 5.4vw, 54px); }
+h2 { font-size: clamp(24px, 3vw, 32px); margin-top: 1.6em; }
+h3 { font-size: 20px; margin-top: 1.4em; }
+p { margin: 0 0 1em; }
+.lead { font-size: clamp(17px, 2vw, 20px); color: var(--text-dim); }
+.muted { color: var(--text-faint); font-size: 14px; }
+
+section { padding: 56px 0; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 24px; border-radius: 999px;
+  background: var(--primary); color: var(--on-primary);
+  font-weight: 650; font-size: 16px;
+}
+.btn:hover { background: #e0d0ff; text-decoration: none; }
+.btn.ghost {
+  background: transparent; color: var(--text); border: 1px solid var(--border);
+}
+.btn.ghost:hover { background: var(--surface-high); }
+.btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- cards ---------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.card {
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.card h3 { margin-top: 0; }
+.card p { margin-bottom: 0; color: var(--text-dim); font-size: 15px; }
+
+/* ---------- footer ---------- */
+.foot {
+  border-top: 1px solid var(--border);
+  margin-top: 40px; padding: 34px 0 48px;
+  color: var(--text-faint); font-size: 14px;
+}
+.foot p { margin: 0 0 6px; }
+.foot a { color: var(--text-dim); }

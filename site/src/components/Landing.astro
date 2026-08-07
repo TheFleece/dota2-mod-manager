@@ -1,0 +1,65 @@
+---
+/**
+ * The landing, in whichever language the page asked for.
+ *
+ * One component for both languages rather than two pages that drift apart: what differs
+ * between them is words, and words live in the dictionary.
+ */
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
+const RELEASES = `${GITHUB}/releases/latest`;
+
+const features = lang === 'ru'
+  ? [
+      { h: 'Каталог на 1100+ модов', p: 'Скины героев, ландшафты, комментаторы, музыка и эффекты. Ставится в один клик, удаляется так же.' },
+      { h: 'Косметика, которая у тебя есть', p: 'Погода, ландшафты и другие предметы, которые лежат в аккаунте, но которые Dota не даёт включить просто так.' },
+      { h: 'Сборка одной ссылкой', p: 'Весь набор модов превращается в ссылку. Друг открывает её и ставит то же самое.' },
+      { h: 'Ничего не ломает', p: 'Файлы игры пишутся одной транзакцией: если что-то пойдёт не так, всё вернётся как было.' },
+      { h: 'Переживает патчи', p: 'После обновления Dota приложение само возвращает моды на место.' },
+      { h: 'Открытый код', p: 'GPL-3.0, сборка на GitHub Actions. Видно, что скачал и что оно делает.' },
+    ]
+  : [
+      { h: '1100+ mods in the catalog', p: 'Hero skins, terrains, announcers, music and effects. One click to install, one to remove.' },
+      { h: 'Cosmetics you already own', p: 'Weather, terrains and other items sitting in your account that Dota gives you no way to switch on.' },
+      { h: 'A whole setup as one link', p: 'Your list of mods becomes a link. A friend opens it and installs the same thing.' },
+      { h: 'It does not break the game', p: 'Game files are written as one transaction: if anything goes wrong, everything goes back as it was.' },
+      { h: 'It survives patches', p: 'After Dota updates, the app puts the mods back on its own.' },
+      { h: 'Open source', p: 'GPL-3.0, built by GitHub Actions. You can see what you downloaded and what it does.' },
+    ];
+---
+
+<section class="hero">
+  <div class="wrap">
+    <h1>{t('hero.title')}</h1>
+    <p class="lead">{t('hero.lead')}</p>
+    <div class="btn-row">
+      <a class="btn" href={RELEASES} rel="noopener">{t('hero.download')}</a>
+      <a class="btn ghost" href={GITHUB} rel="noopener">{t('hero.source')}</a>
+    </div>
+    <p class="muted">{t('hero.free')}</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cards">
+      {features.map((f) => (
+        <article class="card">
+          <h3>{f.h}</h3>
+          <p>{f.p}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero { padding: 72px 0 40px; }
+  .hero .lead { max-width: 62ch; }
+  .hero .btn-row { margin: 28px 0 12px; }
+</style>
