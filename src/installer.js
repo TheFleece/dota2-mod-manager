@@ -5,7 +5,7 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles } = require('./vpk');
 const { extractDeltas, deltaTable, crc32 } = require('./schema');
 // Whole-game tables and tool branding that packaging tools bake into EVERY export.
 // Dota 2 Skinchanger, for one, ships a full 47 MB scripts/items/items_game.txt plus the
@@ -56,6 +56,18 @@ function isOfficialLangFile(baseLower) {
 // Nothing should outlive its transaction; one that does means the app died mid-write, and
 // sweepStaged() cleans up after that on the next start.
 const STAGED_RE = /\.[a-z0-9]+\.mmtx$/i;
+
+// Engine stock that packing tools drop into every export they build: reflection cubemaps,
+// the basic particle set, the error placeholder, the transparency helper, the default
+// textures. Different tools compile them to slightly different bytes, so two mods carrying
+// them look like they are fighting over a file - and they are not. Nobody's mod looks
+// different because another mod's copy of basic_smoke won.
+//
+// Measured over 84 installed mods: of the 84 paths carried by two mods with different bytes,
+// every single one shared by more than four mods matches this, and not one of them is a hero
+// model or an item texture. Matched anywhere in the path, because authors wrap the same stock
+// in a content folder of their own.
+const STOCK_ASSET = /(^|\/)(materials\/(default|particle|transparent)|materials\/models\/cubemaps|particles\/(basic_[a-z]+|error))\//;
 
 function fileUrl(categoryId, fileRef) {
   if (/^https?:\/\//i.test(fileRef)) return fileRef;
@@ -313,6 +325,58 @@ class Installer {
   slotNumber(rec) {
     const base = this.slotBase(rec);
     return base ? Number(base.slice(3)) : null;
+  }
+
+  /**
+   * Which mods are quietly covering which, file by file.
+   *
+   * Two mods can carry the same file, and then only one of them is the one the game loads -
+   * the lower pak number, as above. Nothing said so, so a mod that had been overruled looked
+   * installed and switched on while doing nothing, and the usual conclusion was that the app
+   * had broken it. Measured on 84 installed mods: 801 paths are carried by more than one mod,
+   * but only 84 of those hold *different* bytes. The rest is filler both authors happened to
+   * ship, which is why the CRC decides and a shared path on its own does not.
+   *
+   * @param {Array<{key: string, name: string, files: Array<{root: string, relPath: string}>}>} mods
+   *   enabled mods only - a switched-off mod is renamed on disk and the game never sees it.
+   *   Keyed rather than named, because two copies of the same mod in two slots share a name
+   *   and are exactly the case worth reporting.
+   * @returns {Map<string, Array<{name: string, files: number}>>} mod key -> who covers it
+   */
+  coverage(mods) {
+    const owners = new Map(); // inner path -> [{ key, name, slot, crc }]
+    for (const mod of mods) {
+      const dir = (mod.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+      if (!dir) continue;
+      const slot = this.slotNumber(mod);
+      if (slot === null) continue;
+      let crcs;
+      try { crcs = listVpkPathCrcs(readVpkIndexFile(this.langFileOnDisk(dir.relPath))); } catch { continue; }
+      for (const [p, crc] of crcs) {
+        if (STOCK_ASSET.test(p)) continue;
+        if (!owners.has(p)) owners.set(p, []);
+        owners.get(p).push({ key: mod.key, name: mod.name, slot, crc });
+      }
+    }
+
+    const covered = new Map(); // loser key -> Map(winner name -> file count)
+    for (const [, list] of owners) {
+      if (list.length < 2) continue;
+      const top = list.reduce((a, b) => (b.slot < a.slot ? b : a));
+      for (const other of list) {
+        // same bytes is not a fight: whichever the game picks, the file is identical
+        if (other.key === top.key || other.crc === top.crc) continue;
+        if (!covered.has(other.key)) covered.set(other.key, new Map());
+        const by = covered.get(other.key);
+        by.set(top.name, (by.get(top.name) || 0) + 1);
+      }
+    }
+
+    const out = new Map();
+    for (const [loser, by] of covered) {
+      out.set(loser, [...by].map(([name, files]) => ({ name, files })).sort((a, b) => b.files - a.files));
+    }
+    return out;
   }
 
   // highest free slot strictly below `n`, so climbing over one mod does not eat the whole

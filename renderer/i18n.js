@@ -111,6 +111,9 @@ const EN = {
     'This mod changes the item schema: its effects and icons are built into the shared table',
   'Мод меняет схему предметов. Без правок схемы встанет только модель — эффекты и иконки работать не будут.':
     'This mod changes the item schema. Without the patch only the model installs: effects and icons will not work.',
+  'перекрыт': 'overruled',
+  'Файлов перекрыто: {0} — {1}. Побеждает мод, который загружается раньше; порядок меняется правой кнопкой.':
+    'Files overruled: {0} — {1}. The mod that loads earlier supplies them; right-click to change the order.',
   'Косметика': 'Cosmetics',
   'Моды': 'Mods',
   'бесплатная косметика': 'free cosmetic',

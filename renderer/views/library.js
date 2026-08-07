@@ -150,6 +150,19 @@ function schemaTagHtml(rec) {
     : ` <span class="lib-tag schema off" title="${esc(L`Мод меняет схему предметов. Без правок схемы встанет только модель — эффекты и иконки работать не будут.`)}"><span class="ms">error</span>${L`нужны правки`}</span>`;
 }
 
+/* A mod that is installed, switched on, and still not the one the game loads.
+ *
+ * Two mods can carry the same file, and the lower pak number wins it. Nothing used to say
+ * so, so an overruled mod looked like a mod the app had broken. The row says who covers it
+ * and how much; the fix is the load order, which right-click already offers. */
+function coveredTagHtml(rec) {
+  const by = rec.coveredBy;
+  if (!by || !by.length || !rec.enabled) return '';
+  const total = by.reduce((n, x) => n + x.files, 0);
+  const who = by.map((x) => `«${x.name}» (${x.files})`).join(', ');
+  return ` <span class="lib-tag covered" title="${esc(L`Файлов перекрыто: ${total} — ${who}. Побеждает мод, который загружается раньше; порядок меняется правой кнопкой.`)}"><span class="ms">layers</span>${L`перекрыт`}</span>`;
+}
+
 function normalRowHtml(rec, i, masterOff) {
   const cosmetic = isCosmeticRec(rec);
   const selectable = !isFontRec(rec);
@@ -165,7 +178,7 @@ function normalRowHtml(rec, i, masterOff) {
         ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${cosmeticMeta(rec.slot).icon}</span></div>`
         : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}${coveredTagHtml(rec)}</div>
         <div class="lib-meta"><span>${esc(catLabel)}</span></div>
       </div>
       <div class="lib-actions">
@@ -949,7 +962,7 @@ async function bindLibrary(external) {
       row.innerHTML = `
         ${extThumbHtml(f)}
         <div class="lib-info">
-          <div class="lib-name">${esc(displayName)}${label ? ' ' + label : ''}</div>
+          <div class="lib-name">${esc(displayName)}${label ? ' ' + label : ''}${coveredTagHtml(f)}</div>
           <div class="lib-meta">${fileName}${size}<span>${sub}</span></div>
         </div>
         <div class="lib-actions">

@@ -58,6 +58,12 @@
   background: var(--primary-dim);
   border-color: color-mix(in srgb, var(--md-primary) 45%, transparent);
 }
+/* installed and switched on, but another mod supplies the files they share */
+.lib-tag.covered {
+  color: var(--warning);
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.4);
+}
 .lib-tag.schema.off {
   color: var(--warning);
   background: rgba(251, 191, 36, 0.12);

@@ -1499,6 +1499,19 @@ function registerIpc() {
         return { ...rec, ...a, match: matches };
       } catch { return rec; }
     });
+    // Who is quietly covering whom. Both lists take part: a foreign file in the folder is
+    // mounted by the game exactly like a managed one, so leaving it out would name the wrong
+    // winner. Only switched-on mods, because a switched-off one is renamed and never mounted.
+    let covered = new Map();
+    try {
+      const live = [
+        ...installed.filter((r) => r.enabled).map((r) => ({ key: r.id, name: r.name, files: r.files })),
+        ...external.filter((f) => f.enabled).map((f) => ({ key: f.key, name: f.name, files: f.files })),
+      ];
+      covered = installer.coverage(live);
+    } catch { /* no game path — nothing is mounted, nothing covers anything */ }
+    external = external.map((f) => (covered.has(f.key) ? { ...f, coveredBy: covered.get(f.key) } : f));
+
     let slots = 0;
     try { slots = installer.usedModSlots(); } catch { /* no game path */ }
     // the renderer re-lists after every install, toggle, preset and bulk action, so this is
@@ -1509,9 +1522,10 @@ function registerIpc() {
     // never the stored records — dropping the field off those would erase it on save.
     const schemaOn = schemaService.state().enabled;
     const listed = installed.map((rec) => {
-      if (!Array.isArray(rec.schema)) return rec;
+      const by = covered.get(rec.id);
+      if (!Array.isArray(rec.schema)) return by ? { ...rec, coveredBy: by } : rec;
       const { schema, ...rest } = rec;
-      return { ...rest, schemaCount: schema.length, schemaLive: schemaOn };
+      return { ...rest, schemaCount: schema.length, schemaLive: schemaOn, ...(by ? { coveredBy: by } : {}) };
     });
     return { installed: listed, external, slots, slotCeil: 98, verifyStuck };
   });
