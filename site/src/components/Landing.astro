@@ -4,62 +4,188 @@
  *
  * One component for both languages rather than two pages that drift apart: what differs
  * between them is words, and words live in the dictionary.
+ *
+ * The order of the page answers the order of a stranger's questions. What is it (hero), what
+ * does it look like (screenshots, before any feature list - a picture of the real window
+ * settles more doubt than six paragraphs), what does it do (cards), why should I run an
+ * unsigned .exe from the internet (the part most download pages skip), what about the
+ * obvious worries (FAQ), fine, where (final CTA).
  */
-import { useTranslations, type Lang } from '../i18n/ui';
+import { landing } from '../i18n/landing';
+import type { Lang } from '../i18n/ui';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
-const t = useTranslations(lang);
+const c = landing[lang];
 
 const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
 const RELEASES = `${GITHUB}/releases/latest`;
+const WORKFLOW = `${GITHUB}/actions`;
 
-const features = lang === 'ru'
-  ? [
-      { h: 'Каталог на 1100+ модов', p: 'Скины героев, ландшафты, комментаторы, музыка и эффекты. Ставится в один клик, удаляется так же.' },
-      { h: 'Косметика, которая у тебя есть', p: 'Погода, ландшафты и другие предметы, которые лежат в аккаунте, но которые Dota не даёт включить просто так.' },
-      { h: 'Сборка одной ссылкой', p: 'Весь набор модов превращается в ссылку. Друг открывает её и ставит то же самое.' },
-      { h: 'Ничего не ломает', p: 'Файлы игры пишутся одной транзакцией: если что-то пойдёт не так, всё вернётся как было.' },
-      { h: 'Переживает патчи', p: 'После обновления Dota приложение само возвращает моды на место.' },
-      { h: 'Открытый код', p: 'GPL-3.0, сборка на GitHub Actions. Видно, что скачал и что оно делает.' },
-    ]
-  : [
-      { h: '1100+ mods in the catalog', p: 'Hero skins, terrains, announcers, music and effects. One click to install, one to remove.' },
-      { h: 'Cosmetics you already own', p: 'Weather, terrains and other items sitting in your account that Dota gives you no way to switch on.' },
-      { h: 'A whole setup as one link', p: 'Your list of mods becomes a link. A friend opens it and installs the same thing.' },
-      { h: 'It does not break the game', p: 'Game files are written as one transaction: if anything goes wrong, everything goes back as it was.' },
-      { h: 'It survives patches', p: 'After Dota updates, the app puts the mods back on its own.' },
-      { h: 'Open source', p: 'GPL-3.0, built by GitHub Actions. You can see what you downloaded and what it does.' },
-    ];
+// the app is bilingual, so the window in the picture speaks the reader's language
+const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
 ---
 
 <section class="hero">
   <div class="wrap">
-    <h1>{t('hero.title')}</h1>
-    <p class="lead">{t('hero.lead')}</p>
+    <h1>{c.heroTitle}</h1>
+    <p class="lead">{c.heroLead}</p>
     <div class="btn-row">
-      <a class="btn" href={RELEASES} rel="noopener">{t('hero.download')}</a>
-      <a class="btn ghost" href={GITHUB} rel="noopener">{t('hero.source')}</a>
+      <a class="btn" href={RELEASES} rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        {c.download}
+      </a>
+      <a class="btn ghost" href={GITHUB} rel="noopener">{c.source}</a>
     </div>
-    <p class="muted">{t('hero.free')}</p>
+    <p class="muted">{c.heroMeta}</p>
+  </div>
+</section>
+
+<section class="shots">
+  <div class="wrap">
+    <h2 class="sr-only">{c.shotsTitle}</h2>
+    <figure class="shot wide">
+      <img src={shot('catalog')} width="1360" height="860" loading="eager" decoding="async"
+           alt={lang === 'ru' ? 'Каталог модов в приложении' : 'The mod catalog inside the app'} />
+      <figcaption>{c.shotCatalog}</figcaption>
+    </figure>
+    <div class="pair">
+      <figure class="shot">
+        <img src={shot('heroes')} width="1360" height="860" loading="lazy" decoding="async"
+             alt={lang === 'ru' ? 'Моды, сгруппированные по героям' : 'Mods grouped by hero'} />
+        <figcaption>{c.shotHeroes}</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src={shot('library')} width="1360" height="860" loading="lazy" decoding="async"
+             alt={lang === 'ru' ? 'Список установленных модов' : 'The list of installed mods'} />
+        <figcaption>{c.shotLibrary}</figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
+    <h2>{c.whatTitle}</h2>
     <div class="cards">
-      {features.map((f) => (
+      {c.cards.map(([title, body]) => (
         <article class="card">
-          <h3>{f.h}</h3>
-          <p>{f.p}</p>
+          <h3>{title}</h3>
+          <p>{body}</p>
         </article>
       ))}
     </div>
   </div>
 </section>
 
+<section class="trust">
+  <div class="wrap">
+    <h2>{c.trustTitle}</h2>
+    <p class="lead">{c.trustLead}</p>
+    <ul class="facts">
+      {c.trustFacts.map(([title, body]) => (
+        <li>
+          <b>{title}</b>
+          <span>{body}</span>
+        </li>
+      ))}
+    </ul>
+    <div class="warn">
+      <h3>{c.smartscreenTitle}</h3>
+      <p set:html={c.smartscreen} />
+      <p class="muted">
+        <a href={WORKFLOW} rel="noopener">{lang === 'ru' ? 'Посмотреть, как собираются релизы' : 'See how releases are built'}</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap narrow">
+    <h2>{c.faqTitle}</h2>
+    {c.faq.map(([q, a]) => (
+      <details class="faq">
+        <summary>{q}</summary>
+        <p>{a}</p>
+      </details>
+    ))}
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>{c.ctaTitle}</h2>
+    <p class="lead">{c.ctaLead}</p>
+    <div class="btn-row">
+      <a class="btn" href={RELEASES} rel="noopener">{c.download}</a>
+    </div>
+  </div>
+</section>
+
 <style>
-  .hero { padding: 72px 0 40px; }
-  .hero .lead { max-width: 62ch; }
-  .hero .btn-row { margin: 28px 0 12px; }
+  .hero { padding: 76px 0 24px; }
+  .hero .lead { max-width: 60ch; }
+  .hero .btn-row { margin: 30px 0 14px; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  .shots { padding-top: 24px; }
+  .shot { margin: 0 0 16px; }
+  .shot img {
+    width: 100%; border-radius: var(--radius);
+    border: 1px solid var(--border);
+    /* the window in the picture is dark on a dark page, so it needs a shadow to sit
+       on the page rather than dissolve into it */
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  }
+  .shot figcaption {
+    margin-top: 10px; color: var(--text-faint); font-size: 14px; max-width: 70ch;
+  }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .pair { grid-template-columns: 1fr; } }
+
+  .trust .lead { max-width: 66ch; }
+  .facts {
+    list-style: none; padding: 0; margin: 26px 0 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 26px;
+  }
+  .facts li { display: flex; flex-direction: column; gap: 4px; }
+  .facts b { color: var(--text); }
+  .facts span { color: var(--text-dim); font-size: 15px; }
+
+  .warn {
+    margin-top: 34px; padding: 22px 24px;
+    border: 1px solid color-mix(in srgb, #fbbf24 34%, transparent);
+    background: color-mix(in srgb, #fbbf24 7%, transparent);
+    border-radius: var(--radius);
+  }
+  .warn h3 { margin-top: 0; font-size: 17px; }
+  .warn p { color: var(--text-dim); font-size: 15px; margin-bottom: 0; }
+  .warn p + p { margin-top: 10px; }
+
+  .narrow { max-width: 760px; }
+  .faq {
+    border-bottom: 1px solid var(--border);
+    padding: 4px 0;
+  }
+  .faq summary {
+    cursor: pointer; padding: 14px 0; font-weight: 600;
+    list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: '+'; color: var(--text-faint); font-size: 20px; line-height: 1; flex: none;
+  }
+  .faq[open] summary::after { content: '\2212'; }
+  .faq summary:hover { color: var(--primary); }
+  .faq p { color: var(--text-dim); margin: 0 0 16px; max-width: 68ch; }
+
+  .final { text-align: center; padding-bottom: 20px; }
+  .final .lead { margin-inline: auto; }
+  .final .btn-row { justify-content: center; margin-top: 22px; }
 </style>
