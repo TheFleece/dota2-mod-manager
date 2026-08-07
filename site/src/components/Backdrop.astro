@@ -1,0 +1,112 @@
+---
+/**
+ * What the page sits on: a slow drift of particles under a lavender glow.
+ *
+ * Drawn rather than shipped as an image, because a background image of Dota's own artwork is
+ * Valve's to own and this project is not affiliated with them. This costs nothing to serve,
+ * scales to any screen, and is the app's palette rather than somebody else's key art.
+ *
+ * It stops completely when the visitor asked for less motion, and when the tab is hidden.
+ */
+---
+
+<div class="backdrop" aria-hidden="true">
+  <div class="glow glow-a"></div>
+  <div class="glow glow-b"></div>
+  <canvas id="dust"></canvas>
+  <div class="grid"></div>
+</div>
+
+<style>
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--surface);
+  }
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.5;
+  }
+  .glow-a {
+    width: 780px; height: 780px;
+    top: -320px; left: 50%; margin-left: -560px;
+    background: radial-gradient(circle, #6b4fa8 0%, transparent 70%);
+  }
+  .glow-b {
+    width: 620px; height: 620px;
+    top: -180px; left: 50%; margin-left: 120px;
+    background: radial-gradient(circle, #3d2f6b 0%, transparent 70%);
+  }
+  /* a faint rule grid, so the empty parts of the page are not flat black */
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--primary) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--primary) 5%, transparent) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: radial-gradient(120% 60% at 50% 0%, #000 0%, transparent 72%);
+    -webkit-mask-image: radial-gradient(120% 60% at 50% 0%, #000 0%, transparent 72%);
+  }
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    canvas { display: none; }
+  }
+</style>
+
+<script>
+  const canvas = document.getElementById('dust') as HTMLCanvasElement | null;
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (canvas && !still) {
+    const ctx = canvas.getContext('2d')!;
+    let w = 0, h = 0, raf = 0;
+    // enough to read as depth, few enough to cost nothing on a laptop
+    const dots = Array.from({ length: 70 }, () => ({ x: 0, y: 0, r: 0, s: 0, a: 0 }));
+
+    const seed = () => {
+      for (const d of dots) {
+        d.x = Math.random() * w;
+        d.y = Math.random() * h;
+        d.r = Math.random() * 1.6 + 0.4;
+        d.s = Math.random() * 0.18 + 0.05;   // upward drift
+        d.a = Math.random() * 0.35 + 0.08;
+      }
+    };
+    const size = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.clientWidth; h = canvas.clientHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seed();
+    };
+
+    const frame = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (const d of dots) {
+        d.y -= d.s;
+        if (d.y < -4) { d.y = h + 4; d.x = Math.random() * w; }
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(208, 188, 255, ${d.a})`;
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(frame);
+    };
+
+    const start = () => { if (!raf) raf = requestAnimationFrame(frame); };
+    const stop = () => { cancelAnimationFrame(raf); raf = 0; };
+
+    size();
+    start();
+    window.addEventListener('resize', size);
+    // nothing spins while the tab is in the background
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  }
+</script>

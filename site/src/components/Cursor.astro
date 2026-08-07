@@ -1,0 +1,52 @@
+---
+/**
+ * A soft light that follows the pointer.
+ *
+ * Only where it makes sense: a device with a real pointer, and a visitor who has not asked
+ * for less motion. On a phone there is no cursor to light, so nothing is drawn and nothing
+ * is listened to.
+ */
+---
+
+<div id="cursor-glow" aria-hidden="true"></div>
+
+<style>
+  #cursor-glow {
+    position: fixed;
+    top: 0; left: 0;
+    width: 460px; height: 460px;
+    margin: -230px 0 0 -230px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    background: radial-gradient(circle, color-mix(in srgb, var(--primary) 13%, transparent) 0%, transparent 62%);
+    transition: opacity 400ms ease;
+    will-change: transform;
+  }
+  @media (hover: none), (prefers-reduced-motion: reduce) {
+    #cursor-glow { display: none; }
+  }
+</style>
+
+<script>
+  const glow = document.getElementById('cursor-glow');
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (glow && fine && !still) {
+    let x = 0, y = 0, drawn = false;
+    // the light trails the pointer by a frame rather than being nailed to it: moving it
+    // inside the pointer event would repaint on every mouse tick
+    const paint = () => {
+      glow.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      drawn = false;
+    };
+    window.addEventListener('pointermove', (e) => {
+      x = e.clientX; y = e.clientY;
+      if (glow.style.opacity !== '1') glow.style.opacity = '1';
+      if (!drawn) { drawn = true; requestAnimationFrame(paint); }
+    }, { passive: true });
+    document.addEventListener('pointerleave', () => { glow.style.opacity = '0'; });
+  }
+</script>

@@ -2,14 +2,16 @@
 /**
  * The landing, in whichever language the page asked for.
  *
- * One component for both languages rather than two pages that drift apart: what differs
- * between them is words, and words live in the dictionary.
+ * The page opens with the product's name at full size rather than a sentence about it. That
+ * is what the two sites in this corner of the internet that people actually like do, and it
+ * is also the phrase somebody types into a search box. The sentence explaining it comes
+ * second, where a sentence belongs.
  *
- * The order of the page answers the order of a stranger's questions. What is it (hero), what
- * does it look like (screenshots, before any feature list - a picture of the real window
- * settles more doubt than six paragraphs), what does it do (cards), why should I run an
- * unsigned .exe from the internet (the part most download pages skip), what about the
- * obvious worries (FAQ), fine, where (final CTA).
+ * The numbers under it are the ones people read before they read anything: they are real and
+ * checkable (see src/i18n/landing.ts), which is the only kind worth printing.
+ *
+ * The order after that answers a stranger's questions in the order they ask them: what does
+ * it look like, what does it do, why should I run an unsigned .exe, and the usual worries.
  */
 import { landing } from '../i18n/landing';
 import type { Lang } from '../i18n/ui';
@@ -22,56 +24,93 @@ const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
 const RELEASES = `${GITHUB}/releases/latest`;
 const WORKFLOW = `${GITHUB}/actions`;
 
+// The badge says which version is current, read at build time. If GitHub cannot be reached
+// while building, the badge simply does not appear - a stale version number would be worse.
+let latestTag: string | null = null;
+try {
+  const r = await fetch('https://api.github.com/repos/TheFleece/dota2-mod-manager/releases/latest', {
+    headers: { 'User-Agent': 'dota2modmanager-site' },
+  });
+  if (r.ok) latestTag = (await r.json()).tag_name ?? null;
+} catch { /* offline build: no badge */ }
+
 // the app is bilingual, so the window in the picture speaks the reader's language
 const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
+
+const shots = [
+  { file: 'catalog', caption: c.shotCatalog, alt: lang === 'ru' ? 'Каталог модов в приложении' : 'The mod catalog inside the app' },
+  { file: 'heroes', caption: c.shotHeroes, alt: lang === 'ru' ? 'Моды, сгруппированные по героям' : 'Mods grouped by hero' },
+  { file: 'library', caption: c.shotLibrary, alt: lang === 'ru' ? 'Список установленных модов' : 'The list of installed mods' },
+];
 ---
 
 <section class="hero">
   <div class="wrap">
-    <h1>{c.heroTitle}</h1>
+    {latestTag && (
+      <a class="badge" href={RELEASES} rel="noopener">
+        <span class="dot"></span>
+        <b>{latestTag}</b>
+        <span class="badge-sep"></span>
+        <span>{c.latest}</span>
+      </a>
+    )}
+    <p class="kicker">{c.heroKicker}</p>
+    <h1>
+      <span class="t1">{c.heroTitle}</span>
+      <span class="t2">{c.heroTitleAccent}</span>
+    </h1>
     <p class="lead">{c.heroLead}</p>
+
     <div class="btn-row">
-      <a class="btn" href={RELEASES} rel="noopener">
+      <a class="btn btn-glow" href={RELEASES} rel="noopener">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
         </svg>
         {c.download}
       </a>
-      <a class="btn ghost" href={GITHUB} rel="noopener">{c.source}</a>
+      <a class="btn ghost" href={GITHUB} rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-36 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.6-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z" />
+        </svg>
+        {c.source}
+      </a>
     </div>
     <p class="muted">{c.heroMeta}</p>
+
+    <ul class="stats reveal">
+      {c.stats.map(([n, label]) => (
+        <li>
+          <b>{n}</b>
+          <span>{label}</span>
+        </li>
+      ))}
+    </ul>
   </div>
 </section>
 
 <section class="shots">
   <div class="wrap">
     <h2 class="sr-only">{c.shotsTitle}</h2>
-    <figure class="shot wide">
-      <img src={shot('catalog')} width="1360" height="860" loading="eager" decoding="async"
-           alt={lang === 'ru' ? 'Каталог модов в приложении' : 'The mod catalog inside the app'} />
-      <figcaption>{c.shotCatalog}</figcaption>
-    </figure>
-    <div class="pair">
-      <figure class="shot">
-        <img src={shot('heroes')} width="1360" height="860" loading="lazy" decoding="async"
-             alt={lang === 'ru' ? 'Моды, сгруппированные по героям' : 'Mods grouped by hero'} />
-        <figcaption>{c.shotHeroes}</figcaption>
-      </figure>
-      <figure class="shot">
-        <img src={shot('library')} width="1360" height="860" loading="lazy" decoding="async"
-             alt={lang === 'ru' ? 'Список установленных модов' : 'The list of installed mods'} />
-        <figcaption>{c.shotLibrary}</figcaption>
-      </figure>
+    <div class="shot-list">
+      {shots.map((s, i) => (
+        <figure class={`shot reveal ${i === 0 ? 'lead-shot' : ''}`}>
+          <div class="frame">
+            <div class="frame-bar"><i></i><i></i><i></i></div>
+            <img src={shot(s.file)} width="1360" height="860" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" alt={s.alt} />
+          </div>
+          <figcaption>{s.caption}</figcaption>
+        </figure>
+      ))}
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <h2>{c.whatTitle}</h2>
+    <h2 class="reveal">{c.whatTitle}</h2>
     <div class="cards">
       {c.cards.map(([title, body]) => (
-        <article class="card">
+        <article class="card reveal">
           <h3>{title}</h3>
           <p>{body}</p>
         </article>
@@ -82,17 +121,17 @@ const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
 
 <section class="trust">
   <div class="wrap">
-    <h2>{c.trustTitle}</h2>
-    <p class="lead">{c.trustLead}</p>
+    <h2 class="reveal">{c.trustTitle}</h2>
+    <p class="lead reveal">{c.trustLead}</p>
     <ul class="facts">
       {c.trustFacts.map(([title, body]) => (
-        <li>
+        <li class="reveal">
           <b>{title}</b>
           <span>{body}</span>
         </li>
       ))}
     </ul>
-    <div class="warn">
+    <div class="warn reveal">
       <h3>{c.smartscreenTitle}</h3>
       <p set:html={c.smartscreen} />
       <p class="muted">
@@ -104,9 +143,9 @@ const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
 
 <section>
   <div class="wrap narrow">
-    <h2>{c.faqTitle}</h2>
+    <h2 class="reveal">{c.faqTitle}</h2>
     {c.faq.map(([q, a]) => (
-      <details class="faq">
+      <details class="faq reveal">
         <summary>{q}</summary>
         <p>{a}</p>
       </details>
@@ -116,76 +155,33 @@ const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
 
 <section class="final">
   <div class="wrap">
-    <h2>{c.ctaTitle}</h2>
-    <p class="lead">{c.ctaLead}</p>
-    <div class="btn-row">
-      <a class="btn" href={RELEASES} rel="noopener">{c.download}</a>
+    <div class="final-box reveal">
+      <h2>{c.ctaTitle}</h2>
+      <p class="lead">{c.ctaLead}</p>
+      <div class="btn-row">
+        <a class="btn btn-glow" href={RELEASES} rel="noopener">{c.download}</a>
+      </div>
     </div>
   </div>
 </section>
 
-<style>
-  .hero { padding: 76px 0 24px; }
-  .hero .lead { max-width: 60ch; }
-  .hero .btn-row { margin: 30px 0 14px; }
-
-  .sr-only {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+<script>
+  // Sections arrive as they are scrolled to. One observer, one class, and everything is
+  // already visible for anybody who asked for less motion (see .reveal in site.css).
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const targets = document.querySelectorAll('.reveal');
+  if (still) {
+    targets.forEach((el) => el.classList.add('shown'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en, i) => {
+        if (!en.isIntersecting) return;
+        // a short stagger inside one batch, so a row of cards does not land as one block
+        (en.target as HTMLElement).style.transitionDelay = `${Math.min(i, 5) * 60}ms`;
+        en.target.classList.add('shown');
+        io.unobserve(en.target);
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    targets.forEach((el) => io.observe(el));
   }
-
-  .shots { padding-top: 24px; }
-  .shot { margin: 0 0 16px; }
-  .shot img {
-    width: 100%; border-radius: var(--radius);
-    border: 1px solid var(--border);
-    /* the window in the picture is dark on a dark page, so it needs a shadow to sit
-       on the page rather than dissolve into it */
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-  }
-  .shot figcaption {
-    margin-top: 10px; color: var(--text-faint); font-size: 14px; max-width: 70ch;
-  }
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 800px) { .pair { grid-template-columns: 1fr; } }
-
-  .trust .lead { max-width: 66ch; }
-  .facts {
-    list-style: none; padding: 0; margin: 26px 0 0;
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 26px;
-  }
-  .facts li { display: flex; flex-direction: column; gap: 4px; }
-  .facts b { color: var(--text); }
-  .facts span { color: var(--text-dim); font-size: 15px; }
-
-  .warn {
-    margin-top: 34px; padding: 22px 24px;
-    border: 1px solid color-mix(in srgb, #fbbf24 34%, transparent);
-    background: color-mix(in srgb, #fbbf24 7%, transparent);
-    border-radius: var(--radius);
-  }
-  .warn h3 { margin-top: 0; font-size: 17px; }
-  .warn p { color: var(--text-dim); font-size: 15px; margin-bottom: 0; }
-  .warn p + p { margin-top: 10px; }
-
-  .narrow { max-width: 760px; }
-  .faq {
-    border-bottom: 1px solid var(--border);
-    padding: 4px 0;
-  }
-  .faq summary {
-    cursor: pointer; padding: 14px 0; font-weight: 600;
-    list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px;
-  }
-  .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after {
-    content: '+'; color: var(--text-faint); font-size: 20px; line-height: 1; flex: none;
-  }
-  .faq[open] summary::after { content: '\2212'; }
-  .faq summary:hover { color: var(--primary); }
-  .faq p { color: var(--text-dim); margin: 0 0 16px; max-width: 68ch; }
-
-  .final { text-align: center; padding-bottom: 20px; }
-  .final .lead { margin-inline: auto; }
-  .final .btn-row { justify-content: center; margin-top: 22px; }
-</style>
+</script>

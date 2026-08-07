@@ -12,11 +12,15 @@
  * eight of them, and a number that small argues against the thing it is meant to support.
  */
 export interface Landing {
+  heroKicker: string;
   heroTitle: string;
+  heroTitleAccent: string;
   heroLead: string;
   download: string;
   source: string;
   heroMeta: string;
+  stats: Array<[string, string]>;
+  latest: string;
 
   shotsTitle: string;
   shotCatalog: string;
@@ -41,11 +45,20 @@ export interface Landing {
 
 export const landing: Record<'en' | 'ru', Landing> = {
   en: {
-    heroTitle: 'Mods for Dota 2, without the file juggling',
-    heroLead: '1100+ skins, terrains, announcers and music in one catalog. The cosmetics your account already owns. Setups you can hand to a friend as a link.',
+    heroKicker: 'Free · open source · Windows',
+    heroTitle: 'DOTA 2 MOD',
+    heroTitleAccent: 'MANAGER',
+    heroLead: '1100+ mods in one place. One click to install, one to take back. Plus the cosmetics your account already owns and setups you can send as a link.',
     download: 'Download for Windows',
     source: 'Source code',
-    heroMeta: 'Windows 10/11 · free · open source · updates itself',
+    heroMeta: 'Windows 10/11 · no account · updates itself',
+    stats: [
+      ['1150', 'mods in the catalog'],
+      ['17,515', 'downloads'],
+      ['27', 'releases'],
+      ['100%', 'free'],
+    ],
+    latest: 'latest',
 
     shotsTitle: 'What it looks like',
     shotCatalog: 'The catalog: every mod in the community collection, sorted the way its authors sorted it.',
@@ -88,11 +101,20 @@ export const landing: Record<'en' | 'ru', Landing> = {
   },
 
   ru: {
-    heroTitle: 'Моды для Dota 2 без возни с файлами',
-    heroLead: '1100+ скинов, ландшафтов, комментаторов и музыки в одном каталоге. Косметика, которая у тебя и так есть. Сборки, которые отправляются другу одной ссылкой.',
+    heroKicker: 'Бесплатно · открытый код · Windows',
+    heroTitle: 'DOTA 2 MOD',
+    heroTitleAccent: 'MANAGER',
+    heroLead: '1100+ модов в одном месте. Один клик поставить, один - убрать. Плюс косметика, которая у тебя и так есть, и сборки, которые отправляются ссылкой.',
     download: 'Скачать для Windows',
     source: 'Исходный код',
-    heroMeta: 'Windows 10/11 · бесплатно · открытый код · обновляется само',
+    heroMeta: 'Windows 10/11 · без аккаунта · обновляется само',
+    stats: [
+      ['1150', 'модов в каталоге'],
+      ['17 515', 'скачиваний'],
+      ['27', 'релизов'],
+      ['100%', 'бесплатно'],
+    ],
+    latest: 'последняя',
 
     shotsTitle: 'Как это выглядит',
     shotCatalog: 'Каталог: всё, что есть в общей коллекции, в том порядке, в котором это разложили её авторы.',

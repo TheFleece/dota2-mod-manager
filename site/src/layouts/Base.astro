@@ -7,6 +7,8 @@
  * states its canonical address and both alternates, and x-default points at English.
  */
 import { langFromUrl, useTranslations, pathIn, type Lang } from '../i18n/ui';
+import Backdrop from '../components/Backdrop.astro';
+import Cursor from '../components/Cursor.astro';
 import '../styles/site.css';
 
 interface Props {
@@ -58,6 +60,8 @@ const RELEASES = `${GITHUB}/releases/latest`;
     <slot name="head" />
   </head>
   <body>
+    <Backdrop />
+    <Cursor />
     <a class="skip" href="#main">Skip to content</a>
 
     <header class="topbar">
