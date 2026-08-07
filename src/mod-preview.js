@@ -36,8 +36,26 @@ const CALL_TIMEOUT_MS = 60000;
 const MAX_SIDE = 320;
 
 /** Sources this module answers for, best first. Anything else is somebody else's key. */
+const VID = 'modvid:';
 const ART = 'modart:';
 const TEX = 'modtex:';
+
+// A mod that replaces a hero's animated portrait carries the best picture of itself there is:
+// the author's own showcase of the thing, in motion. Getting a still out of it needs a video
+// decoder, and the app is one - Electron carries ffmpeg inside, which is why no copy of it is
+// downloaded here. The decoding happens in the window (see renderer/ui/cosmetic-icons.js);
+// this file hands over the bytes and judges and keeps what comes back.
+const VIDEO_RANKS = [
+  [/^panorama\/videos\/heroes\/[^/]+\.webm$/, 100],
+  [/^panorama\/videos\/.+\.webm$/, 80],
+];
+// What crosses to the window in one piece. The hero portraits measured are 3.3 MB; anything
+// far past that is not a portrait and not worth the trip.
+const MAX_VIDEO_BYTES = 24 * 1024 * 1024;
+
+// What a mod's file is allowed to be called: "pak24_dir.vpk", "maps/dota.vpk". No walking up
+// out of the mod folder, no drive letters, no backslashes.
+const SAFE_REL = /^[A-Za-z0-9][A-Za-z0-9_.\-]*(\/[A-Za-z0-9][A-Za-z0-9_.\-]*)*$/;
 
 // Pictures drawn to be looked at, best first. The game draws each of these somewhere in its
 // own UI, so whatever the mod put there is what the mod wants shown.
@@ -62,12 +80,17 @@ function pickCandidate(paths, kind) {
   let best = null;
   let bestRank = 0;
   for (const p of paths) {
-    if (!p.endsWith('.vtex_c')) continue;
-    const rank = kind === 'art' ? artRank(p) : textureRank(p);
+    if (kind === 'video' ? !p.endsWith('.webm') : !p.endsWith('.vtex_c')) continue;
+    const rank = kind === 'video' ? videoRank(p) : kind === 'art' ? artRank(p) : textureRank(p);
     // ties go to the first one seen, so the same mod always yields the same picture
     if (rank > bestRank) { bestRank = rank; best = p; }
   }
   return best;
+}
+
+function videoRank(p) {
+  for (const [re, rank] of VIDEO_RANKS) if (re.test(p)) return rank;
+  return 0;
 }
 
 function artRank(p) {
@@ -164,6 +187,7 @@ function createModPreviews({ userDataDir, toolchain, langFileOf, images = null, 
   /** Does this key belong to us, and if so which mod and which kind of picture? */
   function parseKey(key) {
     if (typeof key !== 'string') return null;
+    if (key.startsWith(VID)) return { kind: 'video', relPath: key.slice(VID.length) };
     if (key.startsWith(ART)) return { kind: 'art', relPath: key.slice(ART.length) };
     if (key.startsWith(TEX)) return { kind: 'texture', relPath: key.slice(TEX.length) };
     return null;
@@ -175,6 +199,10 @@ function createModPreviews({ userDataDir, toolchain, langFileOf, images = null, 
    * picture instead of being decoded again.
    */
   function candidateFor({ kind, relPath }) {
+    // A key names a file in the mod folder and nothing else. Nothing but this window's own
+    // code builds these, but a key is still a string that turns into a path, and a string
+    // that turns into a path gets checked.
+    if (!SAFE_REL.test(relPath)) return null;
     let file;
     try { file = langFileOf(relPath); } catch { return null; }
     if (!file || !fs.existsSync(file)) return null;
@@ -248,7 +276,6 @@ function createModPreviews({ userDataDir, toolchain, langFileOf, images = null, 
    */
   async function getMany(keys) {
     const out = {};
-    if (!ready()) return out;
 
     const todo = new Map(); // cache path -> job (two keys can want the same picture)
     const asking = new Map(); // cache path -> keys waiting on it
@@ -259,6 +286,10 @@ function createModPreviews({ userDataDir, toolchain, langFileOf, images = null, 
       if (!job) continue;
       if (fs.existsSync(job.cache)) { out[key] = dataUri(job.cache); continue; }
       if (fs.existsSync(job.miss)) continue; // already looked, there was nothing
+      // a still out of a video is made in the window, not here: the caller comes back for
+      // the bytes and hands the frame over (see videoBytes / saveFrame)
+      if (parsed.kind === 'video') continue;
+      if (!ready()) continue; // the rest needs the toolchain, and it is not here
       if (!todo.has(job.cache)) { todo.set(job.cache, job); asking.set(job.cache, []); }
       asking.get(job.cache).push(key);
     }
@@ -281,6 +312,68 @@ function createModPreviews({ userDataDir, toolchain, langFileOf, images = null, 
     return out;
   }
 
+  /**
+   * Is there a clip here whose frame has not been taken yet? Asked for a whole screenful at
+   * once, so it only reads indexes - the bytes come later, and only for these.
+   */
+  function hasVideo(key) {
+    const parsed = parseKey(key);
+    if (!parsed || parsed.kind !== 'video') return false;
+    const job = candidateFor(parsed);
+    return !!job && !fs.existsSync(job.cache) && !fs.existsSync(job.miss);
+  }
+
+  /**
+   * The mod's own video, for the window to take a frame out of. Only ever asked for once
+   * per mod: whatever comes back from saveFrame settles the question for good.
+   * @returns {{ bytes: Buffer }|null}
+   */
+  function videoBytes(key) {
+    const parsed = parseKey(key);
+    if (!parsed || parsed.kind !== 'video') return null;
+    const job = candidateFor(parsed);
+    if (!job || fs.existsSync(job.cache) || fs.existsSync(job.miss)) return null;
+    let entry;
+    try { entry = readVpkEntryFile(job.file, job.inner); } catch (err) {
+      log(`mod preview: ${job.inner} not readable (${err.message || err})`);
+      return null;
+    }
+    if (!entry || !entry.data || !entry.data.length) return null;
+    if (entry.data.length > MAX_VIDEO_BYTES) {
+      fs.mkdirSync(root, { recursive: true });
+      fs.writeFileSync(job.miss, '');
+      return null;
+    }
+    return { bytes: entry.data };
+  }
+
+  /**
+   * Keep the frame the window decoded - if it is worth keeping. The same judgement the
+   * decoded textures go through, in the same place: a portrait that opens on a fade from
+   * black is a black square, and a black square is not a picture of anything.
+   * @param {string} key
+   * @param {Buffer} png
+   * @returns {string|null} the picture, or null if it was not worth keeping
+   */
+  function saveFrame(key, png) {
+    const parsed = parseKey(key);
+    if (!parsed || parsed.kind !== 'video' || !png || !png.length) return null;
+    const job = candidateFor(parsed);
+    if (!job) return null;
+    fs.mkdirSync(root, { recursive: true });
+    const tmp = path.join(root, `${path.basename(job.cache, '.png')}.frame`);
+    try {
+      fs.writeFileSync(tmp, png);
+      let bmp = null;
+      try { bmp = img.read(tmp); } catch { /* unreadable: nothing to show */ }
+      if (!bmp || !worthShowing(bmp)) { fs.writeFileSync(job.miss, ''); return null; }
+      fs.writeFileSync(job.cache, img.toSmallPng(bmp));
+      return dataUri(job.cache);
+    } finally {
+      fs.rmSync(tmp, { force: true });
+    }
+  }
+
   function size() {
     let bytes = 0;
     try { for (const f of fs.readdirSync(root)) bytes += fs.statSync(path.join(root, f)).size; } catch { /* nothing cached */ }
@@ -291,7 +384,7 @@ function createModPreviews({ userDataDir, toolchain, langFileOf, images = null, 
     fs.rmSync(root, { recursive: true, force: true });
   }
 
-  return { getMany, ready, size, clear, root, ART, TEX };
+  return { getMany, hasVideo, videoBytes, saveFrame, ready, size, clear, root, VID, ART, TEX };
 }
 
-module.exports = { createModPreviews, pickCandidate, worthShowing, ART, TEX };
+module.exports = { createModPreviews, pickCandidate, worthShowing, VID, ART, TEX };

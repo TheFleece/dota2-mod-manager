@@ -77,6 +77,11 @@ contextBridge.exposeInMainWorld('api', {
     icons: (names) => ipcRenderer.invoke('cosmetics:icons', names),
     pick: (slot, itemId, itemName) => ipcRenderer.invoke('cosmetics:pick', slot, itemId, itemName),
   },
+  // a mod's own video, and the still the window decodes out of it
+  preview: {
+    video: (key) => ipcRenderer.invoke('preview:video', key),
+    frame: (key, png) => ipcRenderer.invoke('preview:frame', key, png),
+  },
   game: {
     launch: () => ipcRenderer.invoke('game:launch'),
   },

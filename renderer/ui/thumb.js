@@ -66,14 +66,16 @@ function modFileRef(files) {
 /**
  * Every source that could picture this mod, best first, as one key for the tile.
  *
- * The order is the whole point and it lives here: art the mod's author drew (a portrait, the
- * selection screen, an item icon) beats the wiki's picture of the hero, because the wiki
- * shows the *vanilla* hero and this mod is what replaced him. A raw model texture loses to
- * the wiki instead - it is a UV layout and reads as a coloured smear.
+ * The order is the whole point and it lives here. A mod that replaces the hero's animated
+ * portrait wins outright: that clip is the author's own showcase of the thing. Then art they
+ * drew (the selection screen, an item icon), which still beats the wiki's picture of the
+ * hero, because the wiki shows the *vanilla* hero and this mod is what replaced him. A raw
+ * model texture loses to the wiki instead - it is a UV layout and reads as a coloured smear.
  */
 export function pictureChain(rec, fallbackKey) {
   const ref = modFileRef(rec.files);
-  return [ref && `modart:${ref}`, fallbackKey, ref && `modtex:${ref}`].filter(Boolean).join('|');
+  return [ref && `modvid:${ref}`, ref && `modart:${ref}`, fallbackKey, ref && `modtex:${ref}`]
+    .filter(Boolean).join('|');
 }
 
 // A tile for a fixed fallback key (a hero's portrait, a category's stand-in): whatever is

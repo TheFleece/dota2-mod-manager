@@ -94,6 +94,19 @@ test('a texture is the model\'s own colour, never the exporter\'s filler', () =>
   );
 });
 
+test('the hero\'s own animated portrait is the video worth taking a frame from', () => {
+  const withVideo = [
+    'panorama/videos/heroes/npc_dota_hero_wisp.webm',
+    'panorama/videos/misc/background_loop.webm',
+    'panorama/images/heroes/selection/npc_dota_hero_wisp_png.vtex_c',
+  ];
+  assert.equal(pickCandidate(withVideo, 'video'), 'panorama/videos/heroes/npc_dota_hero_wisp.webm');
+  // any panorama video will do when there is no portrait
+  assert.equal(pickCandidate(['panorama/videos/misc/background_loop.webm'], 'video'), 'panorama/videos/misc/background_loop.webm');
+  // and a mod with no video says so rather than offering a texture
+  assert.equal(pickCandidate(['panorama/images/heroes/selection/x_png.vtex_c'], 'video'), null);
+});
+
 test('a normal map is a pile of numbers, not a picture of anything', () => {
   // caught in the sandbox: a tree mod carries its colour art and its normal map side by side
   // under the same name, the normal map came first in the tree, and the mod ended up with no
@@ -216,6 +229,71 @@ test('a mod already known to have nothing is not looked at twice', async (t) => 
 
   // the marker answers instead of the decoder, which is not on disk and would have thrown
   assert.deepEqual(await previews.getMany(['modtex:pak54_dir.vpk']), {});
+});
+
+test('a video is handed to the window without the toolchain being involved', async (t) => {
+  // this is the whole point of doing it in the window: the app carries a video decoder
+  // already, so a mod's own clip works on a machine that never downloaded anything
+  const dir = userDir(t);
+  const lang = path.join(dir, 'lang');
+  fs.mkdirSync(lang, { recursive: true });
+  const inner = 'panorama/videos/heroes/npc_dota_hero_wisp.webm';
+  const body = 'pretend webm bytes';
+  fs.writeFileSync(path.join(lang, 'pak24_dir.vpk'), vpk.buildVpk([entry(inner, body)]));
+
+  const previews = createModPreviews({
+    userDataDir: dir, toolchain: noTool, langFileOf: (rel) => path.join(lang, rel), images: {},
+  });
+  assert.equal(previews.ready(), false, 'no toolchain here');
+  const got = previews.videoBytes('modvid:pak24_dir.vpk');
+  assert.equal(got.bytes.toString(), body);
+  // and a mod without a video is not offered as one
+  assert.equal(previews.videoBytes('modart:pak24_dir.vpk'), null, 'only the video key answers');
+});
+
+test('a frame is kept only if it is worth looking at', async (t) => {
+  const dir = userDir(t);
+  const lang = path.join(dir, 'lang');
+  fs.mkdirSync(lang, { recursive: true });
+  const inner = 'panorama/videos/heroes/npc_dota_hero_wisp.webm';
+  fs.writeFileSync(path.join(lang, 'pak24_dir.vpk'), vpk.buildVpk([entry(inner, 'pretend webm')]));
+
+  // stands in for the window's decoder: the first frame is black, the second has a picture
+  let next = { width: 256, height: 256, data: Buffer.alloc(256 * 256 * 4, 0) };
+  const images = { read: () => next, toSmallPng: () => Buffer.from('small png') };
+  const previews = createModPreviews({
+    userDataDir: dir, toolchain: noTool, langFileOf: (rel) => path.join(lang, rel), images,
+  });
+
+  const key = 'modvid:pak24_dir.vpk';
+  assert.equal(previews.saveFrame(key, Buffer.from('black frame')), null, 'a fade from black is not a picture');
+  assert.equal(previews.videoBytes(key), null, 'and the mod is not asked for again');
+
+  // a mod whose frame did land keeps it, and it is what getMany answers with from then on
+  previews.clear();
+  next = bitmap(256, 256, (x, y) => [x % 256, y % 256, 90, 255]);
+  assert.match(previews.saveFrame(key, Buffer.from('a real frame')), /^data:image\/png;base64,/);
+  assert.match((await previews.getMany([key]))[key], /^data:image\/png;base64,/);
+});
+
+test('a key is a file in the mod folder and cannot point anywhere else', async (t) => {
+  const dir = userDir(t);
+  let asked = null;
+  const previews = createModPreviews({
+    userDataDir: dir,
+    toolchain: withTool('C:/nowhere/tool.exe'),
+    langFileOf: (rel) => { asked = rel; return path.join(dir, rel); },
+    images: {},
+  });
+  for (const bad of ['../../../windows/win.ini', '..\\secrets.txt', 'C:/windows/win.ini', '/etc/passwd']) {
+    assert.deepEqual(await previews.getMany([`modart:${bad}`]), {});
+    assert.equal(previews.videoBytes(`modvid:${bad}`), null);
+  }
+  assert.equal(asked, null, 'nothing that shaped ever became a path');
+  // and the shapes a mod really has still work
+  fs.mkdirSync(path.join(dir, 'maps'), { recursive: true });
+  await previews.getMany(['modart:pak24_dir.vpk', 'modart:maps/dota.vpk']);
+  assert.ok(asked, 'a real relative path is looked up');
 });
 
 test('a mod whose file is gone is a miss, not a crash', async (t) => {

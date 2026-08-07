@@ -1642,7 +1642,7 @@ function registerIpc() {
     const chains = new Map(wanted.map((n) => [n, String(n).split('|').filter(Boolean)]));
     const sources = [...new Set([...chains.values()].flat())];
 
-    const isMod = (s) => s.startsWith(modPreviews.ART) || s.startsWith(modPreviews.TEX);
+    const isMod = (s) => s.startsWith(modPreviews.VID) || s.startsWith(modPreviews.ART) || s.startsWith(modPreviews.TEX);
     const found = {};
     try {
       Object.assign(found, await modPreviews.getMany(sources.filter(isMod)));
@@ -1661,12 +1661,43 @@ function registerIpc() {
       Object.assign(found, left.length ? await icons.getMany(left) : {}, fromGame);
     }
 
-    const out = {};
+    const pictures = {};
     for (const [key, chain] of chains) {
       const hit = chain.find((s) => found[s]);
-      if (hit) out[key] = found[hit];
+      if (hit) pictures[key] = found[hit];
     }
-    return out;
+    // A clip beats everything else a mod can be pictured by, but only the window can open
+    // one. So the answer also says where a frame is still worth taking: the tile shows
+    // whatever was found meanwhile, and swaps it for the frame when that arrives.
+    const decode = new Set();
+    for (const [, chain] of chains) {
+      const clip = chain.find((s) => s.startsWith(modPreviews.VID));
+      if (clip && !found[clip] && modPreviews.hasVideo(clip)) decode.add(clip);
+    }
+    return { pictures, decode: [...decode] };
+  });
+
+  // A mod that replaces a hero's animated portrait carries its own showcase, and a still out
+  // of it is the best picture of that mod there is. Decoding video is the window's job - the
+  // app is a browser and already has the decoder - so the bytes go there and the frame comes
+  // back to be judged and kept. That is why no ffmpeg is downloaded for this.
+  ipcMain.handle('preview:video', (e, key) => {
+    try {
+      const got = modPreviews.videoBytes(String(key || ''));
+      return got ? got.bytes : null;
+    } catch (err) {
+      diag('mod preview video failed: ' + err.message);
+      return null;
+    }
+  });
+
+  ipcMain.handle('preview:frame', (e, key, png) => {
+    try {
+      return modPreviews.saveFrame(String(key || ''), Buffer.from(png || []));
+    } catch (err) {
+      diag('mod preview frame failed: ' + err.message);
+      return null;
+    }
   });
 
   // ----- the Source 2 toolchain (Settings shows this) -----
