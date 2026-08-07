@@ -462,6 +462,8 @@ const EN = {
   '«{0}» принят': '«{0}» adopted',
   'Загружать раньше': 'Load earlier',
   'Сохранить одним файлом': 'Save as one file',
+  'Распаковать в папку': 'Unpack into a folder',
+  '«{0}»: распакован, файлов — {1} ({2} MB)': '“{0}” unpacked: {1} files ({2} MB)',
   'Сохранить курсор архивом': 'Save the cursor as an archive',
   'Разобрать по героям': 'Split by hero',
   'Разбить на отдельные моды по героям': 'Split into one mod per hero',

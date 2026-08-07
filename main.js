@@ -1408,6 +1408,27 @@ function registerIpc() {
     }
   });
 
+  // The other half of "pack a folder": hand the author back the files themselves, so a mod
+  // can be opened, changed and dropped in again without any other tool.
+  ipcMain.handle('mods:unpackToFolder', async (e, id) => {
+    const rec = library.find(id);
+    if (!rec) return { error: t('Мод не найден') };
+    try {
+      const res = await dialog.showOpenDialog(win, {
+        title: t('Куда распаковать мод'),
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      if (res.canceled || !res.filePaths.length) return { cancelled: true };
+      const safe = rec.name.replace(/[<>:"/\\|?*]/g, '_') || 'mod';
+      const dest = path.join(res.filePaths[0], safe);
+      fs.mkdirSync(dest, { recursive: true });
+      const out = installer.unpackToFolder(rec, dest);
+      return { ok: true, path: dest, ...out };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
   ipcMain.handle('mods:importDialog', async () => {
     const res = await dialog.showOpenDialog(win, {
       title: t('Выбери .vpk файлы модов или .zip с ними'),

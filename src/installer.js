@@ -5,7 +5,8 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles,
+  findContentRoot, packFolder } = require('./vpk');
 const { extractDeltas, deltaTable, crc32 } = require('./schema');
 // Whole-game tables and tool branding that packaging tools bake into EVERY export.
 // Dota 2 Skinchanger, for one, ships a full 47 MB scripts/items/items_game.txt plus the
@@ -880,8 +881,18 @@ class Installer {
 
       if (st && st.isDirectory()) {
         const found = this.scanVpkTree(src);
-        if (found.length) files.push(...found);
-        else errors.push({ source: label, error: t('в папке нет .vpk файлов') });
+        if (found.length) { files.push(...found); continue; }
+        // No archive in there, so this may be the other thing a folder can be: a mod that
+        // has not been packed yet. Authors work in loose files and had nothing to point the
+        // app at; now the folder is packed on the way in and imported like any other mod.
+        try {
+          const built = this.stageFolderAsVpk(src, staged);
+          if (built) { files.push(built); continue; }
+        } catch (err) {
+          errors.push({ source: label, error: String(err.message || err) });
+          continue;
+        }
+        errors.push({ source: label, error: t('в папке нет ни .vpk, ни файлов игры') });
         continue;
       }
       if (/\.zip$/i.test(src)) {
@@ -907,6 +918,55 @@ class Installer {
       files.push(src);
     }
     return { files, errors };
+  }
+
+  /**
+   * The inverse of packing a folder: write a mod's own files out as a tree, so the author
+   * who wants to change one texture can open it, edit it, and drop the folder back in.
+   * Multi-volume sets are followed, exactly as exporting to one file does.
+   * @returns {{ files: number, bytes: number }}
+   */
+  unpackToFolder(rec, dest) {
+    const lang = this.langFolder();
+    const dirRec = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+    if (!dirRec) throw new Error(t('У этого мода нет _dir.vpk — распаковывать нечего'));
+    const dirAbs = this.langFileOnDisk(dirRec.relPath);
+    const base = dirRec.relPath.replace(/_dir\.vpk$/i, '');
+    const archivePathFor = (idx) => this.langFileOnDisk(`${base}_${String(idx).padStart(3, '0')}.vpk`);
+    const entries = readVpkEntries(fs.readFileSync(dirAbs), dirAbs, archivePathFor);
+
+    let bytes = 0;
+    for (const en of entries) {
+      const rel = entryPath(en);
+      // the archive names the file, so the archive could name a path outside the folder;
+      // safeJoin is the same guard foreign zips go through (see src/safe-zip.js)
+      const out = safeJoin(dest, rel);
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      const data = en.data.length ? en.data : en.preload;
+      fs.writeFileSync(out, data);
+      bytes += data.length;
+    }
+    return { files: entries.length, bytes };
+  }
+
+  /**
+   * Pack an author's working folder into a VPK and park it where the normal importer will
+   * find it. Staged rather than installed directly, so a folder goes through exactly the
+   * same path a dropped .vpk does - slot allocation, the schema a mod carries, the
+   * transaction, the naming.
+   * @returns {string|null} path of the staged archive, or null if the folder holds no game files
+   */
+  stageFolderAsVpk(dir, staged) {
+    const root = findContentRoot(dir);
+    if (!root) return null;
+    const buf = packFolder(root);
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-folder-'));
+    staged.push(tmp);
+    // the folder's own name becomes the mod's name, minus anything a file name cannot hold
+    const base = (path.basename(dir).replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim() || 'mod').slice(0, 60);
+    const dest = path.join(tmp, `${base}_dir.vpk`);
+    fs.writeFileSync(dest, buf);
+    return dest;
   }
 
   // A VPK mod is either one self-contained "<base>_dir.vpk", or a multi-volume set:

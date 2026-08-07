@@ -198,7 +198,8 @@ function normalRowHtml(rec, i, masterOff) {
  * the app thinks are in conflict - which files actually cover which is a call for the person
  * looking at the game (see the note on orderBtnsHtml). */
 function rowMenuItems(rec) {
-  const exportable = isCursorRec(rec) || rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+  const langDir = rec.files.some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+  const exportable = isCursorRec(rec) || langDir;
   const ordered = rec.slotIndex != null;
   return [
     ordered && {
@@ -214,6 +215,7 @@ function rowMenuItems(rec) {
       label: isCursorRec(rec) ? L`Сохранить курсор архивом` : L`Сохранить одним файлом`,
       icon: 'save', onPick: () => exportRecord(rec.id),
     },
+    langDir && { label: L`Распаковать в папку`, icon: 'folder_open', onPick: () => unpackRecord(rec.id) },
     rec.subjects >= 2 && { label: L`Разобрать по героям`, icon: 'call_split', onPick: () => splitRecord(rec.id) },
     { separator: true },
     { label: L`Удалить`, icon: 'delete', danger: true, onPick: () => deleteRecord(rec.id) },
@@ -239,6 +241,17 @@ async function exportRecord(id) {
   const r = await window.api.mods.exportSingle(id);
   if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
   else if (r.ok) toast(L`${rec.name} сохранён одним файлом (${fmtMB(r.size)} MB)`, 'ok', 6000);
+}
+
+/* Hand the mod's own files back as a tree. The pair to dropping a folder in: a mod can be
+ * opened, one texture changed, and the folder dropped back without any other tool. */
+async function unpackRecord(id) {
+  const rec = recById(id);
+  if (!rec) return;
+  const r = await window.api.mods.unpackToFolder(id);
+  if (r.cancelled) return;
+  if (r.error) toast(`${rec.name}: ${r.error}`, 'error', 6000);
+  else if (r.ok) toast(L`«${rec.name}»: распакован, файлов — ${r.files} (${fmtMB(r.bytes)} MB)`, 'ok', 6000);
 }
 
 async function splitRecord(id) {
