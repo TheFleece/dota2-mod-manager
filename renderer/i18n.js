@@ -503,12 +503,12 @@ const EN = {
   // ---------- notices from the network ----------
   'Подробнее': 'Read more',
 
-  // ---------- item pictures out of the game (the Source 2 toolchain) ----------
-  'Иконки из игры': 'Pictures from the game',
+  // ---------- pictures out of the game and out of the mods (the Source 2 toolchain) ----------
+  'Картинки из игры и модов': 'Pictures from the game and from mods',
   'Инструмент установлен': 'Tool installed',
   'Инструмент не скачан': 'Tool not downloaded',
-  'Картинки предметов берутся из самой игры: точные, без интернета и без ожидания. Без инструмента они грузятся из вики — медленнее и не для всего есть. Удалить можно в любой момент.':
-    'Item pictures come out of the game itself: exact, offline, no waiting. Without the tool they load from a wiki, which is slower and does not cover everything. You can delete it at any time.',
+  'Картинки предметов приложение берёт из самой игры: точные, без интернета и без ожидания. А моду, который приехал без превью, находит картинку в его же файлах. Без инструмента предметы грузятся из вики (медленнее и есть не для всего), а моды остаются с заглушкой. Удалить можно в любой момент.':
+    'Item pictures come out of the game itself: exact, offline, no waiting. For a mod that arrived without a preview, the app finds a picture inside the mod\'s own files. Without the tool, items load from a wiki (slower, and it does not cover everything) and mods keep their placeholder. You can delete it at any time.',
   'Скачиваю инструмент — это разово': 'Downloading the tool, once and for all',
   'Готово — картинки теперь берутся из игры': 'Done, pictures now come from the game',
   'Инструмент удалён — картинки снова из вики': 'Tool removed, pictures come from the wiki again',

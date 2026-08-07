@@ -57,24 +57,50 @@ export function wikiFallbackKey(rec) {
     : { key: 'generic:pack', icon: 'auto_awesome' };
 }
 
+// The mod's own *_dir.vpk, which is what a picture can be taken out of (see src/mod-preview.js).
+function modFileRef(files) {
+  const f = (files || []).find((x) => x.root === 'lang' && /_dir\.vpk$/i.test(x.relPath));
+  return f ? f.relPath : null;
+}
+
+/**
+ * Every source that could picture this mod, best first, as one key for the tile.
+ *
+ * The order is the whole point and it lives here: art the mod's author drew (a portrait, the
+ * selection screen, an item icon) beats the wiki's picture of the hero, because the wiki
+ * shows the *vanilla* hero and this mod is what replaced him. A raw model texture loses to
+ * the wiki instead - it is a UV layout and reads as a coloured smear.
+ */
+export function pictureChain(rec, fallbackKey) {
+  const ref = modFileRef(rec.files);
+  return [ref && `modart:${ref}`, fallbackKey, ref && `modtex:${ref}`].filter(Boolean).join('|');
+}
+
 // A tile for a fixed fallback key (a hero's portrait, a category's stand-in): whatever is
 // already known client-side, or a placeholder icon with the data-name the list's own
 // IntersectionObserver picks up for free (see watchCosmeticIcons) once it scrolls into view.
+// A null icon means "wait empty" - for a mod with nothing to stand in for it, where a glyph
+// would be a new thing on screen rather than a picture arriving.
 export function fallbackThumbHtml(key, icon, cls) {
+  const glyph = icon ? `<span class="ms thumb-glyph">${icon}</span>` : '';
   if (cosmeticIconKnown(key)) {
     const cached = cosmeticIcon(key);
-    return cached ? `<img class="${cls}" src="${esc(cached)}" loading="lazy" alt="">` : `<div class="${cls}"></div>`;
+    // a lookup that came back with nothing leaves the tile as it was before it was asked:
+    // redrawing the list must not turn a mod with no picture into an empty box
+    return cached ? `<img class="${cls}" src="${esc(cached)}" loading="lazy" alt="">` : `<div class="${cls}">${glyph}</div>`;
   }
-  return `<div class="${cls}" data-name="${esc(key)}"><span class="ms thumb-glyph">${icon}</span></div>`;
+  return `<div class="${cls}" data-name="${esc(key)}">${glyph}</div>`;
 }
 
-// thumbHtml, with the wiki-picture fallback layered on for a record with no picture of its
-// own or the catalog's.
+// thumbHtml, with the mod's own picture and the wiki one layered on for a record with
+// neither a preview of its own nor the catalog's.
 export function libThumbHtml(rec, cls) {
   const url = recPreviewUrl(rec);
   if (url) return thumbHtml(cls, url);
   const fb = wikiFallbackKey(rec);
-  return fb ? fallbackThumbHtml(fb.key, fb.icon, cls) : `<div class="${cls}"></div>`;
+  const chain = pictureChain(rec, fb && fb.key);
+  if (!chain) return `<div class="${cls}"></div>`;
+  return fallbackThumbHtml(chain, fb && fb.icon, cls);
 }
 
 // A foreign file's tile, from the same sources a library row uses: the catalog's picture
@@ -88,9 +114,12 @@ export function extThumbHtml(f) {
   const cp = catalogPreviewFor(f.match);
   if (cp) return thumbHtml(cls, previewUrl(f.match[0].categoryId, cp));
   const heroes = f.heroNames || [];
-  if (heroes.length === 1) return fallbackThumbHtml('hero:' + heroes[0], 'person', cls);
-  if (heroes.length > 1) return fallbackThumbHtml('generic:pack', 'auto_awesome', cls);
-  return `<div class="${cls}"><span class="ms thumb-glyph">folder_zip</span></div>`;
+  const fb = heroes.length === 1 ? { key: 'hero:' + heroes[0], icon: 'person' }
+    : heroes.length > 1 ? { key: 'generic:pack', icon: 'auto_awesome' }
+      : { key: null, icon: 'folder_zip' };
+  const chain = pictureChain(f, fb.key);
+  if (!chain) return `<div class="${cls}"><span class="ms thumb-glyph">${fb.icon}</span></div>`;
+  return fallbackThumbHtml(chain, fb.icon, cls);
 }
 
 // catalog thumbnail for a fingerprint match, resolved from the loaded catalog index

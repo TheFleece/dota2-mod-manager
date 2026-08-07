@@ -116,7 +116,7 @@ export async function renderSettings() {
 
     ${vrf ? `
     <div class="settings-block" style="--i:4">
-      <h3>${L`Иконки из игры`}</h3>
+      <h3>${L`Картинки из игры и модов`}</h3>
       <div class="settings-row">
         <span class="settings-label">${vrf.ready ? L`Инструмент установлен` : L`Инструмент не скачан`}</span>
         <span class="num">${vrf.ready ? `${fmtMB(vrf.installedBytes)} MB` : `${fmtMB(vrf.downloadBytes)} MB`}</span>
@@ -124,7 +124,7 @@ export async function renderSettings() {
     ? `<button class="btn btn-sm" id="toolRemoveBtn">${L`Удалить`}</button>`
     : `<button class="btn btn-sm btn-primary" id="toolInstallBtn"><span class="ms">download</span>${L`Скачать`}</button>`}
       </div>
-      <div class="settings-hint">${L`Картинки предметов берутся из самой игры: точные, без интернета и без ожидания. Без инструмента они грузятся из вики — медленнее и не для всего есть. Удалить можно в любой момент.`}</div>
+      <div class="settings-hint">${L`Картинки предметов приложение берёт из самой игры: точные, без интернета и без ожидания. А моду, который приехал без превью, находит картинку в его же файлах. Без инструмента предметы грузятся из вики (медленнее и есть не для всего), а моды остаются с заглушкой. Удалить можно в любой момент.`}</div>
     </div>` : ''}
 
     <div class="settings-block" style="--i:4">

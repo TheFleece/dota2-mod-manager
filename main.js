@@ -24,6 +24,7 @@ const { createSchemaService } = require('./src/schema-service');
 const { createRemoteConfig } = require('./src/remote-config');
 const { createToolchain } = require('./src/toolchain');
 const { createGameIcons } = require('./src/game-icons');
+const { createModPreviews } = require('./src/mod-preview');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport } = require('./src/diagnostics');
@@ -33,7 +34,7 @@ const { t } = i18n;
 
 let win;
 let settings, catalog, installer, library, fingerprints, presence, schemaService, icons, remoteConfig;
-let toolchain, gameIcons;
+let toolchain, gameIcons, modPreviews;
 let presenceView = 'catalog';
 // The one folder mods are installed into. Dota mounts the folder named by its audio
 // language, so the app sets that language rather than offering a choice of folders
@@ -287,6 +288,13 @@ app.whenReady().then(async () => {
     userDataDir: userData,
     toolchain,
     getGamePath: () => settings.get('dotaGamePath'),
+    log: diag,
+  });
+  // ...and the same toolchain gives a mod that came with no picture one out of itself
+  modPreviews = createModPreviews({
+    userDataDir: userData,
+    toolchain,
+    langFileOf: (relPath) => installer.langFileOnDisk(relPath),
     log: diag,
   });
 
@@ -1581,24 +1589,50 @@ function registerIpc() {
   // courier Valve ships later appears in the list without an app update.
   ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
 
-  // One picture per request, so opening a slot with 2000 items costs only what is on screen.
-  // The game's own pictures when the toolchain is here (exact, offline, no rate limit), the
-  // wiki for whatever is left. Both answer in the same shape, so the picker never knows.
+  // One picture per tile, so opening a slot with 2000 items costs only what is on screen.
+  //
+  // A tile asks with a chain of sources, best first ("modart:pak54_dir.vpk|hero:Brewmaster"),
+  // and gets back the first one that has a picture. That is how "the mod's own art beats the
+  // wiki's portrait of the vanilla hero, but a raw model texture does not" stays written down
+  // in one place - renderer/ui/thumb.js, which composes the chain - instead of being spread
+  // across three. A plain name is simply a chain of one, which is what the picker sends.
+  //
+  // Sources: the mod's own files and the game's own pictures when the toolchain is here
+  // (exact, offline, no rate limit), the wiki for whatever is left.
   ipcMain.handle('cosmetics:icons', async (e, names) => {
     const wanted = (Array.isArray(names) ? names : []).slice(0, 60);
-    let fromGame = {};
+    const chains = new Map(wanted.map((n) => [n, String(n).split('|').filter(Boolean)]));
+    const sources = [...new Set([...chains.values()].flat())];
+
+    const isMod = (s) => s.startsWith(modPreviews.ART) || s.startsWith(modPreviews.TEX);
+    const found = {};
     try {
-      fromGame = await gameIcons.getMany(wanted);
+      Object.assign(found, await modPreviews.getMany(sources.filter(isMod)));
     } catch (err) {
-      diag('game icons failed, falling back to the wiki: ' + err.message);
+      diag('mod previews failed, falling back to the usual pictures: ' + err.message);
     }
-    const left = wanted.filter((n) => !fromGame[n]);
-    if (!left.length) return fromGame;
-    return { ...(await icons.getMany(left)), ...fromGame };
+    const forIcons = sources.filter((s) => !isMod(s) && !found[s]);
+    if (forIcons.length) {
+      let fromGame = {};
+      try {
+        fromGame = await gameIcons.getMany(forIcons);
+      } catch (err) {
+        diag('game icons failed, falling back to the wiki: ' + err.message);
+      }
+      const left = forIcons.filter((n) => !fromGame[n]);
+      Object.assign(found, left.length ? await icons.getMany(left) : {}, fromGame);
+    }
+
+    const out = {};
+    for (const [key, chain] of chains) {
+      const hit = chain.find((s) => found[s]);
+      if (hit) out[key] = found[hit];
+    }
+    return out;
   });
 
   // ----- the Source 2 toolchain (Settings shows this) -----
-  ipcMain.handle('tools:state', () => ({ tools: toolchain.state(), iconCacheBytes: gameIcons.size() }));
+  ipcMain.handle('tools:state', () => ({ tools: toolchain.state(), iconCacheBytes: gameIcons.size() + modPreviews.size() }));
 
   ipcMain.handle('tools:install', async (e, name) => {
     try {
@@ -1611,7 +1645,9 @@ function registerIpc() {
 
   ipcMain.handle('tools:remove', (e, name) => {
     toolchain.remove(String(name || 'vrf'));
-    gameIcons.clear(); // the pictures it produced are only reachable through it
+    // the pictures it produced are only reachable through it
+    gameIcons.clear();
+    modPreviews.clear();
     return { ok: true, tools: toolchain.state() };
   });
 
