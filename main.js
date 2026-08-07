@@ -25,6 +25,7 @@ const { createRemoteConfig } = require('./src/remote-config');
 const { createToolchain } = require('./src/toolchain');
 const { createGameIcons } = require('./src/game-icons');
 const { createModPreviews } = require('./src/mod-preview');
+const { createModIdentity } = require('./src/mod-id');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport } = require('./src/diagnostics');
@@ -34,7 +35,7 @@ const { t } = i18n;
 
 let win;
 let settings, catalog, installer, library, fingerprints, presence, schemaService, icons, remoteConfig;
-let toolchain, gameIcons, modPreviews;
+let toolchain, gameIcons, modPreviews, modId;
 let presenceView = 'catalog';
 // The one folder mods are installed into. Dota mounts the folder named by its audio
 // language, so the app sets that language rather than offering a choice of folders
@@ -268,11 +269,13 @@ app.whenReady().then(async () => {
   library = new Library(userData);
   fingerprints = new Fingerprints(userData);
   fingerprints.refresh(); // fire-and-forget: pull the latest fp -> mod map
+  modId = createModIdentity({ getGamePath: () => settings.get('dotaGamePath'), log: diag });
   installer = new Installer({
     userDataDir: userData,
     getGamePath: () => settings.get('dotaGamePath'),
     getLangSuffix: () => settings.get('langSuffix'),
     onProgress: sendProgress,
+    identify: (paths) => modId.identify(paths),
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
   schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });

@@ -114,6 +114,30 @@ test('analysis of an empty path list says so instead of guessing a hero', () => 
   assert.equal(analysis.pathCount, 0);
 });
 
+test('a hero whose folder only lent a texture is not what the mod is about', () => {
+  // Real shape, from a set that dresses Grimstroke alone: authors borrow generic lookup
+  // textures (fresnel warps, colourwarps, detail masks) out of other heroes' folders, and
+  // counting each of those as a hero announced the set as a bundle of eight. Measured over
+  // 84 installed mods: 12 heroes invented across 5 of them.
+  const analysis = vpk.analyzeVpkPaths([
+    'models/items/grimstroke/gs_armor/gs_armor.vmdl_c',
+    'materials/models/heroes/mars/mars_volume_smoke_normal_png_b0f6b990.vtex_c',
+    'materials/models/heroes/puck/puck_colorwarp3d_z002_tga_d0a36816.vtex_c',
+  ]);
+  assert.equal(analysis.heroes.length, 3, 'all three are still seen');
+  assert.equal(vpk.nameFromAnalysis(analysis), 'Grimstroke', 'only the one it carries a model for names it');
+  assert.equal(vpk.describeAnalysis(analysis).includes('Mars'), false);
+  assert.deepEqual(vpk.subjectHeroes(analysis).map((h) => h.id), ['grimstroke']);
+});
+
+test('a mod that carries no models at all is still named by what it recolours', () => {
+  // a plain retexture owns no model, so there is no better answer than the hero it paints
+  const analysis = vpk.analyzeVpkPaths([
+    'materials/models/heroes/brewmaster/brewmaster_armor_color_psd_f3d0b44a.vtex_c',
+  ]);
+  assert.equal(vpk.nameFromAnalysis(analysis), 'Brewmaster');
+});
+
 test('folders the game uses for non-hero content are not read as heroes', () => {
   // "models/heroes/announcer/..." and friends are content buckets, not heroes; treating them
   // as one would put an announcer pack under a hero name in the library.

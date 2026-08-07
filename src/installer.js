@@ -5,7 +5,7 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles } = require('./vpk');
 const { extractDeltas, deltaTable, crc32 } = require('./schema');
 // Whole-game tables and tool branding that packaging tools bake into EVERY export.
 // Dota 2 Skinchanger, for one, ships a full 47 MB scripts/items/items_game.txt plus the
@@ -70,7 +70,7 @@ class Installer {
    * @param {() => string} opts.getLangSuffix      e.g. "123"
    * @param {(evt: object) => void} opts.onProgress
    */
-  constructor({ userDataDir, getGamePath, getLangSuffix, onProgress }) {
+  constructor({ userDataDir, getGamePath, getLangSuffix, onProgress, identify = null }) {
     this.downloadsDir = path.join(userDataDir, 'downloads');
     this.toolsDir = path.join(userDataDir, 'tools');
     this.backupsDir = path.join(userDataDir, 'backups');
@@ -84,6 +84,32 @@ class Installer {
     this.getGamePath = getGamePath;
     this.getLangSuffix = getLangSuffix;
     this.onProgress = onProgress || (() => {});
+    // asks the game which of its own items a path list replaces (src/mod-id.js); optional,
+    // because without a game path there is nothing to ask and the path guess still answers
+    this.identify = identify || (() => null);
+  }
+
+  /**
+   * What a path list is, told as precisely as this machine allows: the game's own item names
+   * when it recognises them, the guess from the paths otherwise. The two are merged rather
+   * than one replacing the other - a mod can dress a hero in named items AND replace another
+   * hero's bare body, and only the guess sees the second.
+   */
+  describePaths(paths, analysis) {
+    const out = { info: describeAnalysis(analysis), heroNames: analysis.heroes.map((h) => h.name) };
+    let named = null;
+    try { named = this.identify(paths); } catch { /* no game, no table: the guess stands */ }
+    if (!named) return out;
+    out.items = named.items;
+    // the table is the authority on who wears what, so a hero it never mentions and the mod
+    // carries no model for was a borrowed texture, not a subject
+    const carried = new Set(subjectHeroes(analysis).map((h) => h.name));
+    for (const h of named.heroNames) carried.add(h);
+    out.heroNames = [...carried];
+    out.info = named.items.length <= 3
+      ? named.items.join(', ')
+      : `${named.items.slice(0, 2).join(', ')} +${named.items.length - 2}`;
+    return out;
   }
 
   langFolder() {
@@ -1045,15 +1071,19 @@ class Installer {
     if (!dir) return null;
     try {
       const buf = readVpkIndexFile(this.langFileOnDisk(dir.relPath));
-      const a = analyzeVpkPaths(listVpkPaths(buf));
+      const paths = listVpkPaths(buf);
+      const a = analyzeVpkPaths(paths);
+      const told = this.describePaths(paths, a);
       return {
-        info: describeAnalysis(a), heroes: a.heroes.length,
+        info: told.info, heroes: a.heroes.length,
         // heroes the file carries actual models for — the ones it could be split into.
         // Every hero it merely mentions counts for the summary, not for splitting.
         subjects: a.heroes.filter((h) => h.models > 0).length,
+        // the game's own names for what this replaces, when it recognises any of it
+        items: told.items,
         // which hero(es) the content is for, by display name - lets the renderer show a
         // hero's own portrait as a stand-in for an import with no picture of its own
-        heroNames: a.heroes.map((h) => h.name),
+        heroNames: told.heroNames,
         fp: fingerprintVpk(buf),
       };
     } catch { return null; }
@@ -1252,11 +1282,14 @@ class Installer {
     for (const part of this.siblingParts(base)) item.files.push({ root: 'lang', relPath: part });
     try {
       const buf = readVpkIndexFile(abs);
-      const a = analyzeVpkPaths(listVpkPaths(buf));
-      item.info = describeAnalysis(a);
+      const paths = listVpkPaths(buf);
+      const a = analyzeVpkPaths(paths);
+      const told = this.describePaths(paths, a);
+      item.info = told.info;
       item.heroes = a.heroes.length;
       item.subjects = a.heroes.filter((h) => h.models > 0).length;
-      item.heroNames = a.heroes.map((h) => h.name);
+      item.items = told.items;
+      item.heroNames = told.heroNames;
       item.kindTag = a.kind;
       item.fp = fingerprintVpk(buf);
       // a content name ("Juggernaut", "Ландшафт") instead of the slot the file happens

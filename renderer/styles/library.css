@@ -37,6 +37,12 @@
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 999px;
+  /* the tag says what the mod replaces, and a set can replace thirty named items:
+     it gives way to the mod's own name rather than pushing the row wider */
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--primary-soft);
   background: color-mix(in srgb, var(--md-primary) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--md-primary) 28%, transparent);

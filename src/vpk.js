@@ -387,9 +387,27 @@ function describeHero(h) {
 
 const KIND_LABEL = { wards: 'варды', courier: 'курьер', ui: 'интерфейс', sounds: 'звуки', terrain: 'террейн', other: '' };
 
+/**
+ * The heroes a mod is actually about, as opposed to the ones it merely touches.
+ *
+ * A hero's folder is also where authors borrow generic lookup textures from - fresnel warps,
+ * colourwarps, detail masks - and one borrowed file used to count as a whole hero. That is
+ * how a set that dresses Grimstroke alone announced itself as a bundle of eight heroes, and
+ * how a Dazzle skin claimed to also change Bane and Slardar (measured over 84 installed
+ * mods: 12 heroes invented across 5 of them).
+ *
+ * A hero the mod carries no model for is not the subject. When none of them has a model the
+ * mod is a plain recolour, and then every hero it touches is as good an answer as there is.
+ */
+function subjectHeroes(a) {
+  const carried = a.heroes.filter((h) => h.models > 0 || h.base);
+  return carried.length ? carried : a.heroes;
+}
+
 // Human summary of a whole analysis: hero skins, or a coarse content kind.
 function describeAnalysis(a) {
-  if (a.heroes.length) return a.heroes.map(describeHero).join('; ');
+  const heroes = subjectHeroes(a);
+  if (heroes.length) return heroes.map(describeHero).join('; ');
   return t(KIND_LABEL[a.kind] || '');
 }
 
@@ -398,9 +416,10 @@ function describeAnalysis(a) {
 // content isn't recognisable enough to name.
 const KIND_NAME = { wards: 'Варды', courier: 'Курьер', ui: 'Интерфейс меню', sounds: 'Звуки', terrain: 'Ландшафт' };
 function nameFromAnalysis(a) {
-  if (a.heroes.length === 1) return a.heroes[0].name;
-  if (a.heroes.length >= 2 && a.heroes.length <= 3) return a.heroes.map((h) => h.name).join(', ');
-  if (a.heroes.length > 3) return t('Сборка · {0} героев', a.heroes.length);
+  const heroes = subjectHeroes(a);
+  if (heroes.length === 1) return heroes[0].name;
+  if (heroes.length >= 2 && heroes.length <= 3) return heroes.map((h) => h.name).join(', ');
+  if (heroes.length > 3) return t('Сборка · {0} героев', heroes.length);
   return KIND_NAME[a.kind] ? t(KIND_NAME[a.kind]) : null;
 }
 
@@ -731,5 +750,5 @@ module.exports = {
   readVpkEntries, readVpkIndexFile, readVpkEntryFile, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
   fingerprintVpk, fingerprintEntries, fingerprintFiles,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
-  describeHero, describeAnalysis, nameFromAnalysis,
+  describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes,
 };
