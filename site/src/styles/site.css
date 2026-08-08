@@ -133,6 +133,73 @@ section { padding: 44px 0; }
 .btn.ghost:hover { background: var(--surface-high); }
 .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
 
+/* ---------- surfaces the pointer lights ----------
+ *
+ * One behaviour, two shapes: a soft pool of light inside the box and a thin line of it along
+ * the edge. Both are parked at --mx/--my, which one script keeps up to date for a whole group
+ * at a time (see Landing.astro).
+ *
+ * Three things decide whether this reads as light on glass or as a sticker:
+ *
+ * The gradient is radial. A linear one has iso-lines that run straight across the element, so
+ * there is always a visible seam with a direction; a round pool has no edge anywhere. We
+ * already learned this the hard way on the screenshots.
+ *
+ * It fades to the same colour at zero alpha rather than to `transparent`. `transparent` is
+ * transparent *black*, and interpolating a light colour towards it goes through grey - which
+ * is exactly the faint ring people see and cannot explain. The first declaration of each pair
+ * is the old spelling, kept for browsers without relative colour syntax.
+ *
+ * It is additive. `screen` for the broad pool, `plus-lighter` for the edge, so the light can
+ * only ever brighten what is under it. `isolation: isolate` keeps that blending inside the
+ * card instead of letting it mix with the page behind.
+ */
+@property --glow { syntax: '<number>'; initial-value: 0; inherits: false; }
+
+.lit {
+  position: relative;
+  isolation: isolate;
+  transition: --glow 420ms ease, transform 260ms cubic-bezier(0.2, 0, 0, 1),
+              border-color 260ms ease, background 260ms ease;
+}
+.lit::before, .lit::after {
+  content: '';
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--glow);
+}
+.lit::before {
+  inset: 0;
+  background: radial-gradient(200px circle at var(--mx) var(--my), color-mix(in srgb, var(--primary) 14%, transparent), transparent 64%);
+  background: radial-gradient(200px circle at var(--mx) var(--my),
+    rgb(from var(--primary) r g b / 0.15) 0%,
+    rgb(from var(--primary) r g b / 0.05) 34%,
+    rgb(from var(--primary) r g b / 0) 66%);
+  mix-blend-mode: screen;
+}
+.lit::after {
+  inset: -1px;
+  padding: 1px;
+  background: radial-gradient(220px circle at var(--mx) var(--my), var(--primary), transparent 46%);
+  background: radial-gradient(220px circle at var(--mx) var(--my),
+    rgb(from var(--primary) r g b / 0.9) 0%,
+    rgb(from var(--primary) r g b / 0.3) 30%,
+    rgb(from var(--primary) r g b / 0) 58%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  mix-blend-mode: plus-lighter;
+}
+/* The whole group lights when the pointer is anywhere in it, so the pool runs across the row
+   instead of switching on and off card by card. --glow is a registered property, which is the
+   only reason it can be transitioned at all: an unregistered variable jumps. */
+.lit-group:hover .lit { --glow: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .lit { transition: none; }
+}
+
 /* ---------- cards ---------- */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .card {
@@ -202,44 +269,17 @@ section { padding: 44px 0; }
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
 }
 .stats li {
-  position: relative;
   display: flex; flex-direction: column; gap: 4px;
   padding: 20px 12px;
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--surface-container) 65%, transparent);
   border: 1px solid var(--border);
-  overflow: hidden;
-  transition: transform 260ms cubic-bezier(0.2, 0, 0, 1), border-color 260ms ease;
 }
-/* the light the pointer carries also runs along the edge of whatever it is over */
-.stats li::before {
-  content: '';
-  position: absolute; inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: radial-gradient(220px circle at var(--mx) var(--my), var(--primary), transparent 45%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0; transition: opacity 320ms ease;
-  pointer-events: none;
-}
-.stats:hover li::before { opacity: 0.9; }
-.stats li::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(180px circle at var(--mx) var(--my), color-mix(in srgb, var(--primary) 10%, transparent), transparent 60%);
-  opacity: 0; transition: opacity 320ms ease;
-  pointer-events: none;
-}
-.stats:hover li::after { opacity: 1; }
 .stats li:hover {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--primary) 40%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
-  .stats li, .stats li::before, .stats li::after { transition: none; }
   .stats li:hover { transform: none; }
 }
 .stats b {
@@ -319,6 +359,14 @@ section { padding: 44px 0; }
     color-mix(in srgb, var(--primary) 6%, transparent) 32%,
     transparent 68%
   );
+  /* and the same pool again, ending in the colour itself at zero alpha rather than in
+     transparent black, which is what puts a faint grey ring around a light-coloured glow */
+  background: radial-gradient(
+    420px circle at var(--sx, 50%) var(--sy, 50%),
+    rgb(from var(--primary) r g b / 0.17) 0%,
+    rgb(from var(--primary) r g b / 0.06) 32%,
+    rgb(from var(--primary) r g b / 0) 68%
+  );
   mix-blend-mode: screen;
   opacity: 0; transition: opacity 500ms ease;
 }
@@ -375,19 +423,50 @@ section { padding: 44px 0; }
   .deck-controls { display: none; }
 }
 
-/* ---------- reveal on scroll ---------- */
-.reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 620ms cubic-bezier(0.2, 0, 0, 1), transform 620ms cubic-bezier(0.2, 0, 0, 1);
+/* ---------- reveal on scroll ----------
+ *
+ * Visible is the base state, and the animation is added on top of it. The first version had
+ * it the other way round - everything sat at opacity 0 until a script said otherwise - which
+ * means a page that arrives blank if that script does not run, and content that the browser's
+ * own find-on-page cannot reach until you have scrolled to it. Both are complaints people
+ * make about this effect by name.
+ *
+ * The browser drives it from the scroll position itself, so there is no observer and nothing
+ * listening to scroll. Where that is not supported the section is simply there, which is the
+ * correct thing for it to be. */
+.reveal { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      /* Short, and near the start of the pass. The default `cover` stretches the animation
+         across the element's whole journey, which feels tied to the wheel rather than alive. */
+      animation-range: entry 6% cover 30%;
+    }
+  }
 }
-.reveal.shown { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
 }
 
+/* how far down the page you are, painted by the scroll position and nothing else */
+.progress {
+  position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 9;
+  transform: scaleX(0); transform-origin: 0 50%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 30%, transparent), var(--primary));
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .progress { animation: grow linear; animation-timeline: scroll(root block); }
+  @keyframes grow { to { transform: scaleX(1); } }
+}
+@supports not (animation-timeline: scroll()) { .progress { display: none; } }
+
 /* ---------- cards ---------- */
-.card { transition: transform 220ms ease, border-color 220ms ease, background 220ms ease; }
+/* the transition lives on .lit, which every card is */
 .card:hover {
   transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--primary) 34%, transparent);

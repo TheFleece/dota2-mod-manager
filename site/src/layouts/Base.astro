@@ -62,6 +62,10 @@ const RELEASES = `${GITHUB}/releases/latest`;
   <body>
     <Backdrop />
     <Cursor />
+    {/* How far down the page you are. Driven by the scroll position itself, so there is no
+        handler on scroll to make the page feel heavy, and browsers that cannot do that simply
+        do not draw it. */}
+    <div class="progress" aria-hidden="true"></div>
     <a class="skip" href="#main">Skip to content</a>
 
     <header class="topbar">

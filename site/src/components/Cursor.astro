@@ -39,6 +39,18 @@
     background:
       radial-gradient(circle, color-mix(in srgb, var(--primary) 20%, transparent) 0%, transparent 42%),
       radial-gradient(circle, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 68%);
+    /* The same two pools, ending in the colour at zero alpha instead of in `transparent`,
+       which is transparent *black* and drags a light colour through grey on the way out.
+       That grey is the faint ring you can see but cannot point at. */
+    background:
+      radial-gradient(circle,
+        rgb(from var(--primary) r g b / 0.22) 0%,
+        rgb(from var(--primary) r g b / 0.08) 22%,
+        rgb(from var(--primary) r g b / 0) 46%),
+      radial-gradient(circle,
+        rgb(from var(--primary) r g b / 0.075) 0%,
+        rgb(from var(--primary) r g b / 0.025) 38%,
+        rgb(from var(--primary) r g b / 0) 70%);
     /* screen keeps it additive: it can only make the page brighter, never dim it */
     mix-blend-mode: screen;
     will-change: transform;
