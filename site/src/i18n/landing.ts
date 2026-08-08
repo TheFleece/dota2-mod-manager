@@ -26,6 +26,13 @@ export interface Landing {
   shotCatalog: string;
   shotLibrary: string;
   shotHeroes: string;
+  shotLabels: [string, string, string];
+  prev: string;
+  next: string;
+
+  huntFound: string;
+  huntComplete: string;
+  huntHint: string;
 
   whatTitle: string;
   cards: Array<[string, string]>;
@@ -64,6 +71,13 @@ export const landing: Record<'en' | 'ru', Landing> = {
     shotCatalog: 'The catalog: every mod in the community collection, sorted the way its authors sorted it.',
     shotLibrary: 'Your mods: switch one off before a match, back on after. The app says when one mod is covering another.',
     shotHeroes: 'Everything for one hero in one place, with the tags that say what a mod actually changes.',
+    shotLabels: ['Catalog', 'Heroes', 'My mods'],
+    prev: 'Previous screenshot',
+    next: 'Next screenshot',
+
+    huntFound: 'heroes found',
+    huntComplete: 'You found all of them. The site is wearing every palette at once.',
+    huntHint: 'Eight heroes are hiding on this page. Your light finds them.',
 
     whatTitle: 'What you get',
     cards: [
@@ -120,6 +134,13 @@ export const landing: Record<'en' | 'ru', Landing> = {
     shotCatalog: 'Каталог: всё, что есть в общей коллекции, в том порядке, в котором это разложили её авторы.',
     shotLibrary: 'Мои моды: выключил перед каткой, включил после. Приложение говорит, когда один мод перекрывает другой.',
     shotHeroes: 'Всё по одному герою в одном месте, с чипами, которые говорят, что мод меняет на самом деле.',
+    shotLabels: ['Каталог', 'Герои', 'Мои моды'],
+    prev: 'Предыдущий снимок',
+    next: 'Следующий снимок',
+
+    huntFound: 'героев найдено',
+    huntComplete: 'Ты нашёл всех. Сайт надел все палитры разом.',
+    huntHint: 'На этой странице прячутся восемь героев. Их находит твой свет.',
 
     whatTitle: 'Что это даёт',
     cards: [

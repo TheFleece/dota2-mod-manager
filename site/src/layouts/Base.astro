@@ -55,7 +55,7 @@ const RELEASES = `${GITHUB}/releases/latest`;
     <meta property="og:locale" content={lang === 'ru' ? 'ru_RU' : 'en_US'} />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon.png" type="image/png" />
     <meta name="theme-color" content="#141218" />
     <slot name="head" />
   </head>
@@ -67,7 +67,7 @@ const RELEASES = `${GITHUB}/releases/latest`;
     <header class="topbar">
       <div class="wrap bar">
         <a class="brand" href={pathIn(lang, '/')}>
-          <span class="brand-mark" aria-hidden="true"></span>
+          <img class="brand-mark" src="/icon.png" width="28" height="28" alt="" />
           <span>{t('site.name')}</span>
         </a>
         <nav class="nav" aria-label={t('site.name')}>

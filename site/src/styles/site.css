@@ -28,6 +28,14 @@
 
 * { box-sizing: border-box; }
 
+/* `hidden` has to win over any display a rule gives an element, or an element that is
+   supposed to be absent shows up anyway. It cost a "you found them all" banner appearing
+   to somebody who had found none. */
+[hidden] { display: none !important; }
+
+/* nothing on this page may push the viewport sideways */
+html, body { overflow-x: clip; }
+
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -74,8 +82,12 @@ img { max-width: 100%; height: auto; display: block; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; }
 .brand:hover { text-decoration: none; }
 .brand-mark {
-  width: 26px; height: 26px; border-radius: 8px;
-  background: linear-gradient(140deg, var(--primary), var(--accent));
+  width: 28px; height: 28px; border-radius: 8px; display: block;
+  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1), filter 300ms ease;
+}
+.brand:hover .brand-mark {
+  transform: rotate(-8deg) scale(1.08);
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 55%, transparent));
 }
 .nav { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .nav a {
@@ -190,11 +202,45 @@ section { padding: 44px 0; }
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
 }
 .stats li {
+  position: relative;
   display: flex; flex-direction: column; gap: 4px;
   padding: 20px 12px;
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--surface-container) 65%, transparent);
   border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 260ms cubic-bezier(0.2, 0, 0, 1), border-color 260ms ease;
+}
+/* the light the pointer carries also runs along the edge of whatever it is over */
+.stats li::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(220px circle at var(--mx) var(--my), var(--primary), transparent 45%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0; transition: opacity 320ms ease;
+  pointer-events: none;
+}
+.stats:hover li::before { opacity: 0.9; }
+.stats li::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(180px circle at var(--mx) var(--my), color-mix(in srgb, var(--primary) 10%, transparent), transparent 60%);
+  opacity: 0; transition: opacity 320ms ease;
+  pointer-events: none;
+}
+.stats:hover li::after { opacity: 1; }
+.stats li:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .stats li, .stats li::before, .stats li::after { transition: none; }
+  .stats li:hover { transform: none; }
 }
 .stats b {
   font-size: clamp(24px, 3.4vw, 34px); font-weight: 750; letter-spacing: -0.03em;
@@ -211,35 +257,112 @@ section { padding: 44px 0; }
 .btn:hover { transform: translateY(-2px); }
 .btn:active { transform: translateY(0); }
 
-/* ---------- screenshots in a window frame ---------- */
+/* ---------- the screenshot deck ---------- */
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.shot-list { display: grid; gap: 40px; }
-.shot { margin: 0; }
-.shot.lead-shot { max-width: 940px; margin-inline: auto; }
-.shot:not(.lead-shot) { max-width: 780px; }
-.shot:not(.lead-shot):nth-of-type(odd) { margin-left: auto; }
+.deck { max-width: 880px; margin-inline: auto; }
+.stage {
+  position: relative;
+  /* the pictures are 1360x860; the box keeps their shape so nothing jumps while loading */
+  aspect-ratio: 1360 / 900;
+  perspective: 1600px;
+}
+.slide {
+  position: absolute; inset: 0;
+  margin: 0;
+  /* --d is how far this card is from the front: 0 faces you, the rest stand behind */
+  --d: 0;
+  transform:
+    translateX(calc(var(--d) * 8%))
+    translateZ(calc(var(--d) * -140px))
+    rotateY(calc(var(--d) * -14deg));
+  opacity: calc(1 - max(var(--d), var(--d) * -1) * 0.55);
+  pointer-events: none;
+  transition: transform 620ms cubic-bezier(0.2, 0, 0, 1), opacity 620ms ease;
+}
+.slide.front { pointer-events: auto; z-index: 2; }
+.tilt {
+  transition: transform 520ms cubic-bezier(0.2, 0, 0, 1);
+  transform-style: preserve-3d;
+}
 .frame {
+  position: relative;
   border-radius: 14px; overflow: hidden;
   border: 1px solid var(--border);
   background: var(--surface-low);
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
-  transition: transform 320ms cubic-bezier(0.2, 0, 0, 1), box-shadow 320ms ease;
-}
-.shot:hover .frame {
-  transform: translateY(-6px);
-  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 34px 80px rgba(0, 0, 0, 0.6);
 }
 .frame-bar {
   display: flex; align-items: center; gap: 6px;
-  padding: 9px 12px; background: var(--surface-container);
+  padding: 9px 14px; background: var(--surface-container);
   border-bottom: 1px solid var(--border);
 }
 .frame-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--outline); }
+.frame-bar span {
+  margin-left: 10px; font-size: 11.5px; letter-spacing: 0.04em;
+  color: var(--text-faint); text-transform: uppercase;
+}
 .frame img { width: 100%; display: block; }
-.shot figcaption { margin-top: 12px; color: var(--text-faint); font-size: 14px; max-width: 62ch; }
+/* a band of light that slides with the pointer, so the card reads as a surface */
+.sheen {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--primary) 12%, transparent) var(--sx, 50%), transparent 65%);
+  opacity: 0; transition: opacity 400ms ease;
+}
+.slide.front:hover .sheen { opacity: 1; }
+.slide figcaption {
+  position: absolute; left: 0; right: 0; top: calc(100% + 18px);
+  text-align: center; color: var(--text-faint); font-size: 14px;
+  /* only the card facing you gets to speak: three captions stacked on one another was the
+     first thing that looked broken */
+  opacity: 0; transition: opacity 380ms ease;
+}
+.slide.front figcaption { opacity: 1; }
+
+.deck-controls {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  margin-top: 64px;
+}
+.round {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface-container); color: var(--text-dim);
+  border: 1px solid var(--border); cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+.round:hover {
+  color: var(--text); border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  transform: scale(1.08);
+}
+.deck-dots { display: flex; gap: 8px; }
+.deck-dot {
+  width: 26px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer;
+  display: grid; place-items: center;
+}
+.deck-dot span {
+  display: block; width: 7px; height: 7px; border-radius: 999px;
+  background: var(--outline); transition: all 260ms cubic-bezier(0.2, 0, 0, 1);
+}
+.deck-dot[aria-selected='true'] span {
+  width: 22px; background: var(--primary);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
+/* No theatre for anybody who asked for less motion: a plain scrollable row. */
+@media (prefers-reduced-motion: reduce) {
+  .stage {
+    position: static; aspect-ratio: auto; perspective: none;
+    display: grid; gap: 56px;
+  }
+  .slide {
+    position: static; transform: none; opacity: 1; pointer-events: auto;
+    transition: none;
+  }
+  .slide figcaption { position: static; margin-top: 12px; }
+  .deck-controls { display: none; }
+}
 
 /* ---------- reveal on scroll ---------- */
 .reveal {

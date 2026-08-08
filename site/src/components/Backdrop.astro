@@ -1,12 +1,19 @@
 ---
 /**
- * What the page sits on: a slow drift of particles under a lavender glow.
+ * What the page sits on.
  *
- * Drawn rather than shipped as an image, because a background image of Dota's own artwork is
- * Valve's to own and this project is not affiliated with them. This costs nothing to serve,
- * scales to any screen, and is the app's palette rather than somebody else's key art.
+ * The first version drifted every mote straight up at a constant speed, which is exactly as
+ * interesting as it sounds: the eye predicts the path in a second and stops looking. This
+ * one moves them through a flow field - a smooth pseudo-random angle that varies across the
+ * screen and slowly rotates over time - so no two motes take the same road and none of them
+ * travels in a straight line.
  *
- * It stops completely when the visitor asked for less motion, and when the tab is hidden.
+ * The pointer stirs them. Inside its reach they are pulled into a slow orbit rather than
+ * pushed away: mist disturbed by a hand, not a repulsion demo. They brighten as they get
+ * close, which is what makes it read as light rather than as movement.
+ *
+ * Drawn rather than downloaded, because Dota's own artwork belongs to Valve and this project
+ * is not affiliated with them.
  */
 ---
 
@@ -31,6 +38,7 @@
     border-radius: 50%;
     filter: blur(120px);
     opacity: 0.5;
+    animation: breathe 14s ease-in-out infinite alternate;
   }
   .glow-a {
     width: 780px; height: 780px;
@@ -41,8 +49,12 @@
     width: 620px; height: 620px;
     top: -180px; left: 50%; margin-left: 120px;
     background: radial-gradient(circle, #3d2f6b 0%, transparent 70%);
+    animation-delay: -7s;
   }
-  /* a faint rule grid, so the empty parts of the page are not flat black */
+  @keyframes breathe {
+    from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.42; }
+    to { transform: translate3d(0, 34px, 0) scale(1.12); opacity: 0.58; }
+  }
   .grid {
     position: absolute; inset: 0;
     background-image:
@@ -52,51 +64,102 @@
     mask-image: radial-gradient(120% 60% at 50% 0%, #000 0%, transparent 72%);
     -webkit-mask-image: radial-gradient(120% 60% at 50% 0%, #000 0%, transparent 72%);
   }
-  canvas {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-  }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   @media (prefers-reduced-motion: reduce) {
     canvas { display: none; }
+    .glow { animation: none; }
   }
 </style>
 
 <script>
   const canvas = document.getElementById('dust') as HTMLCanvasElement | null;
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   if (canvas && !still) {
-    const ctx = canvas.getContext('2d')!;
-    let w = 0, h = 0, raf = 0;
-    // enough to read as depth, few enough to cost nothing on a laptop
-    const dots = Array.from({ length: 70 }, () => ({ x: 0, y: 0, r: 0, s: 0, a: 0 }));
+    const ctx = canvas.getContext('2d', { alpha: true })!;
+    let w = 0, h = 0, raf = 0, t = 0;
+    let px = -9999, py = -9999;
+
+    // A cheap smooth field: three sines out of phase give an angle that varies over space
+    // and turns slowly over time. Not real curl noise, and close enough that the eye reads
+    // it as weather rather than as a formula.
+    const angleAt = (x: number, y: number) =>
+      Math.sin(x * 0.0016 + t * 0.00021) * 1.7 +
+      Math.cos(y * 0.0021 - t * 0.00017) * 1.7 +
+      Math.sin((x + y) * 0.0009 + t * 0.00013) * 1.2;
+
+    type Mote = { x: number; y: number; vx: number; vy: number; r: number; a: number; s: number };
+    let motes: Mote[] = [];
 
     const seed = () => {
-      for (const d of dots) {
-        d.x = Math.random() * w;
-        d.y = Math.random() * h;
-        d.r = Math.random() * 1.6 + 0.4;
-        d.s = Math.random() * 0.18 + 0.05;   // upward drift
-        d.a = Math.random() * 0.35 + 0.08;
-      }
+      // fewer on a small screen: the same count on a phone buys nothing and costs frames
+      const count = Math.round(Math.min(96, Math.max(34, (w * h) / 26000)));
+      motes = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: 0, vy: 0,
+        r: Math.random() * 1.7 + 0.5,
+        a: Math.random() * 0.3 + 0.06,
+        s: Math.random() * 0.5 + 0.5,      // how strongly this one follows the field
+      }));
     };
+
     const size = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = canvas.clientWidth; h = canvas.clientHeight;
-      canvas.width = w * dpr; canvas.height = h * dpr;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       seed();
     };
 
+    const REACH = 210;
+
     const frame = () => {
+      t += 16;
       ctx.clearRect(0, 0, w, h);
-      for (const d of dots) {
-        d.y -= d.s;
-        if (d.y < -4) { d.y = h + 4; d.x = Math.random() * w; }
+
+      for (const m of motes) {
+        // the field carries it
+        const ang = angleAt(m.x, m.y);
+        m.vx += Math.cos(ang) * 0.012 * m.s;
+        m.vy += Math.sin(ang) * 0.012 * m.s - 0.004; // a whisper of lift
+
+        // the pointer stirs what is near it: pulled slightly in, and pushed sideways, which
+        // together read as an orbit rather than a shove
+        let lit = 0;
+        const dx = m.x - px;
+        const dy = m.y - py;
+        const d = Math.hypot(dx, dy);
+        if (d < REACH && d > 0.001) {
+          const f = (1 - d / REACH) ** 2;
+          lit = f;
+          const nx = dx / d, ny = dy / d;
+          m.vx += (-nx * 0.05 - ny * 0.16) * f;   // inward + tangential
+          m.vy += (-ny * 0.05 + nx * 0.16) * f;
+        }
+
+        m.vx *= 0.96; m.vy *= 0.96;               // drag, so nothing runs away
+        m.x += m.vx; m.y += m.vy;
+
+        // wrap, so the field never empties a corner
+        if (m.x < -6) m.x = w + 6; else if (m.x > w + 6) m.x = -6;
+        if (m.y < -6) m.y = h + 6; else if (m.y > h + 6) m.y = -6;
+
+        const alpha = Math.min(0.85, m.a + lit * 0.75);
         ctx.beginPath();
-        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(208, 188, 255, ${d.a})`;
+        ctx.arc(m.x, m.y, m.r + lit * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(208, 188, 255, ${alpha})`;
+        // the neon only on the ones the pointer has woken: shadowBlur is the expensive part
+        if (lit > 0.12) {
+          ctx.shadowColor = 'rgba(177, 144, 255, 0.9)';
+          ctx.shadowBlur = 10 * lit;
+        } else {
+          ctx.shadowBlur = 0;
+        }
         ctx.fill();
       }
+      ctx.shadowBlur = 0;
       raf = requestAnimationFrame(frame);
     };
 
@@ -106,7 +169,8 @@
     size();
     start();
     window.addEventListener('resize', size);
-    // nothing spins while the tab is in the background
+    window.addEventListener('pointermove', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+    document.addEventListener('pointerleave', () => { px = -9999; py = -9999; });
     document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
   }
 </script>

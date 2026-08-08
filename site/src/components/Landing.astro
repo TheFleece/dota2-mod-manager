@@ -14,6 +14,8 @@
  * it look like, what does it do, why should I run an unsigned .exe, and the usual worries.
  */
 import { landing } from '../i18n/landing';
+import Shots from './Shots.astro';
+import Hunt from './Hunt.astro';
 import type { Lang } from '../i18n/ui';
 
 interface Props { lang: Lang }
@@ -38,9 +40,9 @@ try {
 const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
 
 const shots = [
-  { file: 'catalog', caption: c.shotCatalog, alt: lang === 'ru' ? 'Каталог модов в приложении' : 'The mod catalog inside the app' },
-  { file: 'heroes', caption: c.shotHeroes, alt: lang === 'ru' ? 'Моды, сгруппированные по героям' : 'Mods grouped by hero' },
-  { file: 'library', caption: c.shotLibrary, alt: lang === 'ru' ? 'Список установленных модов' : 'The list of installed mods' },
+  { file: 'catalog', caption: c.shotCatalog, label: c.shotLabels[0], alt: lang === 'ru' ? 'Каталог модов в приложении' : 'The mod catalog inside the app' },
+  { file: 'heroes', caption: c.shotHeroes, label: c.shotLabels[1], alt: lang === 'ru' ? 'Моды, сгруппированные по героям' : 'Mods grouped by hero' },
+  { file: 'library', caption: c.shotLibrary, label: c.shotLabels[2], alt: lang === 'ru' ? 'Список установленных модов' : 'The list of installed mods' },
 ];
 ---
 
@@ -91,17 +93,7 @@ const shots = [
 <section class="shots">
   <div class="wrap">
     <h2 class="sr-only">{c.shotsTitle}</h2>
-    <div class="shot-list">
-      {shots.map((s, i) => (
-        <figure class={`shot reveal ${i === 0 ? 'lead-shot' : ''}`}>
-          <div class="frame">
-            <div class="frame-bar"><i></i><i></i><i></i></div>
-            <img src={shot(s.file)} width="1360" height="860" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" alt={s.alt} />
-          </div>
-          <figcaption>{s.caption}</figcaption>
-        </figure>
-      ))}
-    </div>
+    <Shots lang={lang} shots={shots} prev={c.prev} next={c.next} />
   </div>
 </section>
 
@@ -164,6 +156,31 @@ const shots = [
     </div>
   </div>
 </section>
+
+<Hunt found={c.huntFound} complete={c.huntComplete} hint={c.huntHint} />
+
+<script>
+  // A radial-gradient positioned by a custom property only knows the box it is painted in,
+  // so each card is told where the pointer is in its own coordinates. One listener per
+  // group, and the paint itself is the compositor's problem.
+  for (const group of document.querySelectorAll<HTMLElement>('.stats, .cards')) {
+    let queued = false;
+    let ev: PointerEvent | null = null;
+    const place = () => {
+      queued = false;
+      if (!ev) return;
+      for (const card of group.children as HTMLCollectionOf<HTMLElement>) {
+        const box = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${ev.clientX - box.left}px`);
+        card.style.setProperty('--my', `${ev.clientY - box.top}px`);
+      }
+    };
+    group.addEventListener('pointermove', (e) => {
+      ev = e;
+      if (!queued) { queued = true; requestAnimationFrame(place); }
+    }, { passive: true });
+  }
+</script>
 
 <script>
   // Sections arrive as they are scrolled to. One observer, one class, and everything is
