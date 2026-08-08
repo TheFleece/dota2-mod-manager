@@ -4,8 +4,21 @@
  * in renderer/styles/themes.css. Someone who lands here and then installs the thing should
  * not feel handed off to a different product, so the palette is copied rather than invented.
  * There is no theme switching here: the site has one look, the app has eight. */
+/* The accent is a registered property so that the whole page can move to a new one over half
+ * a second instead of snapping to it. An ordinary custom property cannot be transitioned at
+ * all - the value simply jumps - and a page whose colour changes between two frames reads as
+ * a rendering fault rather than as an answer to the click that caused it. The curve is fast
+ * out of the gate and then settles, with no overshoot: a colour that flies past its target
+ * and comes back looks like a mistake. */
+@property --primary {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #d0bcff;
+}
+
 :root {
   --primary: #d0bcff;
+  transition: --primary 520ms cubic-bezier(0.22, 1, 0.36, 1);
   --on-primary: #220a32;
   --accent: #b190ff;
   --surface: #141218;
@@ -258,6 +271,11 @@ section { padding: 44px 0; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+/* A colour clipped to text has no colour to clip when the system is driving the palette, and
+   the word disappears. Give it back the system's own text colour instead. */
+@media (forced-colors: active) {
+  .hero h1 .t2 { background: none; -webkit-text-fill-color: CanvasText; color: CanvasText; }
 }
 .hero .lead { max-width: 58ch; margin-inline: auto; }
 .hero .btn-row { justify-content: center; margin: 30px 0 14px; }

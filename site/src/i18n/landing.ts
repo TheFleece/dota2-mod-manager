@@ -30,9 +30,9 @@ export interface Landing {
   prev: string;
   next: string;
 
-  huntFound: string;
   huntComplete: string;
-  huntHint: string;
+  /** Shown to somebody who arrived on a link from a person who found all eight. */
+  huntShared: string;
 
   whatTitle: string;
   cards: Array<[string, string]>;
@@ -80,9 +80,8 @@ export const landing: Record<'en' | 'ru', Landing> = {
     prev: 'Previous screenshot',
     next: 'Next screenshot',
 
-    huntFound: 'heroes found',
     huntComplete: 'You found all of them. The site is wearing every palette at once.',
-    huntHint: 'Eight heroes are hiding on this page. Your light finds them.',
+    huntShared: 'Somebody found all eight. Yours are still hidden.',
 
     whatTitle: 'What you get',
     cards: [
@@ -152,9 +151,8 @@ export const landing: Record<'en' | 'ru', Landing> = {
     prev: 'Предыдущий снимок',
     next: 'Следующий снимок',
 
-    huntFound: 'героев найдено',
     huntComplete: 'Ты нашёл всех. Сайт надел все палитры разом.',
-    huntHint: 'На этой странице прячутся восемь героев. Их находит твой свет.',
+    huntShared: 'Кто-то нашёл всех восьмерых. У тебя они ещё спрятаны.',
 
     whatTitle: 'Что это даёт',
     cards: [

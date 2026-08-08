@@ -3,23 +3,31 @@
  * Eight heroes are hiding on this page.
  *
  * This is the site's one secret, and it is not decoration bolted on: the app itself is
- * dressed in eight hero palettes, and you change them by clicking the little animated
- * mascot next to its logo. Somebody who has used the app recognises these characters. So the
- * site hides all eight of them, invisible until the light around the pointer falls on one.
+ * dressed in eight hero palettes, and you change them by clicking the little animated mascot
+ * next to its logo. Somebody who has used the app recognises these characters. So the site
+ * hides all eight of them in its margins, and the light around the pointer brings them up.
  *
  * Click one and it bursts into its own colours, and the site takes that hero's accent -
  * exactly what clicking the mascot does in the window. Find all eight and the page keeps all
- * of them at once, until it is reloaded.
+ * of them at once, and the address bar gets something you can send to somebody.
  *
  * Rules this thing has to obey, or it stops being a delight and becomes a nuisance:
  *   nothing about the page depends on it. Never found = never missed;
- *   nothing moves for a visitor who asked for less motion, and the mascots simply are not
- *     placed - a hunt you cannot see is not worth announcing;
- *   no pointer, no hunt. A phone has no cursor to light the way with;
- *   the counter only appears after the first find, so the page does not open by handing out
- *     a chore;
+ *   nothing is placed for a visitor who asked for less motion, or who has no fine pointer -
+ *     a hunt you cannot see is not worth announcing, and a phone has no cursor to light with;
+ *   the tally only appears after the first find, so the page does not open by handing out a
+ *     chore. It also means nobody ever sees 0/8: you enter the game already winning;
  *   the mascots sit in the page margins, never over text or a control, so a click aimed at
  *     something real can never land on one.
+ *
+ * On accessibility, a deliberate decision rather than an oversight. The whole layer is
+ * `aria-hidden` and contains no focusable element at all - no button, no tabindex, no key
+ * handler. The tempting alternative is to make each mascot a real button "so it is
+ * accessible", but a button needs an accessible name, and a name tells a screen reader
+ * exactly where the secret is; hiding the name instead is the well-known critical failure of
+ * pairing aria-hidden with something focusable. This mechanic needs a pointer and a pair of
+ * eyes to exist at all, so it declares itself invisible to anything else and takes nothing
+ * away from anybody.
  */
 const HEROES = [
   { id: 'ursa', primary: '#d0bcff', accent: '#b190ff' },
@@ -32,61 +40,80 @@ const HEROES = [
   { id: 'axe', primary: '#ffb4a9', accent: '#ff897a' },
 ];
 
-interface Props { found: string; complete: string; hint: string }
-const { found, complete, hint } = Astro.props;
+interface Props { complete: string; shared: string }
+const { complete, shared } = Astro.props;
 ---
 
 <div id="hunt" data-heroes={JSON.stringify(HEROES)} aria-hidden="true"></div>
 
-<div id="hunt-score" class="hunt-score" hidden>
-  <span class="hunt-dots"></span>
-  <span class="hunt-text" data-found={found}></span>
+{/* Eight slots rather than "3/8". A number is a report; an empty slot is a question, and the
+    question here answers itself in colour - you can see how many palettes are still missing
+    and none of them tells you where to look. It is also the thing worth screenshotting. */}
+<div id="hunt-score" class="hunt-score" hidden aria-hidden="true">
+  <span class="hunt-slots"></span>
 </div>
 
-<div id="hunt-done" class="hunt-done" hidden role="status">
+<div id="hunt-done" class="hunt-done" hidden aria-hidden="true">
   <b></b>
-  <span>{complete}</span>
+  <span data-complete={complete} data-shared={shared}></span>
 </div>
-
-<template id="hunt-hint">{hint}</template>
 
 <style>
-  /* A hero sits under the page's own light: invisible until the pointer's glow reaches it.
-     The mask is driven by two custom properties the cursor script keeps up to date, so this
-     costs no JavaScript per frame - the compositor does the reveal. */
+  /* A hero warms up as the pointer approaches instead of switching on when it arrives.
+     Distance drives one number, --heat, and everything here is a function of it. The floor of
+     four and a half per cent is the point of the whole thing: at that level a still image is
+     invisible, but these are animated, and peripheral vision is far better at catching motion
+     than detail. That faint stirring at the edge of the eye is what makes somebody look. An
+     easter egg nobody ever finds is an easter egg that does not exist. */
   :global(.hunt-hero) {
     position: absolute;
     width: 54px; height: 54px;
     z-index: 1;
     cursor: pointer;
-    border: 0; padding: 0; background: none;
-    opacity: 0;
-    transition: opacity 260ms ease, transform 260ms cubic-bezier(0.2, 0, 0, 1);
-    -webkit-mask-image: radial-gradient(circle 150px at var(--hx, -999px) var(--hy, -999px), #000 0%, #000 40%, transparent 75%);
-    mask-image: radial-gradient(circle 150px at var(--hx, -999px) var(--hy, -999px), #000 0%, #000 40%, transparent 75%);
+    opacity: calc(0.045 + var(--heat, 0) * 0.955);
+    transform: scale(calc(0.9 + var(--heat, 0) * 0.1));
+    transition: opacity 90ms linear, transform 200ms cubic-bezier(0.2, 0, 0, 1);
+    will-change: opacity, transform;
   }
-  :global(.hunt-hero.lit) { opacity: 1; }
-  :global(.hunt-hero.lit:hover) { transform: scale(1.16) rotate(-4deg); }
-  :global(.hunt-hero img) { width: 100%; height: 100%; object-fit: contain; display: block; }
-  :global(.hunt-hero:focus-visible) { opacity: 1; outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 8px; }
+  :global(.hunt-hero:hover) { transform: scale(1.16) rotate(-4deg); }
+  :global(.hunt-hero img) { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+
+  /* the moment of the click, on the mascot itself: a body that reacts is what makes the
+     particles read as a consequence rather than as an effect played on top */
+  :global(.hunt-hero.pop) {
+    animation: pop-out 230ms forwards;
+    pointer-events: none;
+  }
+  @keyframes pop-out {
+    0% { transform: scale(1); }
+    39% { transform: scale(1.18); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+  }
 
   .hunt-score {
     position: fixed; right: 18px; bottom: 18px; z-index: 6;
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 14px; border-radius: 999px;
+    display: flex; align-items: center;
+    padding: 10px 13px; border-radius: 999px;
     background: color-mix(in srgb, var(--surface-container) 92%, transparent);
     border: 1px solid var(--border);
     backdrop-filter: blur(10px);
-    font-size: 13px; color: var(--text-dim);
     animation: pop 380ms cubic-bezier(0.2, 0, 0, 1);
   }
-  .hunt-dots { display: flex; gap: 4px; }
-  .hunt-dots i {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--outline);
-    transition: background 300ms ease, box-shadow 300ms ease;
+  .hunt-slots { display: flex; gap: 6px; }
+  .hunt-slots i {
+    width: 11px; height: 11px; border-radius: 4px;
+    border: 1px solid color-mix(in srgb, var(--slot) 34%, transparent);
+    background: transparent;
+    transform: scale(0.85);
+    transition: background 300ms ease, transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 300ms ease;
   }
-  .hunt-dots i.on { box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent); }
+  .hunt-slots i.on {
+    background: var(--slot);
+    border-color: var(--slot);
+    transform: scale(1);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--slot) 60%, transparent);
+  }
 
   .hunt-done {
     position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 7;
@@ -100,7 +127,7 @@ const { found, complete, hint } = Astro.props;
     background-origin: border-box;
     background-clip: padding-box, border-box;
     text-align: center;
-    animation: pop 420ms cubic-bezier(0.2, 0, 0, 1);
+    animation: popc 420ms cubic-bezier(0.2, 0, 0, 1);
   }
   .hunt-done b { font-size: 15px; color: var(--text); }
   .hunt-done span { font-size: 13px; color: var(--text-dim); }
@@ -109,16 +136,16 @@ const { found, complete, hint } = Astro.props;
     from { opacity: 0; transform: translateY(14px) scale(0.94); }
     to { opacity: 1; }
   }
-  .hunt-done { animation-name: popc; }
   @keyframes popc {
     from { opacity: 0; transform: translateX(-50%) translateY(14px) scale(0.94); }
     to { opacity: 1; transform: translateX(-50%); }
   }
 
-  /* Once every hero is found the whole page wears all eight at once. */
-  :global(html.rainbow) {
-    --primary: #d0bcff;
-  }
+  /* Once every hero is found the whole page wears all eight at once. Measured rather than
+     assumed: the worst point anywhere along this gradient sits at 10.8:1 against the page,
+     so there is no contrast problem to solve here. What does break is a high-contrast
+     system theme, where a colour clipped to text has no colour to clip - hence the branch. */
+  :global(html.rainbow) { --primary: #d0bcff; }
   :global(html.rainbow) :global(h1 .t2),
   :global(html.rainbow) :global(.stats b) {
     background: linear-gradient(96deg, #d0bcff, #fac898, #b1f9a4, #c7dbf0, #ffb0c8, #f1d783, #ffb4a9, #d0bcff);
@@ -132,6 +159,14 @@ const { found, complete, hint } = Astro.props;
   @media (prefers-reduced-motion: reduce) {
     :global(html.rainbow) :global(h1 .t2),
     :global(html.rainbow) :global(.stats b) { animation: none; }
+  }
+  @media (forced-colors: active) {
+    :global(html.rainbow) :global(h1 .t2),
+    :global(html.rainbow) :global(.stats b) {
+      background: none;
+      -webkit-text-fill-color: CanvasText;
+      color: CanvasText;
+    }
   }
 
   @media (hover: none), (prefers-reduced-motion: reduce) {
@@ -147,161 +182,223 @@ const { found, complete, hint } = Astro.props;
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (host && score && done && fine && !still) {
-    const heroes = JSON.parse(host.dataset.heroes!) as Array<{ id: string; primary: string; accent: string }>;
-    const foundWord = (score.querySelector('.hunt-text') as HTMLElement).dataset.found!;
-    const dots = score.querySelector('.hunt-dots')!;
-    const text = score.querySelector('.hunt-text')!;
+    type Hero = { id: string; primary: string; accent: string };
+    const heroes = JSON.parse(host.dataset.heroes!) as Hero[];
+    const slots = score.querySelector('.hunt-slots')!;
+    const doneText = done.querySelector('span') as HTMLElement;
     const found = new Set<string>();
 
-    // The margins of the page: to the left and right of the column, where nothing is read
-    // and nothing is clicked. Spread down the whole document so the hunt lasts the scroll.
+    // Where each mascot sits, as a side of the column and a fraction down the page.
+    //
+    // The first one is not random. A hunt whose only entrance is the pointer wandering into
+    // the margins by chance is a hunt most people never enter, so this one sits in the right
+    // margin at the height of the header, directly under the path any hand takes towards the
+    // Download button. The last one sits down by the footer, where nobody arrives by accident:
+    // a set whose final piece costs nothing is an anticlimax, and one that is impossible
+    // breeds resentment, so it costs exactly one deliberate movement.
+    const SPOTS = [
+      { side: 1, y: 0.055 }, { side: -1, y: 0.17 }, { side: 1, y: 0.30 }, { side: -1, y: 0.42 },
+      { side: 1, y: 0.55 }, { side: -1, y: 0.66 }, { side: 1, y: 0.78 }, { side: -1, y: 0.955 },
+    ];
+
+    // Document coordinates of each mascot's centre, kept here rather than measured. Nothing
+    // in the frame loop reads layout at all: the pointer is in viewport coordinates, these
+    // are in page coordinates, and the scroll offset is the only thing between them.
+    type Spot = { el: HTMLElement; hero: Hero; x: number; y: number };
+    let spots: Spot[] = [];
+
     const place = () => {
+      spots = [];
       const pageH = document.documentElement.scrollHeight;
       // clientWidth, not innerWidth: innerWidth counts the scrollbar, and a hero placed in
       // that strip is a hero nobody can reach and a horizontal scrollbar for everybody
       const vw = document.documentElement.clientWidth;
-      const colW = Math.min(1080, vw);
-      const gutter = Math.max(0, (vw - colW) / 2);
-      if (gutter < 70) return false; // no room beside the column: no hunt on a narrow window
+      const gutter = Math.max(0, (vw - Math.min(1080, vw)) / 2);
+      if (gutter < 70) return false;  // no room beside the column: no hunt on a narrow window
+
       heroes.forEach((h, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'hunt-hero';
-        btn.dataset.hero = h.id;
-        btn.type = 'button';
-        btn.tabIndex = -1;                       // never in the tab order: it is a secret
-        btn.setAttribute('aria-hidden', 'true');
+        if (found.has(h.id)) return;
+        const s = SPOTS[i];
+        const el = document.createElement('div');
+        el.className = 'hunt-hero';
+        el.dataset.hero = h.id;
         const img = document.createElement('img');
         img.src = `/mascots/${h.id}.gif`;
         img.alt = '';
         img.loading = 'lazy';
-        btn.appendChild(img);
-        const left = i % 2 === 0;
-        const x = left
-          ? Math.random() * Math.max(10, gutter - 70) + 8
-          : vw - gutter + Math.random() * Math.max(10, gutter - 70) + 8;
-        // spread down the page, skipping the very top so the hero area stays clean
-        const y = pageH * (0.16 + (i / heroes.length) * 0.76) + (Math.random() - 0.5) * 120;
-        btn.style.left = `${Math.round(Math.min(x, vw - 62))}px`;
-        btn.style.top = `${Math.round(y)}px`;
-        document.body.appendChild(btn);
+        el.appendChild(img);
+
+        const drift = Math.random() * Math.max(8, gutter - 74);
+        const x = s.side < 0 ? 8 + drift : vw - gutter + 12 + drift;
+        const y = pageH * s.y + (Math.random() - 0.5) * 70;
+        el.style.left = `${Math.round(Math.min(x, vw - 62))}px`;
+        el.style.top = `${Math.round(y)}px`;
+        document.body.appendChild(el);
+        spots.push({ el, hero: h, x: Math.min(x, vw - 62) + 27, y: y + 27 });
       });
       return true;
     };
 
     const paint = () => {
-      dots.innerHTML = heroes
-        .map((h) => `<i class="${found.has(h.id) ? 'on' : ''}" style="${found.has(h.id) ? `background:${h.primary};color:${h.primary}` : ''}"></i>`)
+      slots.innerHTML = heroes
+        .map((h) => `<i class="${found.has(h.id) ? 'on' : ''}" style="--slot:${h.primary}"></i>`)
         .join('');
-      text.textContent = `${found.size}/${heroes.length} ${foundWord}`;
       score.hidden = found.size === 0;
     };
 
-    // the burst: the hero comes apart into its own colours
-    const burst = (x: number, y: number, colours: string[]) => {
-      const canvas = document.createElement('canvas');
-      canvas.className = 'hunt-burst';
+    // ---- the burst -------------------------------------------------------------------
+    // One canvas for every burst on the page, made on demand and thrown away when the last
+    // particle dies. Additive blending, because on a background this dark a particle should
+    // read as light rather than as a dot of paint.
+    let canvas: HTMLCanvasElement | null = null;
+    let ctx: CanvasRenderingContext2D | null = null;
+    let bits: Array<{ x: number; y: number; vx: number; vy: number; r: number; life: number; dl: number; c: string }> = [];
+    let raf = 0;
+
+    const ensureCanvas = () => {
+      if (canvas) return;
+      canvas = document.createElement('canvas');
       Object.assign(canvas.style, {
         position: 'fixed', left: '0', top: '0', width: '100%', height: '100%',
         pointerEvents: 'none', zIndex: '8',
       });
       document.body.appendChild(canvas);
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      const ctx = canvas.getContext('2d')!;
-      ctx.scale(dpr, dpr);
-      const bits = Array.from({ length: 46 }, () => {
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+      ctx = canvas.getContext('2d')!;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const step = () => {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.globalCompositeOperation = 'lighter';
+      let alive = false;
+      for (const b of bits) {
+        if ((b.life -= b.dl) <= 0) continue;
+        alive = true;
+        b.vy += 0.28;                       // gravity, so it falls rather than floats away
+        b.vx *= 0.9; b.vy *= 0.9;           // and drag, so almost all the travel is early
+        b.x += b.vx; b.y += b.vy;
+        ctx.globalAlpha = b.life * b.life;  // squared: a long, quiet tail
+        ctx.fillStyle = b.c;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * b.life, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      if (alive) { raf = requestAnimationFrame(step); }
+      else { raf = 0; bits = []; canvas.remove(); canvas = null; ctx = null; }
+    };
+
+    const burst = (x: number, y: number, colours: string[]) => {
+      ensureCanvas();
+      // Spread is what makes this look physical, not count. Sizes vary threefold, lifetimes
+      // by a third, and the speed comes off a square root so the crowd separates into a fast
+      // front and a slow body instead of leaving as one ring.
+      for (let i = 0; i < 56; i++) {
         const a = Math.random() * Math.PI * 2;
-        const v = Math.random() * 5 + 1.6;
-        return {
+        const v = 3 + 7 * Math.sqrt(Math.random());
+        bits.push({
           x, y,
-          vx: Math.cos(a) * v, vy: Math.sin(a) * v - 1.4,
-          r: Math.random() * 3 + 1.2,
+          vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2,
+          r: 1 + Math.random() * 2.5,
           life: 1,
+          dl: 0.012 + Math.random() * 0.01,
           c: colours[(Math.random() * colours.length) | 0],
-        };
-      });
-      const step = () => {
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        let alive = false;
-        for (const b of bits) {
-          b.life -= 0.018;
-          if (b.life <= 0) continue;
-          alive = true;
-          b.vy += 0.12;             // gravity, so it falls rather than floats away
-          b.vx *= 0.985;
-          b.x += b.vx; b.y += b.vy;
-          ctx.globalAlpha = Math.max(0, b.life);
-          ctx.fillStyle = b.c;
-          ctx.shadowColor = b.c;
-          ctx.shadowBlur = 12;
-          ctx.beginPath();
-          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        if (alive) requestAnimationFrame(step);
-        else canvas.remove();
-      };
-      requestAnimationFrame(step);
+        });
+      }
+      if (!raf) raf = requestAnimationFrame(step);
+    };
+
+    // ---- finding one -----------------------------------------------------------------
+    const finish = () => {
+      document.documentElement.style.removeProperty('--primary');
+      document.documentElement.classList.add('rainbow');
+      (done.querySelector('b') as HTMLElement).textContent = `${heroes.length}/${heroes.length}`;
+      doneText.textContent = doneText.dataset.complete!;
+      done.hidden = false;
+      score.hidden = true;
+      // Something to send. The reward used to die on reload, which made it the one thing on
+      // the page nobody could show anybody: a screenshot is a dead end, a link is a door.
+      history.replaceState(null, '', '#all-eight');
     };
 
     document.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest('.hunt-hero') as HTMLElement | null;
-      if (!btn || !btn.classList.contains('lit')) return;
-      const id = btn.dataset.hero!;
+      const el = (e.target as HTMLElement).closest('.hunt-hero') as HTMLElement | null;
+      if (!el || el.classList.contains('pop')) return;
+      const id = el.dataset.hero!;
       const hero = heroes.find((h) => h.id === id)!;
-      const box = btn.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
       burst(box.left + box.width / 2, box.top + box.height / 2, [hero.primary, hero.accent, '#ffffff']);
-      btn.remove();
+      el.classList.add('pop');
+      setTimeout(() => el.remove(), 240);
+      spots = spots.filter((s) => s.el !== el);
       found.add(id);
       // the page takes this hero's accent, the way the window does when you click its mascot
       document.documentElement.style.setProperty('--primary', hero.primary);
       paint();
+
       if (found.size === heroes.length) {
-        document.documentElement.style.removeProperty('--primary');
-        document.documentElement.classList.add('rainbow');
-        (done.querySelector('b') as HTMLElement).textContent = `${heroes.length}/${heroes.length}`;
-        done.hidden = false;
-        score.hidden = true;
+        // The eighth find has to differ from the seventh by an event, not only by a result.
+        // Eight bursts around the page, one per palette, and the page changes when they land.
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        heroes.forEach((h, i) => {
+          const a = (i / heroes.length) * Math.PI * 2 - Math.PI / 2;
+          setTimeout(() => burst(cx + Math.cos(a) * cx * 0.72, cy + Math.sin(a) * cy * 0.72, [h.primary, h.accent]), i * 70);
+        });
+        setTimeout(finish, heroes.length * 70 + 120);
       }
     });
 
-    // The light decides what is visible. Each hidden hero is told where the pointer is in
-    // its own box, and the mask does the rest on the compositor - so this loop only writes
-    // two numbers per hero and never measures anything mid-frame.
+    // ---- the light -------------------------------------------------------------------
+    // Heat, not a switch. One number per mascot, from its distance to the pointer, and the
+    // compositor does the rest. Reads no layout, allocates nothing, and stops entirely the
+    // moment the pointer stops: this page's visitor probably has Dota running.
     let px = -9999, py = -9999;
     let queued = false;
-    const REACH = 190;
+    const NEAR = 90, FAR = 285;
 
     const lightUp = () => {
       queued = false;
-      const nodes = document.querySelectorAll<HTMLElement>('.hunt-hero');
-      for (const el of nodes) {
-        const box = el.getBoundingClientRect();
-        const cx = box.left + box.width / 2;
-        const cy = box.top + box.height / 2;
-        const near = Math.hypot(px - cx, py - cy) < REACH;
-        el.classList.toggle('lit', near);
-        if (near) {
-          el.style.setProperty('--hx', `${px - box.left}px`);
-          el.style.setProperty('--hy', `${py - box.top}px`);
-        }
+      const sx = window.scrollX, sy = window.scrollY;
+      for (const s of spots) {
+        const d = Math.hypot(px - (s.x - sx), py - (s.y - sy));
+        const k = Math.max(0, Math.min(1, (FAR - d) / (FAR - NEAR)));
+        s.el.style.setProperty('--heat', (k ** 2.2).toFixed(3));
       }
     };
+    const wake = () => { if (!queued) { queued = true; requestAnimationFrame(lightUp); } };
 
-    window.addEventListener('pointermove', (e) => {
-      px = e.clientX; py = e.clientY;
-      if (!queued) { queued = true; requestAnimationFrame(lightUp); }
-    }, { passive: true });
-    window.addEventListener('scroll', () => {
-      if (!queued) { queued = true; requestAnimationFrame(lightUp); }
-    }, { passive: true });
+    window.addEventListener('pointermove', (e) => { px = e.clientX; py = e.clientY; wake(); }, { passive: true });
+    window.addEventListener('scroll', wake, { passive: true });
 
-    if (place()) paint();
+    // Arriving on somebody else's link: wear the full set for a moment, then hand it back.
+    // The visitor sees what was found without being given it, which is the only way this
+    // stays worth finding.
+    if (location.hash === '#all-eight') {
+      document.documentElement.classList.add('rainbow');
+      (done.querySelector('b') as HTMLElement).textContent = `${heroes.length}/${heroes.length}`;
+      doneText.textContent = doneText.dataset.shared!;
+      done.hidden = false;
+      history.replaceState(null, '', location.pathname);
+      setTimeout(() => {
+        document.documentElement.classList.remove('rainbow');
+        done.hidden = true;
+        if (place()) paint();
+      }, 4200);
+    } else if (place()) {
+      paint();
+    }
+
     window.addEventListener('resize', () => {
       // a resize moves the margins; rather than have heroes float over text, drop the ones
       // still hidden and lay them out again
-      document.querySelectorAll('.hunt-hero').forEach((el) => el.remove());
+      for (const s of spots) s.el.remove();
+      spots = [];
       if (found.size < heroes.length) place();
     });
   }
