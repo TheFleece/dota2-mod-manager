@@ -253,6 +253,38 @@ const shots = [
 </script>
 
 <script>
+  // A second door, for people who open the source of a page before they open the page.
+  //
+  // This is a GPL-3.0 project with a public repository, so a fair share of the people who
+  // land here will look. The console gets the repository link and a working handle on the
+  // thing the site is actually built out of: the eight hero palettes the app wears. Not a
+  // joke printed in a box - the same gesture as clicking the mascot, in the place these
+  // particular visitors live. The palette is read off the hunt's own data, so there is one
+  // list of heroes on this site rather than two that drift apart.
+  //
+  // Deliberately absent: anything that gives away where the mascots are. Somebody who wants
+  // to skip the hunt can already read this file.
+  const heroes = JSON.parse(document.getElementById('hunt')?.dataset.heroes ?? '[]') as Array<{ id: string; primary: string }>;
+  if (heroes.length) {
+    console.log(
+      '%c Dota 2 Mod Manager ',
+      'background:#d0bcff;color:#220a32;padding:4px 10px;border-radius:6px;font-weight:700',
+    );
+    console.log('GPL-3.0, every line: https://github.com/TheFleece/dota2-mod-manager');
+    console.log('The app wears eight hero palettes. So does this page: mm.hero("brew")');
+    (window as any).mm = {
+      palettes: Object.fromEntries(heroes.map((h) => [h.id, h.primary])),
+      hero(name: string) {
+        const h = heroes.find((x) => x.id === name);
+        if (!h) return `no palette called "${name}". try: ${heroes.map((x) => x.id).join(', ')}`;
+        document.documentElement.style.setProperty('--primary', h.primary);
+        return h.id;
+      },
+    };
+  }
+</script>
+
+<script>
   // The big numbers climb to themselves, once.
   //
   // The markup already holds the real, formatted figure - the climb replaces it for a second
