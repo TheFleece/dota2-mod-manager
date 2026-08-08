@@ -32,6 +32,7 @@ export const ui = {
     'foot.unofficial': 'Not affiliated with Valve. Dota 2 is a trademark of Valve Corporation.',
     'foot.privacy': 'Privacy',
     'foot.terms': 'Terms',
+    'foot.releases': 'Releases',
 
     'lang.switch': 'Русский',
   },
@@ -56,6 +57,7 @@ export const ui = {
     'foot.unofficial': 'Проект не связан с Valve. Dota 2 - товарный знак Valve Corporation.',
     'foot.privacy': 'Приватность',
     'foot.terms': 'Условия',
+    'foot.releases': 'Релизы',
 
     'lang.switch': 'English',
   },

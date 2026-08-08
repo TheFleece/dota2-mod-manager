@@ -611,8 +611,30 @@ section { padding: 44px 0; }
 /* ---------- footer ---------- */
 .foot {
   border-top: 1px solid var(--border);
-  margin-top: 40px; padding: 34px 0 48px;
+  margin-top: 40px; padding: 34px 0 0;
   color: var(--text-faint); font-size: 14px;
+  overflow: clip;                 /* the wordmark below is sized to the viewport, not the column */
 }
 .foot p { margin: 0 0 6px; }
 .foot a { color: var(--text-dim); }
+.foot-row { display: flex; align-items: baseline; gap: 16px 28px; flex-wrap: wrap; }
+.foot-links { margin-left: auto; display: flex; gap: 20px; }
+@media (max-width: 720px) { .foot-links { margin-left: 0; } }
+
+/* The name once more, at the size of the page and almost out of sight.
+ *
+ * The size is in vw so the line fits any window. Measured rather than guessed: at weight 800
+ * with this tracking the string is 9.63 times its own font size wide, so 10.5vw overflowed by
+ * a hair and had to be cut. 9vw leaves room for a system font that is wider than the one
+ * measured here, and the clip on .foot catches anything wider still. */
+.wordmark {
+  margin: 30px 0 -0.14em;
+  text-align: center;
+  font-size: min(9vw, 170px);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  color: rgb(from var(--primary) r g b / 0.055);
+  user-select: none;
+  white-space: nowrap;
+}

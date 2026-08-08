@@ -89,16 +89,28 @@ const RELEASES = `${GITHUB}/releases/latest`;
       <slot />
     </main>
 
+    {/* A one-page site gets a utility footer: the few things somebody might still want, and
+        nothing that pretends to be a sitemap. The name is set once more, very large and very
+        quiet, so the page closes on the same word it opened with - a signature at the bottom
+        of a letter rather than another block of content. */}
     <footer class="foot">
-      <div class="wrap">
+      <div class="wrap foot-row">
         <p>
           {t('foot.built')} <a href="https://github.com/TheFleece" rel="noopener">Mykhailo Lynnyk</a>.
           <a href={GITHUB} rel="noopener">{t('foot.license')}</a>.
         </p>
+        <nav class="foot-links" aria-label={t('site.name')}>
+          <a href={GITHUB} rel="noopener">{t('nav.github')}</a>
+          <a href={`${GITHUB}/releases`} rel="noopener">{t('foot.releases')}</a>
+          <a href={DISCORD} rel="noopener">{t('nav.discord')}</a>
+        </nav>
+      </div>
+      <div class="wrap">
         <p class="muted">{t('foot.unofficial')}</p>
         {/* Privacy and Terms are carried over from the old site together with the docs (6.4);
             until then they are not linked, because a link to nothing is not a placeholder. */}
       </div>
+      <p class="wordmark" aria-hidden="true">{t('site.name')}</p>
     </footer>
   </body>
 </html>
