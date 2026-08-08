@@ -305,11 +305,22 @@ section { padding: 44px 0; }
   color: var(--text-faint); text-transform: uppercase;
 }
 .frame img { width: 100%; display: block; }
-/* a band of light that slides with the pointer, so the card reads as a surface */
+/* Light on the glass, following the pointer.
+ *
+ * The first version was a linear-gradient band at 105 degrees, and a band has edges: it drew
+ * a visible diagonal seam straight across the screenshot. A round pool of light has no edge
+ * to see - it falls off to nothing in every direction - so this is a radial gradient parked
+ * at the pointer, blended additively so it can only brighten what is under it. */
 .sheen {
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--primary) 12%, transparent) var(--sx, 50%), transparent 65%);
-  opacity: 0; transition: opacity 400ms ease;
+  background: radial-gradient(
+    420px circle at var(--sx, 50%) var(--sy, 50%),
+    color-mix(in srgb, var(--primary) 16%, transparent) 0%,
+    color-mix(in srgb, var(--primary) 6%, transparent) 32%,
+    transparent 68%
+  );
+  mix-blend-mode: screen;
+  opacity: 0; transition: opacity 500ms ease;
 }
 .slide.front:hover .sheen { opacity: 1; }
 .slide figcaption {
@@ -420,19 +431,103 @@ section { padding: 44px 0; }
 .faq summary:hover { color: var(--primary); }
 .faq p { color: var(--text-dim); margin: 0 0 16px; max-width: 68ch; }
 
+/* ---------- the band of what is inside ---------- */
+.marquee {
+  overflow: hidden;
+  border-block: 1px solid var(--border);
+  padding: 16px 0;
+  margin-top: 30px;
+  /* faded at both ends, so the strip runs out of the page instead of being cut */
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track { display: flex; width: max-content; animation: roll 46s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-run { display: flex; gap: 34px; padding-right: 34px; }
+.marquee-item {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  font-size: 15px; color: var(--text-faint); white-space: nowrap;
+}
+.marquee-item b {
+  font-size: 17px; color: var(--primary); font-variant-numeric: tabular-nums;
+}
+@keyframes roll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+  .marquee { overflow-x: auto; }
+}
+
 /* ---------- final call ---------- */
-.final { text-align: center; }
+.final { text-align: center; padding-top: 56px; }
 .final-box {
-  padding: 54px 24px;
+  position: relative;
+  padding: 56px 24px 48px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
+  overflow: hidden;
   background:
-    radial-gradient(80% 120% at 50% 0%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 70%),
+    radial-gradient(90% 130% at 50% 0%, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 68%),
     var(--surface-container);
 }
-.final-box h2 { margin-top: 0; }
-.final .lead { margin-inline: auto; }
-.final .btn-row { justify-content: center; margin-top: 24px; }
+/* a slow sweep of light across the panel, so the end of the page is not a dead rectangle */
+.final-box::after {
+  content: '';
+  position: absolute; inset: -40% -10%;
+  background: conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, var(--primary) 9%, transparent) 40deg, transparent 90deg);
+  animation: sweep 11s linear infinite;
+  pointer-events: none;
+}
+@keyframes sweep { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .final-box::after { animation: none; opacity: 0.35; } }
+
+.final-box > * { position: relative; z-index: 1; }
+.final-icon {
+  width: 84px; height: 84px; margin: 0 auto 18px;
+  border-radius: 22px;
+  filter: drop-shadow(0 14px 34px color-mix(in srgb, var(--primary) 42%, transparent));
+  animation: hover 6s ease-in-out infinite;
+}
+@keyframes hover {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-9px) rotate(-3deg); }
+}
+@media (prefers-reduced-motion: reduce) { .final-icon { animation: none; } }
+.final-box h2 { margin-top: 0; font-size: clamp(30px, 4.4vw, 44px); }
+.final .lead { margin-inline: auto; max-width: 46ch; }
+.final .btn-row { justify-content: center; margin-top: 26px; }
+.btn-big { padding: 17px 34px; font-size: 17px; }
+
+/* two ways on from here, rather than a full stop */
+.links {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-top: 16px; text-align: left;
+}
+@media (max-width: 720px) { .links { grid-template-columns: 1fr; } }
+.link-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-container) 70%, transparent);
+  color: var(--text);
+  transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), border-color 220ms ease, background 220ms ease;
+}
+.link-card:hover {
+  text-decoration: none;
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+  background: var(--surface-high);
+}
+.link-card svg { flex: none; color: var(--primary); }
+.link-card span { display: flex; flex-direction: column; gap: 2px; }
+.link-card b { font-size: 15.5px; }
+.link-card span > :last-child, .link-card span { font-size: 14px; color: var(--text-dim); }
+.link-card b { color: var(--text); }
+.link-card .arr {
+  margin-left: auto; font-style: normal; color: var(--text-faint);
+  transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), color 220ms ease;
+}
+.link-card:hover .arr { transform: translateX(5px); color: var(--primary); }
 
 /* ---------- footer ---------- */
 .foot {

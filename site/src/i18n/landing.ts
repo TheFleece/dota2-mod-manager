@@ -48,6 +48,11 @@ export interface Landing {
 
   ctaTitle: string;
   ctaLead: string;
+  ctaMeta: string;
+  /** The scrolling band above the finale: what is in the catalog, with real counts. */
+  marquee: Array<[string, string]>;
+  linkGithub: [string, string];
+  linkDiscord: [string, string];
 }
 
 export const landing: Record<'en' | 'ru', Landing> = {
@@ -112,6 +117,15 @@ export const landing: Record<'en' | 'ru', Landing> = {
 
     ctaTitle: 'Get it',
     ctaLead: 'Windows 10 or 11. No account. It updates itself from here on.',
+    ctaMeta: 'Free forever. GPL-3.0. Built in the open.',
+    marquee: [
+      ['Heroes', '463'], ['Backgrounds', '62'], ['Mega-kills', '35'], ['Cursors', '34'],
+      ['Shaders', '32'], ['Couriers', '25'], ['Hero sounds', '24'], ['Terrains', '20'],
+      ['River', '20'], ['Trees', '18'], ['Emblems', '16'], ['Music', '15'],
+      ['Roshan', '10'], ['Fonts', '10'], ['Sounds', '9'], ['Announcers', '7'],
+    ],
+    linkGithub: ['Read the source', 'Every line, every release, every build log.'],
+    linkDiscord: ['Come to Discord', 'Ask, report a bug, show the setup you made.'],
   },
 
   ru: {
@@ -175,5 +189,14 @@ export const landing: Record<'en' | 'ru', Landing> = {
 
     ctaTitle: 'Забрать',
     ctaLead: 'Windows 10 или 11. Без аккаунта. Дальше обновляется само.',
+    ctaMeta: 'Бесплатно навсегда. GPL-3.0. Собирается на виду.',
+    marquee: [
+      ['Герои', '463'], ['Фоны меню', '62'], ['Мега-киллы', '35'], ['Курсоры', '34'],
+      ['Шейдеры', '32'], ['Курьеры', '25'], ['Звуки героев', '24'], ['Ландшафты', '20'],
+      ['Река', '20'], ['Деревья', '18'], ['Эмблемы', '16'], ['Музыка', '15'],
+      ['Рошан', '10'], ['Шрифты', '10'], ['Звуки', '9'], ['Комментаторы', '7'],
+    ],
+    linkGithub: ['Читать исходники', 'Каждая строчка, каждый релиз, каждый лог сборки.'],
+    linkDiscord: ['Зайти в Discord', 'Спросить, сообщить о баге, показать свою сборку.'],
   },
 };

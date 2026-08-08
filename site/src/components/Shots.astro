@@ -129,7 +129,10 @@ const src = (name: string) => `/screenshots/${lang}-${name}.webp`;
         if (!front) return;
         front.style.transform = `perspective(1400px) rotateY(${mx * 7}deg) rotateX(${-my * 5}deg) translateZ(18px)`;
         const sheen = front.querySelector<HTMLElement>('.sheen');
-        if (sheen) sheen.style.setProperty('--sx', `${(mx + 1) * 50}%`);
+        if (sheen) {
+          sheen.style.setProperty('--sx', `${(mx + 1) * 50}%`);
+          sheen.style.setProperty('--sy', `${(my + 1) * 50}%`);
+        }
       };
       deck.addEventListener('pointermove', (e) => {
         const box = deck.getBoundingClientRect();
