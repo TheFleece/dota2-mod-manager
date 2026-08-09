@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('api', {
     setEnabled: (id, enabled) => ipcRenderer.invoke('mods:setEnabled', id, enabled),
     remove: (id) => ipcRenderer.invoke('mods:remove', id),
     move: (id, dir) => ipcRenderer.invoke('mods:move', id, dir),
+    reorder: (id, toIndex) => ipcRenderer.invoke('mods:reorder', id, toIndex),
     externalSetEnabled: (fileName, enabled) => ipcRenderer.invoke('mods:externalSetEnabled', fileName, enabled),
     externalRemove: (fileName) => ipcRenderer.invoke('mods:externalRemove', fileName),
     exportSingle: (id) => ipcRenderer.invoke('mods:exportSingle', id),

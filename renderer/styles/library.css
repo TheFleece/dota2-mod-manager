@@ -29,8 +29,13 @@
 .lib-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .lib-info { flex: 1; min-width: 0; }
 .lib-name { font-weight: 600; font-size: 14px; }
+/* A pill is an icon and a word, and the two have to sit on one line by construction rather
+   than by each variant nudging its own icon up a couple of pixels - which is what used to
+   happen, and the one variant nobody nudged ("covered") was visibly crooked. */
 .lib-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-left: 8px;
   vertical-align: middle;
   font-size: 11px;
@@ -69,13 +74,57 @@
   background: rgba(251, 191, 36, 0.12);
   border-color: rgba(251, 191, 36, 0.4);
 }
-.lib-tag.schema .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
+.lib-tag .ms { font-size: 13px; line-height: 1; }
 /* foreign file that is byte-identical to an installed mod: nothing is wrong, there is
    just one copy too many — stated quietly, since deleting it is the user's call */
 .lib-tag.dup { color: var(--text-muted); background: var(--bg-elev); }
-.lib-tag.dup .ms { font-size: 13px; vertical-align: -2px; margin-right: 3px; }
 .lib-row.dup { opacity: 0.72; }
-.lib-meta { font-size: 11.5px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.lib-meta { font-size: 11.5px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+/* the mod's file, named as the mods folder names it - the only way to tell which of forty
+   pak files belongs to which mod */
+.lib-pak {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-faint, var(--text-muted));
+  opacity: 0.85;
+}
+
+/* ---------- the grab handle and the drag ---------- */
+.lib-grip {
+  flex: none;
+  width: 22px; height: 30px;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-xs);
+  background: transparent; color: var(--text-muted);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
+  touch-action: none;          /* the handle drags; the list must not pan under it */
+}
+.lib-grip .ms { font-size: 18px; }
+.lib-grip-gap { flex: none; width: 22px; }
+.lib-row:hover .lib-grip { opacity: 1; }
+.lib-grip:hover { color: var(--text); background: var(--bg-elev); }
+.lib-row.lib-dragging .lib-grip { opacity: 1; cursor: grabbing; }
+
+.lib-row.lib-dragging {
+  position: relative;
+  z-index: 5;
+  cursor: grabbing;
+  border-color: var(--primary);
+  background: var(--surface-hover);
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.55), 0 0 0 1px color-mix(in srgb, var(--md-primary) 35%, transparent);
+  /* it follows the pointer, so it must not also be animating its own entrance */
+  animation: none;
+  transition: none;
+}
+/* while a row is in the air, nothing else on the page should look grabbable or selectable */
+body.is-dragging-row { cursor: grabbing; }
+body.is-dragging-row .lib-row:not(.lib-dragging):hover { border-color: var(--border); background: var(--surface); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lib-row.lib-dragging { box-shadow: 0 0 0 1px var(--primary); }
+}
 .lib-actions { display: flex; align-items: center; gap: 8px; }
 
 /* load-order arrows: a tight pair, so they read as one control rather than two buttons */

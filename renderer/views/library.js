@@ -91,7 +91,8 @@ function packRowHtml(rec, i, masterOff) {
   const onCount = members.filter((m) => m.enabled).length;
   const langDir = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
   return `
-    <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
+    <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" ${rec.slotIndex != null ? `data-order="${rec.slotIndex}"` : ''} style="--i:${Math.min(i, 20)}">
+      ${gripHtml(rec)}
       <input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать пак`}">
       <button class="pack-expand ${open ? 'open' : ''}" data-expand="${esc(rec.id)}" aria-expanded="${open}" aria-label="${L`Развернуть состав пака`}"><span class="ms">chevron_right</span></button>
       ${packThumbGridHtml(rec)}
@@ -99,6 +100,7 @@ function packRowHtml(rec, i, masterOff) {
         <div class="lib-name">${esc(rec.name)} <span class="lib-tag pack">${L`Пак · ${members.length} ${plural(members.length, 'мод', 'мода', 'модов')}`}</span></div>
         <div class="lib-meta">
           <span>${L`${onCount} из ${members.length} включено`}</span>
+          ${pakFileHtml(rec)}
         </div>
       </div>
       <div class="lib-actions">
@@ -163,6 +165,34 @@ function coveredTagHtml(rec) {
   return ` <span class="lib-tag covered" title="${esc(L`Файлов перекрыто: ${total} — ${who}. Побеждает мод, который загружается раньше; порядок меняется правой кнопкой.`)}"><span class="ms">layers</span>${L`перекрыт`}</span>`;
 }
 
+/* The handle you drag to change the load order.
+ *
+ * Only a row that occupies a numbered pak gets one. A font, a cursor and a cosmetic pick have
+ * no slot to be moved between, so they get an empty space of the same width instead and the
+ * column of thumbnails stays a column.
+ *
+ * It is not in the tab order and not announced: the same two moves live in the row's own menu
+ * as "load earlier" and "load later", which is the path that works without a pointer. A grab
+ * handle that a keyboard can focus but not use is worse than one it never reaches. */
+function gripHtml(rec) {
+  if (rec.slotIndex == null) return '<span class="lib-grip-gap"></span>';
+  return `<button class="lib-grip" data-grip="${esc(rec.id)}" tabindex="-1" aria-hidden="true"
+    title="${esc(L`Перетащи, чтобы изменить порядок загрузки`)}"><span class="ms">drag_indicator</span></button>`;
+}
+
+/* The mod's file, named exactly as it is in the mods folder.
+ *
+ * Taken off the record rather than rebuilt from the slot number, so it cannot drift from what
+ * is on disk, and carrying the .off suffix when the mod is switched off, because that is what
+ * the folder shows. Without this line there is no way to tell which of forty pak files in the
+ * folder belongs to which mod. */
+function pakFileHtml(rec) {
+  const f = (rec.files || []).find((x) => x.root === 'lang' && /^pak\d+_dir\.vpk$/i.test(x.relPath));
+  if (!f) return '';
+  const name = rec.enabled === false ? `${f.relPath}.off` : f.relPath;
+  return `<span class="lib-pak" title="${esc(L`Файл в папке модов`)}">${esc(name)}</span>`;
+}
+
 function normalRowHtml(rec, i, masterOff) {
   const cosmetic = isCosmeticRec(rec);
   const selectable = !isFontRec(rec);
@@ -172,14 +202,15 @@ function normalRowHtml(rec, i, masterOff) {
   // catalog cards use
   const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
   return `
-    <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" style="--i:${Math.min(i, 20)}">
+    <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" ${rec.slotIndex != null ? `data-order="${rec.slotIndex}"` : ''} style="--i:${Math.min(i, 20)}">
+      ${gripHtml(rec)}
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span class="lib-check-gap"></span>'}
       ${cosmetic
         ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${cosmeticMeta(rec.slot).icon}</span></div>`
         : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}${coveredTagHtml(rec)}</div>
-        <div class="lib-meta"><span>${esc(catLabel)}</span></div>
+        <div class="lib-meta"><span>${esc(catLabel)}</span>${pakFileHtml(rec)}</div>
       </div>
       <div class="lib-actions">
         ${isFontRec(rec)
@@ -426,12 +457,143 @@ function libraryListHtml(masterOff) {
   return html;
 }
 
+/* ---------- dragging a mod to a new place in the load order ----------
+ *
+ * The arrows move a mod one slot per press. Somebody who wants a mod to load before thirty
+ * others pressed thirty times, which is what people wrote in to say, and they were right.
+ *
+ * How this behaves, and why:
+ *
+ * The rows rearrange under the pointer as it moves rather than at the moment it is released,
+ * so the drop lands where the eye is already looking. Every displaced row is animated from
+ * where it used to be (measure, move, play back from the old position), so nothing teleports.
+ *
+ * The dragged row follows the pointer instead of snapping between slots, and the row it is
+ * compared against is never itself - the destination is decided by how many other rows the
+ * pointer has passed the middle of.
+ *
+ * The list scrolls itself near the edges, because the row this mod has to end up above is
+ * usually not on screen at the same time as the row it started on.
+ *
+ * The game folder is not touched until the pointer is released. Each slot is a real file
+ * name, so reordering renames files; doing that per step would rename them ten times while
+ * somebody is still deciding where to drop.
+ */
+function scrollerOf(el) {
+  for (let n = el.parentElement; n; n = n.parentElement) {
+    const oy = getComputedStyle(n).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 2) return n;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+
+// a pack's member rows are a separate block that has to travel with their pack
+const tailOf = (row) => (row.nextElementSibling?.classList.contains('pack-members') ? row.nextElementSibling : null);
+const afterRow = (row) => (tailOf(row) ? tailOf(row).nextElementSibling : row.nextElementSibling);
+
+function enableOrderDrag(list) {
+  if (list.dataset.dragReady) return;
+  list.dataset.dragReady = '1';
+
+  let drag = null;
+  const rowsNow = () => [...list.querySelectorAll('.lib-row[data-order]')];
+
+  const follow = () => {
+    const natural = drag.row.getBoundingClientRect().top - drag.shift;
+    drag.shift = drag.y - drag.grab - natural;
+    drag.row.style.transform = `translateY(${drag.shift}px)`;
+  };
+
+  const place = () => {
+    const others = rowsNow().filter((r) => r !== drag.row);
+    let to = others.findIndex((r) => {
+      const b = r.getBoundingClientRect();
+      return drag.y < b.top + b.height / 2;
+    });
+    if (to === -1) to = others.length;
+    const before = new Map(others.map((r) => [r, r.getBoundingClientRect().top]));
+    const ref = to < others.length ? others[to] : null;
+    if (ref === drag.row.nextElementSibling && !drag.tail) return;   // already there
+    list.insertBefore(drag.row, ref);
+    if (drag.tail) list.insertBefore(drag.tail, afterRow(drag.row));
+    for (const r of others) {
+      const dy = before.get(r) - r.getBoundingClientRect().top;
+      if (!dy) continue;
+      r.style.transition = 'none';
+      r.style.transform = `translateY(${dy}px)`;
+      requestAnimationFrame(() => {
+        r.style.transition = 'transform 180ms var(--ease)';
+        r.style.transform = '';
+      });
+    }
+    follow();
+  };
+
+  const tick = () => {
+    if (!drag) return;
+    const b = drag.scroller.getBoundingClientRect();
+    const EDGE = 76;
+    const overTop = EDGE - (drag.y - b.top);
+    const overBottom = EDGE - (b.bottom - drag.y);
+    const dy = overTop > 0 ? -Math.ceil(overTop / 3) : overBottom > 0 ? Math.ceil(overBottom / 3) : 0;
+    if (dy) { drag.scroller.scrollTop += dy; place(); }
+    drag.raf = requestAnimationFrame(tick);
+  };
+
+  const stop = async () => {
+    if (!drag) return;
+    const { row, from } = drag;
+    cancelAnimationFrame(drag.raf);
+    const to = rowsNow().indexOf(row);
+    for (const r of rowsNow()) { r.style.transition = ''; r.style.transform = ''; }
+    row.classList.remove('lib-dragging');
+    document.body.classList.remove('is-dragging-row');
+    const id = row.dataset.row;
+    drag = null;
+    if (to === -1 || to === from) { paintLibraryList(); return; }
+    const res = await window.api.mods.reorder(id, to);
+    if (res?.error) toast(res.error, 'error', 6000);
+    await refreshInstalledIndex();
+    renderLibrary();
+  };
+
+  list.addEventListener('pointerdown', (e) => {
+    const grip = e.target.closest('.lib-grip');
+    if (!grip || e.button !== 0) return;
+    const row = grip.closest('.lib-row');
+    const from = rowsNow().indexOf(row);
+    if (from === -1) return;
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    row.classList.add('lib-dragging');
+    document.body.classList.add('is-dragging-row');
+    drag = {
+      row, from, grip, tail: tailOf(row),
+      y: e.clientY, grab: e.clientY - row.getBoundingClientRect().top,
+      shift: 0, scroller: scrollerOf(list), raf: 0,
+    };
+    follow();
+    drag.raf = requestAnimationFrame(tick);
+  });
+
+  list.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    drag.y = e.clientY;
+    follow();
+    place();
+  });
+
+  list.addEventListener('pointerup', stop);
+  list.addEventListener('pointercancel', stop);
+}
+
 let libCosIconWatcher = null;
 let libExtIconWatcher = null;
 function paintLibraryList() {
   const libList = $('#libList');
   if (!libList) return;
   libList.innerHTML = libraryListHtml(state.masterOff);
+  enableOrderDrag(libList);
   syncSelectAll();
   updateBulkBar();
   // cosmetic rows' pictures, same lazy loader as the catalog grid

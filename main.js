@@ -1856,6 +1856,47 @@ function registerIpc() {
     }
   });
 
+  /**
+   * Put a mod at a given place in the load order.
+   *
+   * The arrows moved a mod one slot per press, which is fine for a nudge and absurd for the
+   * thing people actually want: a mod that has to load before thirty others took thirty
+   * presses. Dragging asks for a destination instead, and this walks the mod there.
+   *
+   * It walks with the same swap the arrows use rather than renumbering everything itself.
+   * A slot is a file name on disk, so every one of these steps renames real files in the
+   * game folder, and reusing the operation that has been doing that safely is worth more
+   * than saving a few renames. The order is re-read after each step because the swap is what
+   * changes it.
+   */
+  ipcMain.handle('mods:reorder', (e, id, toIndex) => {
+    const rec = library.find(id);
+    if (!rec) return { error: t('Мод не найден') };
+    const orderNow = () => library.list()
+      .map((r) => ({ r, n: installer.slotNumber(r) }))
+      .filter((x) => x.n != null)
+      .sort((a, b) => a.n - b.n);
+    try {
+      let ordered = orderNow();
+      let at = ordered.findIndex((x) => x.r.id === id);
+      if (at === -1) return { error: t('У мода нет слота pakNN') };
+      const to = Math.max(0, Math.min(ordered.length - 1, Math.trunc(Number(toIndex))));
+      let steps = 0;
+      while (at !== to && steps <= ordered.length) {
+        const step = to > at ? 1 : -1;
+        for (const m of installer.swapSlots(ordered[at].r, ordered[at + step].r)) {
+          library.update(m.id, { files: m.files });
+        }
+        ordered = orderNow();
+        at = ordered.findIndex((x) => x.r.id === id);
+        steps++;
+      }
+      return { ok: true, moved: steps };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
   ipcMain.handle('mods:externalSetEnabled', (e, fileName, enabled) => {
     try {
       const lang = installer.langFolder();
