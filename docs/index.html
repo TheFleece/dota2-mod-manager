@@ -3,208 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dota 2 Mod Manager — install Dota 2 mods and free cosmetics in one click</title>
-<meta name="description" content="Free desktop mod manager for Dota 2: 1100+ skins, terrains, announcers and music from the Dota2PornFx catalog, free cosmetics from the game's own schema, and builds you can share by link. Windows, open source.">
-<!-- Publishing /docs makes this the site root; without it GitHub serves its own 404 here. -->
-<link rel="canonical" href="https://thefleece.github.io/dota2-mod-manager/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Dota 2 Mod Manager">
+<title>Dota 2 Mod Manager has moved to dota2modmanager.com</title>
+<!--
+  The old address, kept alive as a signpost.
+
+  This page was the whole site until 2.0. It now points at dota2modmanager.com, and the
+  canonical link tells search engines to treat the new address as the real one, because
+  GitHub Pages serves static files and cannot answer with a 301.
+
+  What this page deliberately does NOT redirect: /p/, the preset share page. Every preset
+  link anybody has ever sent points there, and the app still generates links to that address,
+  so it stays exactly where it is. Privacy and Terms stay too, until the new site has its
+  own copies of them.
+
+  The redirect is instant for anybody with JavaScript, and Russian browsers are sent to the
+  Russian half rather than made to find it. The meta refresh below is the fallback, and the
+  link is the fallback to the fallback.
+-->
+<link rel="canonical" href="https://dota2modmanager.com/">
+<meta http-equiv="refresh" content="0; url=https://dota2modmanager.com/">
+<meta name="description" content="Dota 2 Mod Manager now lives at dota2modmanager.com.">
 <meta property="og:title" content="Dota 2 Mod Manager">
-<meta property="og:description" content="1100+ mods, free cosmetics and your own builds. One click each.">
-<meta property="og:image" content="https://thefleece.github.io/dota2-mod-manager/og.png">
-<meta property="og:url" content="https://thefleece.github.io/dota2-mod-manager/">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="icons/catalog.svg">
+<meta property="og:description" content="1100+ mods in one place. One click to install, one to take back.">
+<meta property="og:url" content="https://dota2modmanager.com/">
+<meta property="og:image" content="https://dota2modmanager.com/og.png">
 <style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
   body {
-    margin: 0; padding: 0 16px 70px;
-    background: radial-gradient(120% 70% at 50% -8%, #1c1734 0%, #0d0d13 55%);
-    color: #e9e7f2; font: 15.5px/1.65 system-ui, "Segoe UI", Roboto, sans-serif;
+    margin: 0; min-height: 100vh;
+    display: grid; place-items: center;
+    background: #141218; color: #e6e0e9;
+    font: 16px/1.6 system-ui, "Segoe UI", Roboto, sans-serif;
+    text-align: center; padding: 24px;
   }
-  .wrap { width: min(940px, 100%); margin: 0 auto; }
-  header { text-align: center; padding: 64px 0 34px; }
-  .logo {
-    width: 66px; height: 66px; margin: 0 auto 22px; border-radius: 17px;
-    background: linear-gradient(140deg, #7c5cff, #b79dff);
-    display: grid; place-items: center; font-weight: 800; font-size: 20px; color: #12101c;
+  h1 { font-size: 22px; font-weight: 650; margin: 0 0 10px; letter-spacing: -0.01em; }
+  p { margin: 0 0 22px; color: #cac4d0; }
+  a.go {
+    display: inline-block; padding: 13px 24px; border-radius: 999px;
+    background: #d0bcff; color: #220a32; font-weight: 650; text-decoration: none;
   }
-  h1 { font-size: clamp(30px, 6vw, 44px); margin: 0 0 14px; letter-spacing: -1px; line-height: 1.1; }
-  .lead { margin: 0 auto 28px; max-width: 620px; color: #b3adca; font-size: 17px; }
-  .row { display: flex; gap: 11px; justify-content: center; flex-wrap: wrap; }
-  .btn {
-    display: inline-block; padding: 13px 26px; border-radius: 12px;
-    background: #7c5cff; color: #fff; text-decoration: none; font-weight: 600; font-size: 15.5px;
-  }
-  .btn:hover { background: #8f74ff; }
-  .btn.ghost { background: transparent; color: #b7aee0; border: 1px solid #322c4d; }
-  .under { margin: 16px 0 0; font-size: 12.5px; color: #726c8c; }
-  .shots { display: grid; gap: 12px; margin: 40px 0 10px; }
-  .shots img {
-    width: 100%; display: block; border-radius: 12px; border: 1px solid #241f36;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
-  }
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 680px) { .pair { grid-template-columns: 1fr; } }
-  h2 { font-size: 21px; margin: 52px 0 18px; letter-spacing: -0.3px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
-  .card {
-    background: #16131f; border: 1px solid #241f36; border-radius: 13px; padding: 18px 19px;
-  }
-  .card b { display: block; margin-bottom: 5px; font-size: 15.5px; }
-  .card span { color: #a09ab8; font-size: 14px; }
-  .note {
-    background: rgba(251, 191, 36, 0.07); border: 1px solid rgba(251, 191, 36, 0.28);
-    border-radius: 13px; padding: 18px 20px; color: #cfc8e4; font-size: 14.5px;
-  }
-  .note b { color: #f6cf6a; }
-  details {
-    border-bottom: 1px solid #221d33; padding: 14px 2px;
-  }
-  summary { cursor: pointer; font-weight: 600; }
-  details p { margin: 9px 0 0; color: #a09ab8; font-size: 14.5px; }
-  footer { margin-top: 54px; text-align: center; font-size: 12.5px; color: #6d6787; }
-  footer a { color: #a992ff; }
-  .lang { position: fixed; top: 16px; right: 18px; display: flex; gap: 4px; }
-  .lang button {
-    background: none; border: 1px solid #2a2440; color: #726c8c; cursor: pointer;
-    font: 600 11.5px/1 system-ui, sans-serif; padding: 6px 10px; border-radius: 8px;
-  }
-  .lang button.on { color: #d8d2f0; border-color: #4a3f75; background: #1a1630; }
+  a.go:hover { background: #e0d0ff; }
 </style>
 </head>
 <body>
-<div class="lang">
-  <button type="button" data-lang="en">EN</button>
-  <button type="button" data-lang="ru">RU</button>
-</div>
-
-<div class="wrap">
-  <header>
-    <div class="logo">D2M</div>
-    <h1 data-t="h1">Mods for Dota 2, without the file juggling</h1>
-    <p class="lead" data-t="lead"></p>
-    <div class="row">
-      <a class="btn" href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe" data-t="dl">Download for Windows</a>
-      <a class="btn ghost" href="https://github.com/TheFleece/dota2-mod-manager" data-t="src">Source code</a>
-    </div>
-    <p class="under" data-t="under"></p>
-  </header>
-
-  <div class="shots">
-    <img src="screenshots/home.webp" alt="Catalog" width="1360" height="860" loading="eager">
-    <div class="pair">
-      <img src="screenshots/cosmetics.webp" alt="Free cosmetics" width="1360" height="860" loading="lazy">
-      <img src="screenshots/library.webp" alt="Library" width="1360" height="860" loading="lazy">
-    </div>
-  </div>
-
-  <h2 data-t="whatH"></h2>
-  <div class="cards" id="cards"></div>
-
-  <h2 data-t="safeH"></h2>
-  <p class="note" data-t="safeBody"></p>
-
-  <h2 data-t="faqH"></h2>
-  <div id="faq"></div>
-
-  <footer>
-    <p><a href="https://github.com/TheFleece/dota2-mod-manager">GitHub</a>
-       · <a href="privacy/" data-t="privacy">Privacy</a>
-       · <a href="terms/" data-t="terms">Terms</a></p>
-    <p data-t="credit"></p>
-  </footer>
-</div>
-
-<script>
-  var STR = {
-    en: {
-      h1: 'Mods for Dota 2, without the file juggling',
-      lead: '1100+ skins, terrains, announcers and music in one catalog. Free cosmetics the game already ships. Builds you can hand to a friend as a link.',
-      dl: 'Download for Windows', src: 'Source code',
-      under: 'Windows 10/11 · free · open source · updates itself',
-      whatH: 'What you get',
-      cards: [
-        ['One click in, one click out', 'The app downloads the mod, puts it in a free pak slot and cleans up after itself. No copying files, no renaming pak51_dir.vpk by hand.'],
-        ['Switch off, do not delete', 'Turn a mod off before a match and back on after. Your library stays, the game folder stays clean.'],
-        ['Free cosmetics', 'Weather, couriers, wards, loading screens, announcers, mega-kills. Read from the game’s own item table, so anything Valve adds shows up by itself.'],
-        ['An item over a set', 'Two mods for the same hero can both stay on. The app says which one is on top and lets you swap them.'],
-        ['Builds by link', 'Save the mods you run as a preset and send it in one message. The other side opens it and gets the same look.'],
-        ['Updates itself', 'New version installs in the background. The catalog refreshes on its own too.']
-      ],
-      safeH: 'Why Windows warns about it',
-      safeBody: 'The installer is not signed with a paid certificate, so SmartScreen says "unknown publisher". Click <b>More info</b>, then <b>Run anyway</b>. Every release is built by GitHub Actions from the source in this repository, and you can read all of it.',
-      faqH: 'Questions',
-      faq: [
-        ['Is this a cheat?', 'No. The mods change how things look on your screen only. Nobody else in the match sees them.'],
-        ['Will I get banned?', 'Nobody can promise anything here: these are client-side mods, and you run them at your own risk, same as any other Dota mod. The app never touches your account, and there is no login unless you want your name on a shared build.'],
-        ['How do I remove a mod?', 'Delete it in the Library and the game goes back to how it was. Fonts and cursors are restored from the backup the app made before installing.'],
-        ['Where do the mods come from?', 'The Dota2PornFx catalog. The app reads it directly, so new mods appear without an app update.'],
-        ['Does it work with Dota updates?', 'Yes. After a game patch the app puts back what the update wiped, and warns you when something needs attention.']
-      ],
-      privacy: 'Privacy', terms: 'Terms',
-      credit: 'Mods from the Dota2PornFx catalog. Not affiliated with Valve.'
-    },
-    ru: {
-      h1: 'Моды для Dota 2 без возни с файлами',
-      lead: '1100+ скинов, ландшафтов, комментаторов и музыки в одном каталоге. Бесплатная косметика, которая уже есть в игре. Сборки, которые отправляются другу одной ссылкой.',
-      dl: 'Скачать для Windows', src: 'Исходный код',
-      under: 'Windows 10/11 · бесплатно · открытый код · обновляется само',
-      whatH: 'Что это даёт',
-      cards: [
-        ['Поставил и убрал в один клик', 'Приложение само качает мод, кладёт его в свободный слот и убирает за собой. Не надо копировать файлы и переименовывать pak51_dir.vpk руками.'],
-        ['Выключить, а не удалять', 'Выключи мод перед каткой и включи обратно после. Библиотека остаётся, папка игры чистая.'],
-        ['Бесплатная косметика', 'Погода, курьеры, варды, экраны загрузки, комментаторы, мега-киллы. Читается из таблицы предметов самой игры, поэтому новое от Valve появляется само.'],
-        ['Предмет поверх сета', 'Два мода на одного героя уживаются вместе. Приложение показывает, чей файл сверху, и даёт поменять местами.'],
-        ['Сборки ссылкой', 'Сохрани набор включённых модов пресетом и отправь одним сообщением. На той стороне откроется то же самое.'],
-        ['Обновляется само', 'Новая версия ставится в фоне. Каталог тоже обновляется сам.']
-      ],
-      safeH: 'Почему Windows ругается',
-      safeBody: 'Установщик не подписан платным сертификатом, поэтому SmartScreen пишет «неизвестный издатель». Нажми <b>Подробнее</b>, затем <b>Выполнить в любом случае</b>. Каждая версия собирается GitHub Actions из исходников в этом репозитории, и их можно прочитать целиком.',
-      faqH: 'Вопросы',
-      faq: [
-        ['Это чит?', 'Нет. Моды меняют только картинку у тебя на экране. Соперники и союзники ничего этого не видят.'],
-        ['Забанят?', 'Гарантий тут не даёт никто: это клиентские моды, ставишь на свой страх и риск, как и любые другие моды для доты. Приложение не трогает твой аккаунт, вход нужен только если хочешь подписать свою сборку ником.'],
-        ['Как убрать мод?', 'Кнопка «Удалить» в Библиотеке возвращает игру к исходному виду. Шрифты и курсоры восстанавливаются из копии, которую приложение сделало до установки.'],
-        ['Откуда моды?', 'Каталог Dota2PornFx. Приложение читает его напрямую, поэтому новые моды появляются без обновления программы.'],
-        ['А после патча доты работает?', 'Да. После обновления игры приложение возвращает на место то, что патч стёр, и предупреждает, если что-то требует внимания.']
-      ],
-      privacy: 'Конфиденциальность', terms: 'Условия',
-      credit: 'Моды из каталога Dota2PornFx. Проект не связан с Valve.'
-    }
-  };
-
-  var esc = function (s) {
-    return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; });
-  };
-
-  function apply(l) {
-    var t = STR[l];
-    document.documentElement.lang = l;
-    try { localStorage.setItem('d2mmLang', l); } catch (e) { /* private mode */ }
-    Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
-      b.classList.toggle('on', b.dataset.lang === l);
-    });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-t]'), function (el) {
-      var v = t[el.dataset.t];
-      if (typeof v === 'string') el.innerHTML = v;
-    });
-    document.getElementById('cards').innerHTML = t.cards.map(function (c) {
-      return '<div class="card"><b>' + esc(c[0]) + '</b><span>' + esc(c[1]) + '</span></div>';
-    }).join('');
-    document.getElementById('faq').innerHTML = t.faq.map(function (f) {
-      return '<details><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>';
-    }).join('');
-  }
-
-  Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
-    b.addEventListener('click', function () { apply(b.dataset.lang); });
-  });
-
-  var saved = null;
-  try { saved = localStorage.getItem('d2mmLang'); } catch (e) { /* private mode */ }
-  apply(saved || ((navigator.language || '').toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en'));
-</script>
+  <main>
+    <h1>Dota 2 Mod Manager has a home of its own</h1>
+    <p>The site moved to dota2modmanager.com. Taking you there now.</p>
+    <a class="go" href="https://dota2modmanager.com/">Go to dota2modmanager.com</a>
+  </main>
+  <script>
+    // Russian browsers land on the Russian half. Everyone else gets the root, which is
+    // English. `replace` rather than `assign` so the back button does not bounce.
+    var ru = (navigator.language || '').toLowerCase().indexOf('ru') === 0;
+    location.replace('https://dota2modmanager.com/' + (ru ? 'ru/' : ''));
+  </script>
 </body>
 </html>
