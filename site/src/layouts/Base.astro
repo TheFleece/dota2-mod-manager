@@ -75,8 +75,7 @@ const RELEASES = `${GITHUB}/releases/latest`;
           <span>{t('site.name')}</span>
         </a>
         <nav class="nav" aria-label={t('site.name')}>
-          {/* Docs go here once they exist (6.4). A nav that promises a page the site does
-              not have yet is worse than a shorter nav. */}
+          <a href={pathIn(lang, '/docs/')}>{t('nav.docs')}</a>
           <a href={GITHUB} rel="noopener">{t('nav.github')}</a>
           <a href={DISCORD} rel="noopener">{t('nav.discord')}</a>
           <a class="lang" href={pathIn(other, path)} lang={other} hreflang={other}>{t('lang.switch')}</a>

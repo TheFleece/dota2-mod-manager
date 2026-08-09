@@ -1,23 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Landing from '../../components/Landing.astro';
+import { landingSchema } from '../../lib/schema';
 
 const description = 'Бесплатная программа для модов Dota 2: скины, ландшафты, комментаторы и музыка из общего каталога, косметика, которая уже есть в аккаунте, и сборка, которой можно поделиться одной ссылкой. Windows, открытый код.';
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Dota 2 Mod Manager',
-  applicationCategory: 'GameApplication',
-  operatingSystem: 'Windows 10, Windows 11',
-  url: 'https://dota2modmanager.com/ru/',
-  downloadUrl: 'https://github.com/TheFleece/dota2-mod-manager/releases/latest',
-  license: 'https://www.gnu.org/licenses/gpl-3.0.html',
-  isAccessibleForFree: true,
-  inLanguage: ['ru', 'en'],
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  author: { '@type': 'Person', name: 'Mykhailo Lynnyk', url: 'https://github.com/TheFleece' },
-};
+const jsonLd = landingSchema('ru');
 ---
 
 <Base
@@ -25,6 +13,6 @@ const jsonLd = {
   description={description}
   path="/"
 >
-  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
   <Landing lang="ru" />
 </Base>

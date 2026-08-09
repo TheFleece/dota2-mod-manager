@@ -1,0 +1,14 @@
+---
+/** The same five guides in Russian. Astro keeps the default locale unprefixed, so this
+    half needs its own route rather than a [lang] segment. */
+import Doc from '../../../layouts/Doc.astro';
+import { docSlugs, type DocSlug } from '../../../i18n/docs';
+
+export function getStaticPaths() {
+  return docSlugs.map((slug) => ({ params: { slug } }));
+}
+
+const slug = Astro.params.slug as DocSlug;
+---
+
+<Doc lang="ru" slug={slug} />

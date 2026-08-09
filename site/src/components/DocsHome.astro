@@ -1,0 +1,30 @@
+---
+/** The /docs/ index: five cards and nothing else. It exists so the guides have a parent
+    page to link from, and so a crawler that finds one of them finds the other four. */
+import { pathIn, type Lang } from '../i18n/ui';
+import { docs, docsIndex, docSlugs } from '../i18n/docs';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const index = docsIndex[lang];
+const list = docSlugs.map((s) => docs[lang][s]);
+---
+
+<article class="doc wrap">
+  <h1>{index.h1}</h1>
+  <p class="lead">{index.lead}</p>
+
+  <div class="cards doc-cards">
+    {
+      list.map((d) => (
+        <a class="card doc-card-link" href={pathIn(lang, `/docs/${d.slug}/`)}>
+          <h3>{d.h1}</h3>
+          <p>{d.card}</p>
+        </a>
+      ))
+    }
+  </div>
+</article>

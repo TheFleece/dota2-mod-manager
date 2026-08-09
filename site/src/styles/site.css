@@ -744,3 +744,103 @@ section { padding: 44px 0; }
   user-select: none;
   white-space: nowrap;
 }
+
+/* ---------- docs ---------- */
+/* A reading column, not the landing's full width. The landing is 1080px because it carries
+   screenshots and a four-across card grid; a paragraph at that width is a paragraph people
+   lose their place in. 74ch is the line length the body text was chosen for, and the cards
+   below are allowed back out to the full wrap because they are not prose. */
+.doc {
+  /* padding-block, not the shorthand: .wrap carries the 20px at the sides, and a shorthand
+     here quietly zeroes it, which puts the text against the edge of a phone screen. */
+  padding-block: 44px 72px;
+  max-width: calc(74ch + 40px);
+}
+.doc h1 { font-size: clamp(30px, 4.4vw, 44px); margin-bottom: 0.35em; }
+.doc h2 { scroll-margin-top: 84px; }
+.doc > p, .doc > ul, .doc > ol, .doc > dl { color: var(--text-dim); }
+.doc .lead { color: var(--text); }
+.doc code {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 5px;
+  /* a long Windows path must be allowed to break, or it pushes the column sideways */
+  word-break: break-word;
+}
+
+.crumbs { font-size: 14px; margin-bottom: 18px; }
+.crumbs a { color: var(--text-faint); }
+.crumbs a::before { content: '\2190\00a0'; }
+.crumbs a:hover { color: var(--text); }
+
+.doc-date { margin-top: -0.4em; margin-bottom: 2.2em; }
+
+/* The one thing on the page somebody has to read before they follow the steps below it. */
+.doc-note {
+  border-left: 3px solid var(--primary);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 14px 18px;
+  margin: 1.5em 0;
+  color: var(--text) !important;
+}
+
+/* Numbered steps carry their own number rather than the list's, so it can sit in the accent
+   colour at a size the eye finds while scrolling instead of one that hides in the margin. */
+.doc-steps { list-style: none; margin: 1.4em 0; padding: 0; counter-reset: step; display: grid; gap: 14px; }
+.doc-steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 4px 14px;
+  align-items: baseline;
+}
+.doc-steps li::before {
+  content: counter(step);
+  grid-row: span 2;
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  font-size: 14px; font-weight: 650;
+}
+.doc-steps b { color: var(--text); }
+.doc-steps span { grid-column: 2; }
+
+.doc-list { margin: 1.2em 0; padding-left: 1.15em; display: grid; gap: 8px; }
+.doc-list li { padding-left: 4px; }
+.doc-list li::marker { color: var(--primary); }
+
+.doc-code {
+  background: var(--surface-low);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin: 1.3em 0;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.doc-code code { background: none; border: 0; padding: 0; }
+
+.doc-faq { margin: 1.3em 0; display: grid; gap: 18px; }
+.doc-faq dt { color: var(--text); font-weight: 650; margin-bottom: 4px; }
+.doc-faq dd { margin: 0; }
+
+/* The cards stay inside the reading column rather than breaking out of it. Breaking out
+   needs a negative margin equal to half the difference, and inside a column that is already
+   centred that arithmetic runs off the right edge on every window narrower than 1460px.
+   Two cards across a 74ch column reads fine, which is what the grid does here anyway. */
+.doc-cards { margin: 1.6em 0; }
+.doc-next { margin-top: 56px; border-top: 1px solid var(--border); padding-top: 8px; }
+.doc-next h2 { font-size: 20px; }
+
+.doc-card-link { display: block; color: inherit; transition: border-color 180ms ease, transform 180ms ease; }
+.doc-card-link:hover { text-decoration: none; border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
+.doc-card-link h3 { color: var(--primary); }
+

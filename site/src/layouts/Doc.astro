@@ -1,0 +1,185 @@
+---
+/**
+ * One documentation page.
+ *
+ * The blocks come from src/i18n/docs.ts as data rather than markup, so the same structure
+ * serves both languages and a page cannot end up with a heading in English and a paragraph
+ * in Russian. Links inside that copy are written as "~/docs/vpk/" and get their language
+ * prefix here, which is the one thing a translator would otherwise get wrong every time.
+ *
+ * The structured data says TechArticle plus a breadcrumb on every page, a FAQPage where the
+ * page has questions, and HowTo where it has numbered steps. Google has stopped showing rich
+ * results for most of that, but the markup is what other engines and answer bots read, and
+ * describing the page correctly costs nothing.
+ */
+import Base from './Base.astro';
+import { pathIn, type Lang } from '../i18n/ui';
+import { docs, docsIndex, docSlugs, type Doc, type DocSlug } from '../i18n/docs';
+
+interface Props {
+  lang: Lang;
+  slug: DocSlug;
+}
+
+const { lang, slug } = Astro.props;
+const doc: Doc = docs[lang][slug];
+const index = docsIndex[lang];
+
+/** Last time somebody checked these pages against the game. Shown, and given to crawlers. */
+const UPDATED = '2026-08-09';
+
+const site = Astro.site ?? new URL('https://dota2modmanager.com');
+const abs = (p: string) => new URL(pathIn(lang, p), site).href;
+
+/** "~/docs/vpk/" -> "/docs/vpk/" in English, "/ru/docs/vpk/" in Russian. */
+const link = (html: string) => html.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
+const plain = (html: string) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+const steps = doc.blocks.filter((b) => b.k === 'steps');
+const faqs = doc.blocks.filter((b) => b.k === 'faq');
+
+const jsonLd: Record<string, unknown>[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: doc.h1,
+    description: doc.description,
+    inLanguage: lang,
+    datePublished: UPDATED,
+    dateModified: UPDATED,
+    mainEntityOfPage: abs(`/docs/${doc.slug}/`),
+    author: { '@type': 'Person', name: 'Mykhailo Lynnyk', url: 'https://github.com/TheFleece' },
+    about: { '@type': 'VideoGame', name: 'Dota 2', publisher: { '@type': 'Organization', name: 'Valve Corporation' } },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Dota 2 Mod Manager', item: abs('/') },
+      { '@type': 'ListItem', position: 2, name: index.h1, item: abs('/docs/') },
+      { '@type': 'ListItem', position: 3, name: doc.h1, item: abs(`/docs/${doc.slug}/`) },
+    ],
+  },
+];
+
+if (faqs.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.flatMap((b) =>
+      b.items.map(([q, a]) => ({
+        '@type': 'Question',
+        name: plain(q),
+        acceptedAnswer: { '@type': 'Answer', text: plain(a) },
+      })),
+    ),
+  });
+}
+
+if (steps.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: doc.h1,
+    description: doc.description,
+    inLanguage: lang,
+    step: steps[0].items.map(([name, text], i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: plain(name),
+      text: plain(text),
+    })),
+  });
+}
+
+/** The other four, in the order the index lists them. */
+const others = docSlugs.filter((s) => s !== slug).map((s) => docs[lang][s]);
+
+const backLabel = lang === 'ru' ? 'Все гайды' : 'All guides';
+const updatedLabel = lang === 'ru' ? 'Проверено' : 'Checked';
+const nextLabel = lang === 'ru' ? 'Дальше' : 'Read next';
+const updatedHuman = new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(new Date(UPDATED));
+---
+
+<Base title={`${doc.title} - Dota 2 Mod Manager`} description={doc.description} path={`/docs/${doc.slug}/`}>
+  {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
+
+  <article class="doc wrap">
+    <nav class="crumbs" aria-label={index.h1}>
+      <a href={pathIn(lang, '/docs/')}>{backLabel}</a>
+    </nav>
+
+    <h1>{doc.h1}</h1>
+    <p class="lead">{doc.lead}</p>
+    <p class="muted doc-date">
+      {updatedLabel} <time datetime={UPDATED}>{updatedHuman}</time>
+    </p>
+
+    {
+      doc.blocks.map((b) => {
+        if (b.k === 'h2') return <h2 id={b.id}>{b.t}</h2>;
+        if (b.k === 'p') return <p set:html={link(b.t)} />;
+        if (b.k === 'note') return <p class="doc-note" set:html={link(b.t)} />;
+        if (b.k === 'code') return <pre class="doc-code"><code>{b.t}</code></pre>;
+        if (b.k === 'list')
+          return (
+            <ul class="doc-list">
+              {b.items.map((it) => (
+                <li set:html={link(it)} />
+              ))}
+            </ul>
+          );
+        if (b.k === 'steps')
+          return (
+            <ol class="doc-steps">
+              {b.items.map(([title, text]) => (
+                <li>
+                  <b>{title}</b>
+                  <span set:html={link(text)} />
+                </li>
+              ))}
+            </ol>
+          );
+        if (b.k === 'cards')
+          return (
+            <div class="cards doc-cards">
+              {b.items.map(([title, text]) => (
+                <div class="card">
+                  <h3>{title}</h3>
+                  <p set:html={link(text)} />
+                </div>
+              ))}
+            </div>
+          );
+        return (
+          <dl class="doc-faq">
+            {b.items.map(([q, a]) => (
+              <>
+                <dt>{q}</dt>
+                <dd set:html={link(a)} />
+              </>
+            ))}
+          </dl>
+        );
+      })
+    }
+
+    <aside class="doc-next">
+      <h2>{nextLabel}</h2>
+      <div class="cards">
+        {
+          others.map((o) => (
+            <a class="card doc-card-link" href={pathIn(lang, `/docs/${o.slug}/`)}>
+              <h3>{o.h1}</h3>
+              <p>{o.card}</p>
+            </a>
+          ))
+        }
+      </div>
+    </aside>
+  </article>
+</Base>

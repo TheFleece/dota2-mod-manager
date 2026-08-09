@@ -1,0 +1,13 @@
+---
+/** The five English guides. One route, because they differ only in their content. */
+import Doc from '../../layouts/Doc.astro';
+import { docSlugs, type DocSlug } from '../../i18n/docs';
+
+export function getStaticPaths() {
+  return docSlugs.map((slug) => ({ params: { slug } }));
+}
+
+const slug = Astro.params.slug as DocSlug;
+---
+
+<Doc lang="en" slug={slug} />

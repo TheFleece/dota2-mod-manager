@@ -1,0 +1,11 @@
+---
+import Base from '../../../layouts/Base.astro';
+import DocsHome from '../../../components/DocsHome.astro';
+import { docsIndex } from '../../../i18n/docs';
+
+const t = docsIndex.ru;
+---
+
+<Base title={`${t.title} - Dota 2 Mod Manager`} description={t.description} path="/docs/">
+  <DocsHome lang="ru" />
+</Base>
