@@ -16,6 +16,7 @@
 import { landing } from '../i18n/landing';
 import Shots from './Shots.astro';
 import Tour from './Tour.astro';
+import Stand from './Stand.astro';
 import Hunt from './Hunt.astro';
 import type { Lang } from '../i18n/ui';
 
@@ -125,6 +126,19 @@ const shots = [
     </div>
   </div>
 </section>
+
+{/* Straight after the card that claims the app tells you when mods collide. A claim followed
+    by the thing itself, rather than by another claim. */}
+<Stand
+  title={c.standTitle}
+  lead={c.standLead}
+  slotsLabel={c.standSlots}
+  emptyLabel={c.standEmpty}
+  winsLabel={c.standWins}
+  coveredLabel={c.standCovered}
+  hint={c.standHint}
+  moveLabel={c.standMove}
+/>
 
 <section class="trust">
   <div class="wrap">

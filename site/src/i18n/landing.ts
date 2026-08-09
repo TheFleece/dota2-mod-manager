@@ -26,6 +26,16 @@ export interface Landing {
   filmCaption: string;
   filmPlay: string;
 
+  /** The interactive panel: pak order, and who wins a shared file. */
+  standTitle: string;
+  standLead: string;
+  standSlots: string;
+  standEmpty: string;
+  standWins: string;
+  standCovered: string;
+  standHint: string;
+  standMove: string;
+
   shotsTitle: string;
   shotCatalog: string;
   shotLibrary: string;
@@ -79,6 +89,15 @@ export const landing: Record<'en' | 'ru', Landing> = {
     filmTitle: 'One take, start to finish',
     filmCaption: 'Find a hero, take a set, take another, install both. No cuts and no speed-up.',
     filmPlay: 'Play the clip',
+
+    standTitle: 'Try the part people get wrong',
+    standLead: 'Two mods carrying the same file cannot both win. The game loads the one in the lower pak slot. Switch these on and off, drag them into another order, and watch which one the game takes.',
+    standSlots: 'In the game folder',
+    standEmpty: 'Nothing switched on. The game looks exactly as Valve shipped it.',
+    standWins: 'the game loads it from',
+    standCovered: 'covered',
+    standHint: 'The app shows you this for your real mods, and lets you change the order from the same screen.',
+    standMove: 'Drag to reorder, or use the arrow keys',
 
     shotsTitle: 'What it looks like',
     shotCatalog: 'The catalog: every mod in the community collection, sorted the way its authors sorted it.',
@@ -153,6 +172,15 @@ export const landing: Record<'en' | 'ru', Landing> = {
     filmTitle: 'Один дубль, от начала до конца',
     filmCaption: 'Находим героя, берём сет, берём второй, ставим оба. Без склеек и без ускорения.',
     filmPlay: 'Включить ролик',
+
+    standTitle: 'Потрогай то, на чём все спотыкаются',
+    standLead: 'Два мода с одним и тем же файлом не могут выиграть оба. Игра грузит тот, что лежит в паке с меньшим номером. Повключай их, перетащи в другом порядке и посмотри, чей файл возьмёт игра.',
+    standSlots: 'В папке игры',
+    standEmpty: 'Ничего не включено. Игра ровно такая, какой её выпустила Valve.',
+    standWins: 'игра берёт его из',
+    standCovered: 'перекрыт',
+    standHint: 'Приложение показывает это же для твоих настоящих модов и там же даёт поменять порядок.',
+    standMove: 'Перетащи или двигай стрелками',
 
     shotsTitle: 'Как это выглядит',
     shotCatalog: 'Каталог: всё, что есть в общей коллекции, в том порядке, в котором это разложили её авторы.',
