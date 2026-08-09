@@ -519,9 +519,13 @@ section { padding: 44px 0; }
 
 /* ---------- final call ---------- */
 .final { text-align: center; padding-top: 56px; }
+/* Narrower than the column it sits in. The panel used to run the full width with its content
+   stacked down the middle, so the emptiness was inside the box; now it is around it, which is
+   the difference between a composition and a container. */
+.final .wrap > * { max-width: 720px; margin-inline: auto; }
 .final-box {
   position: relative;
-  padding: 56px 24px 48px;
+  padding: 48px 24px 44px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   overflow: hidden;
