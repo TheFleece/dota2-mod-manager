@@ -4,12 +4,15 @@ const path = require('path');
 
 const DEFAULTS = {
   dotaGamePath: null,
-  // folder mods are installed into: game/dota_<langSuffix>. Since Dota's 2026-07-24 update
-  // this must be the game's own audio language (see src/gamelang.js) — made-up folders like
-  // dota_123 are no longer mounted. Kept in sync automatically unless the user pins it.
+  // folder mods are installed into: game/dota_<langSuffix>. Always russian now — the engine
+  // mounts the folder named by Dota's audio language, and the app writes that language
+  // itself rather than asking (see keepRussianFolder in main.js). The value stays a setting
+  // because everything downstream reads it, and because an upgrade has to be able to see
+  // what the folder used to be.
   langSuffix: 'russian',
-  // follow the audio language read from the game instead of the value above
-  langSuffixAuto: true,
+  // speak English while the mods stay in the Russian folder: Valve's voice pack is moved out
+  // of the mount, nothing else changes (see setVoiceEnabled in src/gamelang.js)
+  englishVoices: false,
   // app UI language: "en" | "ru". English is the default until the user picks otherwise.
   uiLang: 'en',
   // one-time language picker: false for fresh installs AND for users updating from a
@@ -17,6 +20,10 @@ const DEFAULTS = {
   langPromptSeen: false,
   // zoom factor of the whole window (text and images alike), 0.7 - 1.6
   uiScale: 1,
+  // which hero the window is coloured after: ursa | brew | fura | storm | invoker | meepo |
+  // bh | axe. The catalog's own site has the same eight and switches them by clicking the
+  // mascot beside its logo; h6rd let us bring both across (see renderer/styles/themes.css).
+  theme: 'ursa',
   // catalog mods the user starred: "<categoryId>|<mod name>" keys
   favorites: [],
   // sizes and folded state of the title bar, status bar and category rail

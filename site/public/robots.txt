@@ -1,0 +1,7 @@
+# Everything here is meant to be found, except the page that unpacks a shared build:
+# that one is a link somebody sent to somebody, not a page anyone should land on from search.
+User-agent: *
+Allow: /
+Disallow: /p/
+
+Sitemap: https://dota2modmanager.com/sitemap-index.xml

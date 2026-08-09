@@ -1,0 +1,746 @@
+/* The site wears the app's own colours.
+ *
+ * These are the values the window opens on - Material 3's baseline purple, the "ursa" theme
+ * in renderer/styles/themes.css. Someone who lands here and then installs the thing should
+ * not feel handed off to a different product, so the palette is copied rather than invented.
+ * There is no theme switching here: the site has one look, the app has eight. */
+/* The accent is a registered property so that the whole page can move to a new one over half
+ * a second instead of snapping to it. An ordinary custom property cannot be transitioned at
+ * all - the value simply jumps - and a page whose colour changes between two frames reads as
+ * a rendering fault rather than as an answer to the click that caused it. The curve is fast
+ * out of the gate and then settles, with no overshoot: a colour that flies past its target
+ * and comes back looks like a mistake. */
+@property --primary {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #d0bcff;
+}
+
+:root {
+  --primary: #d0bcff;
+  transition: --primary 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  --on-primary: #220a32;
+  --accent: #b190ff;
+  --surface: #141218;
+  --surface-low: #1d1b20;
+  --surface-container: #211f26;
+  --surface-high: #2b2930;
+  --text: #e6e0e9;
+  --text-dim: #cac4d0;
+  --text-faint: #938f99;
+  --outline: #49454f;
+  --border: color-mix(in srgb, var(--outline) 55%, transparent);
+
+  --radius-lg: 24px;
+  --radius: 16px;
+  --radius-sm: 12px;
+
+  --wrap: 1080px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+/* `hidden` has to win over any display a rule gives an element, or an element that is
+   supposed to be absent shows up anyway. It cost a "you found them all" banner appearing
+   to somebody who had found none. */
+[hidden] { display: none !important; }
+
+/* nothing on this page may push the viewport sideways */
+html, body { overflow-x: clip; }
+
+html {
+  scroll-behavior: smooth;
+  /* the header is sticky, so anything scrolled to has to stop below it rather than under it */
+  scroll-padding-top: 78px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: 16px/1.65 system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+.wrap { width: min(var(--wrap), 100%); margin: 0 auto; padding: 0 20px; }
+
+/* keyboard users get to the content without walking the whole nav */
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 10;
+  background: var(--primary); color: var(--on-primary);
+  padding: 10px 16px; border-radius: 0 0 var(--radius-sm) 0; font-weight: 600;
+}
+.skip:focus { left: 0; }
+
+:where(a, button):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---------- header ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.bar { display: flex; align-items: center; gap: 20px; height: 62px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; }
+.brand:hover { text-decoration: none; }
+.brand-mark {
+  width: 28px; height: 28px; border-radius: 8px; display: block;
+  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1), filter 300ms ease;
+}
+.brand:hover .brand-mark {
+  transform: rotate(-8deg) scale(1.08);
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 55%, transparent));
+}
+.nav { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nav a {
+  color: var(--text-dim); padding: 7px 12px; border-radius: 999px; font-size: 14.5px;
+}
+.nav a:hover { background: var(--surface-high); color: var(--text); text-decoration: none; }
+.nav .lang { color: var(--text-faint); }
+.nav .cta {
+  background: var(--primary); color: var(--on-primary); font-weight: 650;
+}
+.nav .cta:hover { background: #e0d0ff; color: var(--on-primary); }
+
+@media (max-width: 720px) {
+  .bar { height: auto; padding-block: 12px; flex-wrap: wrap; }
+  .nav { width: 100%; margin-left: 0; }
+}
+
+/* ---------- prose ---------- */
+h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 0.5em; }
+h1 { font-size: clamp(34px, 5.4vw, 54px); }
+h2 { font-size: clamp(24px, 3vw, 32px); margin-top: 1.6em; }
+h3 { font-size: 20px; margin-top: 1.4em; }
+/* A heading that opens a section already has the section's padding above it; its own
+   top margin on top of that reads as a hole in the page rather than as separation. */
+section > .wrap > :is(h1, h2, h3):first-child { margin-top: 0; }
+p { margin: 0 0 1em; }
+.lead { font-size: clamp(17px, 2vw, 20px); color: var(--text-dim); }
+.muted { color: var(--text-faint); font-size: 14px; }
+
+section { padding: 44px 0; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 24px; border-radius: 999px;
+  background: var(--primary); color: var(--on-primary);
+  font-weight: 650; font-size: 16px;
+}
+.btn:hover { background: #e0d0ff; text-decoration: none; }
+.btn.ghost {
+  background: transparent; color: var(--text); border: 1px solid var(--border);
+}
+.btn.ghost:hover { background: var(--surface-high); }
+.btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- surfaces the pointer lights ----------
+ *
+ * One behaviour, two shapes: a soft pool of light inside the box and a thin line of it along
+ * the edge. Both are parked at --mx/--my, which one script keeps up to date for a whole group
+ * at a time (see Landing.astro).
+ *
+ * Three things decide whether this reads as light on glass or as a sticker:
+ *
+ * The gradient is radial. A linear one has iso-lines that run straight across the element, so
+ * there is always a visible seam with a direction; a round pool has no edge anywhere. We
+ * already learned this the hard way on the screenshots.
+ *
+ * It fades to the same colour at zero alpha rather than to `transparent`. `transparent` is
+ * transparent *black*, and interpolating a light colour towards it goes through grey - which
+ * is exactly the faint ring people see and cannot explain. The first declaration of each pair
+ * is the old spelling, kept for browsers without relative colour syntax.
+ *
+ * It is additive. `screen` for the broad pool, `plus-lighter` for the edge, so the light can
+ * only ever brighten what is under it. `isolation: isolate` keeps that blending inside the
+ * card instead of letting it mix with the page behind.
+ */
+@property --glow { syntax: '<number>'; initial-value: 0; inherits: false; }
+
+.lit {
+  position: relative;
+  isolation: isolate;
+  transition: --glow 420ms ease, transform 260ms cubic-bezier(0.2, 0, 0, 1),
+              border-color 260ms ease, background 260ms ease;
+}
+.lit::before, .lit::after {
+  content: '';
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--glow);
+}
+.lit::before {
+  inset: 0;
+  background: radial-gradient(200px circle at var(--mx) var(--my), color-mix(in srgb, var(--primary) 14%, transparent), transparent 64%);
+  background: radial-gradient(200px circle at var(--mx) var(--my),
+    rgb(from var(--primary) r g b / 0.15) 0%,
+    rgb(from var(--primary) r g b / 0.05) 34%,
+    rgb(from var(--primary) r g b / 0) 66%);
+  mix-blend-mode: screen;
+}
+.lit::after {
+  inset: -1px;
+  padding: 1px;
+  background: radial-gradient(220px circle at var(--mx) var(--my), var(--primary), transparent 46%);
+  background: radial-gradient(220px circle at var(--mx) var(--my),
+    rgb(from var(--primary) r g b / 0.9) 0%,
+    rgb(from var(--primary) r g b / 0.3) 30%,
+    rgb(from var(--primary) r g b / 0) 58%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  mix-blend-mode: plus-lighter;
+}
+/* The whole group lights when the pointer is anywhere in it, so the pool runs across the row
+   instead of switching on and off card by card. --glow is a registered property, which is the
+   only reason it can be transitioned at all: an unregistered variable jumps. */
+.lit-group:hover .lit { --glow: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .lit { transition: none; }
+}
+
+/* ---------- cards ---------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.card {
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.card h3 { margin-top: 0; }
+.card p { margin-bottom: 0; color: var(--text-dim); font-size: 15px; }
+
+/* ---------- the hero ---------- */
+.hero { padding: 92px 0 40px; text-align: center; position: relative; }
+.hero .wrap { position: relative; z-index: 1; }
+
+/* the badge that says which version is current; the ring turns slowly so the eye finds it */
+.badge {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 7px 8px 7px 14px; margin-bottom: 22px;
+  border-radius: 999px; font-size: 13px; color: var(--text-dim);
+  background: color-mix(in srgb, var(--surface-container) 88%, transparent);
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--surface-container) 92%, transparent), color-mix(in srgb, var(--surface-container) 92%, transparent)),
+    conic-gradient(from var(--spin), #d0bcff, #7ee787, #79c0ff, #ff9bd2, #d0bcff);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  animation: spin 6s linear infinite;
+}
+.badge:hover { text-decoration: none; color: var(--text); }
+.badge b { color: var(--text); font-weight: 650; }
+.badge .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #7ee787;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #7ee787 22%, transparent);
+}
+.badge .badge-sep { width: 1px; height: 12px; background: var(--border); }
+.badge > span:last-child { padding-right: 8px; }
+@property --spin { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes spin { to { --spin: 360deg; } }
+
+.kicker {
+  text-transform: uppercase; letter-spacing: 0.16em; font-size: 12px;
+  color: var(--text-faint); margin: 0 0 14px;
+}
+
+.hero h1 {
+  font-size: clamp(44px, 9.5vw, 108px);
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  margin: 0 0 22px;
+}
+.hero h1 .t1, .hero h1 .t2 { display: block; }
+.hero h1 .t2 {
+  background: linear-gradient(96deg, var(--primary), #b190ff 45%, #7f9cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* A colour clipped to text has no colour to clip when the system is driving the palette, and
+   the word disappears. Give it back the system's own text colour instead. */
+@media (forced-colors: active) {
+  .hero h1 .t2 { background: none; -webkit-text-fill-color: CanvasText; color: CanvasText; }
+}
+.hero .lead { max-width: 58ch; margin-inline: auto; }
+.hero .btn-row { justify-content: center; margin: 30px 0 14px; }
+
+/* the numbers people read before they read anything */
+.stats {
+  list-style: none; padding: 0;
+  margin: 54px auto 0; max-width: 860px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.stats li {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 20px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-container) 65%, transparent);
+  border: 1px solid var(--border);
+}
+.stats li:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .stats li:hover { transform: none; }
+}
+.stats b {
+  font-size: clamp(24px, 3.4vw, 34px); font-weight: 750; letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.stats span { font-size: 12.5px; color: var(--text-faint); }
+@media (max-width: 720px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+.btn-glow { box-shadow: 0 10px 34px color-mix(in srgb, var(--primary) 26%, transparent); }
+.btn-glow:hover { box-shadow: 0 14px 42px color-mix(in srgb, var(--primary) 38%, transparent); }
+.btn { transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease; }
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+
+/* ---------- the screens of the app ---------- */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.tour { max-width: 940px; margin-inline: auto; }
+.tour-tabs {
+  display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.tour-tab {
+  padding: 9px 18px; border-radius: 999px; cursor: pointer;
+  background: transparent; border: 1px solid transparent;
+  color: var(--text-faint); font: inherit; font-size: 14.5px; font-weight: 550;
+  transition: color 200ms ease, background 200ms ease, border-color 200ms ease;
+}
+.tour-tab:hover { color: var(--text); background: var(--surface-high); }
+.tour-tab[aria-selected='true'] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--primary) 13%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+}
+.tour-panel { margin: 0; }
+.tour-panel figcaption {
+  margin-top: 20px; text-align: center;
+  color: var(--text-faint); font-size: 14.5px;
+  max-width: 62ch; margin-inline: auto;
+}
+
+/* The window.
+ *
+ * Three things separate a frame that reads as our product from one that reads as a stock
+ * mockup, and none of them is the outline itself.
+ *
+ * The shadow is a stack, not a value. One big blur is the soft halo that dates a page
+ * instantly; a contact shadow, a middle one and a very wide faint one are how an object
+ * actually sits on a surface.
+ *
+ * A one-pixel highlight along the top edge. It costs a line and it is the whole difference
+ * between an object with a lit edge and a rectangle.
+ *
+ * And the radius stays small. Windows 11 rounds its own windows by 8px; at 24 this stops
+ * being a window and becomes a card out of a phone. */
+.win {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f0d12;
+  border: 1px solid rgb(255 255 255 / 0.07);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 1px 2px rgb(0 0 0 / 0.4),
+    0 12px 28px -10px rgb(0 0 0 / 0.55),
+    0 48px 100px -40px rgb(0 0 0 / 0.8);
+}
+.win img, .win video { width: 100%; display: block; }
+
+/* ---------- the clip ---------- */
+.tour-film { padding-bottom: 12px; }
+.tour-film h2 { text-align: center; }
+.film { max-width: 940px; margin: 0 auto; }
+.film .win { position: relative; }
+/* the box keeps the clip's shape before a single byte of it is fetched, so nothing jumps */
+.film video { aspect-ratio: 880 / 556; background: #0f0d12; }
+.film figcaption {
+  margin-top: 18px; text-align: center;
+  color: var(--text-faint); font-size: 14.5px;
+  max-width: 62ch; margin-inline: auto;
+}
+.film-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 13px 22px; border-radius: 999px; cursor: pointer;
+  background: var(--primary); color: var(--on-primary);
+  border: 0; font: inherit; font-weight: 650; font-size: 15px;
+  box-shadow: 0 10px 34px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.film-play:hover { background: #e0d0ff; }
+
+/* Light on the glass, following the pointer. The first version was a linear band at 105
+   degrees, and a band has edges: it drew a visible diagonal seam across the screenshot. A
+   round pool has no edge to see, and it ends in its own colour at zero alpha rather than in
+   `transparent`, which is transparent black and would put a grey ring around it. */
+.sheen {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(
+    460px circle at var(--sx, 50%) var(--sy, 50%),
+    color-mix(in srgb, var(--primary) 16%, transparent) 0%,
+    color-mix(in srgb, var(--primary) 6%, transparent) 32%,
+    transparent 68%
+  );
+  background: radial-gradient(
+    460px circle at var(--sx, 50%) var(--sy, 50%),
+    rgb(from var(--primary) r g b / 0.17) 0%,
+    rgb(from var(--primary) r g b / 0.06) 32%,
+    rgb(from var(--primary) r g b / 0) 68%
+  );
+  mix-blend-mode: screen;
+  opacity: 0; transition: opacity 500ms ease;
+}
+.win:hover .sheen { opacity: 1; }
+
+@media (max-width: 620px) {
+  .tour-tab { padding: 8px 13px; font-size: 13.5px; }
+}
+
+/* ---------- reveal on scroll ----------
+ *
+ * Visible is the base state, and the animation is added on top of it. The first version had
+ * it the other way round - everything sat at opacity 0 until a script said otherwise - which
+ * means a page that arrives blank if that script does not run, and content that the browser's
+ * own find-on-page cannot reach until you have scrolled to it. Both are complaints people
+ * make about this effect by name.
+ *
+ * The browser drives it from the scroll position itself, so there is no observer and nothing
+ * listening to scroll. Where that is not supported the section is simply there, which is the
+ * correct thing for it to be. */
+.reveal { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      /* Short, and near the start of the pass. The default `cover` stretches the animation
+         across the element's whole journey, which feels tied to the wheel rather than alive. */
+      animation-range: entry 6% cover 30%;
+    }
+  }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* how far down the page you are, painted by the scroll position and nothing else */
+.progress {
+  position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 9;
+  transform: scaleX(0); transform-origin: 0 50%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 30%, transparent), var(--primary));
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .progress { animation: grow linear; animation-timeline: scroll(root block); }
+  @keyframes grow { to { transform: scaleX(1); } }
+}
+@supports not (animation-timeline: scroll()) { .progress { display: none; } }
+
+/* ---------- cards ---------- */
+/* the transition lives on .lit, which every card is */
+.card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+  background: var(--surface-high);
+}
+
+/* ---------- the panel you can operate ---------- */
+.stand-sec .lead { max-width: 68ch; }
+.stand {
+  display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 18px;
+  margin-top: 26px;
+}
+@media (max-width: 800px) { .stand { grid-template-columns: 1fr; } }
+
+.stand-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.stand-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-container) 78%, transparent);
+  transition: border-color 200ms ease, background 200ms ease, opacity 200ms ease;
+}
+.stand-row.off { opacity: 0.5; }
+/* the losing mod, marked the way the app marks it */
+.stand-row.covered { border-color: color-mix(in srgb, #fbbf24 45%, transparent); }
+.stand-list.dragging .stand-row { transition: none; }
+
+.stand-grip {
+  display: grid; place-items: center;
+  width: 26px; height: 26px; padding: 0;
+  border: 0; border-radius: 6px; cursor: grab;
+  background: transparent; color: var(--text-faint);
+  touch-action: none;                 /* the grip drags; the page does not scroll under it */
+}
+.stand-grip:hover { background: var(--surface-high); color: var(--text); }
+.stand-list.dragging .stand-grip { cursor: grabbing; }
+
+.stand-slot {
+  font-variant-numeric: tabular-nums; font-size: 12.5px;
+  color: var(--primary); min-width: 46px;
+}
+.stand-row.off .stand-slot { color: var(--text-faint); }
+.stand-name { font-size: 14.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stand-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  padding: 2px 7px; border-radius: 999px;
+  background: color-mix(in srgb, #fbbf24 16%, transparent);
+  color: #fbbf24;
+}
+.stand-cat { font-size: 12px; color: var(--text-faint); }
+
+/* the switch, the app's own shape */
+.stand-sw { position: relative; display: inline-flex; cursor: pointer; }
+.stand-sw input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.stand-sw i {
+  width: 38px; height: 22px; border-radius: 999px;
+  background: var(--outline); position: relative;
+  transition: background 220ms ease;
+}
+.stand-sw i::after {
+  content: ''; position: absolute; left: 3px; top: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+.stand-sw input:checked + i { background: var(--primary); }
+.stand-sw input:checked + i::after { transform: translateX(16px); }
+.stand-sw input:focus-visible + i { outline: 2px solid var(--primary); outline-offset: 3px; }
+
+.stand-out {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-container) 55%, transparent);
+  padding: 16px 18px;
+}
+.stand-out-head {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text-faint); margin-bottom: 12px;
+}
+.stand-slots { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.stand-slots li { display: flex; gap: 10px; font-size: 14px; align-items: baseline; }
+.stand-slots span {
+  font-variant-numeric: tabular-nums; color: var(--primary);
+  font-size: 12.5px; min-width: 46px;
+}
+.stand-empty { color: var(--text-faint); font-size: 13.5px; }
+.stand-verdict {
+  margin: 14px 0 0; padding-top: 13px;
+  border-top: 1px solid var(--border);
+  display: grid; gap: 5px; font-size: 13px; color: var(--text-dim);
+}
+.stand-verdict code {
+  font-size: 12px; color: var(--text-faint);
+  word-break: break-all;
+}
+.stand-verdict b { color: var(--text); }
+.stand-hint { margin-top: 16px; }
+
+/* ---------- the trust block ---------- */
+.trust .lead { max-width: 66ch; }
+.facts {
+  list-style: none; padding: 0; margin: 26px 0 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 26px;
+}
+.facts li { display: flex; flex-direction: column; gap: 4px; }
+.facts b { color: var(--text); }
+.facts span { color: var(--text-dim); font-size: 15px; }
+
+.warn {
+  margin-top: 34px; padding: 22px 24px;
+  border: 1px solid color-mix(in srgb, #fbbf24 34%, transparent);
+  background: color-mix(in srgb, #fbbf24 7%, transparent);
+  border-radius: var(--radius);
+}
+.warn h3 { margin-top: 0; font-size: 17px; }
+.warn p { color: var(--text-dim); font-size: 15px; margin-bottom: 0; }
+.warn p + p { margin-top: 10px; }
+
+/* ---------- questions ---------- */
+.narrow { max-width: 760px; }
+.faq { border-bottom: 1px solid var(--border); padding: 4px 0; }
+.faq summary {
+  cursor: pointer; padding: 15px 0; font-weight: 600;
+  list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  transition: color 160ms ease;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: '+'; color: var(--text-faint); font-size: 20px; line-height: 1; flex: none;
+  transition: transform 200ms ease, color 160ms ease;
+}
+.faq[open] summary::after { transform: rotate(45deg); color: var(--primary); }
+.faq summary:hover { color: var(--primary); }
+.faq p { color: var(--text-dim); margin: 0 0 16px; max-width: 68ch; }
+
+/* ---------- the band of what is inside ---------- */
+.marquee {
+  overflow: hidden;
+  border-block: 1px solid var(--border);
+  padding: 16px 0;
+  margin-top: 30px;
+  /* faded at both ends, so the strip runs out of the page instead of being cut */
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track { display: flex; width: max-content; animation: roll 46s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-run { display: flex; gap: 34px; padding-right: 34px; }
+.marquee-item {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  font-size: 15px; color: var(--text-faint); white-space: nowrap;
+}
+.marquee-item b {
+  font-size: 17px; color: var(--primary); font-variant-numeric: tabular-nums;
+}
+@keyframes roll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+  .marquee { overflow-x: auto; }
+}
+
+/* ---------- final call ---------- */
+.final { text-align: center; padding-top: 56px; }
+/* Narrower than the column it sits in. The panel used to run the full width with its content
+   stacked down the middle, so the emptiness was inside the box; now it is around it, which is
+   the difference between a composition and a container. */
+.final .wrap > * { max-width: 720px; margin-inline: auto; }
+.final-box {
+  position: relative;
+  padding: 48px 24px 44px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background:
+    radial-gradient(90% 130% at 50% 0%, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 68%),
+    var(--surface-container);
+}
+/* a slow sweep of light across the panel, so the end of the page is not a dead rectangle */
+.final-box::after {
+  content: '';
+  position: absolute; inset: -40% -10%;
+  background: conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, var(--primary) 9%, transparent) 40deg, transparent 90deg);
+  animation: sweep 11s linear infinite;
+  pointer-events: none;
+}
+@keyframes sweep { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .final-box::after { animation: none; opacity: 0.35; } }
+
+.final-box > * { position: relative; z-index: 1; }
+.final-icon {
+  width: 84px; height: 84px; margin: 0 auto 18px;
+  border-radius: 22px;
+  filter: drop-shadow(0 14px 34px color-mix(in srgb, var(--primary) 42%, transparent));
+  animation: hover 6s ease-in-out infinite;
+}
+@keyframes hover {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-9px) rotate(-3deg); }
+}
+@media (prefers-reduced-motion: reduce) { .final-icon { animation: none; } }
+.final-box h2 { margin-top: 0; font-size: clamp(30px, 4.4vw, 44px); }
+.final .lead { margin-inline: auto; max-width: 46ch; }
+.final .btn-row { justify-content: center; margin-top: 26px; }
+.btn-big { padding: 17px 34px; font-size: 17px; }
+
+/* two ways on from here, rather than a full stop */
+.links {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-top: 16px; text-align: left;
+}
+@media (max-width: 720px) { .links { grid-template-columns: 1fr; } }
+.link-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-container) 70%, transparent);
+  color: var(--text);
+  transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), border-color 220ms ease, background 220ms ease;
+}
+.link-card:hover {
+  text-decoration: none;
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+  background: var(--surface-high);
+}
+.link-card svg { flex: none; color: var(--primary); }
+.link-card span { display: flex; flex-direction: column; gap: 2px; }
+.link-card b { font-size: 15.5px; }
+.link-card span > :last-child, .link-card span { font-size: 14px; color: var(--text-dim); }
+.link-card b { color: var(--text); }
+.link-card .arr {
+  margin-left: auto; font-style: normal; color: var(--text-faint);
+  transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), color 220ms ease;
+}
+.link-card:hover .arr { transform: translateX(5px); color: var(--primary); }
+
+/* ---------- footer ---------- */
+.foot {
+  border-top: 1px solid var(--border);
+  margin-top: 40px; padding: 34px 0 0;
+  color: var(--text-faint); font-size: 14px;
+  overflow: clip;                 /* the wordmark below is sized to the viewport, not the column */
+}
+.foot p { margin: 0 0 6px; }
+.foot a { color: var(--text-dim); }
+.foot-row { display: flex; align-items: baseline; gap: 16px 28px; flex-wrap: wrap; }
+/* 13px at the dim text colour, measured at 10.9:1 against the page. The faint colour used
+   everywhere else in the footer would have been 5.9:1 - over the line, but this is the
+   paragraph that has to be readable to be worth writing. */
+.foot-legal { margin-top: 18px; }
+.foot-legal p { max-width: 82ch; font-size: 13px; line-height: 1.6; color: var(--text-dim); }
+.foot-links { margin-left: auto; display: flex; gap: 20px; }
+@media (max-width: 720px) { .foot-links { margin-left: 0; } }
+
+/* The name once more, at the size of the page and almost out of sight.
+ *
+ * The size is in vw so the line fits any window. Measured rather than guessed: at weight 800
+ * with this tracking the string is 9.63 times its own font size wide, so 10.5vw overflowed by
+ * a hair and had to be cut. 9vw leaves room for a system font that is wider than the one
+ * measured here, and the clip on .foot catches anything wider still. */
+.wordmark {
+  margin: 30px 0 -0.14em;
+  text-align: center;
+  font-size: min(9vw, 170px);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  color: rgb(from var(--primary) r g b / 0.055);
+  user-select: none;
+  white-space: nowrap;
+}

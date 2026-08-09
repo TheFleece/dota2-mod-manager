@@ -5,7 +5,8 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, fingerprintVpk, fingerprintFiles } = require('./vpk');
+const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles,
+  findContentRoot, packFolder } = require('./vpk');
 const { extractDeltas, deltaTable, crc32 } = require('./schema');
 // Whole-game tables and tool branding that packaging tools bake into EVERY export.
 // Dota 2 Skinchanger, for one, ships a full 47 MB scripts/items/items_game.txt plus the
@@ -21,6 +22,9 @@ const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
   '(?:models/heroes|panorama)/\\d{8,}\\.vxml_c"?$',    // <steam id>.vxml_c watermark
 ].join('|') + ')');
 const { ensureLangFolder } = require('./gamelang');
+const { openZip, safeJoin } = require('./safe-zip');
+const { FileTx } = require('./file-tx');
+const { downloadFile } = require('./net');
 const { t } = require('./i18n');
 
 // Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
@@ -49,6 +53,23 @@ function isOfficialLangFile(baseLower) {
   return /^pak01_/.test(baseLower) || baseLower === 'gameinfo.gi';
 }
 
+// What a FileTx parks next to a file it is about to replace or delete (see src/file-tx.js).
+// Nothing should outlive its transaction; one that does means the app died mid-write, and
+// sweepStaged() cleans up after that on the next start.
+const STAGED_RE = /\.[a-z0-9]+\.mmtx$/i;
+
+// Engine stock that packing tools drop into every export they build: reflection cubemaps,
+// the basic particle set, the error placeholder, the transparency helper, the default
+// textures. Different tools compile them to slightly different bytes, so two mods carrying
+// them look like they are fighting over a file - and they are not. Nobody's mod looks
+// different because another mod's copy of basic_smoke won.
+//
+// Measured over 84 installed mods: of the 84 paths carried by two mods with different bytes,
+// every single one shared by more than four mods matches this, and not one of them is a hero
+// model or an item texture. Matched anywhere in the path, because authors wrap the same stock
+// in a content folder of their own.
+const STOCK_ASSET = /(^|\/)(materials\/(default|particle|transparent)|materials\/models\/cubemaps|particles\/(basic_[a-z]+|error))\//;
+
 function fileUrl(categoryId, fileRef) {
   if (/^https?:\/\//i.test(fileRef)) return fileRef;
   return `${RAW_BASE}/assets/files/${categoryId}/${encodeURIComponent(fileRef)}`;
@@ -62,7 +83,7 @@ class Installer {
    * @param {() => string} opts.getLangSuffix      e.g. "123"
    * @param {(evt: object) => void} opts.onProgress
    */
-  constructor({ userDataDir, getGamePath, getLangSuffix, onProgress }) {
+  constructor({ userDataDir, getGamePath, getLangSuffix, onProgress, identify = null }) {
     this.downloadsDir = path.join(userDataDir, 'downloads');
     this.toolsDir = path.join(userDataDir, 'tools');
     this.backupsDir = path.join(userDataDir, 'backups');
@@ -76,6 +97,32 @@ class Installer {
     this.getGamePath = getGamePath;
     this.getLangSuffix = getLangSuffix;
     this.onProgress = onProgress || (() => {});
+    // asks the game which of its own items a path list replaces (src/mod-id.js); optional,
+    // because without a game path there is nothing to ask and the path guess still answers
+    this.identify = identify || (() => null);
+  }
+
+  /**
+   * What a path list is, told as precisely as this machine allows: the game's own item names
+   * when it recognises them, the guess from the paths otherwise. The two are merged rather
+   * than one replacing the other - a mod can dress a hero in named items AND replace another
+   * hero's bare body, and only the guess sees the second.
+   */
+  describePaths(paths, analysis) {
+    const out = { info: describeAnalysis(analysis), heroNames: analysis.heroes.map((h) => h.name) };
+    let named = null;
+    try { named = this.identify(paths); } catch { /* no game, no table: the guess stands */ }
+    if (!named) return out;
+    out.items = named.items;
+    // the table is the authority on who wears what, so a hero it never mentions and the mod
+    // carries no model for was a borrowed texture, not a subject
+    const carried = new Set(subjectHeroes(analysis).map((h) => h.name));
+    for (const h of named.heroNames) carried.add(h);
+    out.heroNames = [...carried];
+    out.info = named.items.length <= 3
+      ? named.items.join(', ')
+      : `${named.items.slice(0, 2).join(', ')} +${named.items.length - 2}`;
+    return out;
   }
 
   langFolder() {
@@ -106,36 +153,47 @@ class Installer {
 
   // ---------- download ----------
 
+  // What each downloaded archive hashed to, so a cached copy can be trusted and a mirror
+  // cannot hand over a different file under the same name.
+  downloadIndex() {
+    try { return JSON.parse(fs.readFileSync(path.join(this.downloadsDir, 'index.json'), 'utf-8')); } catch { return {}; }
+  }
+
+  rememberDownload(key, entry) {
+    const index = this.downloadIndex();
+    index[key] = entry;
+    try { fs.writeFileSync(path.join(this.downloadsDir, 'index.json'), JSON.stringify(index, null, 2)); } catch { /* the cache still works without it */ }
+  }
+
   async download(categoryId, fileRef, label) {
     const url = fileUrl(categoryId, fileRef);
     const safeName = decodeURIComponent(url.split('/').pop());
     const destDir = path.join(this.downloadsDir, categoryId);
     fs.mkdirSync(destDir, { recursive: true });
     const dest = path.join(destDir, safeName);
-    if (fs.existsSync(dest) && fs.statSync(dest).size > 0) return dest; // cached
+    const key = `${categoryId}/${safeName}`;
+    const known = this.downloadIndex()[key] || null;
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(t('HTTP {0} — не удалось скачать {1}', res.status, safeName));
-    const total = Number(res.headers.get('content-length')) || 0;
-    const tmp = dest + '.part';
-    const out = fs.createWriteStream(tmp);
-    let loaded = 0;
-    const reader = res.body.getReader();
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        loaded += value.length;
-        this.onProgress({ type: 'download', label: label || safeName, loaded, total });
-        await new Promise((resolve, reject) => {
-          out.write(Buffer.from(value), (err) => (err ? reject(err) : resolve()));
-        });
-      }
-    } finally {
-      await new Promise((resolve) => out.end(resolve));
+    if (fs.existsSync(dest) && fs.statSync(dest).size > 0) {
+      // A cached file is reused on its name alone, so a copy that was cut short by a crash
+      // or a full disk would be installed forever after. Its size is checked against what
+      // was recorded when it arrived; hashing 300 MB on every install is not worth it, and
+      // a truncated file is what actually happens.
+      if (!known || known.size === fs.statSync(dest).size) return dest;
+      this.onProgress({ type: 'stage', label: label || safeName, stage: t('перекачиваю повреждённый файл') });
+      fs.rmSync(dest, { force: true });
     }
-    fs.renameSync(tmp, dest);
-    return dest;
+
+    try {
+      const res = await downloadFile(url, dest, {
+        expectSha256: known ? known.sha256 : null,
+        onProgress: (loaded, total) => this.onProgress({ type: 'download', label: label || safeName, loaded, total }),
+      });
+      this.rememberDownload(key, { size: res.bytes, sha256: res.sha256, at: Date.now() });
+      return dest;
+    } catch (err) {
+      throw new Error(t('Не удалось скачать {0}: {1}', safeName, String(err.message || err)));
+    }
   }
 
   // ---------- pak allocation ----------
@@ -270,6 +328,58 @@ class Installer {
     return base ? Number(base.slice(3)) : null;
   }
 
+  /**
+   * Which mods are quietly covering which, file by file.
+   *
+   * Two mods can carry the same file, and then only one of them is the one the game loads -
+   * the lower pak number, as above. Nothing said so, so a mod that had been overruled looked
+   * installed and switched on while doing nothing, and the usual conclusion was that the app
+   * had broken it. Measured on 84 installed mods: 801 paths are carried by more than one mod,
+   * but only 84 of those hold *different* bytes. The rest is filler both authors happened to
+   * ship, which is why the CRC decides and a shared path on its own does not.
+   *
+   * @param {Array<{key: string, name: string, files: Array<{root: string, relPath: string}>}>} mods
+   *   enabled mods only - a switched-off mod is renamed on disk and the game never sees it.
+   *   Keyed rather than named, because two copies of the same mod in two slots share a name
+   *   and are exactly the case worth reporting.
+   * @returns {Map<string, Array<{name: string, files: number}>>} mod key -> who covers it
+   */
+  coverage(mods) {
+    const owners = new Map(); // inner path -> [{ key, name, slot, crc }]
+    for (const mod of mods) {
+      const dir = (mod.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+      if (!dir) continue;
+      const slot = this.slotNumber(mod);
+      if (slot === null) continue;
+      let crcs;
+      try { crcs = listVpkPathCrcs(readVpkIndexFile(this.langFileOnDisk(dir.relPath))); } catch { continue; }
+      for (const [p, crc] of crcs) {
+        if (STOCK_ASSET.test(p)) continue;
+        if (!owners.has(p)) owners.set(p, []);
+        owners.get(p).push({ key: mod.key, name: mod.name, slot, crc });
+      }
+    }
+
+    const covered = new Map(); // loser key -> Map(winner name -> file count)
+    for (const [, list] of owners) {
+      if (list.length < 2) continue;
+      const top = list.reduce((a, b) => (b.slot < a.slot ? b : a));
+      for (const other of list) {
+        // same bytes is not a fight: whichever the game picks, the file is identical
+        if (other.key === top.key || other.crc === top.crc) continue;
+        if (!covered.has(other.key)) covered.set(other.key, new Map());
+        const by = covered.get(other.key);
+        by.set(top.name, (by.get(top.name) || 0) + 1);
+      }
+    }
+
+    const out = new Map();
+    for (const [loser, by] of covered) {
+      out.set(loser, [...by].map(([name, files]) => ({ name, files })).sort((a, b) => b.files - a.files));
+    }
+    return out;
+  }
+
   // highest free slot strictly below `n`, so climbing over one mod does not eat the whole
   // low range that the priority categories want
   freeSlotBelow(n, used) {
@@ -325,12 +435,16 @@ class Installer {
 
   // ---------- helpers ----------
 
-  copyInto(src, destAbs) {
+  // Both take an optional transaction: the operations that touch several files at once run
+  // inside one (see FileTx), the odd single write does not need it.
+  copyInto(src, destAbs, tx = null) {
+    if (tx) { tx.copy(src, destAbs); return; }
     fs.mkdirSync(path.dirname(destAbs), { recursive: true });
     fs.copyFileSync(src, destAbs);
   }
 
-  writeInto(buf, destAbs) {
+  writeInto(buf, destAbs, tx = null) {
+    if (tx) { tx.write(destAbs, buf); return; }
     fs.mkdirSync(path.dirname(destAbs), { recursive: true });
     fs.writeFileSync(destAbs, buf);
   }
@@ -342,13 +456,19 @@ class Installer {
    * [{ root: 'lang'|'fonts'|'cursor'|'tools', relPath, backup? }]
    */
   async install({ categoryId, modName, fileRef }) {
-    const isPriority = PRIORITY_CATEGORIES.includes(categoryId);
     const local = await this.download(categoryId, fileRef, modName);
     this.onProgress({ type: 'stage', label: modName, stage: t('установка') });
+    // A mod is rarely one file, and everything below writes into somebody else's game
+    // folder. One transaction around the lot: a failure on the fourth file takes the first
+    // three with it, instead of leaving paks nothing in the library points at.
+    return FileTx.run((tx) => this.installInto(tx, { categoryId, modName, local }));
+  }
 
-    if (categoryId === 'fonts') return this.installFonts(local, modName);
-    if (categoryId === 'cursors') return this.installCursor(local, modName);
-    if (categoryId === 'tools') return this.installTool(local, modName);
+  installInto(tx, { categoryId, modName, local }) {
+    const isPriority = PRIORITY_CATEGORIES.includes(categoryId);
+    if (categoryId === 'fonts') return this.installFonts(local, modName, tx);
+    if (categoryId === 'cursors') return this.installCursor(local, modName, tx);
+    if (categoryId === 'tools') return this.installTool(local, modName, tx);
 
     const lang = this.langFolder();
     this.ensureLangFolder();
@@ -357,7 +477,7 @@ class Installer {
 
     if (local.toLowerCase().endsWith('.vpk')) {
       const pakName = this.allocatePak(used, isPriority);
-      this.copyInto(local, path.join(lang, pakName));
+      this.copyInto(local, path.join(lang, pakName), tx);
       records.push({ root: 'lang', relPath: pakName });
       return records;
     }
@@ -365,15 +485,14 @@ class Installer {
     if (!local.toLowerCase().endsWith('.zip')) {
       // unknown single file — drop into lang folder as-is
       const base = path.basename(local);
-      this.copyInto(local, path.join(lang, base));
+      this.copyInto(local, path.join(lang, base), tx);
       records.push({ root: 'lang', relPath: base });
       return records;
     }
 
-    const zip = new AdmZip(local);
-    const kept = zip.getEntries().filter((entry) => {
-      if (entry.isDirectory) return false;
-      const lower = entry.entryName.replace(/\\/g, '/').toLowerCase();
+    const archive = openZip(local, { label: modName });
+    const kept = archive.files.filter((file) => {
+      const lower = file.path.toLowerCase();
       const baseName = lower.split('/').pop();
       return !!baseName && !lower.includes('!guide')
         && !/(^|\/)(guide\.txt|install\.bat|uninstall\.bat|readme[^/]*)$/i.test(lower);
@@ -384,13 +503,12 @@ class Installer {
     // reads by), so those keep their path.
     const isMapsPath = (l) => /(^|\/)maps\//.test(l);
     const pakPlan = this.planPakNames(
-      kept.map((e) => e.entryName.replace(/\\/g, '/'))
-        .filter((rel) => /\.vpk$/i.test(rel) && !isMapsPath(rel.toLowerCase())),
+      kept.map((f) => f.path).filter((rel) => /\.vpk$/i.test(rel) && !isMapsPath(rel.toLowerCase())),
       used, isPriority
     );
 
-    for (const entry of kept) {
-      const rel = entry.entryName.replace(/\\/g, '/');
+    for (const file of kept) {
+      const rel = file.path;
       const lower = rel.toLowerCase();
 
       if (isMapsPath(lower)) {
@@ -398,11 +516,11 @@ class Installer {
         const parts = rel.split('/');
         const mapsIdx = parts.findIndex((p) => p.toLowerCase() === 'maps');
         const relPath = parts.slice(mapsIdx).join('/');
-        this.writeInto(entry.getData(), path.join(lang, relPath));
+        this.writeInto(file.read(), safeJoin(lang, relPath), tx);
         records.push({ root: 'lang', relPath });
       } else if (pakPlan.has(rel)) {
         const pakName = pakPlan.get(rel);
-        this.writeInto(entry.getData(), path.join(lang, pakName));
+        this.writeInto(file.read(), safeJoin(lang, pakName), tx);
         records.push({ root: 'lang', relPath: pakName });
       } else {
         // any other payload file — preserve relative path inside lang folder,
@@ -410,7 +528,7 @@ class Installer {
         const parts = rel.split('/');
         const relPath = parts.length > 1 ? parts.slice(1).join('/') : rel;
         if (!relPath) continue;
-        this.writeInto(entry.getData(), path.join(lang, relPath));
+        this.writeInto(file.read(), safeJoin(lang, relPath), tx);
         records.push({ root: 'lang', relPath });
       }
     }
@@ -419,28 +537,26 @@ class Installer {
 
   // Fonts: zip has <Name>/assets/custom (the mod) and <Name>/assets/default (vanilla files).
   // Custom files go to game\dota\panorama\fonts. Vanilla originals are backed up once.
-  installFonts(localZip, modName) {
+  installFonts(localZip, modName, tx = null) {
     const game = this.getGamePath();
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     const target = path.join(game, ...FONTS_SUBDIR);
     fs.mkdirSync(target, { recursive: true });
-    const zip = new AdmZip(localZip);
+    const archive = openZip(localZip, { label: modName });
     const records = [];
     const backupRoot = path.join(this.backupsDir, 'fonts');
-    for (const entry of zip.getEntries()) {
-      if (entry.isDirectory) continue;
-      const rel = entry.entryName.replace(/\\/g, '/');
-      const m = rel.match(/assets\/custom\/(.+)$/i);
+    for (const file of archive.files) {
+      const m = file.path.match(/assets\/custom\/(.+)$/i);
       if (!m) continue;
       const fname = m[1];
-      const destAbs = path.join(target, fname);
+      const destAbs = safeJoin(target, fname);
       // backup vanilla file once (first font mod that touches it)
-      const backupAbs = path.join(backupRoot, fname);
+      const backupAbs = safeJoin(backupRoot, fname);
       if (fs.existsSync(destAbs) && !fs.existsSync(backupAbs)) {
         fs.mkdirSync(path.dirname(backupAbs), { recursive: true });
         fs.copyFileSync(destAbs, backupAbs);
       }
-      this.writeInto(entry.getData(), destAbs);
+      this.writeInto(file.read(), destAbs, tx);
       records.push({ root: 'fonts', relPath: fname });
     }
     if (!records.length) throw new Error(t('{0}: в архиве не найдено assets/custom', modName));
@@ -448,40 +564,38 @@ class Installer {
   }
 
   // Cursors: zip has <Name>/cursor/* → game\dota\resource\cursor (vanilla backed up once)
-  installCursor(localZip, modName) {
+  installCursor(localZip, modName, tx = null) {
     const game = this.getGamePath();
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
     const target = path.join(game, ...CURSOR_SUBDIR);
     fs.mkdirSync(target, { recursive: true });
-    const zip = new AdmZip(localZip);
+    const archive = openZip(localZip, { label: modName });
     const records = [];
     const backupRoot = path.join(this.backupsDir, 'cursor');
-    for (const entry of zip.getEntries()) {
-      if (entry.isDirectory) continue;
-      const rel = entry.entryName.replace(/\\/g, '/');
-      const m = rel.match(/(?:^|\/)cursor\/(.+)$/i);
+    for (const file of archive.files) {
+      const m = file.path.match(/(?:^|\/)cursor\/(.+)$/i);
       if (!m) continue;
       const fname = m[1];
-      const destAbs = path.join(target, fname);
-      const backupAbs = path.join(backupRoot, fname);
+      const destAbs = safeJoin(target, fname);
+      const backupAbs = safeJoin(backupRoot, fname);
       if (fs.existsSync(destAbs) && !fs.existsSync(backupAbs)) {
         fs.mkdirSync(path.dirname(backupAbs), { recursive: true });
         fs.copyFileSync(destAbs, backupAbs);
       }
-      this.writeInto(entry.getData(), destAbs);
+      this.writeInto(file.read(), destAbs, tx);
       records.push({ root: 'cursor', relPath: fname });
     }
     if (!records.length) throw new Error(t('{0}: в архиве не найдена папка cursor', modName));
     return records;
   }
 
-  installTool(localZip, modName) {
+  installTool(localZip, modName, tx = null) {
     const dest = path.join(this.toolsDir, modName.replace(/[<>:"/\\|?*]/g, '_'));
     fs.mkdirSync(dest, { recursive: true });
     if (localZip.toLowerCase().endsWith('.zip')) {
-      new AdmZip(localZip).extractAllTo(dest, true);
+      openZip(localZip, { label: modName }).extractTo(dest, tx);
     } else {
-      this.copyInto(localZip, path.join(dest, path.basename(localZip)));
+      this.copyInto(localZip, path.join(dest, path.basename(localZip)), tx);
     }
     return [{ root: 'tools', relPath: path.basename(dest) }];
   }
@@ -598,20 +712,25 @@ class Installer {
 
   // recId is needed for cursor sets (see the cursor section above); without it a cursor
   // record is left alone, exactly as before.
+  // A mod switched half off is worse than either state: the game mounts the paks that kept
+  // their name and loads a mod that is missing pieces. So the renames are one transaction -
+  // if Dota grabs the third file, the first two go back to how they were.
   setEnabled(files, enabled, recId = null) {
     if (recId && this.cursorFiles(files).length) {
       if (enabled) this.deployCursor(recId, files);
       else this.undeployCursor(recId, files);
       return;
     }
-    for (const f of files) {
-      if (f.root === 'tools') continue;
-      if (f.root === 'fonts' || f.root === 'cursor') continue; // handled by reinstall/restore
-      const abs = path.join(this.rootAbs(f.root), f.relPath);
-      const off = abs + '.off';
-      if (enabled && fs.existsSync(off)) fs.renameSync(off, abs);
-      if (!enabled && fs.existsSync(abs)) fs.renameSync(abs, off);
-    }
+    FileTx.run((tx) => {
+      for (const f of files) {
+        if (f.root === 'tools') continue;
+        if (f.root === 'fonts' || f.root === 'cursor') continue; // handled by reinstall/restore
+        const abs = path.join(this.rootAbs(f.root), f.relPath);
+        const off = abs + '.off';
+        if (enabled && fs.existsSync(off)) tx.move(off, abs);
+        if (!enabled && fs.existsSync(abs)) tx.move(abs, off);
+      }
+    });
   }
 
   // opts.recId drops the record's stored cursor copy; opts.deployed=false says its files are
@@ -621,24 +740,62 @@ class Installer {
     const { recId = null, deployed = true } = opts;
     this.dropCursorStore(recId);
     if (!deployed) files = files.filter((f) => f.root !== 'cursor');
-    for (const f of files) {
-      const rootAbs = this.rootAbs(f.root);
-      if (f.root === 'tools') {
-        fs.rmSync(path.join(rootAbs, f.relPath), { recursive: true, force: true });
-        continue;
-      }
-      const abs = path.join(rootAbs, f.relPath);
-      for (const p of [abs, abs + '.off', abs + MASTER_OFF]) {
-        if (fs.existsSync(p)) fs.rmSync(p, { force: true });
-      }
-      if (f.root === 'fonts' || f.root === 'cursor') {
-        // restore vanilla file from backup if we have one
-        const backupAbs = path.join(this.backupsDir, f.root === 'fonts' ? 'fonts' : 'cursor', f.relPath);
-        if (fs.existsSync(backupAbs)) {
-          this.copyInto(backupAbs, abs);
+    // Removing is deleting files AND putting Valve's own back where a font or cursor sat on
+    // top of one. Half of that leaves a mod that is gone from the library but still on disk,
+    // or a game missing a font it shipped with, so it is all one change.
+    FileTx.run((tx) => {
+      for (const f of files) {
+        const rootAbs = this.rootAbs(f.root);
+        if (f.root === 'tools') {
+          tx.remove(path.join(rootAbs, f.relPath));
+          continue;
+        }
+        const abs = path.join(rootAbs, f.relPath);
+        for (const p of [abs, abs + '.off', abs + MASTER_OFF]) {
+          if (fs.existsSync(p)) tx.remove(p);
+        }
+        if (f.root === 'fonts' || f.root === 'cursor') {
+          // restore vanilla file from backup if we have one
+          const backupAbs = path.join(this.backupsDir, f.root === 'fonts' ? 'fonts' : 'cursor', f.relPath);
+          if (fs.existsSync(backupAbs)) {
+            this.copyInto(backupAbs, abs, tx);
+          }
         }
       }
+    });
+  }
+
+  /**
+   * Clean up after a transaction that never finished, which can only mean the app was killed
+   * mid-write. Two cases, and they need opposite answers:
+   *   the original is missing → the parked copy IS the file, put it back (an interrupted
+   *     remove or rename, e.g. switching a mod off);
+   *   the original is there   → the write went through and the parked copy is the old
+   *     version commit would have deleted. Left alone for a week in case somebody wants it,
+   *     then dropped so the folder does not collect them.
+   * @returns {{ restored: number, dropped: number }}
+   */
+  sweepStaged(maxAgeMs = 7 * 24 * 60 * 60 * 1000) {
+    const out = { restored: 0, dropped: 0 };
+    const game = this.getGamePath();
+    if (!game) return out;
+    const dirs = [];
+    try { dirs.push(this.langFolder()); } catch { /* no language folder yet */ }
+    dirs.push(path.join(game, ...FONTS_SUBDIR), path.join(game, ...CURSOR_SUBDIR), this.toolsDir);
+    for (const dir of dirs) {
+      let names = [];
+      try { names = fs.readdirSync(dir); } catch { continue; }
+      for (const name of names) {
+        if (!STAGED_RE.test(name)) continue;
+        const parked = path.join(dir, name);
+        const original = path.join(dir, name.replace(STAGED_RE, ''));
+        try {
+          if (!fs.existsSync(original)) { fs.renameSync(parked, original); out.restored++; continue; }
+          if (Date.now() - fs.statSync(parked).mtimeMs > maxAgeMs) { fs.rmSync(parked, { recursive: true, force: true }); out.dropped++; }
+        } catch { /* locked or gone: it will be here next start too */ }
+      }
     }
+    return out;
   }
 
   // ---------- export as a single self-contained vpk ----------
@@ -724,8 +881,18 @@ class Installer {
 
       if (st && st.isDirectory()) {
         const found = this.scanVpkTree(src);
-        if (found.length) files.push(...found);
-        else errors.push({ source: label, error: t('в папке нет .vpk файлов') });
+        if (found.length) { files.push(...found); continue; }
+        // No archive in there, so this may be the other thing a folder can be: a mod that
+        // has not been packed yet. Authors work in loose files and had nothing to point the
+        // app at; now the folder is packed on the way in and imported like any other mod.
+        try {
+          const built = this.stageFolderAsVpk(src, staged);
+          if (built) { files.push(built); continue; }
+        } catch (err) {
+          errors.push({ source: label, error: String(err.message || err) });
+          continue;
+        }
+        errors.push({ source: label, error: t('в папке нет ни .vpk, ни файлов игры') });
         continue;
       }
       if (/\.zip$/i.test(src)) {
@@ -733,13 +900,11 @@ class Installer {
         staged.push(tmp);
         let found = 0;
         try {
-          for (const entry of new AdmZip(src).getEntries()) {
-            if (entry.isDirectory) continue;
-            const rel = entry.entryName.replace(/\\/g, '/');
-            if (!/\.vpk$/i.test(rel) || rel.includes('..')) continue;
-            const dest = path.join(tmp, rel);
+          for (const file of openZip(src, { label }).files) {
+            if (!/\.vpk$/i.test(file.path)) continue;
+            const dest = safeJoin(tmp, file.path);
             fs.mkdirSync(path.dirname(dest), { recursive: true });
-            fs.writeFileSync(dest, entry.getData());
+            fs.writeFileSync(dest, file.read());
             files.push(dest);
             found++;
           }
@@ -753,6 +918,55 @@ class Installer {
       files.push(src);
     }
     return { files, errors };
+  }
+
+  /**
+   * The inverse of packing a folder: write a mod's own files out as a tree, so the author
+   * who wants to change one texture can open it, edit it, and drop the folder back in.
+   * Multi-volume sets are followed, exactly as exporting to one file does.
+   * @returns {{ files: number, bytes: number }}
+   */
+  unpackToFolder(rec, dest) {
+    const lang = this.langFolder();
+    const dirRec = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+    if (!dirRec) throw new Error(t('У этого мода нет _dir.vpk — распаковывать нечего'));
+    const dirAbs = this.langFileOnDisk(dirRec.relPath);
+    const base = dirRec.relPath.replace(/_dir\.vpk$/i, '');
+    const archivePathFor = (idx) => this.langFileOnDisk(`${base}_${String(idx).padStart(3, '0')}.vpk`);
+    const entries = readVpkEntries(fs.readFileSync(dirAbs), dirAbs, archivePathFor);
+
+    let bytes = 0;
+    for (const en of entries) {
+      const rel = entryPath(en);
+      // the archive names the file, so the archive could name a path outside the folder;
+      // safeJoin is the same guard foreign zips go through (see src/safe-zip.js)
+      const out = safeJoin(dest, rel);
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      const data = en.data.length ? en.data : en.preload;
+      fs.writeFileSync(out, data);
+      bytes += data.length;
+    }
+    return { files: entries.length, bytes };
+  }
+
+  /**
+   * Pack an author's working folder into a VPK and park it where the normal importer will
+   * find it. Staged rather than installed directly, so a folder goes through exactly the
+   * same path a dropped .vpk does - slot allocation, the schema a mod carries, the
+   * transaction, the naming.
+   * @returns {string|null} path of the staged archive, or null if the folder holds no game files
+   */
+  stageFolderAsVpk(dir, staged) {
+    const root = findContentRoot(dir);
+    if (!root) return null;
+    const buf = packFolder(root);
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-folder-'));
+    staged.push(tmp);
+    // the folder's own name becomes the mod's name, minus anything a file name cannot hold
+    const base = (path.basename(dir).replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim() || 'mod').slice(0, 60);
+    const dest = path.join(tmp, `${base}_dir.vpk`);
+    fs.writeFileSync(dest, buf);
+    return dest;
   }
 
   // A VPK mod is either one self-contained "<base>_dir.vpk", or a multi-volume set:
@@ -785,60 +999,68 @@ class Installer {
       sets.set(key, set);
     }
 
+    // One set is one mod, so each gets its own transaction: a multi-volume import that dies
+    // on its third file rolls that mod back and the rest of the batch carries on.
     for (const set of sets.values()) {
       try {
-        // self-contained non-_dir vpk: copy as a fresh dir slot
-        if (set.single) {
-          const pakName = this.allocatePak(used, false);
-          this.copyInto(set.dirFile, path.join(lang, pakName));
-          results.push({ source: set.sourceLabel, name: set.base, files: [{ root: 'lang', relPath: pakName }] });
-          continue;
-        }
-        // find the _dir.vpk (selected, or sitting next to selected data parts)
-        let dirSrc = set.dirFile;
-        if (!dirSrc) {
-          const guess = path.join(set.srcDir, `${set.base}_dir.vpk`);
-          if (fs.existsSync(guess)) dirSrc = guess;
-        }
-        if (!dirSrc) {
-          results.push({ source: set.sourceLabel, error: t('нет {0}_dir.vpk рядом с data-частями', set.base) });
-          continue;
-        }
-        const pakDir = this.allocatePak(used, false);        // pakXX_dir.vpk
-        const newBase = pakDir.replace(/_dir\.vpk$/i, '');    // pakXX
-        // sibling data archives <base>_NNN.vpk that belong to this index
-        const partRe = new RegExp(`^${set.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_(\\d{3})\\.vpk$`, 'i');
-        const partFiles = fs.readdirSync(set.srcDir)
-          .map((f) => ({ f, m: f.match(partRe) }))
-          .filter((x) => x.m)
-          .sort((x, y) => x.m[1].localeCompare(y.m[1]));
+        FileTx.run((tx) => {
+          // self-contained non-_dir vpk: copy as a fresh dir slot
+          if (set.single) {
+            const pakName = this.allocatePak(used, false);
+            this.copyInto(set.dirFile, path.join(lang, pakName), tx);
+            results.push({ source: set.sourceLabel, name: set.base, files: [{ root: 'lang', relPath: pakName }] });
+            return;
+          }
+          // find the _dir.vpk (selected, or sitting next to selected data parts)
+          let dirSrc = set.dirFile;
+          if (!dirSrc) {
+            const guess = path.join(set.srcDir, `${set.base}_dir.vpk`);
+            if (fs.existsSync(guess)) dirSrc = guess;
+          }
+          if (!dirSrc) {
+            results.push({ source: set.sourceLabel, error: t('нет {0}_dir.vpk рядом с data-частями', set.base) });
+            return;
+          }
+          const pakDir = this.allocatePak(used, false);        // pakXX_dir.vpk
+          const newBase = pakDir.replace(/_dir\.vpk$/i, '');    // pakXX
+          // sibling data archives <base>_NNN.vpk that belong to this index
+          const partRe = new RegExp(`^${set.base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}_(\\d{3})\\.vpk$`, 'i');
+          const partFiles = fs.readdirSync(set.srcDir)
+            .map((f) => ({ f, m: f.match(partRe) }))
+            .filter((x) => x.m)
+            .sort((x, y) => x.m[1].localeCompare(y.m[1]));
 
-        // Multi-volume set (a Skinchanger pack is pak01_dir.vpk + pak01_000.vpk): fold the
-        // index and its volumes into ONE self-contained pakXX_dir.vpk. One file per mod is
-        // what the rest of the app assumes — enable/disable, export, packing and the folder
-        // sync all key off a single name, and a stray half-set left in the folder is exactly
-        // how a mod ends up half-loaded. Byte-for-byte copy stays the fallback.
-        const partsBytes = partFiles.reduce((s, x) => s + fs.statSync(path.join(set.srcDir, x.f)).size, 0);
-        if (partFiles.length && partsBytes <= MERGE_SIZE_CAP) {
-          try {
-            const archiveFor = (idx) => path.join(set.srcDir, `${set.base}_${String(idx).padStart(3, '0')}.vpk`);
-            this.writeInto(mergeVpkToSingle(dirSrc, archiveFor), path.join(lang, pakDir));
-            results.push({
-              source: `${set.base}_dir.vpk`, name: set.base, merged: partFiles.length + 1,
-              files: [{ root: 'lang', relPath: pakDir }],
-            });
-            continue;
-          } catch { /* unreadable index or missing volume — copy the set as it is */ }
-        }
+          // Multi-volume set (a Skinchanger pack is pak01_dir.vpk + pak01_000.vpk): fold the
+          // index and its volumes into ONE self-contained pakXX_dir.vpk. One file per mod is
+          // what the rest of the app assumes — enable/disable, export, packing and the folder
+          // sync all key off a single name, and a stray half-set left in the folder is exactly
+          // how a mod ends up half-loaded. Byte-for-byte copy stays the fallback.
+          const partsBytes = partFiles.reduce((s, x) => s + fs.statSync(path.join(set.srcDir, x.f)).size, 0);
+          if (partFiles.length && partsBytes <= MERGE_SIZE_CAP) {
+            let merged = false;
+            try {
+              const archiveFor = (idx) => path.join(set.srcDir, `${set.base}_${String(idx).padStart(3, '0')}.vpk`);
+              this.writeInto(mergeVpkToSingle(dirSrc, archiveFor), path.join(lang, pakDir), tx);
+              merged = true;
+            } catch { /* unreadable index or missing volume — copy the set as it is */ }
+            if (merged) {
+              results.push({
+                source: `${set.base}_dir.vpk`, name: set.base, merged: partFiles.length + 1,
+                files: [{ root: 'lang', relPath: pakDir }],
+              });
+              return;
+            }
+          }
 
-        this.copyInto(dirSrc, path.join(lang, pakDir));
-        const files = [{ root: 'lang', relPath: pakDir }];
-        for (const { f, m } of partFiles) {
-          const partName = `${newBase}_${m[1]}.vpk`;
-          this.copyInto(path.join(set.srcDir, f), path.join(lang, partName));
-          files.push({ root: 'lang', relPath: partName });
-        }
-        results.push({ source: `${set.base}_dir.vpk`, name: set.base, files });
+          this.copyInto(dirSrc, path.join(lang, pakDir), tx);
+          const files = [{ root: 'lang', relPath: pakDir }];
+          for (const { f, m } of partFiles) {
+            const partName = `${newBase}_${m[1]}.vpk`;
+            this.copyInto(path.join(set.srcDir, f), path.join(lang, partName), tx);
+            files.push({ root: 'lang', relPath: partName });
+          }
+          results.push({ source: `${set.base}_dir.vpk`, name: set.base, files });
+        });
       } catch (err) {
         results.push({ source: set.sourceLabel, error: String(err.message || err) });
       }
@@ -973,15 +1195,19 @@ class Installer {
     if (!dir) return null;
     try {
       const buf = readVpkIndexFile(this.langFileOnDisk(dir.relPath));
-      const a = analyzeVpkPaths(listVpkPaths(buf));
+      const paths = listVpkPaths(buf);
+      const a = analyzeVpkPaths(paths);
+      const told = this.describePaths(paths, a);
       return {
-        info: describeAnalysis(a), heroes: a.heroes.length,
+        info: told.info, heroes: a.heroes.length,
         // heroes the file carries actual models for — the ones it could be split into.
         // Every hero it merely mentions counts for the summary, not for splitting.
         subjects: a.heroes.filter((h) => h.models > 0).length,
+        // the game's own names for what this replaces, when it recognises any of it
+        items: told.items,
         // which hero(es) the content is for, by display name - lets the renderer show a
         // hero's own portrait as a stand-in for an import with no picture of its own
-        heroNames: a.heroes.map((h) => h.name),
+        heroNames: told.heroNames,
         fp: fingerprintVpk(buf),
       };
     } catch { return null; }
@@ -1180,11 +1406,14 @@ class Installer {
     for (const part of this.siblingParts(base)) item.files.push({ root: 'lang', relPath: part });
     try {
       const buf = readVpkIndexFile(abs);
-      const a = analyzeVpkPaths(listVpkPaths(buf));
-      item.info = describeAnalysis(a);
+      const paths = listVpkPaths(buf);
+      const a = analyzeVpkPaths(paths);
+      const told = this.describePaths(paths, a);
+      item.info = told.info;
       item.heroes = a.heroes.length;
       item.subjects = a.heroes.filter((h) => h.models > 0).length;
-      item.heroNames = a.heroes.map((h) => h.name);
+      item.items = told.items;
+      item.heroNames = told.heroNames;
       item.kindTag = a.kind;
       item.fp = fingerprintVpk(buf);
       // a content name ("Juggernaut", "Ландшафт") instead of the slot the file happens
@@ -1237,6 +1466,7 @@ class Installer {
         const full = path.join(lang, f);
         if (!fs.statSync(full).isFile()) continue;
         if (f.toLowerCase().endsWith(MASTER_OFF)) continue; // master-off files: handled by the toggle, not foreign
+        if (STAGED_RE.test(f)) continue; // a file a transaction parked; sweepStaged deals with those
         const base = f.toLowerCase().replace(/\.off$/, '');
         if (isOfficialLangFile(base) || knownLang.has(base)) continue;
         const part = base.match(/^(.*)_\d{3}\.vpk$/);
@@ -1297,6 +1527,70 @@ class Installer {
     };
     walk(dir);
     return out;
+  }
+
+  /* ---------- after Steam's file check ----------
+   *
+   * Mods in the language folder are files Steam knows nothing about, so verifying the game
+   * files leaves them alone. Fonts and cursors are different: they overwrite files Valve
+   * ships, and a verify puts the originals back without telling anyone. The record still
+   * says the mod is on, the game says otherwise, and nothing in between says a word.
+   *
+   * A restored file is recognised by the backup taken when the mod was installed: if what is
+   * deployed is byte for byte the copy we set aside, the game's own file is back. A font
+   * file Valve does not ship has no backup and cannot be confused for one - and a verify
+   * would not have touched it either.
+   */
+  vanillaIsBack(f) {
+    if (f.root !== 'fonts' && f.root !== 'cursor') return false;
+    const deployed = path.join(this.rootAbs(f.root), f.relPath);
+    if (!fs.existsSync(deployed)) return true;
+    const backup = path.join(this.backupsDir, f.root, f.relPath);
+    if (!fs.existsSync(backup)) return false;
+    try {
+      return fs.readFileSync(deployed).equals(fs.readFileSync(backup));
+    } catch {
+      return false;
+    }
+  }
+
+  /** Installed records whose files the game has taken back. */
+  lostToVerify(records) {
+    if (!this.getGamePath()) return [];
+    return (records || []).filter((rec) => rec.enabled !== false
+      && (rec.files || []).some((f) => this.vanillaIsBack(f)));
+  }
+
+  /** The archive this mod was installed from, if it is still in the download cache. */
+  cachedArchive(categoryId, fileRef) {
+    if (!categoryId || !fileRef) return null;
+    try {
+      const name = decodeURIComponent(fileUrl(categoryId, fileRef).split('/').pop());
+      const p = path.join(this.downloadsDir, categoryId, name);
+      return fs.existsSync(p) && fs.statSync(p).size > 0 ? p : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Put one back without asking. A cursor set is kept in userData, so it goes straight back;
+   * a font has to come from the archive it arrived in, and if the download cache has been
+   * cleared there is nothing here to restore from - that one needs the network, which is
+   * not something to start behind the user's back at launch.
+   * @returns {'store'|'cache'|null} where it came from, or null if it could not be done
+   */
+  restoreDeployed(rec) {
+    const isCursor = (rec.files || []).some((f) => f.root === 'cursor');
+    if (isCursor && this.cursorFiles(rec.files).length && fs.existsSync(this.cursorStoreDir(rec.id))) {
+      this.deployCursor(rec.id, rec.files);
+      return 'store';
+    }
+    const local = this.cachedArchive(rec.categoryId, rec.fileRef);
+    if (!local) return null;
+    if (isCursor) this.installCursor(local, rec.name);
+    else this.installFonts(local, rec.name);
+    return 'cache';
   }
 
   downloadCacheSize() {

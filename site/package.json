@@ -1,0 +1,19 @@
+{
+  "name": "dota2modmanager-site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "dota2modmanager.com - landing and docs. Built by Astro, served by Cloudflare Pages.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy:preview": "astro build && wrangler pages deploy dist --project-name dota2modmanager --branch preview --commit-dirty=true",
+    "deploy": "astro build && wrangler pages deploy dist --project-name dota2modmanager --branch main --commit-dirty=true"
+  },
+  "devDependencies": {
+    "@astrojs/sitemap": "^3.6.0",
+    "astro": "^5.15.0",
+    "wrangler": "^4.120.0"
+  }
+}

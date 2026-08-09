@@ -2,6 +2,111 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.0.0
+
+The whole app, rebuilt. Six tabs became four, the catalog was redrawn, and most of the
+questions the app used to ask you it now answers itself.
+
+### Four sections instead of six
+
+Catalog, My mods, Presets, Settings. Guides moved inside the mod they explain: open a mod and
+the guide is there, on the same card. Tools became what they always were, a category of the
+catalog, so they sit in the rail with everything else.
+
+### The catalog, redrawn
+
+- Five columns instead of four, and a card that leads with the picture. Tags say what a mod
+  changes; which item slot it fills is a dropdown, because that is one answer rather than a
+  set. Both are translated now.
+- A mod with several looks shows them as coloured buttons with their names on, and you can
+  flip between them on the card itself without opening anything.
+- An installed mod wears a green frame you can see from across the grid.
+- Heroes is grouped hero by hero, A to Z, and scrolls four times faster than it did.
+- Opening a mod takes a third of a second and comes out of the card you clicked.
+- Counts are gone from the rail, the tiles and the headings. They were catalog statistics, and
+  you came here to install a mod.
+
+### An install list
+
+Click the plus on a card to put a mod aside, keep browsing, then install everything at once.
+The list has its own search, so a list eighty mods long is still a list you can work with.
+That was the most asked-for thing in Discord: people were installing eighty mods one at a
+time.
+
+### It wears the hero you pick
+
+Eight palettes from the catalog's own art, and a little animated mascot next to the logo that
+switches between them. Click it and the whole window follows.
+
+### My mods is a list again
+
+A row is a picture, a name, a category and a switch. Everything rarer lives under the right
+mouse button: rename, remove, open the folder, change the load order. The order is always
+available, not only when something looks wrong.
+
+### Sharing a setup is one button
+
+One Share button opens one sheet: the link is already made and the file is next to it. It
+says what each of the two carries, so nobody sends a link expecting it to include a mod that
+is not in the catalog.
+
+### It stopped asking about languages
+
+The app no longer touches Dota's text language, keeps the voices Russian by itself, and puts
+mods where the game actually looks for them. If your mods were stranded in another folder from
+an older version, they move over on the first start. English voices are a single switch in
+Settings, and turning them on leaves every mod in place.
+
+### It survives a Dota patch
+
+The app notices a game update when it lands rather than at the next start, and puts back what
+the patch wiped. While Dota is running it does not write to the game folder at all: it says so
+and waits for you to close the game.
+
+### All of the change, or none of it
+
+Installing, importing, switching and deleting now write to the game folder as one transaction.
+If anything fails halfway, everything goes back to how it was, including the files that were
+displaced to make room.
+
+### Downloads that finish
+
+Several mirrors instead of one, a download that resumes where it stopped, and a checksum on
+what arrives. A half-finished file in the cache is re-fetched instead of installed.
+
+### It puts back what Steam's file check takes away
+
+Verifying game files in Steam removes the patch, the item table, the voice setup, fonts and
+cursors. The app notices and restores all of it without asking.
+
+### It reads the game rather than guessing
+
+- Item pictures come from Dota's own files, so anything Valve adds appears without an app
+  update and without downloading a 48 MB wiki dump.
+- A mod that came with no picture gets one out of itself, from the art the author packed
+  inside it.
+- The app asks the game which items a mod replaces and who wears them, so a mod is named by
+  what it actually does. A "bundle for 8 heroes" turned out to be one hero.
+- A mod whose files are supplied by another mod is marked covered, and the app tells you which
+  one the game is loading. It decides that by comparing the files themselves, so two mods that
+  happen to carry the same stock file are not accused of fighting.
+- A folder of loose game files can be turned into a mod, and a mod can be unpacked back into a
+  folder. Drag a folder onto the window and it just works.
+
+### Fixed
+
+- **Favouriting a mod could stop installs from working.** Saving any setting made the app
+  forget it had found Dota, so the catalog claimed the game was not installed and every
+  install refused until you restarted. Present since 1.15.0.
+- An archive can no longer lie about its size to make the app unpack a bomb, and a file inside
+  an archive can no longer be written outside the folder it was meant for. That applied to any
+  archive the app accepts, including a preset somebody sends you.
+- Chips on a card stay on one line instead of pushing the card's own layout apart.
+- After moving between screens, cards and buttons could stop responding. The app now waits for
+  a screen to exist before wiring it up.
+- My mods no longer breaks when there are files in the mods folder that the app did not put
+  there.
+
 ## 1.15.0
 
 ### You decide which mod loads first

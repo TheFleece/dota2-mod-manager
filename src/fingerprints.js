@@ -3,6 +3,7 @@
 // catalog mod (see tools/gen-fingerprints.js). Dormant until the map is hosted.
 const fs = require('fs');
 const path = require('path');
+const { fetchText } = require('./net');
 
 const FP_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/fingerprints.json';
 
@@ -36,9 +37,7 @@ class Fingerprints {
 
   async refresh() {
     try {
-      const res = await fetch(FP_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
+      const text = await fetchText(FP_URL);
       this.apply(JSON.parse(text)); // validate before persisting
       fs.mkdirSync(path.dirname(this.file), { recursive: true });
       fs.writeFileSync(this.file, text);

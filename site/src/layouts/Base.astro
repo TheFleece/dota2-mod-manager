@@ -1,0 +1,126 @@
+---
+/**
+ * The shell every page sits in: head tags, header, footer.
+ *
+ * What it exists to get right is the part nobody sees. A two-language site that does not
+ * declare its pairs is two sites competing with each other in search results, so every page
+ * states its canonical address and both alternates, and x-default points at English.
+ */
+import { langFromUrl, useTranslations, pathIn, type Lang } from '../i18n/ui';
+import Backdrop from '../components/Backdrop.astro';
+import Cursor from '../components/Cursor.astro';
+import '../styles/site.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path without a language prefix, e.g. "/docs/quick-start/". */
+  path: string;
+}
+
+const { title, description, path } = Astro.props;
+const lang: Lang = langFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const site = Astro.site ?? new URL('https://dota2modmanager.com');
+const canonical = new URL(pathIn(lang, path), site).href;
+const alternates = [
+  { hreflang: 'en', href: new URL(pathIn('en', path), site).href },
+  { hreflang: 'ru', href: new URL(pathIn('ru', path), site).href },
+  { hreflang: 'x-default', href: new URL(pathIn('en', path), site).href },
+];
+const other: Lang = lang === 'ru' ? 'en' : 'ru';
+
+const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
+const DISCORD = 'https://discord.gg/dota2pornfx';
+const RELEASES = `${GITHUB}/releases/latest`;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={t('site.name')} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og.png', site).href} />
+    <meta property="og:locale" content={lang === 'ru' ? 'ru_RU' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/icon.png" type="image/png" />
+    <meta name="theme-color" content="#141218" />
+    <slot name="head" />
+  </head>
+  <body>
+    <Backdrop />
+    <Cursor />
+    {/* How far down the page you are. Driven by the scroll position itself, so there is no
+        handler on scroll to make the page feel heavy, and browsers that cannot do that simply
+        do not draw it. */}
+    <div class="progress" aria-hidden="true"></div>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="topbar">
+      <div class="wrap bar">
+        <a class="brand" href={pathIn(lang, '/')}>
+          <img class="brand-mark" src="/icon.png" width="28" height="28" alt="" />
+          <span>{t('site.name')}</span>
+        </a>
+        <nav class="nav" aria-label={t('site.name')}>
+          {/* Docs go here once they exist (6.4). A nav that promises a page the site does
+              not have yet is worse than a shorter nav. */}
+          <a href={GITHUB} rel="noopener">{t('nav.github')}</a>
+          <a href={DISCORD} rel="noopener">{t('nav.discord')}</a>
+          <a class="lang" href={pathIn(other, path)} lang={other} hreflang={other}>{t('lang.switch')}</a>
+          <a class="cta" href={RELEASES} rel="noopener">{t('nav.download')}</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    {/* A one-page site gets a utility footer: the few things somebody might still want, and
+        nothing that pretends to be a sitemap. The name is set once more, very large and very
+        quiet, so the page closes on the same word it opened with - a signature at the bottom
+        of a letter rather than another block of content. */}
+    <footer class="foot">
+      <div class="wrap foot-row">
+        <p>
+          {t('foot.built')} <a href="https://github.com/TheFleece" rel="noopener">Mykhailo Lynnyk</a>.
+          <a href={GITHUB} rel="noopener">{t('foot.license')}</a>.
+        </p>
+        <nav class="foot-links" aria-label={t('site.name')}>
+          <a href={GITHUB} rel="noopener">{t('nav.github')}</a>
+          <a href={`${GITHUB}/releases`} rel="noopener">{t('foot.releases')}</a>
+          <a href={DISCORD} rel="noopener">{t('nav.discord')}</a>
+        </nav>
+      </div>
+      {/* The part a fan project owes the people whose work it stands on. Valve lets fan work
+          use its game content on a non-commercial basis, and the art of a Workshop cosmetic
+          belongs to whoever made it rather than to Valve, so both are named. Written at a
+          size somebody can read: a disclaimer set in grey 10px is a disclaimer that knows it
+          is hiding. The way to ask for something to be taken down is a link, not an address
+          buried in a repository. */}
+      <div class="wrap foot-legal">
+        <p>{t('foot.unofficial')}</p>
+        <p>{t('foot.marks')}</p>
+        <p>
+          {t('foot.takedown.before')}<a href={DISCORD} rel="noopener">{t('nav.discord')}</a>{t('foot.takedown.after')}
+        </p>
+        {/* Privacy and Terms are carried over from the old site together with the docs (6.4);
+            until then they are not linked, because a link to nothing is not a placeholder. */}
+      </div>
+      <p class="wordmark" aria-hidden="true">{t('site.name')}</p>
+    </footer>
+  </body>
+</html>

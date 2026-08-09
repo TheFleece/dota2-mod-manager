@@ -1,0 +1,83 @@
+/* ============ Settings ============ */
+.settings-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  max-width: 780px;
+  animation: cardIn 0.4s var(--ease) both;
+}
+.settings-block h3 { font-size: 15px; margin-bottom: 12px; }
+.settings-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.settings-row:last-child { margin-bottom: 0; }
+.settings-label { font-size: 13px; color: var(--text-muted); min-width: 150px; }
+.mono {
+  font-family: 'Cascadia Mono', Consolas, monospace;
+  font-size: 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  word-break: break-all;
+}
+.launch-code {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--bg-elev);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-xs);
+  padding: 8px 14px;
+  font-family: Consolas, monospace;
+  font-size: 13.5px;
+  color: var(--primary-soft);
+}
+
+/* ============ Settings: folded extras ============ */
+.settings-adv { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.settings-adv > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  transition: color 0.2s;
+}
+.settings-adv > summary::-webkit-details-marker { display: none; }
+.settings-adv > summary::before {
+  font-family: 'Material Symbols Rounded';
+  content: 'expand_more';
+  font-size: 18px;
+  transition: transform 0.22s var(--ease);
+}
+.settings-adv[open] > summary::before { transform: rotate(180deg); }
+.settings-adv > summary:hover { color: var(--primary-soft); }
+.settings-adv .settings-row:first-of-type { margin-top: 12px; }
+
+/* ============ Settings: the page's own roles ============ */
+/* Blocks arrive one after another. The index is the same --i the card grids use, rather
+   than a delay written out on each block. */
+.settings-block { animation-delay: calc(var(--i, 0) * 30ms); }
+
+/* The muted line under a control explaining what it does. */
+.settings-hint {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+.settings-row + .settings-hint { margin-top: var(--space-2); }
+/* A row that starts a new thought rather than continuing the last one. */
+.settings-row.spaced { margin-top: var(--space-4); }
+
+.settings-label .ms {
+  font-size: var(--icon-sm);
+  vertical-align: -3px;
+  margin-right: var(--space-1);
+  color: var(--text-faint);
+}
+.settings-link { color: var(--primary-soft); cursor: pointer; font-size: var(--text-sm); }
+.settings-block .modal-note { margin-top: var(--space-3); }
+.settings-block .modal-note .btn { margin-left: var(--space-2); }

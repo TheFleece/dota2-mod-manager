@@ -60,7 +60,17 @@ const EN = {
   // ---------- group / link labels ----------
   'Все герои': 'All heroes', 'Все предметы': 'All items', 'Все крипы': 'All creeps',
   'Все башни': 'All towers', 'Все типы': 'All types', 'Все группы': 'All groups',
-  'Все категории': 'All categories',
+  'Все категории': 'All categories', 'Все слоты': 'All slots',
+
+  // ---------- tags: what a mod changes, and which slot an item goes in ----------
+  // The catalog ships these in English; these are our own words for them. 'Эффекты' and
+  // 'Звуки' are already above as category names, with the same English.
+  'Иконки': 'Icons', 'Аниме': 'Anime', '18+': '18+',
+  'Видео': 'Video', 'Картинка': 'Image', 'Плохое качество': 'Poor quality',
+  'Мета': 'Meta', 'Статистика': 'Stats', 'Развлечения': 'Fun', 'Исходный код': 'Source code',
+  'Оружие': 'Weapon', 'Наплечники': 'Shoulders', 'Голова': 'Head', 'Руки': 'Arms',
+  'Броня': 'Armor', 'Спина': 'Back', 'Ездовое': 'Mount', 'Щит': 'Shield',
+  'Тотем': 'Totem', 'Волосы': 'Hair',
   'Избранное': 'Favorites',
   'В избранное': 'Add to favorites',
   'Убрать из избранного': 'Remove from favorites',
@@ -101,16 +111,15 @@ const EN = {
     'This mod changes the item schema: its effects and icons are built into the shared table',
   'Мод меняет схему предметов. Без правок схемы встанет только модель — эффекты и иконки работать не будут.':
     'This mod changes the item schema. Without the patch only the model installs: effects and icons will not work.',
+  'перекрыт': 'overruled',
+  'Файлов перекрыто: {0} — {1}. Побеждает мод, который загружается раньше; порядок меняется правой кнопкой.':
+    'Files overruled: {0} — {1}. The mod that loads earlier supplies them; right-click to change the order.',
   'Косметика': 'Cosmetics',
   'Моды': 'Mods',
   'бесплатная косметика': 'free cosmetic',
   'Выбрать всю косметику': 'Select every look',
   'Вернуть все слоты к тому, что даёт игра': 'Put every slot back to what the game gives',
   'Косметика выключена — слоты снова как в игре': 'Cosmetics off — the slots are the game’s own again',
-  'Этот вид сейчас стоит в слоте «{0}». Убрать — вернуть то, что даёт игра; включить обратно можно в Библиотеке.':
-    'This look is what the «{0}» slot wears now. Removing it puts the game’s own back; you can switch it on again from the Library.',
-  'На один слот — только одна активная косметика: этот вид заменит «{0}». Прошлый выбор останется в Библиотеке выключенным.':
-    'One slot, one active look: this one replaces «{0}». The previous pick stays in the Library, switched off.',
   'Косметика подставляется в схему предметов игры — файлы модов она не трогает, и её видно только тебе.':
     'A look is spliced into the game’s item schema — it touches no mod files, and only you can see it.',
   '…и ещё {0} — уточни запрос': '…and {0} more — narrow the search',
@@ -124,7 +133,22 @@ const EN = {
   'Серия убийств': 'Kill streak',
   'Поиск модов…': 'Search mods…', 'Очистить': 'Clear', 'Свернуть': 'Minimize',
   'Развернуть': 'Maximize', 'Закрыть': 'Close', 'Поиск Dota 2…': 'Looking for Dota 2…',
-  'Открыть папку модов': 'Open mods folder', 'Играть': 'Play',
+  'Папка модов': 'Mods folder', 'Играть': 'Play',
+  'Сменить цвета': 'Change the colours',
+
+  // ---------- install list ----------
+  'Список установки': 'Install list',
+  'Добавить в список': 'Add to the install list',
+  'В списке установки': 'In the install list',
+  'Установить всё ({0})': 'Install all ({0})',
+  'Найти в списке…': 'Find in the list…',
+  '«{0}» уже в списке установки. Поставить сейчас? Из списка он пропадёт.':
+    '«{0}» is already in the install list. Install it now? It will leave the list.',
+  'Пусто. Жми плюс на карточке мода, чтобы собрать список.':
+    'Empty. Press the plus on a mod to start a list.',
+  'Список: установлено {0}{1}{2}': 'List: {0} installed{1}{2}',
+  ', пропущено {0}': ', {0} skipped',
+  'Открыть папку, куда ставятся моды': 'Open the folder the mods are installed into',
   'Включить/выключить все моды сразу (для запуска ванильной игры)':
     'Turn all mods on/off at once (to launch the vanilla game)',
   'Запустить Dota 2 через Steam с твоими параметрами запуска':
@@ -157,9 +181,6 @@ const EN = {
   'Загрузка каталога…': 'Loading catalog…',
   'Не удалось загрузить каталог: {0}': 'Could not load the catalog: {0}',
   'Повторить': 'Retry',
-  'Моды для Dota 2': 'Mods for Dota 2',
-  '{0} модов в {1} категориях · каталог Dota2PornFx': '{0} mods in {1} categories · Dota2PornFx catalog',
-  ' · обновлён {0}': ' · updated {0}',
   'Недавно добавленные': 'Recently added',
   'Категории': 'Categories',
   'Поиск:': 'Search:',
@@ -168,7 +189,9 @@ const EN = {
   'Установленные': 'Installed',
   'Смотреть превью': 'Watch preview',
   'Установлен': 'Installed',
-  'Пак · {0}': 'Pack · {0}',
+  // the first look of a mod has no name of its own in the catalog
+  'Обычный': 'Default',
+  'Пак': 'Pack',
   'Свой': 'Custom',
   'Ссылка': 'Link',
 
@@ -184,11 +207,8 @@ const EN = {
   'Установить пак ({0})': 'Install pack ({0})',
   'Установка…': 'Installing…', 'Установить': 'Install',
   'Открыть ссылку': 'Open link',
-  'Гайд: {0}': 'Guide: {0}',
   'Шрифт ставится в файлы игры (game\\dota\\panorama\\fonts) — параметр запуска не нужен. Оригиналы сохраняются автоматически.':
     'The font is installed into the game files (game\\dota\\panorama\\fonts) — no launch option needed. Originals are backed up automatically.',
-  'Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически. Включать и выключать его можно в Библиотеке, но активным может быть только один курсор: новый выключит предыдущий.':
-    'The cursor is installed into game\\dota\\resource\\cursor — no launch option needed. Originals are backed up automatically. You can switch it on and off in the Library, but only one cursor can be active: a new one turns the previous one off.',
   'Введи название пака': 'Enter a pack name',
   'В паке не осталось модов': 'No mods left in the pack',
   'Пак «{0}» сохранён — он появился в категории Паки': 'Pack «{0}» saved — it appears in the Packs category',
@@ -214,8 +234,6 @@ const EN = {
   '{0} из {1} включено': '{0} of {1} enabled',
   'пусто': 'empty',
   'Включить/выключить пак целиком': 'Enable/disable whole pack',
-  'Добавить моды в пак': 'Add mods to pack',
-  'Разобрать пак обратно на отдельные моды': 'Disband the pack back into separate mods',
   'Разобрать': 'Split',
 
   // ---------- library: normal rows ----------
@@ -229,13 +247,6 @@ const EN = {
     'Cursors cannot go into a pak — they live in resource\\cursor, not in a pak file',
   'Привязать к каталогу': 'Adopt into the catalog',
   'Привязать': 'Adopt',
-  'Разбить на отдельные моды по героям': 'Split into separate mods by hero',
-  'Сохранить мод одним .vpk файлом (для отправки автору каталога)':
-    'Save the mod as a single .vpk (to send to the catalog author)',
-  'Сохранить курсор архивом (для отправки или на память)':
-    'Save the cursor set as an archive (to pass on or to keep)',
-  'Сохранить пак одним .vpk файлом (войдут включённые моды)':
-    'Save the pack as a single .vpk (the mods that are on go in)',
   'Экспорт': 'Export',
   'Привязано: {0}': 'Adopted: {0}',
 
@@ -296,7 +307,6 @@ const EN = {
   'Разобрано на {0}: {1}': 'Split into {0}: {1}',
   'Разобрано на {0}: {1}{2}': 'Split into {0}: {1}{2}',
   'Удалить пак «{0}» со всеми модами внутри?': 'Delete pack «{0}» with all mods inside?',
-  'Собираю…': 'Building…',
   '{0} сохранён одним файлом ({1} MB)': '{0} saved as a single file ({1} MB)',
   'Привязан к каталогу: «{0}»': 'Adopted into the catalog: «{0}»',
   'Разбить «{0}» на отдельные моды по героям? Исходный файл заменится на отдельные, каждый можно будет включать и удалять по отдельности.':
@@ -333,10 +343,7 @@ const EN = {
   'Не удалось прочитать перетащенную папку': 'Could not read the dropped folder',
 
   // ---------- load order ----------
-  'Загружать раньше: при общих файлах победит этот мод': 'Load earlier: on a shared file this mod wins',
   'Загружать позже': 'Load later',
-  'Выше в порядке загрузки': 'Earlier in the load order',
-  'Ниже в порядке загрузки': 'Later in the load order',
   'Файл игры не совпадает с подписью Dota': "A game file does not match Dota's own signature",
   '. Пока так, клиент может не пускать в матчмейкинг — и моды тут ни при чём. Приложение не смогло восстановить оригинал само: проверь целостность файлов Dota 2 через Steam, это чинит за минуту.':
     ". While that is true the client can refuse to matchmake, and mods have nothing to do with it. The app could not restore the original itself: verify Dota 2's files through Steam, it takes a minute.",
@@ -383,7 +390,6 @@ const EN = {
   'Пресет обновлён: {0} {1}': 'Preset updated: {0} {1}',
 
   // ---------- preset links ----------
-  'Ссылка': 'Link',
   'Файл': 'File',
   'Сохранить пресет файлом — донесёт и свои моды тоже': 'Save the preset as a file — it carries your own mods too',
   'Скопировать короткую ссылку на пресет': 'Copy a short link to the preset',
@@ -399,8 +405,6 @@ const EN = {
 
   // ---------- account ----------
   'Показывать в Discord, что ты в Mod Manager': 'Show in Discord that you are in Mod Manager',
-  'Друзья увидят «Играет в Dota 2 Mod Manager», текущую вкладку и сколько модов включено. В самом Discord это работает, только если включено «Отображать текущую активность как статус».':
-    'Friends will see «Playing Dota 2 Mod Manager», the tab you are on and how many mods are enabled. In Discord itself this only shows while «Display current activity as a status message» is on.',
   'Скопировано': 'Copied',
   'Войти': 'Sign in',
   'Вход нужен, чтобы подписывать свои сборки': 'Signing in puts your name on the builds you share',
@@ -422,97 +426,150 @@ const EN = {
   // ---------- tools ----------
   'Запустить': 'Run', 'Папка': 'Folder', 'Скачать': 'Download', 'Открыть сайт': 'Open site',
   'Скачивание…': 'Downloading…', '{0} готов': '{0} ready',
+  'Открыть': 'Open', 'Исходники': 'Source code', 'Небезопасно': 'Not safe',
 
-  // ---------- guides ----------
-  'Гайды из репозитория Dota2PornFx. Менеджер делает бóльшую часть шагов автоматически — гайды пригодятся для ручной установки и решения проблем.':
-    'Guides from the Dota2PornFx repository. The manager does most of the steps for you — the guides help with manual installs and troubleshooting.',
+  // ---------- help ----------
+  'Помощь': 'Help', 'Вики': 'Wiki',
+
+  // ---------- my mods ----------
+  'Мои моды': 'My mods',
+
+  // ---------- no game found ----------
+  'Dota 2 не найдена': 'Dota 2 not found',
+  ' — моды ставить некуда. Проверь, что игра установлена, или укажи её папку вручную.':
+    ' — there is nowhere to install mods. Check that the game is installed, or point at its folder yourself.',
+  'Искать снова': 'Search again',
+  'Указать папку': 'Choose the folder',
+  'Dota 2 найдена — можно ставить моды': 'Dota 2 found — you can install mods now',
+  'Не нашёл автоматически — укажи папку вручную': 'No luck automatically — point at the folder yourself',
+
+  // ---------- presets: sharing ----------
+  'Скопировать': 'Copy',
+  'Сохранить файлом…': 'Save as a file…',
+  'Обновить по текущему состоянию': 'Update from what is on now',
+  'Открывается в менеджере и ставит моды из каталога.': 'Opens in the manager and installs the mods from the catalog.',
+  'В пресете только свои моды — ссылка их не донесёт.': 'This preset holds only mods of your own, and a link cannot carry those.',
+  'Донесёт {0} из каталога. Свои моды ({1}) в неё не влезут — для них файл.':
+    'Carries {0} from the catalog. Mods of your own ({1}) do not fit in a link — use the file for those.',
+  'Донесёт и те моды, которых нет в каталоге. Дальше выберешь, что положить внутрь.':
+    'Carries the mods the catalog does not have. You pick what goes inside on the next step.',
+  'Пресет запоминает, какие моды включены: применил — эти включились, остальные выключились. Готовым можно поделиться ссылкой или файлом, а полученный .d2mm достаточно перетащить сюда.':
+    'A preset remembers which mods are on: apply it and those switch on while the rest switch off. Share a finished one as a link or a file, and drop a .d2mm you were sent anywhere in this window.',
+  'Поиск среди своих модов…': 'Search your mods…',
+  'Моды, положенные в папку мимо менеджера. «Принять» берёт файл к себе — с превью, переключателем и всем остальным.':
+    'Mods dropped into the folder without the manager. “Take it” adopts the file — preview, switch and all.',
+  'Взять файл к себе — дальше как у обычного мода': 'Adopt the file: from then on it behaves like any other mod',
+  '«{0}» принят': '«{0}» adopted',
+  'Загружать раньше': 'Load earlier',
+  'Сохранить одним файлом': 'Save as one file',
+  'Распаковать в папку': 'Unpack into a folder',
+  '«{0}»: распакован, файлов — {1} ({2} MB)': '“{0}” unpacked: {1} files ({2} MB)',
+  'Сохранить курсор архивом': 'Save the cursor as an archive',
+  'Разобрать по героям': 'Split by hero',
+  'Разбить на отдельные моды по героям': 'Split into one mod per hero',
+  'Разобрать на отдельные моды': 'Split into separate mods',
+  'Добавить моды в пак': 'Add mods to the pack',
+  'Собираю «{0}» в один файл…': 'Building «{0}» into one file…',
+  'Курсор ставится в game\\dota\\resource\\cursor — параметр запуска не нужен. Оригиналы сохраняются автоматически. Включать и выключать его можно в «Моих модах», но активным может быть только один курсор: новый выключит предыдущий.':
+    'The cursor is installed into game\\dota\\resource\\cursor — no launch option needed. Originals are backed up automatically. You can switch it on and off in My mods, but only one cursor can be active: a new one turns the previous one off.',
+  'Этот вид сейчас стоит в слоте «{0}». Убрать — вернуть то, что даёт игра; включить обратно можно в «Моих модах».':
+    'This look currently fills the «{0}» slot. Removing it puts back what the game gives; you can switch it on again in My mods.',
+  'На один слот — только одна активная косметика: этот вид заменит «{0}». Прошлый выбор останется в «Моих модах» выключенным.':
+    'One slot, one active look: this one replaces «{0}». The previous pick stays in My mods, switched off.',
 
   // ---------- settings ----------
+  'Звук в игре': 'Game audio',
+  'Английские голоса': 'English voices',
+  'Русская озвучка выключается, моды остаются на месте. После переключения перезапусти Dota.':
+    'Turns the Russian voice-over off and leaves the mods where they are. Restart Dota afterwards.',
+  'Голоса в игре станут английскими — перезапусти Dota': 'The game will speak English — restart Dota',
+  'Русская озвучка вернулась — перезапусти Dota': 'The Russian voice-over is back — restart Dota',
+  'В самом Discord для этого включено «Отображать текущую активность как статус».':
+    'Discord itself needs “Display current activity as a status message” switched on.',
+  'Скачанные архивы, чтобы не качать повторно. Удаление ничего не сломает.':
+    'Downloaded archives, kept so nothing is fetched twice. Deleting them breaks nothing.',
+  'Путь к игре, список модов и последние записи журнала в одном файле. Пришли его, если что-то не работает.':
+    'The game path, the list of mods and the last log entries in one file. Send it when something is wrong.',
+
+  // ---------- library: where the mods went ----------
+  'Dota сейчас берёт файлы из папки dota_{0}': 'Dota is reading dota_{0} right now',
+  ', а моды ставятся в dota_{0}. Закрой Dota и перезапусти менеджер — он переключит игру сам.':
+    ', while mods are installed into dota_{0}. Close Dota and restart the manager: it switches the game over itself.',
+  'В папке dota_{0} лежат {1} {2}': 'The dota_{0} folder holds {1} {2}',
+  ', которые игра не видит.': ' the game cannot see.',
+  'Рядом установлен Minify': 'Minify is installed alongside',
+  'Проверка файлов Steam вернула оригиналы игры': 'Steam’s file check put the game’s own files back',
+  ': {0}. Архива для установки уже нет — скачать заново?':
+    ': {0}. The archive they were installed from is no longer cached — download it again?',
+  'Поставить заново': 'Install again',
+  '. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.':
+    '. If it installs into the same folder, their files overwrite each other: install with one of the two, not both.',
+
+  // ---------- notices from the network ----------
+  'Подробнее': 'Read more',
+
+  // ---------- pictures out of the game and out of the mods (the Source 2 toolchain) ----------
+  'Картинки из игры и модов': 'Pictures from the game and from mods',
+  'Инструмент установлен': 'Tool installed',
+  'Инструмент не скачан': 'Tool not downloaded',
+  'Картинки предметов приложение берёт из самой игры: точные, без интернета и без ожидания. А моду, который приехал без превью, находит картинку в его же файлах. Без инструмента предметы грузятся из вики (медленнее и есть не для всего), а моды остаются с заглушкой. Удалить можно в любой момент.':
+    'Item pictures come out of the game itself: exact, offline, no waiting. For a mod that arrived without a preview, the app finds a picture inside the mod\'s own files. Without the tool, items load from a wiki (slower, and it does not cover everything) and mods keep their placeholder. You can delete it at any time.',
+  'Скачиваю инструмент — это разово': 'Downloading the tool, once and for all',
+  'Готово — картинки теперь берутся из игры': 'Done, pictures now come from the game',
+  'Инструмент удалён — картинки снова из вики': 'Tool removed, pictures come from the wiki again',
+
+  // ---------- Dota patched underneath the app ----------
+  'Dota обновилась': 'Dota has updated',
+  ', моды и настройки вернули на место': ', and your mods and settings are back in place',
+  ', менять ничего не пришлось': ', and nothing needed changing',
+  '. Можно играть.': '. You are good to play.',
+  'Понятно': 'Got it',
+  'Dota обновилась, пока игра запущена': 'Dota updated while the game was running',
+  '. Моды в этой сессии не работают: файлы игры заняты. Закрой Dota — приложение вернёт всё само.':
+    '. Mods are off for this session because the game holds its files open. Close Dota and the app puts everything back on its own.',
+  'Я закрыл, повтори': 'I closed it, try again',
+  'Dota обновилась, вернуть моды не вышло': 'Dota updated and the mods could not be put back',
+  '. Закрой Dota и нажми «Повторить» — почти всегда дело в том, что игра держит файлы.':
+    '. Close Dota and press Try again: it is almost always the game holding its files.',
+  'Dota всё ещё запущена — закрой её полностью': 'Dota is still running, close it fully',
+  'Dota обновилась — вернём моды, как только закроешь игру': 'Dota has updated, the mods go back as soon as you close the game',
+  'Dota обновилась, вернуть моды не вышло — загляни в «Мои моды»': 'Dota has updated and the mods could not be put back, see My mods',
+  'Dota обновилась — моды на месте': 'Dota has updated, your mods are in place',
+  'Свернуть нижнюю панель': 'Hide the bottom bar',
   'Путь к Dota 2': 'Dota 2 path',
   'не найден': 'not found',
   'Найти автоматически': 'Auto-detect',
   'Указать вручную': 'Set manually',
   'Интерфейс': 'Interface',
   'Язык': 'Language',
-  'Один переключатель на всё: язык приложения, текст в самой Dota и её озвучку (за языком озвучки следует папка модов). Dota при этом должна быть закрыта — иначе она перезапишет настройку при выходе.':
-    'One switch for all of it: the language of this app, the text inside Dota and its voices (the mods folder follows the voice language). Dota has to be closed, or it overwrites the setting on exit.',
   'Масштаб': 'Scale',
-  'Масштаб всего': 'Scale of everything',
-  'Масштаб по частям': 'Scale part by part',
-  'Содержимое': 'Content',
-  'Верхняя панель': 'Top bar',
-  'Нижняя панель': 'Bottom bar',
-  'Список категорий': 'Category list',
   'Мельче': 'Smaller',
   'Крупнее': 'Bigger',
   'Сбросить': 'Reset',
-  'Сбросить всё': 'Reset all',
-  'Двигает содержимое и панели сразу. Ниже каждый масштаб можно задать по отдельности. Те же клавиши: Ctrl + и Ctrl − меняют содержимое, Ctrl + колесо над панелью — эту панель, Ctrl 0 возвращает 100%. За границу панели можно потянуть, чтобы изменить её размер.':
-    'Moves the content and the panels together. Below, each one can be set on its own. The same from the keyboard: Ctrl + and Ctrl − scale the content, Ctrl + wheel over a panel scales that panel, Ctrl 0 puts everything back to 100%. Drag a panel’s edge to resize it.',
-  'Задать языки Dota по отдельности': 'Set Dota’s languages separately',
-  'Текст': 'Text',
-  'Озвучка': 'Voice',
   'Применить': 'Apply',
-  'Dota хранит эти языки отдельно: моды подхватываются из папки языка озвучки, а текст на них не влияет. Отсюда, например, английский интерфейс игры при русской озвучке.':
-    'Dota keeps these two apart: mods load from the voice language’s folder, and the text setting has no say in it. That is how you get an English game interface with Russian voices.',
-  'Переключить и текст в самой Dota на {0}? Игра должна быть закрыта.':
-    'Switch the text inside Dota to {0} as well? The game has to be closed.',
-  'Переключить и саму Dota на {0}? Текст в игре станет {1}, моды переедут в папку dota_{2}{3}. Игра должна быть закрыта, после смены её надо перезапустить.':
-    'Switch Dota itself to {0} as well? The game text becomes {1} and the mods move to the dota_{2} folder{3}. The game has to be closed, and needs a restart afterwards.',
-  ', а озвучка останется английской — пак «{0}» не скачан':
-    ', while the voices stay English because the {0} pack is not downloaded',
-  'Переключить': 'Switch',
-  'Dota переключена: текст «{0}», моды в dota_{1}. Перезапусти Dota.':
-    'Dota switched: text {0}, mods in dota_{1}. Restart Dota.',
-  'Озвучка станет {0}': 'Voices will switch to {0}',
-  'Озвучка останется английской: пак «{0}» не скачан': 'Voices stay English: the {0} pack is not downloaded',
-  'Готово: текст «{0}», моды в dota_{1}. Перезапусти Dota.':
-    'Done: text {0}, mods in dota_{1}. Restart Dota.',
-  'Языковая папка': 'Language folder',
-  'Куда ставятся моды': 'Mods are installed to',
-  'Следовать языку озвучки Dota': 'Follow Dota’s audio language',
-  'Dota монтирует только папку своего языка озвучки, поэтому придуманные папки вроде dota_123 больше не подхватываются. Параметр -language ни на что не влияет — его можно убрать из свойств Steam.':
-    'Dota only mounts the folder of its own audio language, so made-up folders like dota_123 are no longer picked up. The -language option does nothing now — you can remove it from the Steam properties.',
-  'Английский интерфейс': 'English interface',
-  ': открой «Задать языки Dota по отдельности» в блоке «Интерфейс», поставь Текст = English, а Озвучку оставь той, чья папка уже используется. Языки независимы, моды продолжат работать.':
-    ': open “Set Dota’s languages separately” in the Interface block, set Text to English and leave Voice on the language whose folder is already in use. The two are independent, so mods keep working.',
-  'Папку dota_{0} создаёт приложение': 'The dota_{0} folder is created by this app',
-  ': Valve её не поставляет, и гарантии, что игра её смонтирует, нет. Если моды не появились в игре — выбери в настройках Dota другой Audio Language, например Russian.':
-    ': Valve does not ship it, so there is no guarantee the game will mount it. If mods do not show up in game, pick a different Audio Language in Dota’s settings, Russian for example.',
-  'Папка dota_{0} больше не работает': 'The dota_{0} folder no longer works',
-  ': в ней {0} {1}, игра их не видит.': ': it holds {0} {1} the game cannot see.',
   'Перенести сюда': 'Move here',
-  'Обнаружен Minify': 'Minify detected',
-  ' (папка ': ' (the ',
-  ' рядом). Если Minify ставит моды в ту же папку, что и менеджер, их файлы будут перекрывать друг друга — ставь моды через что-то одно.':
-    ' folder is next to it). If Minify installs mods into the same folder as the manager, their files will override each other — install mods through just one of them.',
   'Кэш загрузок': 'Download cache',
   'Размер': 'Size',
   'Очистить': 'Clear',
-  'Скачанные архивы модов. Нужны для быстрой переустановки — удаление ничего не сломает.':
-    'Downloaded mod archives. They speed up reinstalls — clearing them breaks nothing.',
   'Каталог': 'Catalog',
   'Обновлён': 'Updated',
   'Обновить сейчас': 'Refresh now',
   'Источник': 'Source',
   'О программе': 'About',
   'Версия': 'Version',
-  'Обновления скачиваются автоматически из GitHub Releases — когда новая версия готова, появится кнопка установки.':
-    'Updates download automatically from GitHub Releases — when a new version is ready, an install button appears.',
   'Dota 2 найдена: {0}': 'Dota 2 found: {0}',
   'Не нашёл автоматически — укажи вручную': 'Not found automatically — set it manually',
   'Путь сохранён': 'Path saved',
-  'Папка модов: dota_{0}': 'Mods folder: dota_{0}',
   'Перенесено файлов: {0}': 'Moved {0} files',
-  'Моды перенесены в dota_{0}: игра больше не подхватывает папку dota_{1}':
-    'Mods moved to dota_{0}: the game no longer picks up the dota_{1} folder',
+  'Моды перенесены из dota_{0} в dota_{1}, озвучка Dota переключена на русскую. Перезапусти игру.':
+    'Mods moved from dota_{0} to dota_{1} and Dota’s audio language is now Russian. Restart the game.',
   'Скопировано в буфер': 'Copied to clipboard',
   'Кэш очищен': 'Cache cleared',
   'Язык переключён на English': 'Language switched to English',
   'Язык переключён на Русский': 'Language switched to Russian',
 
   // ---------- status bar ----------
-  'Dota 2 подключена · моды в dota_{0}': 'Dota 2 connected · mods in dota_{0}',
+  'Dota 2 подключена': 'Dota 2 connected',
   'Dota 2 не найдена — укажи путь в настройках': 'Dota 2 not found — set the path in Settings',
 
   // ---------- what's new ----------
@@ -533,8 +590,6 @@ const EN = {
 
   // ---------- diagnostics ----------
   'Диагностика': 'Diagnostics',
-  'Один файл с путём и настройками Dota, списком модов, состоянием патча и последними записями журнала приложения — без личных данных, кроме имени в Discord, если ты вошёл. Пришли его вместо скриншотов, если что-то не работает.':
-    "One file with Dota's path and settings, the mod list, patch state and the app's recent log entries — no personal data beyond your Discord name, if you're signed in. Send it instead of screenshots when something's broken.",
   'Экспортировать отчёт': 'Export report',
   'Отчёт сохранён': 'Report saved',
 };

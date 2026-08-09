@@ -9,6 +9,7 @@ const path = require('path');
 const os = require('os');
 const gamelang = require('./gamelang');
 const { validateGamePath } = require('./steam');
+const { mirrorHealth } = require('./net');
 
 // Nothing about a folder listing that matters for troubleshooting needs the file's bytes,
 // only its shape - names, sizes, when they last changed.
@@ -99,6 +100,11 @@ function buildReport({ settings, library, installer, schemaService, catalog, ico
     },
     patchAndSchema: (() => {
       try { return schemaService.state(); } catch (err) { return { error: String(err.message || err) }; }
+    })(),
+    // which download mirrors have been failing this session: "it won't download" is one of
+    // the commonest reports, and this says whether the bytes or the route are the problem
+    mirrors: (() => {
+      try { return mirrorHealth(); } catch { return []; }
     })(),
     library: {
       totalRecords: records.length,

@@ -1,0 +1,463 @@
+/* ============ Modal ============ */
+/* Opening a mod, on one clock:
+     0ms   the dimming starts, 200ms long
+     0ms   the window starts, 200ms: it comes out of the card that was clicked, growing from
+           a third of its size into place
+     120ms the picture starts, 200ms, growing from a point at the centre of the window
+     320ms everything has landed
+   The picture used to wait for the window to stop before it began, and 550ms to open a mod
+   is a mod manager that feels slow - people press these forty times in a sitting. It starts
+   while the window is on its last fifth instead, which still reads as the window arriving
+   first, and everything is done in the time the picture alone used to take. Where the card was is passed in as --from-x / --from-y (see openFrom);
+   with no card - a mod reached from a link - both are zero and the window simply grows in
+   place. Leaving is a single 200ms fall: an exit as long as its entrance feels like the
+   window is arguing about being closed. */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(3, 3, 6, 0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  animation: fadeIn var(--dur-base) var(--ease-standard) both;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-overlay.hidden { display: none; }
+.modal-overlay.closing { animation: fadeOut var(--dur-base) var(--ease-accelerate) both; }
+@keyframes fadeOut { to { opacity: 0; } }
+.modal-content {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  width: min(700px, calc(92vw / var(--content-zoom)));
+  max-height: calc(88vh / var(--content-zoom));
+  overflow-y: auto;
+  box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--md-primary) 8%, transparent);
+  animation: windowIn var(--dur-base) var(--ease-decelerate) both;
+}
+.closing .modal-content { animation: windowOut var(--dur-base) var(--ease-accelerate) both; }
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes windowIn {
+  from {
+    opacity: 0;
+    transform: translate(var(--from-x, 0), var(--from-y, 0)) scale(0.34);
+  }
+}
+@keyframes windowOut { to { opacity: 0; transform: scale(0.97); } }
+
+.modal-media {
+  aspect-ratio: 16 / 9;
+  background: var(--bg-elev);
+  position: relative;
+  /* the window's own top corners, and a hard edge for the picture growing inside: without
+     this the picture crosses the rounded corner on its way out to full size */
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  overflow: hidden;
+}
+/* From a point in the middle of the window out to the full frame. It is the picture that
+   grows, never the frame around it - the frame has stopped by then and scaling it would
+   open a gap at the window's edge. */
+.modal-media img, .modal-media video {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  animation: pictureIn var(--dur-base) var(--ease-decelerate) var(--dur-fast) both;
+}
+@keyframes pictureIn { from { opacity: 0; transform: scale(0.02); } }
+.modal-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 75%, rgba(20, 20, 29, 0.9) 100%);
+  pointer-events: none;
+}
+.modal-body { padding: 16px 22px 22px; display: flex; flex-direction: column; gap: 13px; }
+.modal-title-row { display: flex; align-items: flex-start; gap: 12px; }
+.modal-title { font-size: 20px; font-weight: 800; flex: 1; }
+.modal-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(10, 10, 16, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: 50%;
+  line-height: 0;
+  transition: all 0.15s;
+  z-index: 2;
+}
+.modal-close:hover { background: rgba(232, 17, 35, 0.85); color: #fff; transform: rotate(90deg); }
+.modal-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+/* Which look gets installed. Filled in its own colour, these shouted louder than Install and
+   read as four things to press; the colour is a label, not a call to action. So the colour
+   is now the outline and a low wash behind the name, which also lets it glow a little in the
+   dark theme instead of sitting there as a slab. The name stays because colour alone cannot
+   tell Retro from Retro v2, two greens a shade apart, and the name is all the catalog knows
+   about a variant. The same looks are dots on the card, where the picture does the talking. */
+.style-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.style-btn {
+  --wash: color-mix(in srgb, var(--c, var(--md-primary)) 14%, transparent);
+  background: var(--wash);
+  border: 1px solid color-mix(in srgb, var(--c, var(--md-primary)) 55%, transparent);
+  border-radius: 999px;
+  color: var(--text-muted);
+  padding: 7px 15px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+/* the colour itself, as a mark rather than a field */
+.style-btn::before {
+  content: '';
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--c, var(--md-primary));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c, var(--md-primary)) 70%, transparent);
+  flex-shrink: 0;
+}
+.style-btn:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--c, var(--md-primary)) 80%, transparent);
+}
+.style-btn:active { transform: scale(0.97); }
+.style-btn.active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--c, var(--md-primary)) 22%, transparent);
+  border-color: var(--c, var(--md-primary));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c, var(--md-primary)) 32%, transparent);
+}
+.modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.modal-links { display: flex; gap: 8px; flex-wrap: wrap; }
+.modal-links .btn .ms { color: var(--primary-soft); }
+.modal-note {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 9px 13px;
+}
+/* same amber as .lib-banner.warn — something needs attention but nothing is broken */
+.modal-note.warn {
+  background: rgba(251, 191, 36, 0.11);
+  border-color: rgba(251, 191, 36, 0.32);
+}
+.modal-note.warn b { color: var(--warning); }
+
+/* ============ Confirm dialog ============ */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 14, 0.66);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: fadeIn 0.2s var(--ease);
+}
+.confirm-box {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 24px 26px 20px;
+  width: min(400px, calc(88vw / var(--content-zoom)));
+  box-shadow: var(--shadow), 0 0 50px color-mix(in srgb, var(--md-primary) 10%, transparent);
+  animation: modalIn 0.28s var(--ease);
+}
+.confirm-msg { font-size: 15px; font-weight: 600; margin-bottom: 20px; line-height: 1.5; }
+/* wraps rather than spilling out of the box when labels are long (RU labels are) */
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+
+/* ============ Preview toggle / audio ============ */
+.preview-toggle {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(14, 12, 20, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--md-primary) 30%, transparent);
+  color: var(--primary-soft);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 2;
+  transition: all 0.25s var(--ease);
+}
+.preview-toggle:hover {
+  background: color-mix(in srgb, var(--md-primary) 25%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--md-primary) 30%, transparent);
+  transform: translateY(-1px);
+}
+.preview-toggle .ms { font-size: 17px; }
+
+.audio-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--md-primary) 18%, transparent), transparent 70%);
+}
+.audio-icon { font-size: 54px !important; color: var(--primary-soft); }
+.audio-wrap audio { width: 80%; }
+audio { accent-color: var(--primary); }
+audio::-webkit-media-controls-panel { background: var(--surface-solid); }
+.modal-media.audio-mode { aspect-ratio: 16 / 7; }
+
+/* ============ Built-in player ============ */
+.player-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 14, 0.78);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+  animation: fadeIn 0.25s var(--ease);
+}
+.player-box {
+  position: relative;
+  width: min(960px, calc(90vw / var(--content-zoom)));
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+  box-shadow: var(--shadow), 0 0 80px color-mix(in srgb, var(--md-primary) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--md-primary) 22%, transparent);
+  animation: modalIn 0.32s var(--ease);
+}
+.player-box video {
+  width: 100%;
+  display: block;
+  max-height: calc(78vh / var(--content-zoom));
+  background: #000;
+  cursor: pointer;
+}
+.player-box.audio {
+  background: linear-gradient(160deg, var(--surface-solid), var(--bg-deep));
+}
+.player-audio-visual {
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--md-primary) 25%, transparent), transparent 70%);
+}
+.player-audio-visual .ms {
+  font-size: 84px;
+  color: var(--primary-soft);
+  filter: drop-shadow(0 0 24px color-mix(in srgb, var(--md-primary) 60%, transparent));
+}
+.player-title {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 2;
+}
+.player-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(14, 12, 20, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 7px;
+  border-radius: 50%;
+  line-height: 0;
+  z-index: 3;
+  transition: all 0.2s;
+}
+.player-close:hover { background: rgba(232, 17, 35, 0.85); color: #fff; transform: rotate(90deg); }
+.player-controls {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  background: linear-gradient(180deg, transparent, rgba(5, 4, 10, 0.85));
+  z-index: 2;
+}
+.player-box.audio .player-controls { position: relative; background: none; }
+.pl-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s var(--ease);
+  flex-shrink: 0;
+}
+.pl-btn:hover { background: color-mix(in srgb, var(--md-primary) 45%, transparent); box-shadow: 0 0 16px color-mix(in srgb, var(--md-primary) 40%, transparent); }
+.pl-btn .ms { font-size: 20px; }
+.pl-progress {
+  position: relative;
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.pl-progress:hover { height: 7px; }
+.pl-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-soft));
+  border-radius: 3px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--md-primary) 60%, transparent);
+}
+.pl-knob {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--md-primary) 80%, transparent);
+  pointer-events: none;
+}
+.pl-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* A confirm box holding a list rather than a sentence. */
+.confirm-box.wide { max-width: 460px; width: 90vw; }
+.prompt-input { margin: var(--space-4) 0 var(--space-1); width: 100%; }
+
+/* ============ Install list ============ */
+/* The same window shape as a mod's, because it is the same kind of thing: something that
+   opened over the catalog and will close again. Rows are the mod as the grid showed it -
+   picture, name, where it came from - so the list reads as the cards you pressed. */
+.queue-panel {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  width: min(520px, calc(92vw / var(--content-zoom)));
+  max-height: calc(84vh / var(--content-zoom));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--md-primary) 8%, transparent);
+  animation: windowIn var(--dur-base) var(--ease-decelerate) both;
+}
+.queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+.queue-head h2 { font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.queue-x {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  line-height: 0;
+  padding: var(--space-1);
+  border-radius: 50%;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.queue-x:hover { color: var(--text); background: var(--surface-hover); }
+.queue-list { overflow-y: auto; padding: var(--space-2) var(--space-3); }
+.queue-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.queue-row:hover { background: var(--surface); }
+.queue-thumb {
+  width: 64px;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-elev);
+}
+.queue-thumb img, .queue-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.queue-info { flex: 1; min-width: 0; }
+.queue-name { font-weight: var(--weight-semibold); font-size: var(--text-sm); }
+.queue-cat { color: var(--text-faint); font-size: var(--text-xs); }
+.queue-drop {
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  line-height: 0;
+  padding: var(--space-1);
+  border-radius: 50%;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.queue-drop:hover { color: var(--danger); background: var(--surface-hover); }
+.queue-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5) var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* Finding one row among eighty is the whole reason the list exists, so it can be searched
+   once it is long enough to be scrolled rather than read. */
+.queue-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) var(--space-5) 0;
+  padding: 0 var(--space-3);
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--bg-elev);
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+.queue-search:focus-within { border-color: var(--primary); }
+.queue-search .ms { font-size: var(--icon-sm); color: var(--text-faint); }
+.queue-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.queue-search input::placeholder { color: var(--text-faint); }

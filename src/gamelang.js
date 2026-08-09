@@ -127,18 +127,24 @@ function detectLangSuffix(gamePath) {
 }
 
 /**
- * Set the game's two language settings. Dota reads boot.vcfg at startup, so this has to
- * happen while the game is closed. Existing keys are patched in place and anything else in
- * the file is left alone; a missing file gets Valve's own shape.
+ * Set the game's language settings. Dota reads boot.vcfg at startup, so this has to happen
+ * while the game is closed. Existing keys are patched in place and anything else in the file
+ * is left alone; a missing file gets Valve's own shape.
+ *
+ * Either setting may be left out, and the app leaves the text one out always: which language
+ * somebody reads the game in is their business, decided long before this app arrived. Only
+ * the audio language is ours to set, because it is what names the folder the engine mounts
+ * and therefore where a mod has to live.
  */
 function writeBootLanguages(gamePath, { ui, audio }) {
   const file = path.join(gamePath, 'dota', 'cfg', 'boot.vcfg');
   let text = null;
   try { text = fs.readFileSync(file, 'utf-8'); } catch { /* first write */ }
+  const pairs = [['UILanguage', ui], ['AudioLanguage', audio]].filter(([, v]) => v);
   if (!text || !/"boot"/i.test(text)) {
-    text = `"boot"\n{\n\t"UILanguage"\t\t"${ui}"\n\t"AudioLanguage"\t\t"${audio}"\n}\n`;
+    text = `"boot"\n{\n${pairs.map(([k, v]) => `\t"${k}"\t\t"${v}"\n`).join('')}}\n`;
   } else {
-    for (const [key, value] of [['UILanguage', ui], ['AudioLanguage', audio]]) {
+    for (const [key, value] of pairs) {
       const re = new RegExp(`("${key}"\\s*")[^"]*(")`, 'i');
       if (re.test(text)) text = text.replace(re, `$1${value}$2`);
       else text = text.replace(/\}\s*$/, `\t"${key}"\t\t"${value}"\n}\n`);
@@ -171,6 +177,61 @@ function ensureLangFolder(gamePath, suffix) {
   return dir;
 }
 
+/* English voices without moving the mods.
+ *
+ * The engine mounts the folder named by the audio language, and the app keeps that Russian so
+ * there is one place mods live. What makes the speech Russian is not the folder: it is Valve's
+ * own voice pack inside it. Take the pack out of the mount and the game falls back to the
+ * English speech in dota/pak01, while every mod in the folder stays exactly where it was.
+ *
+ * Only the index file moves. A VPK's volumes (pak01_000.vpk and friends) are dead weight
+ * without pak01_dir.vpk, so renaming one file of a few hundred kilobytes does the whole job
+ * and leaves the gigabytes alone. The suffix is its own, never .off (a mod switched off) or
+ * .moff (all mods switched off): those belong to files the app installed, and this one is
+ * Valve's.
+ */
+const VOICE_OFF = '.voff';
+const voicePakPath = (gamePath, suffix) => path.join(gamePath, `dota_${suffix}`, 'pak01_dir.vpk');
+
+/**
+ * 'on' — Valve's voice pack is mounted · 'off' — we have moved it aside ·
+ * 'absent' — this language's pack was never downloaded, so the speech is English anyway
+ * and there is nothing to switch.
+ */
+function voiceState(gamePath, suffix) {
+  if (!gamePath) return 'absent';
+  const pak = voicePakPath(gamePath, suffix);
+  if (fs.existsSync(pak)) return 'on';
+  return fs.existsSync(pak + VOICE_OFF) ? 'off' : 'absent';
+}
+
+/**
+ * Put the voice pack in or out of the mount, and clean up after Steam.
+ *
+ * Verifying the game files hands the original back without asking, and then both names exist
+ * at once: the one Steam restored and the one we set aside. The restored file is the real
+ * one, so ours goes, and the state the user asked for is applied to what is there now.
+ *
+ * @returns {'on'|'off'|'absent'} the state actually on disk afterwards
+ */
+function setVoiceEnabled(gamePath, suffix, enabled) {
+  if (!gamePath) return 'absent';
+  const pak = voicePakPath(gamePath, suffix);
+  const parked = pak + VOICE_OFF;
+  const hasPak = fs.existsSync(pak);
+  const hasParked = fs.existsSync(parked);
+
+  if (hasPak && hasParked) fs.rmSync(parked, { force: true });
+  if (!hasPak && !hasParked) return 'absent';
+
+  if (enabled) {
+    if (!fs.existsSync(pak)) fs.renameSync(parked, pak);
+    return 'on';
+  }
+  if (fs.existsSync(pak)) fs.renameSync(pak, parked);
+  return 'off';
+}
+
 module.exports = {
   OFFICIAL_LANGUAGES,
   bootLanguages,
@@ -180,4 +241,6 @@ module.exports = {
   writeBootLanguages,
   voiceInstalled,
   ensureLangFolder,
+  voiceState,
+  setVoiceEnabled,
 };

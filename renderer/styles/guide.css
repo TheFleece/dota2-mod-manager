@@ -1,0 +1,114 @@
+/* ============ Guide ============
+   A how-to from the catalog, drawn wherever the thing it explains is drawn (renderer/ui/guide.js).
+   It is for the user who stopped, not the one who is installing, so it stays quieter than the
+   mod's own controls: no fill, one hairline, and the steps folded away until asked for. The
+   note form has no fold at all - a single sentence hidden behind a click is a sentence nobody
+   reads. */
+
+.guide {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.guide-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.guide-head:hover { color: var(--text); background: var(--state-hover); }
+.guide-head:focus-visible { outline: none; box-shadow: var(--focus-ring-inset); }
+.guide-head > .ms { font-size: var(--icon-md); color: var(--primary-soft); flex-shrink: 0; }
+.guide-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.guide-chev {
+  font-size: var(--icon-md);
+  flex-shrink: 0;
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+.guide.open .guide-head { color: var(--text); }
+.guide.open .guide-chev { transform: rotate(180deg); }
+
+/* The fold: a grid row going 0fr -> 1fr so the height animates without anyone measuring it. */
+.guide-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-standard);
+}
+.guide.open > .guide-body,
+.guide-note > .guide-body { grid-template-rows: 1fr; }
+
+.guide-inner {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.guide.open > .guide-body > .guide-inner { padding-block: var(--space-2) var(--space-3); }
+.guide-note > .guide-body > .guide-inner { padding-block: 0 var(--space-3); }
+
+/* The note form: heading on top, body underneath, nothing to click. */
+.guide-note > .g-title { padding: var(--space-2) var(--space-3) 0; }
+
+.g-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.g-title .ms { font-size: var(--icon-md); color: var(--primary-soft); flex-shrink: 0; }
+.g-lead { color: var(--text-faint); }
+
+.g-steps {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.g-steps li::marker { color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+.g-note {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-xs);
+  background: var(--bg-deep);
+}
+.g-note > .ms { font-size: var(--icon-sm); margin-top: 2px; flex-shrink: 0; color: var(--text-faint); }
+/* same amber as .modal-note.warn - something needs attention but nothing is broken */
+.g-note.g-warn { background: rgba(251, 191, 36, 0.11); }
+.g-note.g-warn > .ms { color: var(--warning); }
+.g-note.g-result > .ms { color: var(--installed); }
+
+/* Two tags the catalog writes for its own site, given a meaning here (see ui/guide.js) */
+.guide-body code,
+.g-hl {
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  background: var(--primary-dim);
+  color: var(--primary-soft);
+  font-size: 0.92em;
+  word-break: break-word;
+}
+.guide-body code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.guide-body a { color: var(--primary); text-decoration: none; cursor: pointer; }
+.guide-body a:hover { text-decoration: underline; }

@@ -5,7 +5,7 @@
 
   <p><b>Mods for Dota 2, without the file juggling.</b><br>
   1100+ skins, terrains, announcers and music in one catalog. Free cosmetics the game
-  already ships. Builds you can hand to a friend as a link.</p>
+  already ships. Setups you can hand to a friend as a link.</p>
 
   <p>
     <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe">
@@ -13,41 +13,40 @@
     </a>
     <img src="https://img.shields.io/badge/Windows-10%2F11-201c2c?style=for-the-badge" alt="Windows">
     <img src="https://img.shields.io/badge/License-GPL--3.0-c4b5fd?style=for-the-badge" alt="License">
-    <a href="https://thefleece.github.io/dota2-mod-manager/">
-      <img src="https://img.shields.io/badge/Site-thefleece.github.io-2a2440?style=for-the-badge" alt="Website">
+    <a href="https://dota2modmanager.com">
+      <img src="https://img.shields.io/badge/Site-dota2modmanager.com-2a2440?style=for-the-badge" alt="Website">
     </a>
   </p>
 
-  <img src="docs/screenshots/home.webp" alt="Catalog" width="100%">
+  <img src="site/public/screenshots/en-catalog.webp" alt="The catalog" width="100%">
 </div>
 
 > **Why not just copy the files yourself?** You can, and people do. What the app adds is
-> everything after that: switching a mod off before a match without deleting it, wearing an
-> item over a hero set, free cosmetics read from the game's own item table, a build you send
-> as one link, and a game that still works after a Dota patch.
+> everything after that: switching a mod off before a match without deleting it, free
+> cosmetics read from the game's own item table, a setup you send as one link, and a game that
+> still works after a Dota patch.
 
 ---
 
-## Features
+## What it does
 
 | | | |
 |---|---|---|
-| <img src="docs/icons/catalog.svg" width="20"> | **Full catalog** | 1100+ mods in 40 categories: heroes, terrains, shaders, fonts, cursors, announcers, music. Synced with the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository |
-| <img src="docs/icons/install.svg" width="20"> | **One-click install** | The app downloads the mod, picks a free pak slot, gives priority mods low pak numbers and unpacks terrain `maps/` folders |
-| <img src="docs/icons/player.svg" width="20"> | **Built-in previews** | Video and audio previews play in an in-app player |
-| <img src="docs/icons/library.svg" width="20"> | **Library** | Toggle installed mods on and off without deleting them, remove them cleanly, see files installed outside the manager, import your own `.vpk` files (single or multi-part `pak_dir`+`pak_000` sets) via button or drag & drop, export any mod as one self-contained `.vpk` |
-| <img src="docs/icons/catalog.svg" width="20"> | **Free cosmetics** | Weather, couriers, wards, loading screens, announcers, mega-kills, read from the game's own item table, so anything Valve adds appears without an app update |
-| <img src="docs/icons/install.svg" width="20"> | **Load order** | Two mods can supply the same file and both stay on: the app says which one is on top and swaps them on a click, which is how an item mod is worn over a hero set |
-| <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Sort by date or name; filter by tag, hero or installed state; search across the whole catalog |
-| <img src="docs/icons/pack.svg" width="20"> | **Packs** | Open a themed pack, drop the mods you don't want, save the result as your own pack |
-| <img src="docs/icons/preset.svg" width="20"> | **Presets** | Save named sets of enabled mods and switch between them in one click |
-| <img src="docs/icons/font.svg" width="20"> | **Fonts and cursors** | Installed into game files with a backup of the originals; removal restores vanilla. Cursors switch on and off like any other mod, one set at a time |
-| <img src="docs/icons/tools.svg" width="20"> | **Tools** | Download and launch community utilities (Background Changer, ItemsFix, Compiler) from the app |
+| <img src="docs/icons/catalog.svg" width="20"> | **The whole catalog** | 1100+ mods in 40 categories: heroes, terrains, shaders, fonts, cursors, announcers, music. Read live from the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository, so new mods appear without an app update |
+| <img src="docs/icons/install.svg" width="20"> | **One click in, one click out** | The app downloads the mod, picks a free pak slot and cleans up after itself. Categories that have to load early get low slots by themselves |
+| <img src="docs/icons/install.svg" width="20"> | **An install list** | Put mods aside while you browse and install them all at once. The list has its own search, because people were installing eighty mods one at a time |
+| <img src="docs/icons/library.svg" width="20"> | **My mods** | Switch a mod off before a match and back on after, without deleting it. Rare actions live under the right mouse button, and the load order is always there |
+| <img src="docs/icons/catalog.svg" width="20"> | **Free cosmetics** | Weather, couriers, wards, loading screens, announcers, mega-kills, read from the game's own item table, so anything Valve adds appears by itself |
+| <img src="docs/icons/install.svg" width="20"> | **It says when mods collide** | Two mods that carry the same file cannot both win. The app names the file, says which mod the game is loading it from, and lets you change the order |
+| <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Chips for what a mod changes, a dropdown for the item slot, a list of heroes, and one search across the whole catalog |
+| <img src="docs/icons/preset.svg" width="20"> | **Setups by link** | Save the mods you run as a preset and send it in one message. One button, with the link ready and the file next to it |
+| <img src="docs/icons/font.svg" width="20"> | **Fonts and cursors** | Installed into the game files with a backup of the originals; removing them restores vanilla |
+| <img src="docs/icons/update.svg" width="20"> | **It survives Dota patches** | The app notices a game update when it lands, puts back what the patch wiped, and never writes to the game folder while Dota is running |
 | <img src="docs/icons/update.svg" width="20"> | **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
 
 <div align="center">
-  <img src="docs/screenshots/cosmetics.webp" alt="Free cosmetics from the game's own item table" width="49%">
-  <img src="docs/screenshots/library.webp" alt="Library with load order" width="49%">
+  <img src="site/public/screenshots/en-heroes.webp" alt="Mods grouped hero by hero" width="49%">
+  <img src="site/public/screenshots/en-library.webp" alt="Installed mods, with the load order" width="49%">
 </div>
 
 ## Installation
@@ -55,36 +54,53 @@
 1. Download **[Dota 2 Mod Manager Setup](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe)** (direct link, always the latest version)
 2. Run it. The app installs, creates a desktop shortcut and starts
 3. It finds your Dota 2 installation on its own (you can change the path in Settings)
-4. That is all. No launch options, no Steam properties to edit — **Settings** shows the folder mods are installed into
+4. That is all. No launch options and no Steam properties to edit
 
-Mods live in the folder named after Dota's own audio language (`game/dota_russian` for Russian voices, `game/dota_english` for English), because that is the only one the game mounts. The app reads that language from the game and follows it, moving your installed mods along if it changes. You can also switch Dota's text and voice languages from **Settings** without leaving the app. The `-language` launch option stopped doing anything with Dota's July 2026 update, so you can drop it from the Steam properties; fonts and cursors go straight into the game files and never needed it.
+Windows will warn you that the publisher is unknown, because the installer is not signed with
+a paid certificate. Click **More info**, then **Run anyway**. Every release is built from this
+source by a [public workflow](https://github.com/TheFleece/dota2-mod-manager/actions), not
+uploaded from anybody's desktop, and you can read the build log for the file you downloaded.
 
 ## How it works
 
 The app follows the same installation mechanics as the Dota2PornFx guides:
 
-- Dota keeps its text and voice languages separately in `dota/cfg/boot.vcfg` and mounts the folder of the **voice** one, so that folder is where mods have to live; the app reads the setting from the game and keeps up with it
-- VPK mods go into `steamapps/common/dota 2 beta/game/dota_<voice language>/` as `pakNN_dir.vpk`; the app assigns slots 10–99
-- Priority categories (trees, river, shaders, hero fx, ranged attack, hero items, optimization) get low slots `pak02`–`pak09`, so they load before regular mods
+- Dota mounts the folder named after its **voice** language, so that folder is where mods have
+  to live. The app keeps the voices Russian and puts mods in `game/dota_russian`, which is why
+  it no longer asks you anything about languages. Mods stranded in another folder by an older
+  version are moved over on the first start
+- English voices are a switch in Settings. Turning it on takes Valve's own `pak01_dir.vpk` out
+  of the mounted folder and leaves every mod in place
+- VPK mods go into `steamapps/common/dota 2 beta/game/dota_russian/` as `pakNN_dir.vpk`; the
+  app assigns slots 10 to 99
+- Categories that have to load first (trees, river, shaders, hero fx, ranged attack, hero
+  items, optimization) get low slots `pak02` to `pak09`
 - Terrains ship a `maps/` folder, placed next to the paks
-- Fonts go to `game/dota/panorama/fonts`, cursors to `game/dota/resource/cursor`; the app backs up originals and restores them on removal
-- Disabling a mod renames its file to `.off`; the game skips it, the file stays
-- Cursors are loose files rather than a pak, so switching one off puts the vanilla files back instead of renaming; the app keeps its own copy of every installed set in `%APPDATA%/dota2-mod-manager/cursors`
+- Fonts go to `game/dota/panorama/fonts`, cursors to `game/dota/resource/cursor`; the app backs
+  up the originals and restores them on removal
+- Switching a mod off renames its file to `.off`; the game skips it, the file stays
+- Everything that writes to the game folder does so as one transaction. If a step fails, the
+  whole change is rolled back, including files that were displaced to make room
 
-Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in `manifest.json` next to it.
-
-<div align="center">
-  <img src="docs/screenshots/pack.png" alt="Pack contents" width="70%">
-</div>
+Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in
+`manifest.json` next to it.
 
 ## Установка (Russian)
 
 1. Скачай **[Dota 2 Mod Manager Setup](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe)** (прямая ссылка, всегда последняя версия)
 2. Запусти. Приложение установится, создаст ярлык и откроется
 3. Путь к Dota 2 находится автоматически
-4. Всё. Никаких параметров запуска и правок свойств Steam — в **Настройках** видно, в какую папку ставятся моды
+4. Всё. Никаких параметров запуска и правок свойств Steam
 
-Моды живут в папке языка озвучки Dota (`game/dota_russian` при русских голосах, `game/dota_english` при английских): только эту папку игра и монтирует. Приложение читает язык из самой игры, следует за ним и переносит уже установленные моды, если он сменился. Сменить язык текста и озвучки Dota можно прямо в **Настройках**. Параметр `-language` после июльского апдейта Dota 2026 ни на что не влияет, его можно убрать из свойств Steam; шрифтам и курсорам он не был нужен никогда — они ставятся прямо в файлы игры.
+Windows скажет, что издатель неизвестен: установщик не подписан платным сертификатом. Нажми
+**Подробнее**, затем **Выполнить в любом случае**. Каждый релиз собирается из этих исходников
+[публичным workflow](https://github.com/TheFleece/dota2-mod-manager/actions), а не заливается
+с чьего-то компьютера, и лог сборки твоего файла можно открыть и прочитать.
+
+Приложение само держит озвучку русской и ставит моды в `game/dota_russian`, потому что игра
+монтирует только папку языка озвучки. Английские голоса включаются тумблером в Настройках, и
+моды при этом остаются на месте. Параметр `-language` после июльского апдейта Dota 2026 ни на
+что не влияет, его можно убрать из свойств Steam.
 
 ## Development
 
@@ -93,12 +109,18 @@ git clone https://github.com/TheFleece/dota2-mod-manager.git
 cd dota2-mod-manager
 npm install
 npm start        # run from source
+npm test         # unit tests for the code that writes to the game folder
 npm run dist     # build the Windows installer
 ```
 
 Stack: Electron, plain HTML/CSS/JS renderer, no build step for the UI.
 
-Releases build automatically: push a `v*` tag and GitHub Actions compiles the installer and publishes it. Installed apps pick the update up on their own.
+There is a throwaway Dota tree for development: `npm run sandbox:seed` builds it and downloads
+real catalog mods into it, `npm run start:sandbox` runs the app against it, and
+`npm run sandbox:reset` puts it back. Nothing in it touches a real game install.
+
+Releases build automatically: push a `v*` tag and GitHub Actions compiles the installer and
+publishes it. Installed apps pick the update up on their own.
 
 ## Credits
 

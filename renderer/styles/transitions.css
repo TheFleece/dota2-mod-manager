@@ -1,0 +1,40 @@
+/* ============ View transitions ============
+   The browser animates one state of the window into the next; this file says how. See
+   ui/transitions.js for when. Motion durations come from the tokens, so the reduced-motion
+   media query already shortens them to nothing - and the module skips the transition
+   outright in that case, since an instant crossfade is still a crossfade. */
+
+/* ---- Moving between screens ----
+   Scoped to the class the module sets, so opening a modal does not slide the whole window:
+   that transition falls back to the browser's own quiet crossfade. */
+.vt-screen::view-transition-old(root) {
+  animation: screenOut var(--dur-fast) var(--ease-in) both;
+}
+.vt-screen::view-transition-new(root) {
+  animation: screenIn var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes screenOut {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+/* The chrome is not part of the screen and must not travel with it. Naming these captures
+   them apart from the view; their content is unchanged, so they simply hold still. */
+#titlebar { view-transition-name: chrome-top; }
+#statusbar { view-transition-name: chrome-bottom; }
+
+.vt-screen::view-transition-group(chrome-top),
+.vt-screen::view-transition-group(chrome-bottom),
+.vt-screen::view-transition-old(chrome-top),
+.vt-screen::view-transition-new(chrome-top),
+.vt-screen::view-transition-old(chrome-bottom),
+.vt-screen::view-transition-new(chrome-bottom) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Opening a mod is not here any more: a window that grows out of its card is one movement in
+   theory and two on screen. It is plain CSS on one clock now - see the top of modal.css. */

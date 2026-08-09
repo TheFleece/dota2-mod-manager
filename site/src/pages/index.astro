@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+import Landing from '../components/Landing.astro';
+
+const description = 'Free desktop app for Dota 2 mods: install skins, terrains, announcers and music from the community catalog, unlock cosmetics your account already owns, and share a whole setup as one link. Windows, open source.';
+
+// What the app is, in the vocabulary a search engine reads. Rich results for software want
+// a price, and this one is honest: zero, and it stays zero.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Dota 2 Mod Manager',
+  applicationCategory: 'GameApplication',
+  operatingSystem: 'Windows 10, Windows 11',
+  url: 'https://dota2modmanager.com/',
+  downloadUrl: 'https://github.com/TheFleece/dota2-mod-manager/releases/latest',
+  license: 'https://www.gnu.org/licenses/gpl-3.0.html',
+  isAccessibleForFree: true,
+  inLanguage: ['en', 'ru'],
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  author: { '@type': 'Person', name: 'Mykhailo Lynnyk', url: 'https://github.com/TheFleece' },
+};
+---
+
+<Base
+  title="Dota 2 Mod Manager - install Dota 2 mods and free cosmetics in one click"
+  description={description}
+  path="/"
+>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <Landing lang="en" />
+</Base>

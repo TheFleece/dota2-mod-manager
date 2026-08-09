@@ -1,0 +1,199 @@
+---
+/**
+ * What the page sits on.
+ *
+ * The first version drifted every mote straight up at a constant speed, which is exactly as
+ * interesting as it sounds: the eye predicts the path in a second and stops looking. This
+ * one moves them through a flow field - a smooth pseudo-random angle that varies across the
+ * screen and slowly rotates over time - so no two motes take the same road and none of them
+ * travels in a straight line.
+ *
+ * The pointer stirs them. Inside its reach they are pulled into a slow orbit rather than
+ * pushed away: mist disturbed by a hand, not a repulsion demo. They brighten as they get
+ * close, which is what makes it read as light rather than as movement.
+ *
+ * Drawn rather than downloaded, because Dota's own artwork belongs to Valve and this project
+ * is not affiliated with them.
+ */
+---
+
+<div class="backdrop" aria-hidden="true">
+  <div class="glow glow-a"></div>
+  <div class="glow glow-b"></div>
+  <canvas id="dust"></canvas>
+  <div class="grid"></div>
+</div>
+
+<style>
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--surface);
+  }
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.5;
+    animation: breathe 14s ease-in-out infinite alternate;
+  }
+  .glow-a {
+    width: 780px; height: 780px;
+    top: -320px; left: 50%; margin-left: -560px;
+    background: radial-gradient(circle, #6b4fa8 0%, transparent 70%);
+  }
+  .glow-b {
+    width: 620px; height: 620px;
+    top: -180px; left: 50%; margin-left: 120px;
+    background: radial-gradient(circle, #3d2f6b 0%, transparent 70%);
+    animation-delay: -7s;
+  }
+  @keyframes breathe {
+    from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.42; }
+    to { transform: translate3d(0, 34px, 0) scale(1.12); opacity: 0.58; }
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--primary) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--primary) 5%, transparent) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: radial-gradient(120% 60% at 50% 0%, #000 0%, transparent 72%);
+    -webkit-mask-image: radial-gradient(120% 60% at 50% 0%, #000 0%, transparent 72%);
+  }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* The page ends by going still.
+   *
+   * Everything here is light that drifts and answers the pointer, so the honest way to say
+   * "this is the bottom" is to let that light settle rather than to print the word. The
+   * scroll position drives it directly, which means no handler and no observer, and browsers
+   * that cannot do that simply keep the backdrop lit all the way down. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      .backdrop {
+        animation: settle linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 74% 100%;
+      }
+      @keyframes settle { to { opacity: 0.2; } }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    canvas { display: none; }
+    .glow { animation: none; }
+  }
+</style>
+
+<script>
+  const canvas = document.getElementById('dust') as HTMLCanvasElement | null;
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (canvas && !still) {
+    const ctx = canvas.getContext('2d', { alpha: true })!;
+    let w = 0, h = 0, raf = 0, t = 0;
+    let px = -9999, py = -9999;
+
+    // A cheap smooth field: three sines out of phase give an angle that varies over space
+    // and turns slowly over time. Not real curl noise, and close enough that the eye reads
+    // it as weather rather than as a formula.
+    const angleAt = (x: number, y: number) =>
+      Math.sin(x * 0.0016 + t * 0.00021) * 1.7 +
+      Math.cos(y * 0.0021 - t * 0.00017) * 1.7 +
+      Math.sin((x + y) * 0.0009 + t * 0.00013) * 1.2;
+
+    type Mote = { x: number; y: number; vx: number; vy: number; r: number; a: number; s: number };
+    let motes: Mote[] = [];
+
+    const seed = () => {
+      // fewer on a small screen: the same count on a phone buys nothing and costs frames
+      const count = Math.round(Math.min(96, Math.max(34, (w * h) / 26000)));
+      motes = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: 0, vy: 0,
+        r: Math.random() * 1.7 + 0.5,
+        a: Math.random() * 0.3 + 0.06,
+        s: Math.random() * 0.5 + 0.5,      // how strongly this one follows the field
+      }));
+    };
+
+    const size = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.clientWidth; h = canvas.clientHeight;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seed();
+    };
+
+    const REACH = 210;
+
+    const frame = () => {
+      t += 16;
+      ctx.clearRect(0, 0, w, h);
+
+      for (const m of motes) {
+        // the field carries it
+        const ang = angleAt(m.x, m.y);
+        m.vx += Math.cos(ang) * 0.012 * m.s;
+        m.vy += Math.sin(ang) * 0.012 * m.s - 0.004; // a whisper of lift
+
+        // the pointer stirs what is near it: pulled slightly in, and pushed sideways, which
+        // together read as an orbit rather than a shove
+        let lit = 0;
+        const dx = m.x - px;
+        const dy = m.y - py;
+        const d = Math.hypot(dx, dy);
+        if (d < REACH && d > 0.001) {
+          const f = (1 - d / REACH) ** 2;
+          lit = f;
+          const nx = dx / d, ny = dy / d;
+          m.vx += (-nx * 0.05 - ny * 0.16) * f;   // inward + tangential
+          m.vy += (-ny * 0.05 + nx * 0.16) * f;
+        }
+
+        m.vx *= 0.96; m.vy *= 0.96;               // drag, so nothing runs away
+        m.x += m.vx; m.y += m.vy;
+
+        // wrap, so the field never empties a corner
+        if (m.x < -6) m.x = w + 6; else if (m.x > w + 6) m.x = -6;
+        if (m.y < -6) m.y = h + 6; else if (m.y > h + 6) m.y = -6;
+
+        const alpha = Math.min(0.85, m.a + lit * 0.75);
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.r + lit * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(208, 188, 255, ${alpha})`;
+        ctx.fill();
+
+        // The neon on the ones the pointer has woken. This used to be `shadowBlur`, which is
+        // the single most expensive thing you can ask a 2D canvas for - the whole shape gets
+        // re-rasterised through a blur. A second, wider, dimmer disc added on top of the first
+        // costs one more fill and looks the same at this size.
+        if (lit > 0.12) {
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, (m.r + 1) * 3.4, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(177, 144, 255, ${0.1 * lit})`;
+          ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      }
+      raf = requestAnimationFrame(frame);
+    };
+
+    const start = () => { if (!raf) raf = requestAnimationFrame(frame); };
+    const stop = () => { cancelAnimationFrame(raf); raf = 0; };
+
+    size();
+    start();
+    window.addEventListener('resize', size);
+    window.addEventListener('pointermove', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+    document.addEventListener('pointerleave', () => { px = -9999; py = -9999; });
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  }
+</script>

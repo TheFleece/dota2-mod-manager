@@ -1,0 +1,248 @@
+/* ============================================================================
+   Design tokens - Soft Cinematic Lavender
+   ============================================================================
+   Every value the interface is allowed to use. Nothing outside this file should
+   invent a size, a radius, a duration or a shadow.
+
+   Why this exists: the stylesheet had 31 different spacing values, 25 font sizes
+   (including 10.5, 11.5, 12.5, 13.5) and 10 radii. With that many steps nothing
+   groups visually - the eye cannot tell what belongs to what, so every element
+   reads as equally important. That is the density problem, and it is a scale
+   problem rather than a colour one. The palette below is unchanged.
+
+   Scales are deliberately short. If a value seems missing, the answer is almost
+   always the neighbouring step, not a new token.
+   ============================================================================ */
+
+:root {
+  /* ---------- Palette ----------
+     Not written here any more: every colour below is read off the theme in
+     themes.css, in Material 3's role names, because that is what the catalog's
+     own site is built on and what its eight hero palettes are expressed in.
+     Switching hero rewrites eight source values and the whole window follows.
+
+     The names on the left are ours and stay - hundreds of rules refer to them,
+     and "the surface a card sits on" is a better thing for a stylesheet to ask
+     for than "container-high". Lavender is still what the app opens on: that is
+     the ursa theme, which is Material's own baseline purple. */
+  --bg-deep: color-mix(in srgb, var(--md-surface) 78%, #000);
+  --bg-base: var(--md-surface);
+  --bg-elev: var(--md-surface-low);
+  --surface: color-mix(in srgb, var(--md-on-surface) 6%, transparent);
+  --surface-hover: color-mix(in srgb, var(--md-on-surface) 11%, transparent);
+  --surface-solid: var(--md-surface-container);
+  --border: color-mix(in srgb, var(--md-outline) 26%, transparent);
+  --border-strong: color-mix(in srgb, var(--md-outline) 45%, transparent);
+
+  /* A fill and the ink that survives on it. In a dark Material theme the accent
+     is the light tone and its ink is dark - that is why a filled button here is
+     pale lavender with near-black text rather than saturated purple with white. */
+  --primary: var(--md-primary);
+  --on-primary: var(--md-on-primary);
+  --primary-soft: var(--md-primary);
+  --primary-glow: color-mix(in srgb, var(--md-primary) 30%, transparent);
+  --primary-dim: color-mix(in srgb, var(--md-primary) 16%, transparent);
+  --accent: var(--md-error);
+  --accent-glow: color-mix(in srgb, var(--md-error) 28%, transparent);
+
+  --text: var(--md-on-surface);
+  --text-muted: var(--md-on-surface-variant);
+  --text-faint: color-mix(in srgb, var(--md-on-surface-variant) 62%, transparent);
+
+  --success: #4ade80;
+  /* "this one is already in your game" - the one colour that stays put while the window
+     changes hero, because it is a state rather than a mood */
+  --installed: #2bffa3;
+  --danger: var(--md-error);
+  --warning: #fcd34d;
+
+  /* ---------- Spacing: 4px base, 7 steps ----------
+     Pick by meaning, not by eye:
+       1  inside a control (icon to label)
+       2  between related controls
+       3  padding of a small surface
+       4  padding of a card, gap in a grid
+       5  between groups inside a section
+       6  between sections
+       7  page-level breathing room                                          */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  /* Hairline nudges only: optical alignment, never layout. */
+  --space-px: 2px;
+
+  /* ---------- Type: 7 steps, no half pixels ----------
+     xs   badges, counters, meta
+     sm   secondary text, hints
+     base body
+     md   emphasised body, card titles
+     lg   section headings
+     xl   view titles
+     2xl  the one number or title a screen is about                          */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-md: 17px;
+  --text-lg: 20px;
+  --text-xl: 26px;
+  --text-2xl: 34px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  /* Body drops to 400. It was 500, which is a big part of why dense screens
+     read as heavy: semibold body leaves no weight left to mark what matters. */
+  --weight-body: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --font-head: 'Exo 2', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  /* Counts, sizes and timers, so columns stop jittering as digits change. */
+  --font-numeric: 'Inter', system-ui, sans-serif;
+
+  /* ---------- Radii: 5 steps ----------
+     The old --radius was 20px on everything, which is what made cards read as
+     chunky and ate horizontal room. Surfaces now sit at md/lg, controls at sm. */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-full: 999px;
+
+  /* ---------- Elevation: 4 steps, one per layer ---------- */
+  --shadow-1: 0 1px 2px rgba(5, 3, 12, 0.4);
+  --shadow-2: 0 4px 14px rgba(5, 3, 12, 0.45);
+  --shadow-3: 0 10px 34px rgba(5, 3, 12, 0.55);
+  --shadow-4: 0 22px 60px rgba(5, 3, 12, 0.65);
+
+  /* ---------- Interaction ----------
+     States are overlays, so one rule works on any surface colour. */
+  --state-hover: rgba(255, 255, 255, 0.06);
+  --state-active: rgba(255, 255, 255, 0.1);
+  --state-selected: var(--primary-dim);
+  --disabled-opacity: 0.45;
+
+  /* Two rings: a dark gap against the element, then the ring itself. Readable
+     on light cards and on the deep background alike. */
+  --focus-ring: 0 0 0 2px var(--bg-deep), 0 0 0 4px var(--primary);
+  --focus-ring-inset: inset 0 0 0 2px var(--primary);
+
+  /* Minimum hit area. Desktop pointer, so 32px rather than the 44px touch
+     figure, but small icon buttons still have to reach it via padding. */
+  --hit-min: 32px;
+
+  /* ---------- Icons ----------
+     xs rides inside a line of text, xl stands in for a whole picture. */
+  --icon-xs: 12px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 32px;
+
+  /* ---------- Motion ----------
+     Entering uses ease-out, leaving uses ease-in and is shorter, so dismissing
+     feels immediate while appearing feels placed.
+
+     The durations and the last three curves are Material 3's, which is what the
+     catalog's own site is built on: standard for anything that just moves,
+     emphasized-decelerate for something arriving, emphasized-accelerate for
+     something leaving. Ours stay for the sections that have not moved over. */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-medium: 250ms;
+  --dur-medium-long: 300ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* ---------- Layers ----------
+     Every stacking decision picks from this list; ad-hoc z-index values are how
+     a dropdown ends up under a status bar. */
+  --z-base: 0;
+  --z-rail: 10;
+  --z-bar: 20;
+  --z-overlay: 40;
+  --z-modal: 100;
+  --z-toast: 1000;
+
+  /* ---------- Shell metrics and runtime zoom ----------
+     Driven from JS (see the panel grips section): the content scale is CSS zoom
+     on the content itself, not on the window, because the panels sit outside it
+     and carry their own. Scaling the catalog leaves the chrome alone and both
+     land in the same style pass - a window zoom arrives a frame later and made
+     the whole thing shudder. */
+  --tb-h: 48px;
+  --status-h: 50px;
+  --rail-w: 218px;
+  --content-zoom: 1;
+  --top-zoom: 1;
+  --bottom-zoom: 1;
+  --rail-zoom: 1;
+
+  /* ---------- Legacy aliases ----------
+     The existing stylesheet still refers to these. They map onto the scales
+     above so nothing shifts more than a pixel or two while sections migrate;
+     each one disappears as its section is rewritten. Do not use them in new
+     code. */
+  --radius: var(--radius-lg);
+  --shadow: var(--shadow-3);
+  --ease: var(--ease-out);
+}
+
+/* Honour the system setting rather than assuming everyone enjoys motion.
+   Animations become instant instead of merely faster: a shortened animation is
+   still motion, and this setting exists for people who cannot tolerate it. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-medium: 1ms;
+    --dur-medium-long: 1ms;
+    --dur-slow: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard focus is visible everywhere by default. Anything that wants a
+   different ring overrides it; nothing gets to remove it silently. */
+/* No border-radius here on purpose: the ring is a box-shadow, so it already
+   follows whatever radius the element has. Setting one would reshape round
+   buttons the moment they take focus. */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* A pointer never gets the ring, so mouse users are not shouted at. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Disabled means one thing everywhere: dimmed, not interactive, and the cursor
+   says so before the click does. */
+[disabled],
+.is-disabled,
+[aria-disabled='true'] {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+  pointer-events: none;
+}

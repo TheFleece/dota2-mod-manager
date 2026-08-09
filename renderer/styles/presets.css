@@ -1,0 +1,96 @@
+/* ============ Presets ============ */
+.preset-new { display: flex; gap: 10px; margin-bottom: 18px; }
+.preset-new .input { flex: 1; max-width: 340px; }
+.preset-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+  animation: cardIn 0.35s var(--ease) both;
+}
+.preset-card:hover { border-color: var(--border-strong); }
+.preset-head { display: flex; align-items: center; gap: 12px; }
+.preset-name { font-weight: 700; font-size: 15px; flex: 1; font-family: var(--font-head); }
+.preset-mods { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
+
+/* a preset received from someone else, not installed yet */
+.preset-card.shared { border-color: var(--primary); background: var(--primary-dim); }
+.preset-note { font-size: 12.5px; color: var(--text); opacity: 0.85; margin-top: 8px; font-style: italic; }
+.preset-warn {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 9px; font-size: 12px; color: var(--warning);
+}
+.preset-warn .ms { font-size: 16px; }
+/* what a link would leave behind — a note, not a warning: the file share still carries it */
+.preset-hint {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 8px; font-size: 12px; color: var(--text-muted);
+}
+.preset-hint .ms { font-size: 15px; }
+
+/* share dialog: what travels as a link and what as bytes */
+.share-box { width: min(520px, calc(92vw / var(--content-zoom))); text-align: left; }
+.share-title { font-family: var(--font-head); font-weight: 700; font-size: 16px; margin-bottom: 14px; }
+.share-line { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; margin-bottom: 9px; }
+.share-line .ms { font-size: 19px; color: var(--primary-soft); flex-shrink: 0; }
+.share-line.muted, .share-line.muted .ms { color: var(--text-muted); }
+.share-hint { display: block; color: var(--text-muted); font-size: 11.5px; margin-top: 1px; }
+.share-list {
+  max-height: 168px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-xs);
+  padding: 5px; margin: 4px 0 6px 29px;
+}
+.share-item { display: flex; align-items: center; gap: 9px; padding: 5px 7px; border-radius: var(--radius-xs); cursor: pointer; }
+.share-item:hover { background: var(--surface-hover); }
+.share-item-name { flex: 1; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-item-size { font-size: 11.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.share-total { font-size: 13px; color: var(--text-muted); margin-top: 14px; }
+.share-total b { color: var(--text); }
+
+/* "copied" confirmation shown on the button itself instead of a dialog */
+.btn.copied {
+  color: var(--success);
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.45);
+}
+
+/* The optional name and note under the size breakdown. */
+.share-box .input { margin-top: var(--space-2); }
+
+/* Sharing, one door with both ways behind it (see shareSheet). The link is written out and
+   ready to copy rather than promised by a button; the file sits below it because it is the
+   heavier answer and the rarer one. */
+.share-way {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+.share-way:first-of-type { border-top: 0; padding-top: var(--space-1); }
+.share-way-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--space-2);
+}
+.share-way-head .ms { font-size: var(--icon-md); color: var(--primary-soft); }
+.share-copy { display: flex; gap: var(--space-2); }
+.share-copy .input { flex: 1; min-width: 0; font-size: 12px; }
+.share-way .share-hint { margin-top: var(--space-2); }
+
+/* An empty screen is the one place with room to say what the screen is for. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-state > .ms { font-size: 44px; color: var(--text-faint); }
+.empty-title { font-family: var(--font-head); font-weight: 700; font-size: var(--text-md); color: var(--text); }
+.empty-body { max-width: 46ch; font-size: var(--text-sm); line-height: 1.5; }

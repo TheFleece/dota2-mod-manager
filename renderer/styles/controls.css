@@ -1,0 +1,242 @@
+/* ============ Buttons / inputs ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: all 0.25s var(--ease);
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+.btn:hover { background: var(--surface-hover); border-color: var(--border-strong); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(5, 3, 12, 0.4); }
+.btn:active { transform: scale(0.96); }
+.btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn .ms { font-size: 16px; }
+
+/* A filled button in a dark Material theme is the light accent carrying dark ink, not a
+   saturated block carrying white. It also means one button style covers all eight heroes:
+   the pair is defined per theme, so the ink is never left guessing. */
+.btn-primary {
+  background: var(--primary);
+  border-color: transparent;
+  color: var(--on-primary);
+  box-shadow: 0 6px 22px var(--primary-glow);
+}
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--primary) 88%, #fff);
+  box-shadow: 0 8px 30px var(--primary-glow);
+  border-color: transparent;
+}
+.btn-primary .ms { color: inherit; }
+
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { background: rgba(251, 113, 133, 0.13); border-color: var(--danger); box-shadow: 0 4px 18px rgba(251, 113, 133, 0.18); }
+
+.btn-danger-solid {
+  background: var(--danger);
+  border-color: transparent;
+  color: var(--md-on-error);
+  box-shadow: 0 6px 22px var(--accent-glow);
+}
+.btn-danger-solid:hover { box-shadow: 0 8px 30px var(--accent-glow); border-color: transparent; }
+
+.btn-ghost { background: none; border-color: transparent; color: var(--text-muted); backdrop-filter: none; }
+.btn-ghost:hover { background: var(--surface); color: var(--text); border-color: transparent; box-shadow: none; }
+
+.btn-sm { padding: 6px 13px; font-size: 12.5px; }
+
+.input {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-xs);
+  padding: 8px 12px;
+  font-size: 13px;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+.input:focus { outline: none; border-color: var(--primary); }
+.input::placeholder { color: var(--text-faint); }
+
+/* ============ Toolbar (filters/sort) ============ */
+/* Two lines that are not equals. The first is the same on every category - order, whose
+   heroes, and the two questions about your own library - and it reads as one row. Tags
+   belong to this category alone and sit under a rule, quieter, so the eye can skip them. */
+.toolbar {
+  margin-bottom: var(--space-4);
+  padding: 11px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+}
+.tb-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.tb-tags {
+  gap: var(--space-1);
+  margin-top: 11px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+}
+.tb-tags .fchip { font-size: var(--text-xs); padding: 5px 12px; }
+.tb-line .sep { width: 1px; height: 20px; background: var(--border); margin: 0 var(--space-1); }
+.tb-line .count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.select-wrap .ms {
+  position: absolute;
+  left: 9px;
+  font-size: 15px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+.select-wrap select {
+  appearance: none;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 7px 28px 7px 32px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  max-width: 210px;
+}
+.select-wrap select:focus { box-shadow: 0 0 14px color-mix(in srgb, var(--md-primary) 18%, transparent); }
+.select-wrap select:hover { border-color: var(--border-strong); }
+.select-wrap select:focus { outline: none; border-color: var(--primary); }
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--text-faint);
+  border-bottom: 1.5px solid var(--text-faint);
+  transform: rotate(45deg) translateY(-2px);
+  pointer-events: none;
+}
+
+.fchip {
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.25s var(--ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.fchip:hover { border-color: var(--border-strong); color: var(--text); transform: translateY(-1px); background: var(--surface); }
+.fchip.active {
+  background: var(--primary-dim);
+  border-color: var(--primary);
+  color: var(--primary-soft);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--md-primary) 24%, transparent);
+}
+.fchip .ms { font-size: 13px; }
+
+/* ============ UI scale control ============ */
+.scale-ctl { display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap; }
+.scale-ctl .scale-step { padding: 6px 9px; }
+.scale-ctl .scale-step .ms { font-size: 16px; }
+.scale-val {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 46px;
+  text-align: center;
+}
+.scale-range {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  min-width: 120px;
+  max-width: 220px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  outline: none;
+}
+.scale-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  box-shadow: 0 0 10px var(--primary-glow);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease);
+}
+.scale-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
+.scale-range:focus-visible { border-color: color-mix(in srgb, var(--md-primary) 50%, transparent); }
+
+/* ============ Context menu ============
+   What a row can do beyond its switch (see ui/menu.js). Lives on the body rather than in the
+   row, so it is never clipped by a list that scrolls, and it borrows the same surface, radius
+   and shadow as the help menu in the title bar - one kind of floating panel, not two. */
+.ctx-menu {
+  position: fixed;
+  z-index: var(--z-toast);
+  min-width: 208px;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-3);
+  animation: ctxIn var(--dur-fast) var(--ease-decelerate);
+}
+@keyframes ctxIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ctx-item .ms { font-size: var(--icon-md); color: var(--primary-soft); flex-shrink: 0; }
+.ctx-item:hover:not(:disabled) { background: var(--state-hover); color: var(--text); }
+.ctx-item:disabled { opacity: var(--disabled-opacity); cursor: default; }
+.ctx-item.danger { color: var(--danger); }
+.ctx-item.danger .ms { color: var(--danger); }
+.ctx-item.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.ctx-sep { height: 1px; margin: var(--space-1) var(--space-2); background: var(--border); }

@@ -1,0 +1,128 @@
+/* Tokens live in styles/tokens.css, loaded before this file. Nothing here may
+   invent a size, radius, duration or shadow - take the neighbouring step from a
+   scale instead of adding a value. Sections migrate onto the scales one at a
+   time; --radius-sm / --radius-xs / --shadow / --ease below are legacy aliases
+   that disappear with the section that still uses them. */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--weight-body);
+  line-height: var(--leading-normal);
+  color: var(--text);
+  background: linear-gradient(155deg, var(--bg-base) 0%, var(--bg-deep) 100%);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-head); letter-spacing: 0.01em; }
+
+button { font-family: inherit; cursor: pointer; color: inherit; }
+input, select { font-family: inherit; }
+
+/* A picture in a window is a picture, not a file to carry around. Left draggable, holding
+   one and moving it started a native drag, and the window's own drop target answered it by
+   offering to import the mod picture the user had just picked up off its own card. */
+img, video { -webkit-user-drag: none; user-select: none; }
+
+.ms {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  user-select: none;
+}
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.18); }
+
+.hidden { display: none !important; }
+
+/* ============ Ambient background ============ */
+.ambient {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.blob {
+  position: absolute;
+  width: 640px;
+  height: 640px;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.16;
+}
+/* They used to drift, forever, on a 26 and a 32 second loop. Two 640px circles under a 110px
+   blur cannot be moved without being drawn again, and they sit under everything - measured
+   while scrolling a category of 463 mods, that alone was the difference between 10 long
+   frames and 74. They keep the colour of the room and stopped moving. */
+.blob-a {
+  background: var(--md-accent);
+  top: -180px;
+  right: -120px;
+}
+.blob-b {
+  background: var(--md-primary-container);
+  bottom: -220px;
+  left: -160px;
+}
+
+/* ============ Body ============ */
+#body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#main {
+  zoom: var(--content-zoom);
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+#view-root {
+  padding: 22px 26px 90px;
+  max-width: 1500px;
+  animation: viewIn 0.35s var(--ease);
+}
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ Text roles ============
+   A size and a colour together, so a template never has to name either. These replaced 59
+   inline style attributes; what is still inline is per-element data (a stagger index, a
+   category's own colour), not a styling decision. */
+.text-meta { font-size: var(--text-xs); color: var(--text-muted); }
+.text-accent { color: var(--primary-soft); }
+/* Digits that sit in a column or change in place, so the row stops jittering. */
+.num { font-variant-numeric: tabular-nums; }
+.grow { flex: 1; }
+
+/* The line under a view title that says what the screen is for. */
+.view-intro {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+/* The glyph standing in for a picture that is missing or not fetched yet. */
+.thumb-glyph { font-size: var(--icon-md); color: var(--text-faint); }
+/* An icon riding inside a line of text rather than sitting in a control. */
+.ms.ms-xs { font-size: var(--icon-xs); }

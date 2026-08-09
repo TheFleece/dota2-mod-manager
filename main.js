@@ -21,6 +21,12 @@ const discordAuth = require('./src/discord-auth');
 const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const { createSchemaService } = require('./src/schema-service');
+const { createRemoteConfig } = require('./src/remote-config');
+const { createToolchain } = require('./src/toolchain');
+const { createGameIcons } = require('./src/game-icons');
+const { createModPreviews } = require('./src/mod-preview');
+const { createModIdentity } = require('./src/mod-id');
+const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
@@ -28,11 +34,24 @@ const i18n = require('./src/i18n');
 const { t } = i18n;
 
 let win;
-let settings, catalog, installer, library, fingerprints, presence, schemaService, icons;
+let settings, catalog, installer, library, fingerprints, presence, schemaService, icons, remoteConfig;
+let toolchain, gameIcons, modPreviews, modId;
 let presenceView = 'catalog';
-// set when startup moved mods to the folder the game actually mounts; the renderer
+// The one folder mods are installed into. Dota mounts the folder named by its audio
+// language, so the app sets that language rather than offering a choice of folders
+// (see keepRussianFolder).
+const LANG_FOLDER = 'russian';
+// set when startup moved mods into that folder from wherever they were; the renderer
 // picks it up once with settings:get and tells the user what happened
 let langMigration = null;
+// fonts and cursors Steam's file check took back and the app could not put back on its own
+// (the archive they came in is no longer cached), reported by mods:list
+let verifyStuck = [];
+// what the app did about the last Dota patch, shown as a banner in My mods:
+// { state: 'idle' | 'waiting' | 'done' | 'failed', healed: string[], error?, at }
+let patchRepair = { state: 'idle' };
+let patchWatcher = null;
+let repairTimer = null;
 
 function sendProgress(evt) {
   if (win && !win.isDestroyed()) win.webContents.send('progress', evt);
@@ -120,6 +139,32 @@ function createWindow() {
               await new Promise((r) => setTimeout(r, 700));
             }
           }
+          if (process.env.MM_HOVER) {
+            // dev-only: park the pointer over a selector (or "x,y") so the shot shows the
+            // hover state. Half of what a card does only exists under the cursor, and a
+            // screenshot of the resting state cannot show a control that slides on hover.
+            const spec = process.env.MM_HOVER;
+            let point = null;
+            if (/^\d+\s*,\s*\d+$/.test(spec)) {
+              const [x, y] = spec.split(',').map(Number);
+              point = { x, y };
+            } else {
+              point = await win.webContents.executeJavaScript(`(() => {
+                const el = document.querySelector(${JSON.stringify(spec)});
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+              })()`);
+            }
+            if (point) {
+              // two moves: the first lands, the second keeps the pointer there after any
+              // relayout the first one caused
+              win.webContents.sendInputEvent({ type: 'mouseMove', x: point.x, y: point.y });
+              await new Promise((r) => setTimeout(r, 250));
+              win.webContents.sendInputEvent({ type: 'mouseMove', x: point.x, y: point.y });
+              await new Promise((r) => setTimeout(r, 600));
+            }
+          }
           if (process.env.MM_DRAG) {
             // dev-only: press, move, release — "x1,y1,x2,y2" (drags a grip, swipes a strip)
             const [x1, y1, x2, y2] = process.env.MM_DRAG.split(',').map(Number);
@@ -166,6 +211,15 @@ function createWindow() {
               await new Promise((r) => setTimeout(r, 2500));
             }
           }
+          if (process.env.MM_EVAL) {
+            // dev-only: read the finished DOM and write the answer beside the screenshot.
+            // A picture cannot say whether a fold opened with the right text in the right
+            // language, and that is exactly the kind of thing that ships broken.
+            const out = await win.webContents.executeJavaScript(`(async () => {
+              ${process.env.MM_EVAL}
+            })()`);
+            fs.writeFileSync(`${process.env.MM_SHOT}.eval.json`, JSON.stringify(out, null, 1));
+          }
           await new Promise((r) => setTimeout(r, 500));
           const img = await win.webContents.capturePage();
           fs.writeFileSync(process.env.MM_SHOT, img.toPNG());
@@ -174,6 +228,37 @@ function createWindow() {
           fs.writeFileSync(process.env.MM_SHOT + '.err.txt', String(e));
         }
       }, 7000);
+    });
+  }
+
+  // dev: MM_REC=<dir> films the app running a scripted scene, one webm per scene. The site
+  // needs a clip of the app working and will need a fresh one every release, so it is a
+  // script rather than something recorded by hand. MM_SCENE picks scenes by name.
+  // Everything it needs lives in tools/screencast.js, loaded only on this branch.
+  if (process.env.MM_REC) {
+    win.webContents.once('did-finish-load', () => {
+      setTimeout(async () => {
+        const log = (m) => process.stdout.write(`${m}\n`);
+        let cast = null;
+        try {
+          const { Cast } = require('./tools/screencast');
+          const scenes = require('./tools/screencast-scenes');
+          win.show();
+          win.focus();
+          cast = new Cast(win, { out: process.env.MM_REC });
+          log(`cast ready ${JSON.stringify(await cast.setup())}`);
+          const only = process.env.MM_SCENE ? process.env.MM_SCENE.split(',') : null;
+          for (const [name, build] of Object.entries(scenes)) {
+            if (only && !only.includes(name)) continue;
+            const steps = typeof build === 'function' ? await build(cast, log) : build;
+            await cast.scene(name, steps, log);
+          }
+        } catch (e) {
+          log(`cast failed: ${(e && e.stack) || e}`);
+        }
+        if (cast) cast.close();
+        app.quit();
+      }, 9000);
     });
   }
 }
@@ -215,16 +300,37 @@ app.whenReady().then(async () => {
   library = new Library(userData);
   fingerprints = new Fingerprints(userData);
   fingerprints.refresh(); // fire-and-forget: pull the latest fp -> mod map
+  modId = createModIdentity({ getGamePath: () => settings.get('dotaGamePath'), log: diag });
   installer = new Installer({
     userDataDir: userData,
     getGamePath: () => settings.get('dotaGamePath'),
     getLangSuffix: () => settings.get('langSuffix'),
     onProgress: sendProgress,
+    identify: (paths) => modId.identify(paths),
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
   schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });
+  // what the app can be told after it shipped: a feature switched off with a reason, and
+  // dated notices. Fire-and-forget, and everything it governs stays on until it says otherwise
+  remoteConfig = createRemoteConfig({ userDataDir: userData, appVersion: () => app.getVersion(), log: diag });
+  remoteConfig.refresh();
   // pictures for the cosmetics picker come through Electron's network stack (see src/icons.js)
   icons = new Icons(userData, net.fetch);
+  // ...unless the Source 2 toolchain is here, in which case they come out of the game itself
+  toolchain = createToolchain({ userDataDir: userData, onProgress: sendProgress, log: diag });
+  gameIcons = createGameIcons({
+    userDataDir: userData,
+    toolchain,
+    getGamePath: () => settings.get('dotaGamePath'),
+    log: diag,
+  });
+  // ...and the same toolchain gives a mod that came with no picture one out of itself
+  modPreviews = createModPreviews({
+    userDataDir: userData,
+    toolchain,
+    langFileOf: (relPath) => installer.langFileOnDisk(relPath),
+    log: diag,
+  });
 
   // auto-detect dota on first run
   if (!validateGamePath(settings.get('dotaGamePath'))) {
@@ -232,10 +338,10 @@ app.whenReady().then(async () => {
     if (found) settings.set('dotaGamePath', found);
   }
 
-  // point the library at the folder the game mounts now — Dota's 2026-07-24 update stopped
-  // mounting made-up language folders, so installs sitting in dota_123 have to move
+  // put the mods where the game will look for them, and make the game look there
   try {
-    syncLangFolder();
+    await keepRussianFolder();
+    applyVoicePreference();
   } catch (e) {
     diag('lang folder sync skipped: ' + e.message);
   }
@@ -262,6 +368,14 @@ app.whenReady().then(async () => {
     diag('cursor reconcile skipped: ' + e.message);
   }
 
+  // finish what a killed process could not: a file a transaction had parked while it worked
+  try {
+    const swept = installer.sweepStaged();
+    if (swept.restored || swept.dropped) diag(`staged files: ${swept.restored} restored, ${swept.dropped} dropped`);
+  } catch (e) {
+    diag('staged sweep skipped: ' + e.message);
+  }
+
   // one-time sweep of mods installed before the schema engine existed: they still carry a
   // stale item table and a stale localization copy inside their VPK
   try {
@@ -280,12 +394,37 @@ app.whenReady().then(async () => {
 
   // a Dota update overwrites the patched gameinfo and moves the item table: put both
   // back before the user gets a chance to launch the game with a half-applied setup
+  const startupHealed = [];
+  let startupError = null;
   try {
     const healed = schemaService.heal();
-    if (healed.healed && healed.healed.length) diag('schema healed: ' + healed.healed.join(','));
-    if (healed.error) diag('schema heal failed: ' + healed.error);
+    if (healed.healed && healed.healed.length) { startupHealed.push(...healed.healed); diag('schema healed: ' + healed.healed.join(',')); }
+    if (healed.error) { startupError = healed.error; diag('schema heal failed: ' + healed.error); }
   } catch (e) {
+    startupError = e.message;
     diag('schema heal skipped: ' + e.message);
+  }
+
+  // the same job for the two kinds of mod that overwrite files Valve ships
+  try {
+    if (restoreAfterVerify()) startupHealed.push('files');
+  } catch (e) {
+    diag('restore after verify skipped: ' + e.message);
+  }
+
+  // Did the game change while the app was closed? The repair for it has just run either
+  // way - this only decides whether the user is told about it, and hands the watcher the
+  // build to compare against.
+  try {
+    const stamp = gameStamp(settings.get('dotaGamePath'));
+    const known = settings.get('gameStamp');
+    if (stamp && known && stamp !== known) {
+      diag(`Dota changed while the app was closed: ${known} -> ${stamp}`);
+      patchRepair = { state: startupError ? 'failed' : 'done', healed: startupHealed, error: startupError, at: Date.now() };
+    }
+    if (stamp) settings.set('gameStamp', stamp);
+  } catch (e) {
+    diag('build check skipped: ' + e.message);
   }
 
   registerIpc();
@@ -299,6 +438,14 @@ app.whenReady().then(async () => {
   if (cold) win.webContents.once('did-finish-load', () => handleDeepLink(cold));
   applyPresenceSetting();
   setupAutoUpdate();
+
+  // and from here on, notice a patch the moment it lands rather than at the next start
+  patchWatcher = createPatchWatcher({
+    getGamePath: () => settings.get('dotaGamePath'),
+    onPatch: (evt) => repairAfterPatch(evt),
+    log: diag,
+  });
+  patchWatcher.start(settings.get('gameStamp'));
 }).catch((e) => diag('whenReady FAIL: ' + (e.stack || e)));
 
 // ---- auto-update via GitHub Releases (packaged builds only) ----
@@ -318,6 +465,10 @@ function setupAutoUpdate() {
 }
 
 app.on('window-all-closed', () => app.quit());
+app.on('before-quit', () => {
+  clearTimeout(repairTimer);
+  if (patchWatcher) patchWatcher.stop();
+});
 
 // ---------- d2mm:// links ----------
 
@@ -922,18 +1073,147 @@ function moveLangFolder(game, fromSuffix, toSuffix) {
   return moved;
 }
 
-// Follow the folder the game actually mounts (its audio language). This is what repairs
-// installs made before 2026-07-24, when a made-up folder like dota_123 still worked.
-function syncLangFolder() {
+/* Mods live in dota_russian, and the app is the one that arranges it.
+ *
+ * The engine mounts the folder named by Dota's audio language, so a mod folder is not a
+ * preference - it is a consequence of a setting somewhere else. Asking the user to keep the
+ * two in step was asking them to understand our filing system. Now there is one folder,
+ * always the same one, and the app writes the audio language that mounts it.
+ *
+ * The text language stays untouched. It is the one the user picked when they installed the
+ * game, and nothing about mods depends on it. Voices are not disturbed either unless Valve's
+ * Russian pack is actually downloaded: without it dota_russian mounts with our mods in it
+ * and the speech keeps coming from dota/pak01, which is English.
+ *
+ * Dota rewrites boot.vcfg when it exits, so a running game means we try again next launch.
+ */
+async function keepRussianFolder() {
   const game = settings.get('dotaGamePath');
-  if (!game || !settings.get('langSuffixAuto')) return;
-  const { suffix } = gamelang.detectLangSuffix(game);
-  const current = settings.get('langSuffix');
-  if (!suffix || suffix === current) return;
-  const moved = moveLangFolder(game, current, suffix);
-  settings.set('langSuffix', suffix);
-  if (moved) langMigration = { from: current, to: suffix, moved };
-  diag(`lang folder synced: dota_${current} -> dota_${suffix} (${moved} files)`);
+  if (!game) return;
+  const mounted = gamelang.detectLangSuffix(game).suffix;
+  if (mounted !== LANG_FOLDER) {
+    if (await dotaIsRunning()) {
+      diag(`audio language is ${mounted}, Dota is running - leaving boot.vcfg alone`);
+      return;
+    }
+    gamelang.writeBootLanguages(game, { audio: LANG_FOLDER });
+    diag(`audio language ${mounted} -> ${LANG_FOLDER}`);
+  }
+  gamelang.ensureLangFolder(game, LANG_FOLDER);
+  // whatever the mods were following before: our own last setting, and the folder the game
+  // was mounting until a moment ago
+  let moved = 0;
+  const from = new Set([settings.get('langSuffix'), mounted].filter((s) => s && s !== LANG_FOLDER));
+  for (const old of from) moved += moveLangFolder(game, old, LANG_FOLDER);
+  if (moved) {
+    langMigration = { from: [...from][0], to: LANG_FOLDER, moved };
+    diag(`mods moved into dota_${LANG_FOLDER}: ${moved} files from ${[...from].join(', ')}`);
+  }
+  settings.set('langSuffix', LANG_FOLDER);
+}
+
+/* Whatever the user asked of the voices, applied to what is on disk now.
+ *
+ * Run on every launch, not only when the switch is touched: verifying the game files through
+ * Steam hands Valve's voice pack back without telling anyone, and the answer to "I want
+ * English voices" should not quietly expire because somebody checked their install.
+ */
+function applyVoicePreference() {
+  const game = settings.get('dotaGamePath');
+  if (!game) return 'absent';
+  try {
+    return gamelang.setVoiceEnabled(game, LANG_FOLDER, !settings.get('englishVoices'));
+  } catch (err) {
+    // Dota holds its paks open, so a running game means we try again next launch
+    diag('voice pack not switched: ' + err.message);
+    return gamelang.voiceState(game, LANG_FOLDER);
+  }
+}
+
+/* Put back what Steam's file check took away.
+ *
+ * Only fonts and cursors can be taken: they overwrite files Valve ships. What can be restored
+ * from what the app already holds is restored without a word - it is the state the user asked
+ * for, and they did not ask Steam to undo it. What would need downloading is left alone and
+ * reported instead: starting a download at launch because a file changed is not something to
+ * do behind somebody's back.
+ */
+function restoreAfterVerify() {
+  const lost = installer.lostToVerify(library.list());
+  if (!lost.length) return 0;
+  const stuck = [];
+  let restored = 0;
+  for (const rec of lost) {
+    try {
+      const from = installer.restoreDeployed(rec);
+      if (from) { restored++; diag(`restored after verify: ${rec.name} (from ${from})`); }
+      else stuck.push({ id: rec.id, name: rec.name });
+    } catch (err) {
+      diag(`restore failed for ${rec.name}: ${err.message}`);
+      stuck.push({ id: rec.id, name: rec.name });
+    }
+  }
+  verifyStuck = stuck;
+  return restored;
+}
+
+/* Everything the app puts back after the game changed underneath it.
+ *
+ * Not one line of the repair itself is new: heal() re-applies the search-path patch and
+ * rebuilds the item schema, restoreAfterVerify() puts fonts and cursors back, and
+ * applyVoicePreference() re-applies the voice choice. What 4.1 adds is when this runs and
+ * that somebody hears about it - before, it happened at startup and on our own Play button,
+ * while Steam patches the game in the background and most people press Play in Steam.
+ *
+ * Nothing is written while Dota is running. It holds gameinfo and its paks open, so a write
+ * would half-succeed, and the client has already read the files anyway. The app says it is
+ * waiting and tries again after the game exits.
+ */
+const REPAIR_RETRY_MS = 20000;
+
+function setPatchRepair(next) {
+  patchRepair = next;
+  if (win && !win.isDestroyed()) win.webContents.send('patch-repair', patchRepair);
+}
+
+async function repairAfterPatch(reason) {
+  const game = settings.get('dotaGamePath');
+  if (!game) return;
+  clearTimeout(repairTimer);
+  repairTimer = null;
+
+  if (await dotaIsRunning()) {
+    diag('Dota patched while the game is running - repair deferred');
+    setPatchRepair({ state: 'waiting', reason, at: Date.now() });
+    repairTimer = setTimeout(() => { repairAfterPatch(reason); }, REPAIR_RETRY_MS);
+    return;
+  }
+
+  const healed = [];
+  let error = null;
+  try {
+    const res = schemaService.heal();
+    if (res.healed) healed.push(...res.healed);
+    if (res.error) error = res.error;
+  } catch (err) {
+    error = String(err.message || err);
+  }
+  try {
+    if (restoreAfterVerify()) healed.push('files');
+  } catch (err) {
+    diag('restore after verify skipped: ' + err.message);
+  }
+  try {
+    applyVoicePreference();
+  } catch (err) {
+    diag('voice preference skipped: ' + err.message);
+  }
+
+  // remembered only now: a stamp stored before a failed repair would make the next start
+  // think there is nothing to fix
+  settings.set('gameStamp', gameStamp(game));
+  diag(`repair after patch: ${healed.join(',') || 'nothing to do'}${error ? ' error=' + error : ''}`);
+  setPatchRepair({ state: error ? 'failed' : 'done', healed, error, at: Date.now() });
 }
 
 function registerIpc() {
@@ -975,50 +1255,54 @@ function registerIpc() {
   });
 
   // ----- settings -----
-  ipcMain.handle('settings:get', () => {
+  /**
+   * What the renderer means by "settings": the stored values plus the few facts about this
+   * machine that only the main process can answer.
+   *
+   * Both handlers return this, and that is the point. `settings:set` used to answer with the
+   * bare store, and the renderer caches whatever it is handed - so saving any single setting
+   * quietly dropped `dotaPathValid` from the screen's copy. Favouriting a mod was enough:
+   * from the next repaint the catalog claimed Dota was not installed and every install
+   * refused with "set the path first", until the app was restarted. The values were all
+   * correct; only the screen's idea of them was not.
+   */
+  const settingsView = ({ consumeMigration = false } = {}) => {
     const game = settings.get('dotaGamePath');
     let minifyDetected = false;
     try { minifyDetected = !!game && fs.existsSync(path.join(game, 'dota_minify')); } catch { /* ignore */ }
-    const detected = game ? gamelang.detectLangSuffix(game) : { suffix: null, source: null, uiLanguage: null };
     const folders = gamelang.langFolders(game);
-    const active = settings.get('langSuffix');
-    const migrated = langMigration;
-    langMigration = null; // reported once
+    // Only the screen asking for settings gets to hear about the migration, and only once.
+    // A save must not swallow the news before anybody has read it.
+    const migrated = consumeMigration ? langMigration : null;
+    if (consumeMigration) langMigration = null;
     return {
       ...settings.all(),
       dotaPathValid: validateGamePath(game),
       minifyDetected,
       discordConfigured: discordAuth.isConfigured(),
+      // What is left of the language question, now that the folder is always dota_russian:
+      // whether the game agrees, and whether any mods are stranded outside it. Both are
+      // things to tell the user about, not things to ask them.
       gameLang: {
-        ...detected,
-        folders,
-        languages: gamelang.OFFICIAL_LANGUAGES,
-        // whether the voice pack for the folder in use is actually downloaded
-        voice: !!game && gamelang.voiceInstalled(game, active),
-        // Valve ships no dota_english (English voice lives in dota/pak01), so that folder
-        // is one we create ourselves and cannot promise the engine will mount
-        selfMade: !folders.some((f) => f.suffix === active && f.valveContent),
-        // mods left behind in a folder the game no longer mounts
-        stranded: folders.filter((f) => f.suffix !== active && !f.official && f.modFiles > 0)
+        mounted: game ? gamelang.detectLangSuffix(game).suffix : null,
+        folder: LANG_FOLDER,
+        // mods sitting in a folder the game does not mount
+        stranded: folders.filter((f) => f.suffix !== LANG_FOLDER && f.modFiles > 0)
           .map((f) => ({ suffix: f.suffix, modFiles: f.modFiles })),
       },
       langMigration: migrated,
     };
-  });
+  };
+
+  ipcMain.handle('settings:get', () => settingsView({ consumeMigration: true }));
 
   ipcMain.handle('settings:set', (e, key, value) => {
     // keep main-process strings (dialogs, errors) in sync with the UI language
     if (key === 'uiLang') i18n.setLang(value);
-    // when the language folder changes, move installed mod files over
-    if (key === 'langSuffix' && value !== settings.get('langSuffix')) {
-      moveLangFolder(settings.get('dotaGamePath'), settings.get('langSuffix'), value);
-    }
     settings.set(key, value);
-    // pinning a folder by hand stops the automatic follow; releasing it re-syncs now
-    if (key === 'langSuffixAuto' && value) syncLangFolder();
     // the status text is localized, so a language change has to redraw it too
     if (key === 'discordPresence' || key === 'uiLang') applyPresenceSetting();
-    return settings.all();
+    return settingsView();
   });
 
   // ----- Discord presence -----
@@ -1045,38 +1329,45 @@ function registerIpc() {
     return { ok: true };
   });
 
-  // set Dota's own text/voice languages and take the mods along: the voice language decides
-  // which dota_<lang> folder the engine mounts, so it is also where mods have to live
-  ipcMain.handle('settings:setGameLanguages', async (e, { ui, audio }) => {
+  // ----- English voices (Valve's pak01 in or out of the mount) -----
+  ipcMain.handle('voice:state', () => {
+    const game = settings.get('dotaGamePath');
+    return {
+      state: game ? gamelang.voiceState(game, LANG_FOLDER) : 'absent',
+      english: !!settings.get('englishVoices'),
+    };
+  });
+
+  ipcMain.handle('voice:setEnabled', async (e, english) => {
+    const stop = blocked('voice');
+    if (stop) return stop;
     const game = settings.get('dotaGamePath');
     if (!game) return { error: t('Путь к Dota 2 не задан') };
-    if (!gamelang.OFFICIAL_LANGUAGES.includes(ui) || !gamelang.OFFICIAL_LANGUAGES.includes(audio)) {
-      return { error: t('Dota не знает такого языка') };
-    }
-    if (await dotaIsRunning()) return { error: t('Сначала закрой Dota 2 — она перезапишет настройку при выходе') };
+    if (await dotaIsRunning()) return { error: t('Сначала закрой Dota 2 — она держит файлы озвучки открытыми') };
+    settings.set('englishVoices', !!english);
     try {
-      gamelang.writeBootLanguages(game, { ui, audio });
+      return { state: gamelang.setVoiceEnabled(game, LANG_FOLDER, !english), english: !!english };
     } catch (err) {
       return { error: String(err.message || err) };
     }
-    const moved = moveLangFolder(game, settings.get('langSuffix'), audio);
-    gamelang.ensureLangFolder(game, audio);
-    settings.set('langSuffix', audio);
-    return { ok: true, moved, audio, ui, voice: gamelang.voiceInstalled(game, audio) };
   });
 
-  // rescue mods sitting in a folder the game stopped mounting (our old dota_123, or another
-  // tool's dota_minify) by moving them into the folder that is live now
+  // rescue mods sitting in a folder the game does not mount (our old dota_123, another
+  // tool's dota_minify, or whatever the audio language used to be)
   ipcMain.handle('settings:moveLangFiles', (e, fromSuffix) => {
     const game = settings.get('dotaGamePath');
     if (!game) return { error: t('Путь к Dota 2 не задан') };
-    const moved = moveLangFolder(game, String(fromSuffix || ''), settings.get('langSuffix'));
-    return { moved, to: settings.get('langSuffix') };
+    const moved = moveLangFolder(game, String(fromSuffix || ''), LANG_FOLDER);
+    return { moved, to: LANG_FOLDER };
   });
 
   ipcMain.handle('settings:detectDota', async () => {
     const found = await findDotaGamePath();
-    if (found) settings.set('dotaGamePath', found);
+    if (found) {
+      settings.set('dotaGamePath', found);
+      // the watcher is holding handles on the folder that was current a moment ago
+      if (patchWatcher) patchWatcher.rearm();
+    }
     return found;
   });
 
@@ -1091,6 +1382,7 @@ function registerIpc() {
     if (!validateGamePath(p) && validateGamePath(path.join(p, 'game'))) p = path.join(p, 'game');
     if (!validateGamePath(p)) return { error: t('В этой папке не найдена Dota 2 (нет подпапки dota)') };
     settings.set('dotaGamePath', p);
+    if (patchWatcher) patchWatcher.rearm();
     return { path: p };
   });
 
@@ -1106,6 +1398,8 @@ function registerIpc() {
   // ----- install/manage -----
   ipcMain.handle('mods:install', async (e, payload) => {
     // payload: { categoryId, name, styleLabel, fileRef, preview }
+    const stop = blocked('install');
+    if (stop) return stop;
     try {
       const existing = library.findByKey(payload.categoryId, payload.name, payload.styleLabel);
       if (existing) return { error: t('Уже установлено'), already: true };
@@ -1155,6 +1449,27 @@ function registerIpc() {
       if (res.canceled || !res.filePath) return { cancelled: true };
       fs.writeFileSync(res.filePath, buf);
       return { ok: true, path: res.filePath, size: buf.length };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // The other half of "pack a folder": hand the author back the files themselves, so a mod
+  // can be opened, changed and dropped in again without any other tool.
+  ipcMain.handle('mods:unpackToFolder', async (e, id) => {
+    const rec = library.find(id);
+    if (!rec) return { error: t('Мод не найден') };
+    try {
+      const res = await dialog.showOpenDialog(win, {
+        title: t('Куда распаковать мод'),
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      if (res.canceled || !res.filePaths.length) return { cancelled: true };
+      const safe = rec.name.replace(/[<>:"/\\|?*]/g, '_') || 'mod';
+      const dest = path.join(res.filePaths[0], safe);
+      fs.mkdirSync(dest, { recursive: true });
+      const out = installer.unpackToFolder(rec, dest);
+      return { ok: true, path: dest, ...out };
     } catch (err) {
       return { error: String(err.message || err) };
     }
@@ -1251,6 +1566,19 @@ function registerIpc() {
         return { ...rec, ...a, match: matches };
       } catch { return rec; }
     });
+    // Who is quietly covering whom. Both lists take part: a foreign file in the folder is
+    // mounted by the game exactly like a managed one, so leaving it out would name the wrong
+    // winner. Only switched-on mods, because a switched-off one is renamed and never mounted.
+    let covered = new Map();
+    try {
+      const live = [
+        ...installed.filter((r) => r.enabled).map((r) => ({ key: r.id, name: r.name, files: r.files })),
+        ...external.filter((f) => f.enabled).map((f) => ({ key: f.key, name: f.name, files: f.files })),
+      ];
+      covered = installer.coverage(live);
+    } catch { /* no game path — nothing is mounted, nothing covers anything */ }
+    external = external.map((f) => (covered.has(f.key) ? { ...f, coveredBy: covered.get(f.key) } : f));
+
     let slots = 0;
     try { slots = installer.usedModSlots(); } catch { /* no game path */ }
     // the renderer re-lists after every install, toggle, preset and bulk action, so this is
@@ -1261,11 +1589,12 @@ function registerIpc() {
     // never the stored records — dropping the field off those would erase it on save.
     const schemaOn = schemaService.state().enabled;
     const listed = installed.map((rec) => {
-      if (!Array.isArray(rec.schema)) return rec;
+      const by = covered.get(rec.id);
+      if (!Array.isArray(rec.schema)) return by ? { ...rec, coveredBy: by } : rec;
       const { schema, ...rest } = rec;
-      return { ...rest, schemaCount: schema.length, schemaLive: schemaOn };
+      return { ...rest, schemaCount: schema.length, schemaLive: schemaOn, ...(by ? { coveredBy: by } : {}) };
     });
-    return { installed: listed, external, slots, slotCeil: 98 };
+    return { installed: listed, external, slots, slotCeil: 98, verifyStuck };
   });
 
   // ----- launch + master mods switch -----
@@ -1282,11 +1611,52 @@ function registerIpc() {
 
   // ---------- item schema / search-path patch ----------
 
+  // ----- what the app was told from the network -----
+
+  // A switch is honoured here rather than in the renderer: this is the boundary an old
+  // window, a stale screen or a replayed click all have to come through.
+  const uiLang = () => (settings.get('uiLang') === 'ru' ? 'ru' : 'en');
+  const blocked = (name) => {
+    const f = remoteConfig.feature(name, uiLang());
+    return f.off ? { error: f.note || t('Эта возможность временно отключена') } : null;
+  };
+
+  ipcMain.handle('config:state', () => ({
+    features: Object.fromEntries(remoteConfig.SWITCHABLE.map((n) => [n, remoteConfig.feature(n, uiLang())])),
+    notices: remoteConfig.notices(uiLang()),
+    seen: settings.get('seenNotices') || [],
+  }));
+
+  ipcMain.handle('config:noticeSeen', (e, id) => {
+    const seen = new Set(settings.get('seenNotices') || []);
+    seen.add(String(id));
+    // an id list that only grows is a settings file that only grows
+    settings.set('seenNotices', [...seen].slice(-50));
+    return [...seen];
+  });
+
   ipcMain.handle('patch:state', () => schemaService.state());
+
+  // what the app did about the last Dota patch (the banner in My mods asks on every visit;
+  // while the app is open it is pushed instead, see setPatchRepair)
+  ipcMain.handle('patch:repairState', () => patchRepair);
+  // "I closed the game, do it now" — the same path the retry timer takes
+  ipcMain.handle('patch:repairNow', async () => {
+    await repairAfterPatch('manual');
+    return patchRepair;
+  });
+  // the banner is news, not a state of the game: once it has been read it goes away
+  ipcMain.handle('patch:repairSeen', () => {
+    if (patchRepair.state === 'done' || patchRepair.state === 'failed') patchRepair = { state: 'idle' };
+    return patchRepair;
+  });
 
   // The one moment the app touches files of the game install: gated on an explicit yes,
   // reversible from the same switch, and every original is backed up in userData first.
   ipcMain.handle('patch:setEnabled', async (e, enabled) => {
+    // turning it OFF is always allowed: a switch that traps people in the state it broke is
+    // worse than the problem it was flipped for
+    if (enabled) { const stop = blocked('cosmetics'); if (stop) return stop; }
     if (!settings.get('dotaGamePath')) return { error: t('Путь к Dota 2 не задан') };
     // the game holds gameinfo open while it runs, so writing it would fail half-way
     if (await dotaIsRunning()) return { error: t('Закрой Dota 2 перед изменением файлов игры') };
@@ -1303,13 +1673,104 @@ function registerIpc() {
   // courier Valve ships later appears in the list without an app update.
   ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
 
-  // One picture per request, so opening a slot with 2000 items costs only what is on screen.
-  ipcMain.handle('cosmetics:icons', (e, names) =>
-    icons.getMany((Array.isArray(names) ? names : []).slice(0, 60)));
+  // One picture per tile, so opening a slot with 2000 items costs only what is on screen.
+  //
+  // A tile asks with a chain of sources, best first ("modart:pak54_dir.vpk|hero:Brewmaster"),
+  // and gets back the first one that has a picture. That is how "the mod's own art beats the
+  // wiki's portrait of the vanilla hero, but a raw model texture does not" stays written down
+  // in one place - renderer/ui/thumb.js, which composes the chain - instead of being spread
+  // across three. A plain name is simply a chain of one, which is what the picker sends.
+  //
+  // Sources: the mod's own files and the game's own pictures when the toolchain is here
+  // (exact, offline, no rate limit), the wiki for whatever is left.
+  ipcMain.handle('cosmetics:icons', async (e, names) => {
+    const wanted = (Array.isArray(names) ? names : []).slice(0, 60);
+    const chains = new Map(wanted.map((n) => [n, String(n).split('|').filter(Boolean)]));
+    const sources = [...new Set([...chains.values()].flat())];
+
+    const isMod = (s) => s.startsWith(modPreviews.VID) || s.startsWith(modPreviews.ART) || s.startsWith(modPreviews.TEX);
+    const found = {};
+    try {
+      Object.assign(found, await modPreviews.getMany(sources.filter(isMod)));
+    } catch (err) {
+      diag('mod previews failed, falling back to the usual pictures: ' + err.message);
+    }
+    const forIcons = sources.filter((s) => !isMod(s) && !found[s]);
+    if (forIcons.length) {
+      let fromGame = {};
+      try {
+        fromGame = await gameIcons.getMany(forIcons);
+      } catch (err) {
+        diag('game icons failed, falling back to the wiki: ' + err.message);
+      }
+      const left = forIcons.filter((n) => !fromGame[n]);
+      Object.assign(found, left.length ? await icons.getMany(left) : {}, fromGame);
+    }
+
+    const pictures = {};
+    for (const [key, chain] of chains) {
+      const hit = chain.find((s) => found[s]);
+      if (hit) pictures[key] = found[hit];
+    }
+    // A clip beats everything else a mod can be pictured by, but only the window can open
+    // one. So the answer also says where a frame is still worth taking: the tile shows
+    // whatever was found meanwhile, and swaps it for the frame when that arrives.
+    const decode = new Set();
+    for (const [, chain] of chains) {
+      const clip = chain.find((s) => s.startsWith(modPreviews.VID));
+      if (clip && !found[clip] && modPreviews.hasVideo(clip)) decode.add(clip);
+    }
+    return { pictures, decode: [...decode] };
+  });
+
+  // A mod that replaces a hero's animated portrait carries its own showcase, and a still out
+  // of it is the best picture of that mod there is. Decoding video is the window's job - the
+  // app is a browser and already has the decoder - so the bytes go there and the frame comes
+  // back to be judged and kept. That is why no ffmpeg is downloaded for this.
+  ipcMain.handle('preview:video', (e, key) => {
+    try {
+      const got = modPreviews.videoBytes(String(key || ''));
+      return got ? got.bytes : null;
+    } catch (err) {
+      diag('mod preview video failed: ' + err.message);
+      return null;
+    }
+  });
+
+  ipcMain.handle('preview:frame', (e, key, png) => {
+    try {
+      return modPreviews.saveFrame(String(key || ''), Buffer.from(png || []));
+    } catch (err) {
+      diag('mod preview frame failed: ' + err.message);
+      return null;
+    }
+  });
+
+  // ----- the Source 2 toolchain (Settings shows this) -----
+  ipcMain.handle('tools:state', () => ({ tools: toolchain.state(), iconCacheBytes: gameIcons.size() + modPreviews.size() }));
+
+  ipcMain.handle('tools:install', async (e, name) => {
+    try {
+      await toolchain.ensure(String(name || 'vrf'));
+      return { ok: true, tools: toolchain.state() };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('tools:remove', (e, name) => {
+    toolchain.remove(String(name || 'vrf'));
+    // the pictures it produced are only reachable through it
+    gameIcons.clear();
+    modPreviews.clear();
+    return { ok: true, tools: toolchain.state() };
+  });
 
   // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
   // handle it (see touchesSchema above), this is only for the initial choice.
   ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName) => {
+    const stop = blocked('cosmetics');
+    if (stop) return stop;
     try {
       const rec = schemaService.pickCosmetic(slot, itemId, itemName);
       return { ok: true, record: rec };

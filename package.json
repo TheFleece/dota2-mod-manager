@@ -1,12 +1,17 @@
 {
   "name": "dota2-mod-manager",
   "productName": "Dota 2 Mod Manager",
-  "version": "1.15.0",
+  "version": "2.0.0",
   "description": "Desktop mod manager for Dota 2 — browse, install, toggle and preset 1100+ cosmetic mods from the Dota2PornFx catalog",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "test": "node --test \"test/**/*.test.js\"",
+    "sandbox:seed": "node tools/sandbox.js seed",
+    "sandbox:reset": "node tools/sandbox.js reset",
+    "sandbox:status": "node tools/sandbox.js status",
+    "start:sandbox": "electron . --user-data-dir=sandbox/userdata"
   },
   "repository": {
     "type": "git",
@@ -20,7 +25,7 @@
     "electron-builder": "^25.1.8"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16",
+    "adm-zip": "^0.6.0",
     "electron-updater": "^6.3.9"
   },
   "build": {

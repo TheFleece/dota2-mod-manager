@@ -387,9 +387,27 @@ function describeHero(h) {
 
 const KIND_LABEL = { wards: 'варды', courier: 'курьер', ui: 'интерфейс', sounds: 'звуки', terrain: 'террейн', other: '' };
 
+/**
+ * The heroes a mod is actually about, as opposed to the ones it merely touches.
+ *
+ * A hero's folder is also where authors borrow generic lookup textures from - fresnel warps,
+ * colourwarps, detail masks - and one borrowed file used to count as a whole hero. That is
+ * how a set that dresses Grimstroke alone announced itself as a bundle of eight heroes, and
+ * how a Dazzle skin claimed to also change Bane and Slardar (measured over 84 installed
+ * mods: 12 heroes invented across 5 of them).
+ *
+ * A hero the mod carries no model for is not the subject. When none of them has a model the
+ * mod is a plain recolour, and then every hero it touches is as good an answer as there is.
+ */
+function subjectHeroes(a) {
+  const carried = a.heroes.filter((h) => h.models > 0 || h.base);
+  return carried.length ? carried : a.heroes;
+}
+
 // Human summary of a whole analysis: hero skins, or a coarse content kind.
 function describeAnalysis(a) {
-  if (a.heroes.length) return a.heroes.map(describeHero).join('; ');
+  const heroes = subjectHeroes(a);
+  if (heroes.length) return heroes.map(describeHero).join('; ');
   return t(KIND_LABEL[a.kind] || '');
 }
 
@@ -398,9 +416,10 @@ function describeAnalysis(a) {
 // content isn't recognisable enough to name.
 const KIND_NAME = { wards: 'Варды', courier: 'Курьер', ui: 'Интерфейс меню', sounds: 'Звуки', terrain: 'Ландшафт' };
 function nameFromAnalysis(a) {
-  if (a.heroes.length === 1) return a.heroes[0].name;
-  if (a.heroes.length >= 2 && a.heroes.length <= 3) return a.heroes.map((h) => h.name).join(', ');
-  if (a.heroes.length > 3) return t('Сборка · {0} героев', a.heroes.length);
+  const heroes = subjectHeroes(a);
+  if (heroes.length === 1) return heroes[0].name;
+  if (heroes.length >= 2 && heroes.length <= 3) return heroes.map((h) => h.name).join(', ');
+  if (heroes.length > 3) return t('Сборка · {0} героев', heroes.length);
   return KIND_NAME[a.kind] ? t(KIND_NAME[a.kind]) : null;
 }
 
@@ -464,6 +483,24 @@ function readVpkEntries(dirBuf, dirPath, archivePathFor) {
   return entries;
 }
 
+// The VPK index carries a CRC32 per entry. Hand-rolled because Node's own zlib.crc32 is
+// newer than the Node inside our Electron; src/schema.js re-exports this one.
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
 // Build one self-contained single-file VPK v2 from a flat entry list. Groups entries
 // by ext -> folder (first-seen order), embeds every entry's data inline (0x7fff).
 function buildVpk(entries) {
@@ -513,6 +550,95 @@ function buildVpk(entries) {
   header.writeUInt32LE(treeBuf.length, 8);
   header.writeUInt32LE(dataLen, 12); // fileDataSectionSize; MD5/signature sections left at 0
   return Buffer.concat([header, treeBuf, ...dataChunks]);
+}
+
+// ---------- packing a folder of loose files into a mod ----------
+
+// The folders the game itself mounts. A mod author's working copy is a tree of these, and
+// finding which directory they sit directly under is what tells us where the archive's root
+// is - get that wrong and the mod installs, mounts, and changes nothing, because every path
+// inside it is off by a folder.
+const GAME_ROOTS = new Set([
+  'models', 'materials', 'particles', 'panorama', 'sounds', 'soundevents',
+  'scripts', 'resource', 'maps', 'vscripts', 'shaders', 'expressions',
+]);
+
+// Not content, and not something an author means to ship.
+const JUNK = /^(thumbs\.db|desktop\.ini|\.ds_store|\.git|\.gitignore|\.svn|__macosx)$/i;
+
+/**
+ * Where the mod's content actually starts under `dir`.
+ *
+ * An author points at "MyMod", but the tree underneath may be MyMod/models/..., or the
+ * game-shaped MyMod/game/dota_russian/models/..., or a single wrapper folder left by
+ * unzipping. Whatever it is, the archive root is the directory that holds the game's own
+ * folders - and everything beside them comes too: measured over 84 installed mods, 35 carry
+ * a top folder of the author's own (dota2pornfx/, amir4an/, models123/) next to the
+ * canonical ones, and three ship a readme.
+ *
+ * @returns {string|null} absolute path, or null if nothing game-shaped is under there
+ */
+function findContentRoot(dir, depth = 0) {
+  if (depth > 6) return null;
+  let names;
+  try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch { return null; }
+  const dirs = names.filter((e) => e.isDirectory() && !JUNK.test(e.name));
+  if (dirs.some((e) => GAME_ROOTS.has(e.name.toLowerCase()))) return dir;
+  // no game folder here: follow the wrappers down, and only while they are unambiguous
+  for (const e of dirs) {
+    const hit = findContentRoot(path.join(dir, e.name), depth + 1);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+// One buffer holds the whole archive while it is being built, so this is where a folder
+// stops being something we can pack in one piece. The largest real mod measured is 46 MB;
+// a gigabyte is twenty times that and still far below what a Buffer can hold.
+const MAX_FOLDER_BYTES = 1024 * 1024 * 1024;
+
+/**
+ * Pack a folder of loose game files into a single self-contained VPK - the other half of
+ * importing, for the author who has the files but not the archive.
+ * @param {string} root the content root (see findContentRoot)
+ * @returns {Buffer}
+ */
+function packFolder(root) {
+  const entries = [];
+  let total = 0;
+  const walk = (dir, prefix) => {
+    let names;
+    try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of names) {
+      if (JUNK.test(e.name)) continue;
+      // a symlink is somebody else's file, and following one can walk in a circle
+      if (e.isSymbolicLink()) continue;
+      const full = path.join(dir, e.name);
+      const rel = prefix ? `${prefix}/${e.name}` : e.name;
+      if (e.isDirectory()) { walk(full, rel); continue; }
+      if (!e.isFile()) continue;
+      let data;
+      try { data = fs.readFileSync(full); } catch { continue; }
+      total += data.length;
+      if (total > MAX_FOLDER_BYTES) throw new Error(t('Папка слишком большая, чтобы собрать её в один VPK'));
+      // the game looks files up in lower case, and so does every reader here
+      const lower = rel.toLowerCase();
+      const slash = lower.lastIndexOf('/');
+      const file = slash === -1 ? lower : lower.slice(slash + 1);
+      const dot = file.lastIndexOf('.');
+      entries.push({
+        ext: dot === -1 ? ' ' : file.slice(dot + 1),
+        folder: slash === -1 ? ' ' : lower.slice(0, slash),
+        name: dot === -1 ? file : file.slice(0, dot),
+        data,
+        preload: EMPTY,
+        crc: crc32(data),
+      });
+    }
+  };
+  walk(root, '');
+  if (!entries.length) throw new Error(t('В папке нет файлов'));
+  return buildVpk(entries);
 }
 
 // Build a _dir.vpk index that references data in *external* archives (_NNN.vpk). Entries
@@ -729,7 +855,8 @@ function listVpkEntries(buf) {
 module.exports = {
   listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, listVpkEntries, mergeVpkToSingle, splitVpkByHero,
   readVpkEntries, readVpkIndexFile, readVpkEntryFile, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
+  findContentRoot, packFolder, crc32,
   fingerprintVpk, fingerprintEntries, fingerprintFiles,
   analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
-  describeHero, describeAnalysis, nameFromAnalysis,
+  describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes,
 };
