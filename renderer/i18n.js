@@ -460,6 +460,7 @@ const EN = {
     'Mods dropped into the folder without the manager. “Take it” adopts the file — preview, switch and all.',
   'Взять файл к себе — дальше как у обычного мода': 'Adopt the file: from then on it behaves like any other mod',
   '«{0}» принят': '«{0}» adopted',
+  'Сайт программы': 'Website',
   'Перетащи, чтобы изменить порядок загрузки': 'Drag to change the load order',
   'Файл в папке модов': 'The file in your mods folder',
   'Загружать раньше': 'Load earlier',

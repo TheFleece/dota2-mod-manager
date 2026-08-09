@@ -8,7 +8,15 @@
 }
 
 /* ============ Title bar ============ */
+/* The bar owns a layer of its own, above the content it sits over.
+ *
+ * It has a backdrop-filter, and that makes it a stacking context: everything inside it,
+ * including an open dropdown, is trapped at the bar's own level. The bar had none, so it
+ * painted in document order - underneath the catalog's cards, which do claim a level. The
+ * help menu therefore slid behind the mods as soon as the page scrolled under it. */
 #titlebar {
+  position: relative;
+  z-index: var(--z-bar);
   zoom: var(--top-zoom);
   container-type: inline-size;
   height: var(--tb-h);

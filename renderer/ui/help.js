@@ -29,6 +29,11 @@ function wikiUrl() {
 
 const discordUrl = () => newsUrl(/discord\.(gg|com)/i) || HELP_LINKS.discord;
 
+// Ours, and the only place in the window that says the app has a home of its own. The site
+// carries the answers this menu cannot: what the program is, and every release with its notes.
+const SITE = 'https://dota2modmanager.com/';
+const siteUrl = () => (window.I18N_LANG === 'ru' ? `${SITE}ru/` : SITE);
+
 export function bindHelp() {
   const btn = $('#helpBtn');
   const menu = $('#helpMenu');
@@ -52,6 +57,11 @@ export function bindHelp() {
         <span class="ms">forum</span>
         <span>Discord</span>
         <span class="ms tb-menu-out">open_in_new</span>
+      </button>
+      <button class="tb-menu-item" data-url="${siteUrl()}" role="menuitem">
+        <span class="ms">public</span>
+        <span>${L`Сайт программы`}</span>
+        <span class="ms tb-menu-out">open_in_new</span>
       </button>`;
     menu.querySelectorAll('[data-url]').forEach((item) => {
       item.addEventListener('click', () => {
@@ -74,4 +84,10 @@ export function bindHelp() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') close();
   });
+  // A menu hangs off the button that opened it. Scroll the page and the button goes with the
+  // titlebar while the menu stays where it was, sitting over the mods and then under them.
+  // A dropdown that outlives the gesture that opened it is a dropdown in the wrong place.
+  document.addEventListener('scroll', () => {
+    if (!menu.classList.contains('hidden')) close();
+  }, { capture: true, passive: true });
 }

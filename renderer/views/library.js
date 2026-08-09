@@ -190,7 +190,9 @@ function pakFileHtml(rec) {
   const f = (rec.files || []).find((x) => x.root === 'lang' && /^pak\d+_dir\.vpk$/i.test(x.relPath));
   if (!f) return '';
   const name = rec.enabled === false ? `${f.relPath}.off` : f.relPath;
-  return `<span class="lib-pak" title="${esc(L`Файл в папке модов`)}">${esc(name)}</span>`;
+  // selectable on purpose: this is the one string on the row somebody copies, to go and find
+  // the file, or to paste it into a question about it
+  return `<span class="lib-pak selectable" title="${esc(L`Файл в папке модов`)}">${esc(name)}</span>`;
 }
 
 function normalRowHtml(rec, i, masterOff) {
