@@ -461,6 +461,7 @@ const EN = {
   'Взять файл к себе — дальше как у обычного мода': 'Adopt the file: from then on it behaves like any other mod',
   '«{0}» принят': '«{0}» adopted',
   'Сайт программы': 'Website',
+  'Что внутри': 'What is in it',
   'Перетащи, чтобы изменить порядок загрузки': 'Drag to change the load order',
   'Файл в папке модов': 'The file in your mods folder',
   'Загружать раньше': 'Load earlier',

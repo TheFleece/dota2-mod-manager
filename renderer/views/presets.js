@@ -11,6 +11,10 @@ import { state } from '../core/store.js';
 import { registerView, switchView } from '../core/router.js';
 import { refreshInstalledIndex } from '../core/installed.js';
 import { esc, fmtMB, plural } from '../ui/format.js';
+import { libThumbHtml } from '../ui/thumb.js';
+import { catName, catIcon } from '../core/categories.js';
+import { isCosmeticRec } from '../core/records.js';
+import { COSMETIC_PREFIX, cosmeticMeta } from '../core/constants.js';
 import { toast } from '../ui/toast.js';
 import { confirmDialog, promptDialog } from '../ui/dialog.js';
 import { paint } from '../ui/transitions.js';
@@ -161,6 +165,61 @@ function flashCopied(btn) {
   }, 5000);
 }
 
+/* What a preset looks like, instead of what it used to look like.
+ *
+ * A preset was printed as its mod names joined by dots. At five mods that is a sentence; at
+ * eighty it is a paragraph of proper nouns nobody reads, and the card that held it was a wall
+ * of grey text with no shape. The names were the only thing on it, and they were the least
+ * useful thing on it.
+ *
+ * A set of mods is recognised by its pictures and summarised by its categories, so the card
+ * leads with a row of covers and a line of counts: forty heroes, three terrains, one cursor.
+ * The full list is still there for anybody who wants to check a specific mod, one click away
+ * and grouped, rather than in the way of everybody who does not.
+ */
+const STRIP = 12;
+
+function presetThumbHtml(rec) {
+  if (isCosmeticRec(rec)) {
+    return `<div class="preset-thumb"><span class="ms thumb-glyph">${cosmeticMeta(rec.slot).icon}</span></div>`;
+  }
+  return libThumbHtml(rec, 'preset-thumb');
+}
+
+function presetBodyHtml(recs) {
+  if (!recs.length) return `<div class="preset-mods">${L`пусто (всё будет выключено)`}</div>`;
+
+  const catOf = (r) => (isCosmeticRec(r) ? COSMETIC_PREFIX + r.slot : r.categoryId);
+  const groups = new Map();
+  for (const r of recs) {
+    const id = catOf(r) || 'other';
+    if (!groups.has(id)) groups.set(id, []);
+    groups.get(id).push(r);
+  }
+  // biggest group first: it is what the preset is mostly made of
+  const ordered = [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
+  const shown = recs.slice(0, STRIP);
+  const rest = recs.length - shown.length;
+
+  return `
+    <div class="preset-strip">
+      ${shown.map(presetThumbHtml).join('')}
+      ${rest > 0 ? `<div class="preset-more">+${rest}</div>` : ''}
+    </div>
+    <div class="preset-cats">
+      ${ordered.map(([id, list]) => `
+        <span class="preset-cat"><span class="ms">${catIcon(id)}</span>${esc(catName(id))}<b>${list.length}</b></span>`).join('')}
+    </div>
+    <details class="preset-all">
+      <summary><span class="ms">expand_more</span>${L`Что внутри`}</summary>
+      ${ordered.map(([id, list]) => `
+        <div class="preset-group">
+          <div class="preset-group-head"><span class="ms">${catIcon(id)}</span>${esc(catName(id))}<span class="preset-group-n">${list.length}</span></div>
+          <div class="preset-group-names">${list.map((r) => esc(r.name)).join(' · ')}</div>
+        </div>`).join('')}
+    </details>`;
+}
+
 // a received preset that hasn't been installed yet
 function sharedPresetCardHtml(p) {
   const s = p.status || { installed: 0, download: 0, embedded: 0, free: 0, unavailable: [] };
@@ -214,7 +273,7 @@ export async function renderPresets() {
     if (p.wanted) {
       card.innerHTML = sharedPresetCardHtml(p);
     } else {
-      const names = p.modIds.map((id) => byId.get(id)?.name).filter(Boolean);
+      const recs = p.modIds.map((id) => byId.get(id)).filter(Boolean);
       const link = p.link || { count: 0, skipped: [] };
       const linkTitle = !link.count
         ? L`В пресете только свои моды — ссылка их не донесёт, отправь файлом`
@@ -224,11 +283,11 @@ export async function renderPresets() {
       card.innerHTML = `
         <div class="preset-head">
           <div class="preset-name">${esc(p.name)}</div>
-          <span class="text-meta">${names.length} ${plural(names.length, 'мод', 'мода', 'модов')}</span>
+          <span class="text-meta">${recs.length} ${plural(recs.length, 'мод', 'мода', 'модов')}</span>
           <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
           <button class="btn btn-sm" data-share="${p.id}" title="${esc(linkTitle)}"><span class="ms">ios_share</span>${L`Поделиться`}</button>
         </div>
-        <div class="preset-mods">${names.length ? esc(names.join(' · ')) : L`пусто (всё будет выключено)`}</div>`;
+        ${presetBodyHtml(recs)}`;
     }
     list.appendChild(card);
   });

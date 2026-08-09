@@ -15,6 +15,62 @@
 .preset-name { font-weight: 700; font-size: 15px; flex: 1; font-family: var(--font-head); }
 .preset-mods { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
 
+/* ---------- what a preset is made of ---------- */
+/* the covers, because a set of mods is recognised by its pictures long before its names */
+.preset-strip { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.preset-thumb {
+  width: 62px; height: 39px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-elev);
+  overflow: hidden;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.preset-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.preset-thumb .thumb-glyph { font-size: var(--icon-md); color: var(--text-faint); }
+.preset-more {
+  width: 62px; height: 39px; flex: none;
+  border-radius: var(--radius-xs);
+  border: 1px dashed var(--border-strong);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+}
+
+/* the counts, which is what the card is actually telling you */
+.preset-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.preset-cat {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11.5px; color: var(--text-muted);
+  background: var(--bg-elev); border: 1px solid var(--border);
+}
+.preset-cat .ms { font-size: 13px; line-height: 1; color: var(--primary-soft); }
+.preset-cat b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* the full list, for the one time somebody needs to check a specific mod */
+.preset-all { margin-top: 10px; }
+.preset-all summary {
+  display: inline-flex; align-items: center; gap: 4px;
+  cursor: pointer; list-style: none;
+  font-size: 12px; color: var(--text-muted);
+  padding: 3px 0;
+}
+.preset-all summary::-webkit-details-marker { display: none; }
+.preset-all summary:hover { color: var(--text); }
+.preset-all summary .ms { font-size: 16px; transition: transform 0.18s var(--ease); }
+.preset-all[open] summary .ms { transform: rotate(180deg); }
+.preset-group { margin-top: 10px; }
+.preset-group-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--text);
+}
+.preset-group-head .ms { font-size: 14px; color: var(--primary-soft); }
+.preset-group-n { color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.preset-group-names {
+  font-size: 12px; color: var(--text-muted); line-height: 1.65; margin-top: 2px;
+  user-select: text;              /* the one place here somebody copies a name out */
+}
+
 /* a preset received from someone else, not installed yet */
 .preset-card.shared { border-color: var(--primary); background: var(--primary-dim); }
 .preset-note { font-size: 12.5px; color: var(--text); opacity: 0.85; margin-top: 8px; font-style: italic; }
