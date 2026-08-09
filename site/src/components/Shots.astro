@@ -1,153 +1,130 @@
 ---
 /**
- * The screenshots, as a deck rather than a stack down the page.
+ * The screenshots: one at a time, at full size, and you choose which.
  *
- * Before, three pictures each took a third of the screen and did nothing but nudge upwards
- * when pointed at. Now they are one card at a time in a fanned deck: the current one faces
- * you, the others stand behind it turned away. It advances on its own, stops the moment you
- * touch it, and you can steer it - buttons, dots, keyboard, or a swipe.
+ * This started as three pictures down the page, then became a fanned deck that advanced on
+ * its own. The deck looked like a deck in the sketch and like a layout bug on the screen: the
+ * cards behind the front one ran off the left and right edges by different amounts, which is
+ * what an accident looks like. Asymmetry reads as a mistake because it usually is one.
  *
- * The card leans away from the pointer while you are on it, the way a card held in a hand
- * catches the light, and it comes level as you leave.
+ * The auto-advance had to go regardless of how it looked. Carousels that move by themselves
+ * are one of the better-documented losers in interface research: they take fewer looks and
+ * fewer clicks than the same content standing still, almost nobody reaches the second slide,
+ * and anyone slow with a pointer is fighting the page. This is a product page - the screens
+ * are the argument, not the decoration - so the visitor picks which one to look at and it
+ * stays there until they say otherwise.
  *
- * The whole thing collapses to a plain scrollable row when the visitor asked for less
- * motion: same pictures, same captions, no theatre.
+ * What is left is a real tab list: arrow keys, Home and End, one stop in the tab order, and
+ * the panel labelled by its tab. None of that had to be built - it is what the role is for.
+ *
+ * There is no title bar drawn around the picture, and that is the second thing this went
+ * through. Drawing browser chrome around a desktop application would be a lie about the
+ * product, and macOS traffic lights would be a lie about the platform as well as the surest
+ * sign the frame came out of a mockup generator - so the first attempt drew a Windows one.
+ * Then it went on screen: the app has its own title bar, it is in the screenshot, and the
+ * page had put a second one above it. What was left was worth keeping on its own - the small
+ * radius, the lit top edge, the layered shadow - so the frame stayed and the bar went.
  */
 import type { Lang } from '../i18n/ui';
 
 interface Props {
   lang: Lang;
   shots: Array<{ file: string; caption: string; alt: string; label: string }>;
-  prev: string;
-  next: string;
+  /** Accessible name for the tab list, e.g. "Screens of the app". */
+  tablist: string;
 }
-const { lang, shots, prev, next } = Astro.props;
+const { lang, shots, tablist } = Astro.props;
 const src = (name: string) => `/screenshots/${lang}-${name}.webp`;
 ---
 
-<div class="deck" id="deck" data-count={shots.length}>
-  <div class="stage">
+<div class="tour" id="tour">
+  <div class="tour-tabs" role="tablist" aria-label={tablist}>
     {shots.map((s, i) => (
-      <figure class="slide" data-i={i} aria-hidden={i === 0 ? 'false' : 'true'}>
-        <div class="tilt">
-          <div class="frame">
-            <div class="frame-bar">
-              <i></i><i></i><i></i>
-              <span>{s.label}</span>
-            </div>
-            <img src={src(s.file)} width="1360" height="860" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" alt={s.alt} />
-            <div class="sheen"></div>
-          </div>
-        </div>
-        <figcaption>{s.caption}</figcaption>
-      </figure>
+      <button
+        class="tour-tab"
+        type="button"
+        role="tab"
+        id={`tour-tab-${i}`}
+        aria-controls={`tour-panel-${i}`}
+        aria-selected={i === 0 ? 'true' : 'false'}
+        tabindex={i === 0 ? 0 : -1}
+      >{s.label}</button>
     ))}
   </div>
 
-  <div class="deck-controls">
-    <button class="round" type="button" data-step="-1" aria-label={prev}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
-    </button>
-    <div class="deck-dots" role="tablist">
-      {shots.map((s, i) => (
-        <button class="deck-dot" type="button" role="tab" data-go={i} aria-label={s.label} aria-selected={i === 0}>
-          <span></span>
-        </button>
-      ))}
-    </div>
-    <button class="round" type="button" data-step="1" aria-label={next}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
-    </button>
-  </div>
+  {shots.map((s, i) => (
+    <figure
+      class="tour-panel"
+      role="tabpanel"
+      id={`tour-panel-${i}`}
+      aria-labelledby={`tour-tab-${i}`}
+      hidden={i !== 0}
+    >
+      <div class="win">
+        <img
+          src={src(s.file)}
+          width="1360"
+          height="860"
+          loading={i === 0 ? 'eager' : 'lazy'}
+          decoding="async"
+          fetchpriority={i === 0 ? 'high' : undefined}
+          alt={s.alt}
+        />
+        <div class="sheen"></div>
+      </div>
+      <figcaption>{s.caption}</figcaption>
+    </figure>
+  ))}
 </div>
 
 <script>
-  const deck = document.getElementById('deck');
-  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tour = document.getElementById('tour');
 
-  if (deck) {
-    const slides = [...deck.querySelectorAll<HTMLElement>('.slide')];
-    const dots = [...deck.querySelectorAll<HTMLElement>('.deck-dot')];
-    let at = 0;
-    let timer = 0;
+  if (tour) {
+    const tabs = [...tour.querySelectorAll<HTMLElement>('[role="tab"]')];
+    const panels = [...tour.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
 
-    const show = (n: number) => {
-      at = (n + slides.length) % slides.length;
-      slides.forEach((s, i) => {
-        // how far this card is from the front, signed, wrapped the short way round
-        let d = i - at;
-        if (d > slides.length / 2) d -= slides.length;
-        if (d < -slides.length / 2) d += slides.length;
-        s.style.setProperty('--d', String(d));
-        s.classList.toggle('front', d === 0);
-        s.setAttribute('aria-hidden', d === 0 ? 'false' : 'true');
+    // Roving tabindex: the tab list is one stop on the way through the page, and the arrows
+    // move between the tabs inside it. Tabbing through three buttons to get past three
+    // pictures is what a tab list exists to avoid.
+    const select = (n: number, focus = true) => {
+      const at = (n + tabs.length) % tabs.length;
+      tabs.forEach((t, i) => {
+        t.setAttribute('aria-selected', String(i === at));
+        t.tabIndex = i === at ? 0 : -1;
       });
-      dots.forEach((b, i) => b.setAttribute('aria-selected', String(i === at)));
+      panels.forEach((p, i) => { p.hidden = i !== at; });
+      if (focus) tabs[at].focus();
     };
 
-    const play = () => {
-      if (still) return;
-      stop();
-      timer = window.setInterval(() => show(at + 1), 6000);
-    };
-    const stop = () => { if (timer) { clearInterval(timer); timer = 0; } };
-
-    deck.addEventListener('click', (e) => {
-      const el = (e.target as HTMLElement).closest('[data-step], [data-go]') as HTMLElement | null;
-      if (!el) return;
-      if (el.dataset.step) show(at + Number(el.dataset.step));
-      else show(Number(el.dataset.go));
-      play();                                  // a nudge restarts the clock, never stops it dead
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(i, false));
+      tab.addEventListener('keydown', (e) => {
+        const go = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: tabs.length - 1 }[e.key];
+        if (go === undefined) return;
+        e.preventDefault();
+        select(go);
+      });
     });
 
-    // pointing at it, or tabbing into it, means you are reading: stop moving things
-    deck.addEventListener('pointerenter', stop);
-    deck.addEventListener('pointerleave', play);
-    deck.addEventListener('focusin', stop);
-    deck.addEventListener('focusout', play);
-
-    deck.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') { show(at - 1); e.preventDefault(); }
-      if (e.key === 'ArrowRight') { show(at + 1); e.preventDefault(); }
-    });
-
-    // swipe, for a touch screen
-    let sx = 0;
-    deck.addEventListener('pointerdown', (e) => { sx = e.clientX; }, { passive: true });
-    deck.addEventListener('pointerup', (e) => {
-      const dx = e.clientX - sx;
-      if (Math.abs(dx) > 46) show(at + (dx < 0 ? 1 : -1));
-    }, { passive: true });
-
-    // the front card leans away from the pointer, and levels off when it is left alone
-    if (!still) {
+    // Light on the glass, following the pointer. A round pool has no edge anywhere; the band
+    // this replaced had two, and drew a diagonal seam straight across the screenshot.
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       let queued = false;
-      let mx = 0, my = 0;
-      const lean = () => {
+      let ev: PointerEvent | null = null;
+      const move = () => {
         queued = false;
-        const front = deck.querySelector<HTMLElement>('.slide.front .tilt');
-        if (!front) return;
-        front.style.transform = `perspective(1400px) rotateY(${mx * 7}deg) rotateX(${-my * 5}deg) translateZ(18px)`;
-        const sheen = front.querySelector<HTMLElement>('.sheen');
-        if (sheen) {
-          sheen.style.setProperty('--sx', `${(mx + 1) * 50}%`);
-          sheen.style.setProperty('--sy', `${(my + 1) * 50}%`);
-        }
+        if (!ev) return;
+        const win = (ev.target as HTMLElement).closest<HTMLElement>('.win');
+        if (!win) return;
+        const box = win.getBoundingClientRect();
+        win.style.setProperty('--sx', `${((ev.clientX - box.left) / box.width) * 100}%`);
+        win.style.setProperty('--sy', `${((ev.clientY - box.top) / box.height) * 100}%`);
       };
-      deck.addEventListener('pointermove', (e) => {
-        const box = deck.getBoundingClientRect();
-        mx = (e.clientX - box.left) / box.width * 2 - 1;
-        my = (e.clientY - box.top) / box.height * 2 - 1;
-        if (!queued) { queued = true; requestAnimationFrame(lean); }
+      tour.addEventListener('pointermove', (e) => {
+        ev = e;
+        if (!queued) { queued = true; requestAnimationFrame(move); }
       }, { passive: true });
-      deck.addEventListener('pointerleave', () => {
-        const front = deck.querySelector<HTMLElement>('.slide.front .tilt');
-        if (front) front.style.transform = '';
-      });
     }
-
-    show(0);
-    play();
-    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : play()));
   }
 </script>

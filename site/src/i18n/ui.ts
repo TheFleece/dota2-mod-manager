@@ -29,7 +29,12 @@ export const ui = {
 
     'foot.built': 'Built by',
     'foot.license': 'GPL-3.0, source on GitHub',
-    'foot.unofficial': 'Not affiliated with Valve. Dota 2 is a trademark of Valve Corporation.',
+    'foot.unofficial': 'Dota 2 Mod Manager is a free community project under GPL-3.0. Valve Corporation has not endorsed it and takes no part in it.',
+    'foot.marks': 'Dota 2 and the Dota 2 logo are trademarks of Valve Corporation. Game screenshots and in-game artwork belong to Valve and to the Steam Workshop authors who made them, and appear here only to show what the app does. Nothing on this site is sold.',
+    /* Split around the link so the word "Discord" in the sentence is the link itself. Both
+       halves are needed because the two languages put it in different places. */
+    'foot.takedown.before': 'Made something shown here and want it credited differently, or gone? Say so on ',
+    'foot.takedown.after': ' and it is done.',
     'foot.privacy': 'Privacy',
     'foot.terms': 'Terms',
     'foot.releases': 'Releases',
@@ -54,7 +59,10 @@ export const ui = {
 
     'foot.built': 'Сделал',
     'foot.license': 'GPL-3.0, исходники на GitHub',
-    'foot.unofficial': 'Проект не связан с Valve. Dota 2 - товарный знак Valve Corporation.',
+    'foot.unofficial': 'Dota 2 Mod Manager - бесплатный проект сообщества под лицензией GPL-3.0. Valve Corporation его не одобряла и к нему не причастна.',
+    'foot.marks': 'Dota 2 и логотип Dota 2 - товарные знаки Valve Corporation. Скриншоты игры и внутриигровой арт принадлежат Valve и авторам работ в Steam Workshop, а здесь показаны только чтобы объяснить, что делает программа. Ничего на этом сайте не продаётся.',
+    'foot.takedown.before': 'Сделал что-то из показанного здесь и хочешь другую подпись или чтобы это убрали? Напиши в ',
+    'foot.takedown.after': ', и так и будет.',
     'foot.privacy': 'Приватность',
     'foot.terms': 'Условия',
     'foot.releases': 'Релизы',

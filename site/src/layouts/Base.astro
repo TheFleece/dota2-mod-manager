@@ -105,8 +105,18 @@ const RELEASES = `${GITHUB}/releases/latest`;
           <a href={DISCORD} rel="noopener">{t('nav.discord')}</a>
         </nav>
       </div>
-      <div class="wrap">
-        <p class="muted">{t('foot.unofficial')}</p>
+      {/* The part a fan project owes the people whose work it stands on. Valve lets fan work
+          use its game content on a non-commercial basis, and the art of a Workshop cosmetic
+          belongs to whoever made it rather than to Valve, so both are named. Written at a
+          size somebody can read: a disclaimer set in grey 10px is a disclaimer that knows it
+          is hiding. The way to ask for something to be taken down is a link, not an address
+          buried in a repository. */}
+      <div class="wrap foot-legal">
+        <p>{t('foot.unofficial')}</p>
+        <p>{t('foot.marks')}</p>
+        <p>
+          {t('foot.takedown.before')}<a href={DISCORD} rel="noopener">{t('nav.discord')}</a>{t('foot.takedown.after')}
+        </p>
         {/* Privacy and Terms are carried over from the old site together with the docs (6.4);
             until then they are not linked, because a link to nothing is not a placeholder. */}
       </div>

@@ -27,8 +27,8 @@ export interface Landing {
   shotLibrary: string;
   shotHeroes: string;
   shotLabels: [string, string, string];
-  prev: string;
-  next: string;
+  /** Accessible name for the tab list that switches between the screenshots. */
+  shotsTablist: string;
 
   huntComplete: string;
   /** Shown to somebody who arrived on a link from a person who found all eight. */
@@ -77,8 +77,7 @@ export const landing: Record<'en' | 'ru', Landing> = {
     shotLibrary: 'Your mods: switch one off before a match, back on after. The app says when one mod is covering another.',
     shotHeroes: 'Everything for one hero in one place, with the tags that say what a mod actually changes.',
     shotLabels: ['Catalog', 'Heroes', 'My mods'],
-    prev: 'Previous screenshot',
-    next: 'Next screenshot',
+    shotsTablist: 'Screens of the app',
 
     huntComplete: 'You found all of them. The site is wearing every palette at once.',
     huntShared: 'Somebody found all eight. Yours are still hidden.',
@@ -148,8 +147,7 @@ export const landing: Record<'en' | 'ru', Landing> = {
     shotLibrary: 'Мои моды: выключил перед каткой, включил после. Приложение говорит, когда один мод перекрывает другой.',
     shotHeroes: 'Всё по одному герою в одном месте, с чипами, которые говорят, что мод меняет на самом деле.',
     shotLabels: ['Каталог', 'Герои', 'Мои моды'],
-    prev: 'Предыдущий снимок',
-    next: 'Следующий снимок',
+    shotsTablist: 'Экраны приложения',
 
     huntComplete: 'Ты нашёл всех. Сайт надел все палитры разом.',
     huntShared: 'Кто-то нашёл всех восьмерых. У тебя они ещё спрятаны.',
