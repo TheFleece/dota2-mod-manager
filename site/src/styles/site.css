@@ -375,7 +375,29 @@ section { padding: 44px 0; }
     0 12px 28px -10px rgb(0 0 0 / 0.55),
     0 48px 100px -40px rgb(0 0 0 / 0.8);
 }
-.win img { width: 100%; display: block; }
+.win img, .win video { width: 100%; display: block; }
+
+/* ---------- the clip ---------- */
+.tour-film { padding-bottom: 12px; }
+.tour-film h2 { text-align: center; }
+.film { max-width: 940px; margin: 0 auto; }
+.film .win { position: relative; }
+/* the box keeps the clip's shape before a single byte of it is fetched, so nothing jumps */
+.film video { aspect-ratio: 880 / 556; background: #0f0d12; }
+.film figcaption {
+  margin-top: 18px; text-align: center;
+  color: var(--text-faint); font-size: 14.5px;
+  max-width: 62ch; margin-inline: auto;
+}
+.film-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 13px 22px; border-radius: 999px; cursor: pointer;
+  background: var(--primary); color: var(--on-primary);
+  border: 0; font: inherit; font-weight: 650; font-size: 15px;
+  box-shadow: 0 10px 34px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.film-play:hover { background: #e0d0ff; }
 
 /* Light on the glass, following the pointer. The first version was a linear band at 105
    degrees, and a band has edges: it drew a visible diagonal seam across the screenshot. A

@@ -22,6 +22,10 @@ export interface Landing {
   stats: Array<[string, string]>;
   latest: string;
 
+  filmTitle: string;
+  filmCaption: string;
+  filmPlay: string;
+
   shotsTitle: string;
   shotCatalog: string;
   shotLibrary: string;
@@ -71,6 +75,10 @@ export const landing: Record<'en' | 'ru', Landing> = {
       ['100%', 'free'],
     ],
     latest: 'latest',
+
+    filmTitle: 'One take, start to finish',
+    filmCaption: 'Find a hero, take a set, take another, install both. No cuts and no speed-up.',
+    filmPlay: 'Play the clip',
 
     shotsTitle: 'What it looks like',
     shotCatalog: 'The catalog: every mod in the community collection, sorted the way its authors sorted it.',
@@ -141,6 +149,10 @@ export const landing: Record<'en' | 'ru', Landing> = {
       ['100%', 'бесплатно'],
     ],
     latest: 'последняя',
+
+    filmTitle: 'Один дубль, от начала до конца',
+    filmCaption: 'Находим героя, берём сет, берём второй, ставим оба. Без склеек и без ускорения.',
+    filmPlay: 'Включить ролик',
 
     shotsTitle: 'Как это выглядит',
     shotCatalog: 'Каталог: всё, что есть в общей коллекции, в том порядке, в котором это разложили её авторы.',
