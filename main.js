@@ -28,7 +28,7 @@ const { createModPreviews } = require('./src/mod-preview');
 const { createModIdentity } = require('./src/mod-id');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
-const { buildReport } = require('./src/diagnostics');
+const { buildReport, renderSummary, renderDetailed } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
 const i18n = require('./src/i18n');
 const { t } = i18n;
@@ -281,6 +281,11 @@ function appendLog(line) {
   } catch { /* logging must never be why the app crashes */ }
 }
 
+// The last few things the interface said went wrong, so a report can list them separately
+// from two thousand lines of ordinary log (see diag:rendererError).
+const rendererErrors = [];
+let lastUpdateError = null;
+
 const DIAG = process.env.MM_DIAG;
 function diag(msg) {
   const line = `${new Date().toISOString()} ${msg}\n`;
@@ -458,7 +463,9 @@ function setupAutoUpdate() {
   autoUpdater.on('update-downloaded', (info) => {
     if (win && !win.isDestroyed()) win.webContents.send('update', { type: 'downloaded', version: info.version });
   });
-  autoUpdater.on('error', () => { /* offline or rate-limited — silent */ });
+  // Silent for the user - being offline is not something to interrupt anybody about - but
+  // remembered, because "it never updates" is a support question and this is the answer to it.
+  autoUpdater.on('error', (err) => { lastUpdateError = String(err?.message || err).slice(0, 500); });
   autoUpdater.checkForUpdates().catch(() => {});
   // re-check every 4 hours while the app is open
   setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
@@ -2484,27 +2491,87 @@ function registerIpc() {
   // ----- diagnostics -----
   // fire-and-forget: a renderer crash it can't recover from still lands in the log a support
   // report is built from, instead of vanishing with the window
-  ipcMain.on('diag:rendererError', (e, msg) => diag('renderer: ' + String(msg || '').slice(0, 2000)));
+  ipcMain.on('diag:rendererError', (e, msg) => {
+    const text = String(msg || '').slice(0, 2000);
+    diag(`renderer: ${text}`);
+    // Kept apart from the log as well, because in the log they are twenty lines among two
+    // thousand. A report that lists them on their own is the difference between "the app
+    // does nothing when I click" and a stack trace.
+    rendererErrors.push({ at: new Date().toISOString(), text });
+    if (rendererErrors.length > 50) rendererErrors.shift();
+  });
 
+  /* One button, and inside the archive two reports written for two different readers.
+   *
+   * SUMMARY.txt is a screen of plain sentences that opens with whether anything is wrong at
+   * all, because whoever answers a support message first should not have to read JSON to find
+   * out that the game is not where the app thinks it is.
+   *
+   * REPORT.md is the same data with nothing left out, laid out to be read: every section, the
+   * full mod list in load order, the errors the interface reported. That is the one to hand
+   * to somebody who is going to work out what actually happened.
+   *
+   * report.json stays exactly as it was, for anything that wants the raw shape. Nothing about
+   * this changes for the user: the same button, the same zip, the same place to send it. */
   ipcMain.handle('diag:export', async () => {
     try {
       const { report, files } = buildReport({
         settings, library, installer, schemaService, catalog, icons,
-        app: { version: app.getVersion(), logFile: logFile() },
+        app: {
+          version: app.getVersion(),
+          logFile: logFile(),
+          userDataDir: app.getPath('userData'),
+          updateError: lastUpdateError,
+        },
+        extra: {
+          dotaRunning: await dotaIsRunning(),
+          rendererErrors,
+          windows: BrowserWindow.getAllWindows().map((w) => {
+            const [width, height] = w.getSize();
+            return {
+              id: w.id, width, height,
+              visible: w.isVisible(), focused: w.isFocused(),
+              maximized: w.isMaximized(), minimized: w.isMinimized(),
+              url: w.webContents.getURL(),
+              zoom: w.webContents.getZoomFactor(),
+              crashed: w.webContents.isCrashed(),
+            };
+          }),
+          updater: { available: !!autoUpdater, lastError: lastUpdateError },
+          remoteConfig: (() => {
+            try {
+              return {
+                url: remoteConfig.url,
+                switches: Object.fromEntries(remoteConfig.SWITCHABLE.map((k) => [k, remoteConfig.feature(k)])),
+                notices: remoteConfig.notices(settings.get('uiLang') || 'en').length,
+              };
+            } catch (err) { return { error: String(err.message || err) }; }
+          })(),
+          toolchain: (() => {
+            try { return toolchain.installed(); } catch (err) { return { error: String(err.message || err) }; }
+          })(),
+        },
       });
       const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const res = await dialog.showSaveDialog(win, {
-        title: t('Сохранить отчёт для поддержки'),
-        defaultPath: `dota2-mod-manager-diag-${stamp}.zip`,
-        filters: [{ name: t('Отчёт диагностики'), extensions: ['zip'] }],
-      });
+      // dev: MM_DIAG_OUT=<path> writes the archive straight there instead of asking. A report
+      // that can only be produced by a human clicking through a save dialog is a report nobody
+      // checks after changing it.
+      const res = process.env.MM_DIAG_OUT
+        ? { canceled: false, filePath: process.env.MM_DIAG_OUT }
+        : await dialog.showSaveDialog(win, {
+          title: t('Сохранить отчёт для поддержки'),
+          defaultPath: `dota2-mod-manager-diag-${stamp}.zip`,
+          filters: [{ name: t('Отчёт диагностики'), extensions: ['zip'] }],
+        });
       if (res.canceled || !res.filePath) return { cancelled: true };
       const zip = new AdmZip();
+      zip.addFile('SUMMARY.txt', Buffer.from(renderSummary(report), 'utf-8'));
+      zip.addFile('REPORT.md', Buffer.from(renderDetailed(report, files), 'utf-8'));
       zip.addFile('report.json', Buffer.from(JSON.stringify(report, null, 2)));
       for (const [name, text] of Object.entries(files)) zip.addFile(name, Buffer.from(text, 'utf-8'));
       try { zip.addFile('manifest.json', fs.readFileSync(library.file)); } catch { /* nothing installed yet */ }
       fs.writeFileSync(res.filePath, zip.toBuffer());
-      shell.showItemInFolder(res.filePath);
+      if (!process.env.MM_DIAG_OUT) shell.showItemInFolder(res.filePath);
       return { ok: true, path: res.filePath };
     } catch (err) {
       return { error: String(err.message || err) };
