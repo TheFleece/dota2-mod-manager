@@ -2,6 +2,64 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.1.0
+
+Everything here came from what people said after 2.0.
+
+### Drag a mod to where it should load
+
+The arrows moved a mod one slot per press, so getting a mod to load before
+thirty others took thirty presses. Rows now have a grab handle. The list rearranges under the
+pointer as you move it, the other rows slide out of the way, and it scrolls itself when you
+near the top or bottom. Nothing is written to the game folder until you let go.
+
+### Every mod shows its file
+
+A row now prints its own file, named exactly as your mods folder names it, and carrying the
+`.off` suffix when the mod is switched off. There was no other way to tell which of forty pak
+files belonged to which mod.
+
+### A preset looks like what it holds
+
+A preset used to be its mod names joined by dots, which at eighty mods is a paragraph nobody
+reads. It now leads with the covers of the mods in it and a line of counts by category, with
+the full list one click away and grouped. A preset of eighty looks the same as a preset of ten.
+
+### The window behaves like a window
+
+Text no longer selects when you drag across a list, and pictures no longer pick up and follow
+the mouse. Both used to happen while scrolling, and the second one ended with the app offering
+to import the picture you had just dragged off its own card. Text fields still select, and so
+does the file name on a mod row, which is the one string there worth copying.
+
+The help menu no longer slides behind the mods when the page scrolls, and it closes when you
+scroll away from it.
+
+### The app says where it lives
+
+The help menu now has the site next to the wiki and Discord, in the language the window is
+speaking. Nothing in the program mentioned it before.
+
+### A support report that says what is wrong
+
+Same button, same file, same place to send it. Inside, the archive now opens with a one-screen
+summary that starts with the verdict: if nothing is wrong it says so, and if something is, it
+is named in plain words - the game is not patched, mods are going to a folder the game does
+not mount, downloads are failing, the drive is nearly full. A second, full report next to it
+carries everything for whoever is going to dig: the whole mod list in load order, the open
+windows, the errors the interface reported, the updater and the config.
+
+It also collects more: the two game files our patch edits, Dota's own console log if you have
+ever run with `-condebug`, and listings of the app's own folders.
+
+### Fixed
+
+- The pill that says a mod is overruled had its icon sitting crooked next to its own text.
+- "How many mods are overruled" was blank in every support report ever sent: the report asked
+  for something that does not exist and quietly wrote nothing.
+- Update errors were thrown away entirely, which is unhelpful when the report is that it never
+  updates. They are still silent for you, and now recorded for a support report.
+
 ## 2.0.0
 
 The whole app, rebuilt. Six tabs became four, the catalog was redrawn, and most of the
