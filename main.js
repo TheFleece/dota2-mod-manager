@@ -230,6 +230,37 @@ function createWindow() {
       }, 7000);
     });
   }
+
+  // dev: MM_REC=<dir> films the app running a scripted scene, one webm per scene. The site
+  // needs a clip of the app working and will need a fresh one every release, so it is a
+  // script rather than something recorded by hand. MM_SCENE picks scenes by name.
+  // Everything it needs lives in tools/screencast.js, loaded only on this branch.
+  if (process.env.MM_REC) {
+    win.webContents.once('did-finish-load', () => {
+      setTimeout(async () => {
+        const log = (m) => process.stdout.write(`${m}\n`);
+        let cast = null;
+        try {
+          const { Cast } = require('./tools/screencast');
+          const scenes = require('./tools/screencast-scenes');
+          win.show();
+          win.focus();
+          cast = new Cast(win, { out: process.env.MM_REC });
+          log(`cast ready ${JSON.stringify(await cast.setup())}`);
+          const only = process.env.MM_SCENE ? process.env.MM_SCENE.split(',') : null;
+          for (const [name, build] of Object.entries(scenes)) {
+            if (only && !only.includes(name)) continue;
+            const steps = typeof build === 'function' ? await build(cast, log) : build;
+            await cast.scene(name, steps, log);
+          }
+        } catch (e) {
+          log(`cast failed: ${(e && e.stack) || e}`);
+        }
+        if (cast) cast.close();
+        app.quit();
+      }, 9000);
+    });
+  }
 }
 
 // A small rotating log every install keeps, so a support report (see src/diagnostics.js and
@@ -1224,13 +1255,26 @@ function registerIpc() {
   });
 
   // ----- settings -----
-  ipcMain.handle('settings:get', () => {
+  /**
+   * What the renderer means by "settings": the stored values plus the few facts about this
+   * machine that only the main process can answer.
+   *
+   * Both handlers return this, and that is the point. `settings:set` used to answer with the
+   * bare store, and the renderer caches whatever it is handed - so saving any single setting
+   * quietly dropped `dotaPathValid` from the screen's copy. Favouriting a mod was enough:
+   * from the next repaint the catalog claimed Dota was not installed and every install
+   * refused with "set the path first", until the app was restarted. The values were all
+   * correct; only the screen's idea of them was not.
+   */
+  const settingsView = ({ consumeMigration = false } = {}) => {
     const game = settings.get('dotaGamePath');
     let minifyDetected = false;
     try { minifyDetected = !!game && fs.existsSync(path.join(game, 'dota_minify')); } catch { /* ignore */ }
     const folders = gamelang.langFolders(game);
-    const migrated = langMigration;
-    langMigration = null; // reported once
+    // Only the screen asking for settings gets to hear about the migration, and only once.
+    // A save must not swallow the news before anybody has read it.
+    const migrated = consumeMigration ? langMigration : null;
+    if (consumeMigration) langMigration = null;
     return {
       ...settings.all(),
       dotaPathValid: validateGamePath(game),
@@ -1248,7 +1292,9 @@ function registerIpc() {
       },
       langMigration: migrated,
     };
-  });
+  };
+
+  ipcMain.handle('settings:get', () => settingsView({ consumeMigration: true }));
 
   ipcMain.handle('settings:set', (e, key, value) => {
     // keep main-process strings (dialogs, errors) in sync with the UI language
@@ -1256,7 +1302,7 @@ function registerIpc() {
     settings.set(key, value);
     // the status text is localized, so a language change has to redraw it too
     if (key === 'discordPresence' || key === 'uiLang') applyPresenceSetting();
-    return settings.all();
+    return settingsView();
   });
 
   // ----- Discord presence -----
