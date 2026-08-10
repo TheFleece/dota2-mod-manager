@@ -22,6 +22,9 @@ const jsonLd = landingSchema('en');
       points at the root, and a token repeated on fourteen pages is fourteen places to wonder
       about later. */}
   <meta slot="head" name="google-site-verification" content="4Lj6jQPFBoJFamznrXfyhg-TwaPUfZqb5Wkpx8rvlf8" />
+  {/* Yandex wants its token in the head of the homepage and nowhere else, and it matters more
+      than Google for the Russian half of the audience. */}
+  <meta slot="head" name="yandex-verification" content="56ecac7cb1165363" />
   {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
   <Landing lang="en" />
 </Base>
