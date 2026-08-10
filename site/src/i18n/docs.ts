@@ -4,9 +4,10 @@
  * Why these five and not a manual: each one answers a question people actually type into a
  * search box, and the landing page cannot answer any of them without becoming a wall. The
  * install page exists because every guide ranking for that question today teaches the
- * `-language mods` launch option, which Dota stopped honouring on 2026-07-24 when it moved
- * the folder name into boot.vcfg. Being the page that says so is worth more than being the
- * tenth page that repeats the old trick.
+ * `-language mods` trick, which stopped producing a folder on 2026-07-24 when Dota moved the
+ * name into boot.vcfg. The argument itself still works and still sets the game's language;
+ * what it can no longer do is invent a folder out of a made-up value. Being the page that
+ * gets that distinction right is worth more than being the tenth page repeating the trick.
  *
  * Everything technical here is read off our own code rather than remembered: pak slots from
  * installer.js (allocatePak), the search-path patch from patcher.js, the language folder from
@@ -76,13 +77,13 @@ const en: Record<DocSlug, Doc> = {
     title: 'How to install Dota 2 mods in 2026',
     h1: 'How to install Dota 2 mods',
     description:
-      'Install steps that work in 2026: three clicks with the app, or by hand with a pakNN_dir.vpk file. Plus why -language mods stopped working in July.',
-    lead: 'Most guides still teach a launch option Valve stopped honouring in July 2026. Both methods below work on the game as it ships today, one with a program and one without.',
-    card: 'Three clicks with the app, or the file work by hand. Plus the launch option that no longer does anything.',
+      'Install steps that work in 2026: three clicks with the app, or by hand with a pakNN_dir.vpk file. Plus what the July patch changed about launch options.',
+    lead: 'Most guides still teach a folder trick the July 2026 patch killed. Both methods below work on the game as it ships today, one with a program and one without.',
+    card: 'Three clicks with the app, or the file work by hand. Plus what the launch option does now, which is not what it used to.',
     blocks: [
       {
         k: 'note',
-        t: 'If a guide tells you to put <code>-language mods</code> in your Steam launch options, it was written before 24 July 2026. Dota now reads that folder name from its own settings file and ignores the argument. A folder called <code>dota_mods123</code> will never mount again.',
+        t: 'If a guide tells you to put <code>-language mods</code> in your Steam launch options, it was written before 24 July 2026. The argument still works, but it sets the game\'s language rather than naming a folder, and the value has to be a language Dota knows. A made-up <code>dota_mods</code> never mounts now.',
       },
 
       { k: 'h2', t: 'The three-click way', id: 'app' },
@@ -146,23 +147,23 @@ const en: Record<DocSlug, Doc> = {
       { k: 'h2', t: 'English audio is its own case', id: 'english' },
       {
         k: 'p',
-        t: 'English speech lives inside <code>dota/pak01</code>, so Valve ships no <code>dota_english</code> folder: there would be nothing to put in it. With English audio selected there is nowhere for a mod to go.',
+        t: 'English speech lives inside <code>dota/pak01</code>, so Valve ships no <code>dota_english</code> folder: there would be nothing to put in it. Switch your audio to English and the mods you already installed stop loading, because the folder holding them is no longer the one being mounted.',
       },
       {
         k: 'p',
-        t: 'Making the folder yourself is not enough either. Each of Valve\'s language folders carries its own <code>gameinfo.gi</code> that layers it onto <code>dota</code>, and a folder without that file is one the engine never looks in.',
+        t: 'The short fix is to put the audio language back to one Valve does ship a folder for. Change it in Dota\'s own settings, or start the game once with <code>-language russian</code> in your launch options and then take the argument out again. It writes the setting, and the setting stays.',
       },
       {
         k: 'p',
-        t: 'One way out is to build the layer properly: create <code>game\\dota_english\\</code> and save this inside it as <code>gameinfo.gi</code>. It writes a new file in a new folder and touches nothing Valve shipped.',
+        t: 'If it was the English speech you wanted rather than the Russian, you can have both. Keep the mods in that folder and rename Valve\'s <code>pak01_dir.vpk</code> inside it. The speech falls back to the English in <code>dota/pak01</code> and every mod stays mounted. Only the index has to move: the numbered volumes beside it are unreadable without it, so you rename a few hundred kilobytes and leave the gigabytes where they are. Rename it back to undo, or verify the game files in Steam.',
+      },
+      {
+        k: 'p',
+        t: 'There is a longer way, for anybody who would rather have a real <code>dota_english</code>. An empty folder will not do: each of Valve\'s language folders carries its own <code>gameinfo.gi</code> that layers it onto <code>dota</code>, and the engine never looks inside one without that file. Create <code>game\\dota_english\\</code> and save this in it as <code>gameinfo.gi</code>.',
       },
       {
         k: 'code',
         t: '"GameInfo"\n{\n\tLayeredOnMod\tdota\n\n\tFileSystem\n\t{\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t\tdota_english\n\t\t\tGame\t\t\tdota\n\t\t\tGame\t\t\tcore\n\n\t\t\tMod\t\t\t\tdota_english\n\t\t\tMod\t\t\t\tdota\n\n\t\t\tAddonRoot\t\tdota_addons\n\n\t\t\tPublicContent\tcore\n\t\t}\n\t}\n}',
-      },
-      {
-        k: 'p',
-        t: 'The other way creates nothing at all. Leave the audio language on one that has a real folder, keep the mods there, and rename Valve\'s <code>pak01_dir.vpk</code> inside it. The speech falls back to the English in <code>dota/pak01</code> and every mod stays mounted. Only the index has to move: the numbered volumes beside it are unreadable without it, so you rename a few hundred kilobytes and leave the gigabytes where they are. Rename it back to undo, or verify the game files in Steam.',
       },
 
       { k: 'h2', t: 'Free cosmetics take one more step', id: 'schema' },
@@ -194,8 +195,8 @@ const en: Record<DocSlug, Doc> = {
             'No. Every file involved lives on your machine and changes what your client draws. Nothing about it reaches the match.',
           ],
           [
-            'Does -language mods still work?',
-            'No. Dota took the folder name out of the launch arguments on 24 July 2026 and now reads it from <code>boot.vcfg</code>. Guides that still teach it were written earlier and nobody updated them.',
+            'Does the -language launch option still work?',
+            'Yes, but not for what those guides used it for. It sets the game\'s language at startup, text and voices both, and the setting stays after you take the argument back out. What it cannot do any more is name a folder: the value has to be a language Dota knows, so <code>-language mods</code> gets you nothing.',
           ],
           [
             'Where do I get the mods themselves?',
@@ -247,7 +248,7 @@ const en: Record<DocSlug, Doc> = {
       { k: 'h2', t: 'Which folder gets mounted', id: 'folder' },
       {
         k: 'p',
-        t: 'Dota mounts <code>game\\dota</code>, <code>game\\core</code>, and one folder named after your audio language, such as <code>game\\dota_russian</code>. Until July 2026 you could invent that suffix with a <code>-language</code> launch argument, which is where the old advice to make a <code>dota_mods</code> folder comes from. Dota now takes the value from <code>game\\dota\\cfg\\boot.vcfg</code> instead, and a folder that matches no real language stays unmounted.',
+        t: 'Dota mounts <code>game\\dota</code>, <code>game\\core</code>, and one folder named after your audio language, such as <code>game\\dota_russian</code>. Until July 2026 you could invent that suffix with a <code>-language</code> launch argument, which is where the old advice to make a <code>dota_mods</code> folder comes from. Since then the suffix comes from <code>AudioLanguage</code> in <code>game\\dota\\cfg\\boot.vcfg</code>. The argument still exists and still works, but it writes that setting instead of the search path, so it can only ever name a language the game already knows.',
       },
       {
         k: 'code',
@@ -568,13 +569,13 @@ const ru: Record<DocSlug, Doc> = {
     title: 'Как установить моды на Dota 2 в 2026 году',
     h1: 'Как установить моды на Dota 2',
     description:
-      'Рабочая установка модов Dota 2: три клика через приложение или руками через pakNN_dir.vpk. И почему -language mods перестал работать в июле 2026.',
-    lead: 'Почти все гайды до сих пор учат параметру запуска, который Valve отключила в июле 2026. Ниже два способа по игре в её сегодняшнем виде: с программой и без.',
-    card: 'Три клика через приложение или работа с файлами руками. Плюс параметр запуска, который больше ничего не делает.',
+      'Рабочая установка модов Dota 2: три клика через приложение или руками через pakNN_dir.vpk. И что июльский патч поменял в параметрах запуска.',
+    lead: 'Почти все гайды до сих пор учат трюку с папкой, который июльский патч 2026 убил. Ниже два способа по игре в её сегодняшнем виде: с программой и без.',
+    card: 'Три клика через приложение или работа с файлами руками. Плюс что параметр запуска делает теперь, а делает он другое.',
     blocks: [
       {
         k: 'note',
-        t: 'Если гайд советует прописать <code>-language mods</code> в параметрах запуска Steam, он написан до 24 июля 2026. Дота теперь берёт имя папки из своего файла настроек и на аргумент не смотрит. Папка вида <code>dota_mods123</code> больше не примонтируется никогда.',
+        t: 'Если гайд советует прописать <code>-language mods</code> в параметрах запуска Steam, он написан до 24 июля 2026. Аргумент по-прежнему работает, но теперь он ставит язык игры, а не называет папку, и значение должно быть языком, который Дота знает. Выдуманная <code>dota_mods</code> не примонтируется.',
       },
 
       { k: 'h2', t: 'Способ на три клика', id: 'app' },
@@ -638,23 +639,23 @@ const ru: Record<DocSlug, Doc> = {
       { k: 'h2', t: 'Английская озвучка: отдельный случай', id: 'english' },
       {
         k: 'p',
-        t: 'Английская речь лежит внутри <code>dota/pak01</code>, поэтому папки <code>dota_english</code> Valve не поставляет: класть туда было бы нечего. С английской озвучкой моду просто некуда деться.',
+        t: 'Английская речь лежит внутри <code>dota/pak01</code>, поэтому папки <code>dota_english</code> Valve не поставляет: класть туда было бы нечего. Переключишь озвучку на английскую - и уже поставленные моды перестанут грузиться, потому что папка, в которой они лежат, больше не та, которую монтирует игра.',
       },
       {
         k: 'p',
-        t: 'Создать папку самому тоже мало. В каждой валвовской языковой папке лежит свой <code>gameinfo.gi</code>, который накладывает её на <code>dota</code>, а в папку без этого файла движок не заглядывает.',
+        t: 'Короткое решение - вернуть язык озвучки на тот, для которого папка есть. Поменяй его в настройках самой Доты или запусти игру один раз с <code>-language russian</code> в параметрах запуска, а потом убери аргумент обратно. Он пишет настройку, и настройка остаётся.',
       },
       {
         k: 'p',
-        t: 'Первый выход - сделать слой по-настоящему: создать <code>game\\dota_english\\</code> и положить внутрь вот это под именем <code>gameinfo.gi</code>. Так ты пишешь новый файл в новую папку и ничего валвовского не трогаешь.',
+        t: 'Если тебе нужна была именно английская речь, а не русская, можно получить и то и другое. Оставь моды в этой папке, а валвовский <code>pak01_dir.vpk</code> внутри неё переименуй. Речь откатится на английскую из <code>dota/pak01</code>, а все моды останутся смонтированными. Двигать надо только индекс: нумерованные тома рядом без него не читаются, так что ты переименовываешь несколько сотен килобайт и не трогаешь гигабайты. Обратно - тем же переименованием или проверкой целостности файлов в Steam.',
+      },
+      {
+        k: 'p',
+        t: 'Есть путь длиннее, для тех, кому нужна настоящая <code>dota_english</code>. Пустой папки мало: в каждой валвовской языковой папке лежит свой <code>gameinfo.gi</code>, который накладывает её на <code>dota</code>, и в папку без этого файла движок не заглядывает. Создай <code>game\\dota_english\\</code> и положи внутрь вот это под именем <code>gameinfo.gi</code>.',
       },
       {
         k: 'code',
         t: '"GameInfo"\n{\n\tLayeredOnMod\tdota\n\n\tFileSystem\n\t{\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t\tdota_english\n\t\t\tGame\t\t\tdota\n\t\t\tGame\t\t\tcore\n\n\t\t\tMod\t\t\t\tdota_english\n\t\t\tMod\t\t\t\tdota\n\n\t\t\tAddonRoot\t\tdota_addons\n\n\t\t\tPublicContent\tcore\n\t\t}\n\t}\n}',
-      },
-      {
-        k: 'p',
-        t: 'Второй выход не создаёт вообще ничего. Оставь язык озвучки таким, для которого папка есть, держи моды там, а валвовский <code>pak01_dir.vpk</code> внутри неё переименуй. Речь откатится на английскую из <code>dota/pak01</code>, а все моды останутся смонтированными. Двигать надо только индекс: нумерованные тома рядом без него не читаются, так что ты переименовываешь несколько сотен килобайт и не трогаешь гигабайты. Обратно - тем же переименованием или проверкой целостности файлов в Steam.',
       },
 
       { k: 'h2', t: 'Бесплатной косметике нужен ещё один шаг', id: 'schema' },
@@ -686,8 +687,8 @@ const ru: Record<DocSlug, Doc> = {
             'Нет. Все задействованные файлы лежат у тебя и меняют то, что рисует твой клиент. До матча из этого не доходит ничего.',
           ],
           [
-            'А -language mods ещё работает?',
-            'Нет. 24 июля 2026 Дота убрала имя папки из аргументов запуска и читает его из <code>boot.vcfg</code>. Гайды, которые всё ещё этому учат, написаны раньше, и их никто не обновил.',
+            'Параметр -language ещё работает?',
+            'Да, но не для того, ради чего его прописывали в старых гайдах. Он ставит язык игры при запуске, и текст, и озвучку, а настройка остаётся после того, как ты уберёшь аргумент. Чего он больше не умеет - называть папку: значение должно быть языком, который Дота знает, поэтому <code>-language mods</code> не даёт ничего.',
           ],
           [
             'Где брать сами моды?',
@@ -739,7 +740,7 @@ const ru: Record<DocSlug, Doc> = {
       { k: 'h2', t: 'Какая папка монтируется', id: 'folder' },
       {
         k: 'p',
-        t: 'Дота монтирует <code>game\\dota</code>, <code>game\\core</code> и одну папку по имени языка озвучки, например <code>game\\dota_russian</code>. До июля 2026 этот суффикс можно было выдумать аргументом запуска <code>-language</code>, откуда и растёт старый совет сделать папку <code>dota_mods</code>. Теперь Дота берёт значение из <code>game\\dota\\cfg\\boot.vcfg</code>, и папка, не совпадающая ни с одним настоящим языком, остаётся непримонтированной.',
+        t: 'Дота монтирует <code>game\\dota</code>, <code>game\\core</code> и одну папку по имени языка озвучки, например <code>game\\dota_russian</code>. До июля 2026 этот суффикс можно было выдумать аргументом запуска <code>-language</code>, откуда и растёт старый совет сделать папку <code>dota_mods</code>. Теперь суффикс берётся из <code>AudioLanguage</code> в <code>game\\dota\\cfg\\boot.vcfg</code>. Аргумент никуда не делся и работает, но пишет он эту настройку, а не путь поиска, поэтому назвать он может только язык, который игра и так знает.',
       },
       {
         k: 'code',
