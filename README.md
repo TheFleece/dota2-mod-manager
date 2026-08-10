@@ -4,7 +4,7 @@
   <h1>Dota 2 Mod Manager</h1>
 
   <p><b>Mods for Dota 2, without the file juggling.</b><br>
-  1100+ skins, terrains, announcers and music in one catalog. Free cosmetics the game
+  1000+ skins, terrains, announcers and music in one catalog. Free cosmetics the game
   already ships. Setups you can hand to a friend as a link.</p>
 
   <p>
@@ -30,19 +30,19 @@
 
 ## What it does
 
-| | | |
-|---|---|---|
-| <img src="docs/icons/catalog.svg" width="20"> | **The whole catalog** | 1100+ mods in 40 categories: heroes, terrains, shaders, fonts, cursors, announcers, music. Read live from the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository, so new mods appear without an app update |
-| <img src="docs/icons/install.svg" width="20"> | **One click in, one click out** | The app downloads the mod, picks a free pak slot and cleans up after itself. Categories that have to load early get low slots by themselves |
-| <img src="docs/icons/install.svg" width="20"> | **An install list** | Put mods aside while you browse and install them all at once. The list has its own search, because people were installing eighty mods one at a time |
-| <img src="docs/icons/library.svg" width="20"> | **My mods** | Switch a mod off before a match and back on after, without deleting it. Rare actions live under the right mouse button, and the load order is always there |
-| <img src="docs/icons/catalog.svg" width="20"> | **Free cosmetics** | Weather, couriers, wards, loading screens, announcers, mega-kills, read from the game's own item table, so anything Valve adds appears by itself |
-| <img src="docs/icons/install.svg" width="20"> | **It says when mods collide** | Two mods that carry the same file cannot both win. The app names the file, says which mod the game is loading it from, and lets you change the order |
-| <img src="docs/icons/filter.svg" width="20"> | **Filters and search** | Chips for what a mod changes, a dropdown for the item slot, a list of heroes, and one search across the whole catalog |
-| <img src="docs/icons/preset.svg" width="20"> | **Setups by link** | Save the mods you run as a preset and send it in one message. One button, with the link ready and the file next to it |
-| <img src="docs/icons/font.svg" width="20"> | **Fonts and cursors** | Installed into the game files with a backup of the originals; removing them restores vanilla |
-| <img src="docs/icons/update.svg" width="20"> | **It survives Dota patches** | The app notices a game update when it lands, puts back what the patch wiped, and never writes to the game folder while Dota is running |
-| <img src="docs/icons/update.svg" width="20"> | **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
+| | What it means |
+|---|---|
+| **The whole catalog** | 1000+ mods in 41 categories: heroes, terrains, shaders, fonts, cursors, announcers, music. Read live from the [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) repository, so new mods appear without an app update |
+| **One click in, one click out** | The app downloads the mod, picks a free pak slot and cleans up after itself. Categories that have to load early get low slots by themselves |
+| **An install list** | Put mods aside while you browse and install them all at once. The list has its own search, because people were installing eighty mods one at a time |
+| **My mods** | Switch a mod off before a match and back on after, without deleting it. Rare actions live under the right mouse button, and the load order is always there |
+| **Free cosmetics** | Weather, couriers, wards, loading screens, announcers, mega-kills, read from the game's own item table, so anything Valve adds appears by itself |
+| **It says when mods collide** | Two mods that carry the same file cannot both win. The app names the file, says which mod the game is loading it from, and lets you change the order |
+| **Filters and search** | Chips for what a mod changes, a dropdown for the item slot, a list of heroes, and one search across the whole catalog |
+| **Setups by link** | Save the mods you run as a preset and send it in one message. One button, with the link ready and the file next to it |
+| **Fonts and cursors** | Installed into the game files with a backup of the originals; removing them restores vanilla |
+| **It survives Dota patches** | The app notices a game update when it lands, puts back what the patch wiped, and never writes to the game folder while Dota is running |
+| **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
 
 <div align="center">
   <img src="site/public/screenshots/en-heroes.webp" alt="Mods grouped hero by hero" width="49%">
