@@ -4,15 +4,12 @@ const path = require('path');
 
 const DEFAULTS = {
   dotaGamePath: null,
-  // folder mods are installed into: game/dota_<langSuffix>. Always russian now — the engine
-  // mounts the folder named by Dota's audio language, and the app writes that language
-  // itself rather than asking (see keepRussianFolder in main.js). The value stays a setting
-  // because everything downstream reads it, and because an upgrade has to be able to see
-  // what the folder used to be.
+  // folder mods are installed into: game/dota_<langSuffix>. Decided by Dota's own audio
+  // language rather than by us, so Korean speech means dota_koreana and Chinese means
+  // dota_schinese; English is the one that has no folder and borrows the Russian one
+  // (see keepModFolder in main.js). The value stays a setting because everything downstream
+  // reads it, and because an upgrade has to be able to see what the folder used to be.
   langSuffix: 'russian',
-  // speak English while the mods stay in the Russian folder: Valve's voice pack is moved out
-  // of the mount, nothing else changes (see setVoiceEnabled in src/gamelang.js)
-  englishVoices: false,
   // app UI language: "en" | "ru". English is the default until the user picks otherwise.
   uiLang: 'en',
   // one-time language picker: false for fresh installs AND for users updating from a

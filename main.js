@@ -37,10 +37,10 @@ let win;
 let settings, catalog, installer, library, fingerprints, presence, schemaService, icons, remoteConfig;
 let toolchain, gameIcons, modPreviews, modId;
 let presenceView = 'catalog';
-// The one folder mods are installed into. Dota mounts the folder named by its audio
-// language, so the app sets that language rather than offering a choice of folders
-// (see keepRussianFolder).
-const LANG_FOLDER = 'russian';
+// The folder mods are installed into, decided by the game's own audio language rather than
+// by us: Korean audio means dota_koreana, Chinese means dota_schinese, and English borrows
+// dota_russian because it has no folder of its own (see keepModFolder).
+let langFolder = gamelang.FALLBACK_FOLDER;
 // set when startup moved mods into that folder from wherever they were; the renderer
 // picks it up once with settings:get and tells the user what happened
 let langMigration = null;
@@ -345,8 +345,7 @@ app.whenReady().then(async () => {
 
   // put the mods where the game will look for them, and make the game look there
   try {
-    await keepRussianFolder();
-    applyVoicePreference();
+    await keepModFolder();
   } catch (e) {
     diag('lang folder sync skipped: ' + e.message);
   }
@@ -1080,61 +1079,48 @@ function moveLangFolder(game, fromSuffix, toSuffix) {
   return moved;
 }
 
-/* Mods live in dota_russian, and the app is the one that arranges it.
+/* Mods follow the game's audio language instead of the game following us.
  *
- * The engine mounts the folder named by Dota's audio language, so a mod folder is not a
- * preference - it is a consequence of a setting somewhere else. Asking the user to keep the
- * two in step was asking them to understand our filing system. Now there is one folder,
- * always the same one, and the app writes the audio language that mounts it.
+ * The engine mounts the folder named by that language, so the mod folder is not a preference,
+ * it is a consequence of a setting somewhere else. Three of Dota's four voice languages have a
+ * folder, so somebody playing with Korean or Chinese speech keeps it and their mods go into
+ * dota_koreana or dota_schinese. Nothing is asked and nothing is changed.
+ *
+ * English is the one that has to move, because it has no folder at all and Valve's gameinfo
+ * mounts no language path for it. Those users get dota_russian written into the audio setting,
+ * and they hear no difference: Steam decides what is downloaded and Dota decides what is
+ * mounted, so a folder with no voice pack in it mounts with our mods and the speech keeps
+ * coming out of dota/pak01, in English.
  *
  * The text language stays untouched. It is the one the user picked when they installed the
- * game, and nothing about mods depends on it. Voices are not disturbed either unless Valve's
- * Russian pack is actually downloaded: without it dota_russian mounts with our mods in it
- * and the speech keeps coming from dota/pak01, which is English.
+ * game, and nothing about mods depends on it.
  *
  * Dota rewrites boot.vcfg when it exits, so a running game means we try again next launch.
  */
-async function keepRussianFolder() {
+async function keepModFolder() {
   const game = settings.get('dotaGamePath');
   if (!game) return;
   const mounted = gamelang.detectLangSuffix(game).suffix;
-  if (mounted !== LANG_FOLDER) {
+  langFolder = gamelang.folderFor(mounted);
+  if (mounted !== langFolder) {
     if (await dotaIsRunning()) {
       diag(`audio language is ${mounted}, Dota is running - leaving boot.vcfg alone`);
       return;
     }
-    gamelang.writeBootLanguages(game, { audio: LANG_FOLDER });
-    diag(`audio language ${mounted} -> ${LANG_FOLDER}`);
+    gamelang.writeBootLanguages(game, { audio: langFolder });
+    diag(`audio language ${mounted} -> ${langFolder}`);
   }
-  gamelang.ensureLangFolder(game, LANG_FOLDER);
+  gamelang.ensureLangFolder(game, langFolder);
   // whatever the mods were following before: our own last setting, and the folder the game
   // was mounting until a moment ago
   let moved = 0;
-  const from = new Set([settings.get('langSuffix'), mounted].filter((s) => s && s !== LANG_FOLDER));
-  for (const old of from) moved += moveLangFolder(game, old, LANG_FOLDER);
+  const from = new Set([settings.get('langSuffix'), mounted].filter((s) => s && s !== langFolder));
+  for (const old of from) moved += moveLangFolder(game, old, langFolder);
   if (moved) {
-    langMigration = { from: [...from][0], to: LANG_FOLDER, moved };
-    diag(`mods moved into dota_${LANG_FOLDER}: ${moved} files from ${[...from].join(', ')}`);
+    langMigration = { from: [...from][0], to: langFolder, moved };
+    diag(`mods moved into dota_${langFolder}: ${moved} files from ${[...from].join(', ')}`);
   }
-  settings.set('langSuffix', LANG_FOLDER);
-}
-
-/* Whatever the user asked of the voices, applied to what is on disk now.
- *
- * Run on every launch, not only when the switch is touched: verifying the game files through
- * Steam hands Valve's voice pack back without telling anyone, and the answer to "I want
- * English voices" should not quietly expire because somebody checked their install.
- */
-function applyVoicePreference() {
-  const game = settings.get('dotaGamePath');
-  if (!game) return 'absent';
-  try {
-    return gamelang.setVoiceEnabled(game, LANG_FOLDER, !settings.get('englishVoices'));
-  } catch (err) {
-    // Dota holds its paks open, so a running game means we try again next launch
-    diag('voice pack not switched: ' + err.message);
-    return gamelang.voiceState(game, LANG_FOLDER);
-  }
+  settings.set('langSuffix', langFolder);
 }
 
 /* Put back what Steam's file check took away.
@@ -1167,8 +1153,8 @@ function restoreAfterVerify() {
 /* Everything the app puts back after the game changed underneath it.
  *
  * Not one line of the repair itself is new: heal() re-applies the search-path patch and
- * rebuilds the item schema, restoreAfterVerify() puts fonts and cursors back, and
- * applyVoicePreference() re-applies the voice choice. What 4.1 adds is when this runs and
+ * rebuilds the item schema and restoreAfterVerify() puts fonts and cursors back. What 4.1
+ * adds is when this runs and
  * that somebody hears about it - before, it happened at startup and on our own Play button,
  * while Steam patches the game in the background and most people press Play in Steam.
  *
@@ -1210,12 +1196,6 @@ async function repairAfterPatch(reason) {
   } catch (err) {
     diag('restore after verify skipped: ' + err.message);
   }
-  try {
-    applyVoicePreference();
-  } catch (err) {
-    diag('voice preference skipped: ' + err.message);
-  }
-
   // remembered only now: a stamp stored before a failed repair would make the next start
   // think there is nothing to fix
   settings.set('gameStamp', gameStamp(game));
@@ -1292,9 +1272,9 @@ function registerIpc() {
       // things to tell the user about, not things to ask them.
       gameLang: {
         mounted: game ? gamelang.detectLangSuffix(game).suffix : null,
-        folder: LANG_FOLDER,
+        folder: langFolder,
         // mods sitting in a folder the game does not mount
-        stranded: folders.filter((f) => f.suffix !== LANG_FOLDER && f.modFiles > 0)
+        stranded: folders.filter((f) => f.suffix !== langFolder && f.modFiles > 0)
           .map((f) => ({ suffix: f.suffix, modFiles: f.modFiles })),
       },
       langMigration: migrated,
@@ -1336,36 +1316,13 @@ function registerIpc() {
     return { ok: true };
   });
 
-  // ----- English voices (Valve's pak01 in or out of the mount) -----
-  ipcMain.handle('voice:state', () => {
-    const game = settings.get('dotaGamePath');
-    return {
-      state: game ? gamelang.voiceState(game, LANG_FOLDER) : 'absent',
-      english: !!settings.get('englishVoices'),
-    };
-  });
-
-  ipcMain.handle('voice:setEnabled', async (e, english) => {
-    const stop = blocked('voice');
-    if (stop) return stop;
-    const game = settings.get('dotaGamePath');
-    if (!game) return { error: t('Путь к Dota 2 не задан') };
-    if (await dotaIsRunning()) return { error: t('Сначала закрой Dota 2 — она держит файлы озвучки открытыми') };
-    settings.set('englishVoices', !!english);
-    try {
-      return { state: gamelang.setVoiceEnabled(game, LANG_FOLDER, !english), english: !!english };
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
-  });
-
   // rescue mods sitting in a folder the game does not mount (our old dota_123, another
   // tool's dota_minify, or whatever the audio language used to be)
   ipcMain.handle('settings:moveLangFiles', (e, fromSuffix) => {
     const game = settings.get('dotaGamePath');
     if (!game) return { error: t('Путь к Dota 2 не задан') };
-    const moved = moveLangFolder(game, String(fromSuffix || ''), LANG_FOLDER);
-    return { moved, to: LANG_FOLDER };
+    const moved = moveLangFolder(game, String(fromSuffix || ''), langFolder);
+    return { moved, to: langFolder };
   });
 
   ipcMain.handle('settings:detectDota', async () => {

@@ -326,7 +326,7 @@ window.api.patch.onRepair((st) => {
   // startup put the mods where the game will look for them, and pointed the game there —
   // say so once, because the game has to be restarted before it reads the new folder
   if (cfg.langMigration) {
-    toast(L`Моды перенесены из dota_${cfg.langMigration.from} в dota_${cfg.langMigration.to}, озвучка Dota переключена на русскую. Перезапусти игру.`, 'warn', 9000);
+    toast(L`Моды перенесены в dota_${cfg.langMigration.to} — папку, которую монтирует твоя озвучка. Перезапусти игру.`, 'warn', 9000);
   }
 
   await refreshSidebarStatus();

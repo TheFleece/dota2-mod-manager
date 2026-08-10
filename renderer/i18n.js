@@ -482,12 +482,6 @@ const EN = {
     'One slot, one active look: this one replaces «{0}». The previous pick stays in My mods, switched off.',
 
   // ---------- settings ----------
-  'Звук в игре': 'Game audio',
-  'Английские голоса': 'English voices',
-  'Русская озвучка выключается, моды остаются на месте. После переключения перезапусти Dota.':
-    'Turns the Russian voice-over off and leaves the mods where they are. Restart Dota afterwards.',
-  'Голоса в игре станут английскими — перезапусти Dota': 'The game will speak English — restart Dota',
-  'Русская озвучка вернулась — перезапусти Dota': 'The Russian voice-over is back — restart Dota',
   'В самом Discord для этого включено «Отображать текущую активность как статус».':
     'Discord itself needs “Display current activity as a status message” switched on.',
   'Скачанные архивы, чтобы не качать повторно. Удаление ничего не сломает.':
@@ -565,8 +559,8 @@ const EN = {
   'Не нашёл автоматически — укажи вручную': 'Not found automatically — set it manually',
   'Путь сохранён': 'Path saved',
   'Перенесено файлов: {0}': 'Moved {0} files',
-  'Моды перенесены из dota_{0} в dota_{1}, озвучка Dota переключена на русскую. Перезапусти игру.':
-    'Mods moved from dota_{0} to dota_{1} and Dota’s audio language is now Russian. Restart the game.',
+  'Моды перенесены в dota_{0} — папку, которую монтирует твоя озвучка. Перезапусти игру.':
+    'Mods moved into dota_{0}, the folder your audio language mounts. Restart the game.',
   'Скопировано в буфер': 'Copied to clipboard',
   'Кэш очищен': 'Cache cleared',
   'Язык переключён на English': 'Language switched to English',

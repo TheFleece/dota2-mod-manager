@@ -17,13 +17,39 @@
 const fs = require('fs');
 const path = require('path');
 
-// languages Dota ships text for (resource/localization/*_<lang>.txt inside dota/pak01)
-const OFFICIAL_LANGUAGES = [
-  'brazilian', 'bulgarian', 'czech', 'danish', 'dutch', 'english', 'finnish', 'french',
-  'german', 'greek', 'hungarian', 'indonesian', 'italian', 'japanese', 'koreana', 'latam',
-  'norwegian', 'polish', 'portuguese', 'romanian', 'russian', 'schinese', 'spanish',
-  'swedish', 'tchinese', 'thai', 'turkish', 'ukrainian', 'vietnamese',
-];
+/* Languages Dota records VOICE in - four of them, and that is the list that matters here.
+ *
+ * The engine substitutes the audio language into its Game_Language search path, so the folder
+ * a mod has to live in is named by this setting and by nothing else. Text is a different list
+ * of twenty-nine languages living in dota/pak01, and it has no bearing on any of this; reading
+ * the wrong one of the two is how a mod ends up in a folder nobody mounts.
+ */
+const VOICE_LANGUAGES = ['english', 'koreana', 'russian', 'schinese'];
+
+/* Three of those four get a folder on disk.
+ *
+ * English speech ships inside dota/pak01 with the base game, so Valve makes no dota_english,
+ * and its own gameinfo.gi mounts the language path only "if running a specific language",
+ * which English is not. A dota_english built by hand, correct gameinfo.gi and all, filled with
+ * mods, is never read. Tested 2026-08-10 rather than assumed, twice.
+ */
+const MOD_FOLDERS = ['koreana', 'russian', 'schinese'];
+
+/** Borrowed by English, and by anything unrecognised. */
+const FALLBACK_FOLDER = 'russian';
+
+/**
+ * Where mods have to live for a given audio language.
+ *
+ * English has no folder of its own, so it borrows the Russian one. The folder mounts whether
+ * or not Valve's voice pack was ever downloaded, because Steam decides what is on disk and
+ * Dota decides what is mounted, and they are separate. So an English speaker gets a mounted
+ * dota_russian holding nothing but mods, and keeps hearing the English speech out of
+ * dota/pak01 without noticing anything happened.
+ */
+function folderFor(audio) {
+  return MOD_FOLDERS.includes(audio) ? audio : FALLBACK_FOLDER;
+}
 
 // what Valve puts in every official language folder; mirrored when we have to create one
 const gameinfoStub = (suffix) => `"GameInfo"
@@ -101,7 +127,7 @@ function langFolders(gamePath) {
     try { files = fs.readdirSync(path.join(gamePath, name)); } catch { /* unreadable */ }
     out.push({
       suffix,
-      official: OFFICIAL_LANGUAGES.includes(suffix),
+      official: MOD_FOLDERS.includes(suffix),
       // Valve's own voice paks vs anything we or another tool put there
       valveContent: files.some((f) => /^pak01_/i.test(f)),
       modFiles: files.filter((f) => /^pak\d+_dir\.vpk(\.off|\.moff)?$/i.test(f) && !/^pak01_/i.test(f)).length,
@@ -116,11 +142,11 @@ function langFolders(gamePath) {
  */
 function detectLangSuffix(gamePath) {
   const boot = bootLanguages(gamePath);
-  if (boot?.audio && OFFICIAL_LANGUAGES.includes(boot.audio)) {
+  if (boot?.audio && VOICE_LANGUAGES.includes(boot.audio)) {
     return { suffix: boot.audio, source: 'boot', uiLanguage: boot.ui || null };
   }
   const steam = steamLanguage(gamePath);
-  if (steam && OFFICIAL_LANGUAGES.includes(steam)) {
+  if (steam && VOICE_LANGUAGES.includes(steam)) {
     return { suffix: steam, source: 'steam', uiLanguage: boot?.ui || null };
   }
   return { suffix: null, source: null, uiLanguage: boot?.ui || null };
@@ -177,63 +203,11 @@ function ensureLangFolder(gamePath, suffix) {
   return dir;
 }
 
-/* English voices without moving the mods.
- *
- * The engine mounts the folder named by the audio language, and the app keeps that Russian so
- * there is one place mods live. What makes the speech Russian is not the folder: it is Valve's
- * own voice pack inside it. Take the pack out of the mount and the game falls back to the
- * English speech in dota/pak01, while every mod in the folder stays exactly where it was.
- *
- * Only the index file moves. A VPK's volumes (pak01_000.vpk and friends) are dead weight
- * without pak01_dir.vpk, so renaming one file of a few hundred kilobytes does the whole job
- * and leaves the gigabytes alone. The suffix is its own, never .off (a mod switched off) or
- * .moff (all mods switched off): those belong to files the app installed, and this one is
- * Valve's.
- */
-const VOICE_OFF = '.voff';
-const voicePakPath = (gamePath, suffix) => path.join(gamePath, `dota_${suffix}`, 'pak01_dir.vpk');
-
-/**
- * 'on' — Valve's voice pack is mounted · 'off' — we have moved it aside ·
- * 'absent' — this language's pack was never downloaded, so the speech is English anyway
- * and there is nothing to switch.
- */
-function voiceState(gamePath, suffix) {
-  if (!gamePath) return 'absent';
-  const pak = voicePakPath(gamePath, suffix);
-  if (fs.existsSync(pak)) return 'on';
-  return fs.existsSync(pak + VOICE_OFF) ? 'off' : 'absent';
-}
-
-/**
- * Put the voice pack in or out of the mount, and clean up after Steam.
- *
- * Verifying the game files hands the original back without asking, and then both names exist
- * at once: the one Steam restored and the one we set aside. The restored file is the real
- * one, so ours goes, and the state the user asked for is applied to what is there now.
- *
- * @returns {'on'|'off'|'absent'} the state actually on disk afterwards
- */
-function setVoiceEnabled(gamePath, suffix, enabled) {
-  if (!gamePath) return 'absent';
-  const pak = voicePakPath(gamePath, suffix);
-  const parked = pak + VOICE_OFF;
-  const hasPak = fs.existsSync(pak);
-  const hasParked = fs.existsSync(parked);
-
-  if (hasPak && hasParked) fs.rmSync(parked, { force: true });
-  if (!hasPak && !hasParked) return 'absent';
-
-  if (enabled) {
-    if (!fs.existsSync(pak)) fs.renameSync(parked, pak);
-    return 'on';
-  }
-  if (fs.existsSync(pak)) fs.renameSync(pak, parked);
-  return 'off';
-}
-
 module.exports = {
-  OFFICIAL_LANGUAGES,
+  VOICE_LANGUAGES,
+  MOD_FOLDERS,
+  FALLBACK_FOLDER,
+  folderFor,
   bootLanguages,
   steamLanguage,
   langFolders,
@@ -241,6 +215,4 @@ module.exports = {
   writeBootLanguages,
   voiceInstalled,
   ensureLangFolder,
-  voiceState,
-  setVoiceEnabled,
 };

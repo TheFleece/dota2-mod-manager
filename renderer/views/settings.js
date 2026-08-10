@@ -6,9 +6,9 @@
  * what has to be repainted once it does.
  *
  * What is deliberately not here: anything about Dota's own languages or the folder mods go
- * into. The folder is always dota_russian and the app arranges that itself, including the
- * one Dota setting that decides it (see keepRussianFolder in main.js). Dota's text language
- * is the user's, chosen when they installed the game, and no mod depends on it. Where mods
+ * into. The folder follows the game's audio language and the app arranges that itself
+ * (see keepModFolder in main.js). Dota's text language is the user's, chosen when they
+ * installed the game, and no mod depends on it. Where mods
  * can go missing is news, not a setting, so it is a banner on the Library.
  *
  * The one import from another screen is loadCatalog, for the button that re-fetches the
@@ -37,9 +37,6 @@ export async function renderSettings() {
   const scalePct = Math.round((Number(s.uiScale) || 1) * 100);
   const cacheSize = await window.api.misc.cacheSize();
   const appVersion = await window.api.update.version();
-  // no Russian voice pack downloaded means the speech is already English: a switch with
-  // nothing to switch is not shown at all
-  const voice = await window.api.voice.state();
   // the Source 2 toolchain: shown as a size and a button, never downloaded on its own
   let vrf = null;
   try { vrf = (await window.api.tools.state()).tools.find((x) => x.name === 'vrf') || null; } catch { /* older build */ }
@@ -70,17 +67,6 @@ export async function renderSettings() {
         </div>
       </div>
     </div>
-
-    ${voice.state === 'absent' ? '' : `
-    <div class="settings-block" style="--i:1">
-      <h3>${L`Звук в игре`}</h3>
-      <div class="settings-row">
-        <span class="settings-label">${L`Английские голоса`}</span>
-        <button class="toggle ${voice.english ? 'on' : ''}" id="voiceToggle" role="switch"
-                aria-checked="${!!voice.english}" aria-label="${L`Английские голоса`}"></button>
-      </div>
-      <div class="settings-hint">${L`Русская озвучка выключается, моды остаются на месте. После переключения перезапусти Dota.`}</div>
-    </div>`}
 
     <div class="settings-block" style="--i:1">
       <h3>Discord</h3>
@@ -223,17 +209,6 @@ export async function renderSettings() {
     if (r?.path) toast(L`Путь сохранён`);
     renderSettings();
     refreshSidebarStatus();
-  });
-  $('#voiceToggle')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    const on = !btn.classList.contains('on');
-    btn.disabled = true;
-    const r = await window.api.voice.setEnglish(on);
-    btn.disabled = false;
-    if (r?.error) { toast(r.error, 'error', 7000); return; }
-    btn.classList.toggle('on', on);
-    btn.setAttribute('aria-checked', String(on));
-    toast(on ? L`Голоса в игре станут английскими — перезапусти Dota` : L`Русская озвучка вернулась — перезапусти Dota`, 'ok', 7000);
   });
   $('#presenceToggle')?.addEventListener('click', async (e) => {
     const on = !e.currentTarget.classList.contains('on');
