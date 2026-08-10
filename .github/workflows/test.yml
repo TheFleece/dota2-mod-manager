@@ -24,7 +24,12 @@ jobs:
         with:
           node-version: 24
 
-      # No install step on purpose: the modules under test are dependency-free, and the app's
-      # own deps are irrelevant here. Keeps the run at a couple of seconds.
+      # This used to skip installing on the grounds that the modules under test were
+      # dependency-free. That stopped being true once the tests reached the installer and the
+      # toolchain, which pull in adm-zip, and every run since has failed on a missing module
+      # while a developer's machine passed because node_modules was already there.
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run tests
         run: npm test

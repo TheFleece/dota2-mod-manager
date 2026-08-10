@@ -32,9 +32,14 @@ function fakeGame(t, { version = '6888', signatures = SIGNATURES } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-patch-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'dota'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'bin', 'win64'), { recursive: true });
   fs.writeFileSync(path.join(root, 'dota', 'steam.inf'), INF(version));
-  fs.writeFileSync(patcher.paths(root).signatures, signatures);
+  // The bin folder is named per platform (bin/win64, bin/linuxsteamrt64), so it is taken from
+  // the patcher rather than spelled out here: hardcoding the Windows one made these tests pass
+  // on a developer's machine and fail on the Linux runner for two days without anyone reading
+  // the log, because the file simply had nowhere to be written.
+  const signaturesPath = patcher.paths(root).signatures;
+  fs.mkdirSync(path.dirname(signaturesPath), { recursive: true });
+  fs.writeFileSync(signaturesPath, signatures);
   return root;
 }
 
