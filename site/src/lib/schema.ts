@@ -41,6 +41,9 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     isAccessibleForFree: true,
     inLanguage: lang === 'ru' ? ['ru', 'en'] : ['en', 'ru'],
     softwareHelp: { '@type': 'CreativeWork', url: `${url}docs/` },
+    // The card image, not a screenshot: it is the one picture here that still reads at the
+    // size a search result shows, and it is what Google is being offered as the thumbnail.
+    image: `${origin}/og.png`,
     screenshot: [`${origin}/screenshots/${lang}-catalog.webp`, `${origin}/screenshots/${lang}-library.webp`],
     featureList: t.cards.map(([title]) => title),
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
