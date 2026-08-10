@@ -126,7 +126,7 @@ const en: Record<DocSlug, Doc> = {
           ],
           [
             'Open the matching folder',
-            'Russian audio means <code>game\\dota_russian\\</code>, English means <code>game\\dota_english\\</code>. It already holds <code>pak01_dir.vpk</code> and its numbered parts. Leave those where they are: they are Valve\'s localized voice files, and the game misses them.',
+            'Russian audio means <code>game\\dota_russian\\</code>, German means <code>game\\dota_german\\</code>, and so on through the languages Valve recorded voice for. The folder already holds <code>pak01_dir.vpk</code> and its numbered parts; leave those where they are, they are Valve\'s localized voice. <b>English audio has no folder at all</b>, which is its own case: see below.',
           ],
           [
             'Rename the mod and drop it in',
@@ -141,6 +141,28 @@ const en: Record<DocSlug, Doc> = {
       {
         k: 'p',
         t: 'That holds until it stops. A game patch can clear the folder, two mods can carry the same texture and cancel each other with no message, and nothing on disk records which mod a given <code>pak14_dir.vpk</code> came from. Those three are the parts a manager exists to remember for you. <a href="~/docs/vpk/">What the numbering means</a>.',
+      },
+
+      { k: 'h2', t: 'English audio is its own case', id: 'english' },
+      {
+        k: 'p',
+        t: 'English speech lives inside <code>dota/pak01</code>, so Valve ships no <code>dota_english</code> folder: there would be nothing to put in it. With English audio selected there is nowhere for a mod to go.',
+      },
+      {
+        k: 'p',
+        t: 'Making the folder yourself is not enough either. Each of Valve\'s language folders carries its own <code>gameinfo.gi</code> that layers it onto <code>dota</code>, and a folder without that file is one the engine never looks in.',
+      },
+      {
+        k: 'p',
+        t: 'One way out is to build the layer properly: create <code>game\\dota_english\\</code> and save this inside it as <code>gameinfo.gi</code>. It writes a new file in a new folder and touches nothing Valve shipped.',
+      },
+      {
+        k: 'code',
+        t: '"GameInfo"\n{\n\tLayeredOnMod\tdota\n\n\tFileSystem\n\t{\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t\tdota_english\n\t\t\tGame\t\t\tdota\n\t\t\tGame\t\t\tcore\n\n\t\t\tMod\t\t\t\tdota_english\n\t\t\tMod\t\t\t\tdota\n\n\t\t\tAddonRoot\t\tdota_addons\n\n\t\t\tPublicContent\tcore\n\t\t}\n\t}\n}',
+      },
+      {
+        k: 'p',
+        t: 'The other way creates nothing at all. Leave the audio language on one that has a real folder, keep the mods there, and rename Valve\'s <code>pak01_dir.vpk</code> inside it. The speech falls back to the English in <code>dota/pak01</code> and every mod stays mounted. Only the index has to move: the numbered volumes beside it are unreadable without it, so you rename a few hundred kilobytes and leave the gigabytes where they are. Rename it back to undo, or verify the game files in Steam.',
       },
 
       { k: 'h2', t: 'Free cosmetics take one more step', id: 'schema' },
@@ -475,6 +497,7 @@ const en: Record<DocSlug, Doc> = {
         items: [
           'Restart Dota from Steam rather than returning to the menu. The game reads the mod folders once, at startup.',
           'Check that you put the file in the folder matching your <b>audio</b> language, not your menu language. They are separate settings since July 2026.',
+          'No <code>dota_</code> folder anywhere? Your audio is English, and Valve ships no folder for it. <a href="~/docs/install/#english">What to do instead</a>.',
           'A file named <code>!pak51_dir.vpk</code> or <code>mymod.vpk</code> is never mounted. It has to be <code>pakNN_dir.vpk</code>.',
           'If the mod replaces a hero set you do not own, it needs the item schema patch as well as the archive. <a href="~/docs/cosmetics/">Why</a>.',
         ],
@@ -568,7 +591,7 @@ const ru: Record<DocSlug, Doc> = {
           ],
           [
             'Открой нужную папку',
-            'Русская озвучка означает <code>game\\dota_russian\\</code>, английская - <code>game\\dota_english\\</code>. Там уже лежит <code>pak01_dir.vpk</code> и его нумерованные части. Их не трогай: это валвовская локализованная озвучка, без неё игра начнёт ругаться.',
+            'Русская озвучка означает <code>game\\dota_russian\\</code>, немецкая <code>game\\dota_german\\</code>, и так далее по языкам, для которых Valve записала озвучку. Там уже лежит <code>pak01_dir.vpk</code> и его нумерованные части, их не трогай: это валвовская локализованная речь. <b>У английской озвучки папки нет вообще</b>, и это отдельный случай, он ниже.',
           ],
           [
             'Переименуй мод и положи туда',
@@ -583,6 +606,28 @@ const ru: Record<DocSlug, Doc> = {
       {
         k: 'p',
         t: 'Работает, пока не перестанет. Патч игры может вычистить папку, два мода могут нести одну и ту же текстуру и молча погасить друг друга, а на диске нигде не записано, из какого мода взялся конкретный <code>pak14_dir.vpk</code>. Ровно эти три вещи менеджер и держит в голове за тебя. <a href="~/docs/vpk/">Что означает нумерация</a>.',
+      },
+
+      { k: 'h2', t: 'Английская озвучка: отдельный случай', id: 'english' },
+      {
+        k: 'p',
+        t: 'Английская речь лежит внутри <code>dota/pak01</code>, поэтому папки <code>dota_english</code> Valve не поставляет: класть туда было бы нечего. С английской озвучкой моду просто некуда деться.',
+      },
+      {
+        k: 'p',
+        t: 'Создать папку самому тоже мало. В каждой валвовской языковой папке лежит свой <code>gameinfo.gi</code>, который накладывает её на <code>dota</code>, а в папку без этого файла движок не заглядывает.',
+      },
+      {
+        k: 'p',
+        t: 'Первый выход - сделать слой по-настоящему: создать <code>game\\dota_english\\</code> и положить внутрь вот это под именем <code>gameinfo.gi</code>. Так ты пишешь новый файл в новую папку и ничего валвовского не трогаешь.',
+      },
+      {
+        k: 'code',
+        t: '"GameInfo"\n{\n\tLayeredOnMod\tdota\n\n\tFileSystem\n\t{\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t\tdota_english\n\t\t\tGame\t\t\tdota\n\t\t\tGame\t\t\tcore\n\n\t\t\tMod\t\t\t\tdota_english\n\t\t\tMod\t\t\t\tdota\n\n\t\t\tAddonRoot\t\tdota_addons\n\n\t\t\tPublicContent\tcore\n\t\t}\n\t}\n}',
+      },
+      {
+        k: 'p',
+        t: 'Второй выход не создаёт вообще ничего. Оставь язык озвучки таким, для которого папка есть, держи моды там, а валвовский <code>pak01_dir.vpk</code> внутри неё переименуй. Речь откатится на английскую из <code>dota/pak01</code>, а все моды останутся смонтированными. Двигать надо только индекс: нумерованные тома рядом без него не читаются, так что ты переименовываешь несколько сотен килобайт и не трогаешь гигабайты. Обратно - тем же переименованием или проверкой целостности файлов в Steam.',
       },
 
       { k: 'h2', t: 'Бесплатной косметике нужен ещё один шаг', id: 'schema' },
@@ -917,6 +962,7 @@ const ru: Record<DocSlug, Doc> = {
         items: [
           'Перезапусти Доту из Steam, а не выйди в меню. Папки модов читаются один раз, при старте.',
           'Проверь, что положил файл в папку по языку <b>озвучки</b>, а не по языку меню. С июля 2026 это разные настройки.',
+          'Папки <code>dota_</code> нет ни одной? Значит озвучка английская, а для неё Valve папку не поставляет. <a href="~/docs/install/#english">Что делать вместо этого</a>.',
           'Файл с именем <code>!pak51_dir.vpk</code> или <code>mymod.vpk</code> не монтируется никогда. Нужно <code>pakNN_dir.vpk</code>.',
           'Если мод подменяет сет, которого у тебя нет, ему нужен ещё и патч таблицы предметов, не только архив. <a href="~/docs/cosmetics/">Почему</a>.',
         ],
