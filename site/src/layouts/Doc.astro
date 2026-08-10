@@ -105,7 +105,10 @@ const updatedHuman = new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-GB', 
 }).format(new Date(UPDATED));
 ---
 
-<Base title={`${doc.title} - Dota 2 Mod Manager`} description={doc.description} path={`/docs/${doc.slug}/`}>
+{/* No brand suffix here. A guide competes on the question somebody typed, and " - Dota 2 Mod
+    Manager" costs twenty characters that push the answer past where search results cut the
+    line. The landing and the guides index carry the name; these carry the question. */}
+<Base title={doc.title} description={doc.description} path={`/docs/${doc.slug}/`}>
   {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
 
   <article class="doc wrap">

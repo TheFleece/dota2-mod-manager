@@ -51,17 +51,17 @@ export type DocSlug = (typeof docSlugs)[number];
 
 export const docsIndex: Record<'en' | 'ru', DocsIndex> = {
   en: {
-    title: 'Dota 2 modding guides - install, VPK files, free cosmetics',
+    title: 'Dota 2 modding guides: install, VPK, free cosmetics',
     h1: 'Guides',
     description:
-      'How Dota 2 mods work and how to install them on Windows: pak slots and load order, VPK files, the item schema behind free cosmetics, and what to do after a game patch.',
+      'How Dota 2 mods work and how to install them on Windows: pak slots and load order, VPK files, the item schema, and what to do after a game patch.',
     lead: 'Five pages on how Dota 2 modding actually works. Written against the game as it is in 2026, not as it was when the tutorials on page one were published.',
   },
   ru: {
-    title: 'Моды для Dota 2: установка, VPK, бесплатная косметика - гайды',
+    title: 'Гайды по модам Dota 2: установка, VPK, косметика',
     h1: 'Гайды',
     description:
-      'Как устроены моды для Dota 2 и как их поставить на Windows: слоты pak и порядок загрузки, файлы VPK, таблица предметов за бесплатной косметикой и что делать после патча игры.',
+      'Как устроены моды для Dota 2 и как их поставить: слоты pak и порядок загрузки, файлы VPK, таблица предметов и что делать после патча игры.',
     lead: 'Пять страниц о том, как моддинг Доты работает на самом деле. По игре образца 2026 года, а не той, при которой писались гайды из топа выдачи.',
   },
 };
@@ -73,10 +73,10 @@ export const docsIndex: Record<'en' | 'ru', DocsIndex> = {
 const en: Record<DocSlug, Doc> = {
   install: {
     slug: 'install',
-    title: 'How to install Dota 2 mods in 2026 (Windows)',
+    title: 'How to install Dota 2 mods in 2026',
     h1: 'How to install Dota 2 mods',
     description:
-      'Install steps that work in 2026: three clicks with Dota 2 Mod Manager, or by hand with a pakNN_dir.vpk file. Includes why the -language mods launch option stopped working in July 2026.',
+      'Install steps that work in 2026: three clicks with the app, or by hand with a pakNN_dir.vpk file. Plus why -language mods stopped working in July.',
     lead: 'Most guides still teach a launch option Valve stopped honouring in July 2026. Both methods below work on the game as it ships today, one with a program and one without.',
     card: 'Three clicks with the app, or the file work by hand. Plus the launch option that no longer does anything.',
     blocks: [
@@ -186,10 +186,10 @@ const en: Record<DocSlug, Doc> = {
 
   vpk: {
     slug: 'vpk',
-    title: 'Dota 2 VPK files: pak numbers, load order, gameinfo.gi',
+    title: 'Dota 2 VPK files and pak load order explained',
     h1: 'What a VPK is and which one Dota loads',
     description:
-      'What VPK files are, why Dota 2 mods are named pak02_dir.vpk through pak99_dir.vpk, which mod wins when two carry the same file, and what gameinfo.gi has to do with any of it.',
+      'What VPK archives are, why Dota 2 mods are named pak02_dir.vpk through pak99, which mod wins when two carry the same file, and where gameinfo.gi fits.',
     lead: 'Everything Dota ships sits inside VPK archives. A mod is another one of those, slotted in ahead of the game\'s own. The number in its name decides who wins an argument.',
     card: 'Archives, pak numbers and the search paths. Why one mod covers another, and how the engine decides.',
     blocks: [
@@ -269,10 +269,10 @@ const en: Record<DocSlug, Doc> = {
 
   safe: {
     slug: 'safe',
-    title: 'Are Dota 2 mods safe? Bans, VAC and the Windows warning',
+    title: 'Are Dota 2 mods safe? Bans, VAC and Windows warnings',
     h1: 'Are Dota 2 mods safe?',
     description:
-      'What client-side Dota 2 mods do and do not touch, what Valve has and has not said about them, why Windows SmartScreen flags unsigned installers, and how to check a mod manager before running it.',
+      'What client-side Dota 2 mods do and do not touch, whether Valve has ruled on them, why SmartScreen flags unsigned installers, and how to check a tool.',
     lead: 'Two different questions get asked as one. Whether the mods can cost you your account, and whether the program you downloaded to install them can cost you your machine.',
     card: 'Bans, VAC, and why Windows calls the installer an unknown publisher. What you can verify instead of trust.',
     blocks: [
@@ -356,10 +356,10 @@ const en: Record<DocSlug, Doc> = {
 
   cosmetics: {
     slug: 'cosmetics',
-    title: 'Free Dota 2 cosmetics: what the item schema unlocks',
+    title: 'Free Dota 2 cosmetics and the item schema',
     h1: 'Free cosmetics, and what they really are',
     description:
-      'Dota 2 ships the files for every courier, ward, announcer and terrain. The item schema decides which ones your client shows you. What editing it locally does, and what it cannot do.',
+      'Dota 2 ships the files for every courier, ward and announcer. The item schema decides which ones your client shows, and a local edit has honest limits.',
     lead: 'Every cosmetic in Dota is already on your disk. Your client checks a list to decide which ones to show you. Edit your copy of the list and it shows you more.',
     card: 'Why the files are already there, what a local schema edit changes, and where the honest limits are.',
     blocks: [
@@ -436,10 +436,10 @@ const en: Record<DocSlug, Doc> = {
 
   troubleshooting: {
     slug: 'troubleshooting',
-    title: 'Dota 2 mods not working? Fixes after a patch',
+    title: 'Dota 2 mods not working: fixes after a patch',
     h1: 'Mods stopped working',
     description:
-      'Dota 2 mods gone after an update, one mod covering another, the game refusing to start, missing pak slots. What each symptom means and the fix for it.',
+      'Dota 2 mods gone after an update, one mod covering another, a game that will not start, a mod that changed nothing. Symptom by symptom, with the fix.',
     lead: 'Most of these have the same cause. A Dota patch rewrote a file your mods depend on, and nothing told you.',
     card: 'Mods gone after a patch, one covering another, a game that will not start. Symptom by symptom.',
     blocks: [
@@ -515,10 +515,10 @@ const en: Record<DocSlug, Doc> = {
 const ru: Record<DocSlug, Doc> = {
   install: {
     slug: 'install',
-    title: 'Как установить моды на Dota 2 в 2026 году (Windows)',
+    title: 'Как установить моды на Dota 2 в 2026 году',
     h1: 'Как установить моды на Dota 2',
     description:
-      'Рабочая установка модов Dota 2 в 2026: три клика через Dota 2 Mod Manager или руками через pakNN_dir.vpk. И почему параметр запуска -language mods перестал работать в июле 2026.',
+      'Рабочая установка модов Dota 2: три клика через приложение или руками через pakNN_dir.vpk. И почему -language mods перестал работать в июле 2026.',
     lead: 'Почти все гайды до сих пор учат параметру запуска, который Valve отключила в июле 2026. Ниже два способа по игре в её сегодняшнем виде: с программой и без.',
     card: 'Три клика через приложение или работа с файлами руками. Плюс параметр запуска, который больше ничего не делает.',
     blocks: [
@@ -628,10 +628,10 @@ const ru: Record<DocSlug, Doc> = {
 
   vpk: {
     slug: 'vpk',
-    title: 'VPK в Dota 2: номера pak, порядок загрузки, gameinfo.gi',
+    title: 'VPK в Dota 2: номера pak и порядок загрузки',
     h1: 'Что такое VPK и какой из них берёт Дота',
     description:
-      'Что такое файлы VPK, почему моды Dota 2 называются pak02_dir.vpk и до pak99_dir.vpk, какой мод побеждает при совпадении файлов и при чём тут gameinfo.gi.',
+      'Что такое файлы VPK, почему моды называются pak02_dir.vpk и до pak99, какой мод побеждает при совпадении файлов и при чём тут gameinfo.gi.',
     lead: 'Всё, что Дота с собой возит, лежит в архивах VPK. Мод - ещё один такой архив, поставленный перед игровыми. Номер в его имени решает, кто выиграет спор.',
     card: 'Архивы, номера pak и пути поиска. Почему один мод перекрывает другой и как движок это решает.',
     blocks: [
@@ -711,10 +711,10 @@ const ru: Record<DocSlug, Doc> = {
 
   safe: {
     slug: 'safe',
-    title: 'Безопасны ли моды Dota 2? Баны, VAC и ругань Windows',
+    title: 'Безопасны ли моды для Dota 2? Баны и VAC',
     h1: 'Безопасны ли моды для Dota 2?',
     description:
-      'Что клиентские моды Dota 2 трогают и чего не трогают, что Valve об этом говорила и о чём молчит, почему SmartScreen ругается на неподписанные установщики и как проверить менеджер модов до запуска.',
+      'Что клиентские моды Dota 2 трогают и чего не трогают, что об этом говорила Valve, почему ругается SmartScreen и как проверить менеджер до запуска.',
     lead: 'Под одним вопросом прячутся два. Могут ли моды стоить тебе аккаунта и может ли программа, которой ты их ставишь, стоить тебе компьютера.',
     card: 'Баны, VAC и почему Windows называет издателя неизвестным. Что можно проверить вместо того, чтобы верить.',
     blocks: [
@@ -798,10 +798,10 @@ const ru: Record<DocSlug, Doc> = {
 
   cosmetics: {
     slug: 'cosmetics',
-    title: 'Бесплатная косметика Dota 2: что открывает таблица предметов',
+    title: 'Бесплатная косметика Dota 2: таблица предметов',
     h1: 'Бесплатная косметика и что это такое на самом деле',
     description:
-      'Dota 2 везёт с собой файлы каждого курьера, варда, комментатора и ландшафта. Какие из них показать, решает таблица предметов. Что даёт её локальная правка и чего она не даёт.',
+      'Dota 2 везёт файлы каждого курьера, варда и комментатора. Какие показать, решает таблица предметов. Что даёт её правка и чего она не даёт.',
     lead: 'Вся косметика Доты уже лежит у тебя на диске. Клиент сверяется со списком, чтобы решить, что тебе показывать. Поправь свою копию списка - он покажет больше.',
     card: 'Почему файлы уже на диске, что меняет локальная правка схемы и где честные границы.',
     blocks: [
@@ -878,10 +878,10 @@ const ru: Record<DocSlug, Doc> = {
 
   troubleshooting: {
     slug: 'troubleshooting',
-    title: 'Моды Dota 2 не работают? Что делать после патча',
+    title: 'Моды Dota 2 не работают: что делать после патча',
     h1: 'Моды перестали работать',
     description:
-      'Моды Dota 2 пропали после обновления, один мод перекрывает другой, игра не запускается, кончились слоты pak. Что означает каждый симптом и как его лечить.',
+      'Моды Dota 2 пропали после обновления, один перекрывает другой, игра не запускается, мод встал но ничего не изменил. Что значит каждый симптом.',
     lead: 'У большинства из этого одна и та же причина. Патч Доты переписал файл, на котором держались твои моды, и никто тебе об этом не сказал.',
     card: 'Моды пропали после патча, один перекрывает другой, игра не стартует. По симптомам.',
     blocks: [
