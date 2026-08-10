@@ -25,6 +25,10 @@ const jsonLd = landingSchema('en');
   {/* Yandex wants its token in the head of the homepage and nowhere else, and it matters more
       than Google for the Russian half of the audience. */}
   <meta slot="head" name="yandex-verification" content="56ecac7cb1165363" />
+  {/* Bing, added by hand because importing from Search Console could not read a Domain-type
+      property. It is worth the trouble: everyone who runs this app is on Windows, where Edge
+      searches Bing until somebody changes it, and Bing is what the answer bots read. */}
+  <meta slot="head" name="msvalidate.01" content="56A816AD2504090870E4A16DCD3BDC18" />
   {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
   <Landing lang="en" />
 </Base>
