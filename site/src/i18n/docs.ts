@@ -127,7 +127,7 @@ const en: Record<DocSlug, Doc> = {
           ],
           [
             'Open the matching folder',
-            'Russian audio means <code>game\\dota_russian\\</code>, German means <code>game\\dota_german\\</code>, and so on through the languages Valve recorded voice for. The folder already holds <code>pak01_dir.vpk</code> and its numbered parts; leave those where they are, they are Valve\'s localized voice. <b>English audio has no folder at all</b>, which is its own case: see below.',
+            'There are only three of these folders, because Dota records voice in four languages and English is not one that gets a folder: <code>game\\dota_russian\\</code>, <code>game\\dota_koreana\\</code>, <code>game\\dota_schinese\\</code>. If the voice pack was downloaded the folder also holds <code>pak01_dir.vpk</code> and its numbered parts; leave those alone, they are Valve\'s speech. <b>English audio has no folder at all</b>, which is its own case: see below.',
           ],
           [
             'Rename the mod and drop it in',
@@ -147,23 +147,23 @@ const en: Record<DocSlug, Doc> = {
       { k: 'h2', t: 'English audio is its own case', id: 'english' },
       {
         k: 'p',
-        t: 'English speech lives inside <code>dota/pak01</code>, so Valve ships no <code>dota_english</code> folder: there would be nothing to put in it. Switch your audio to English and the mods you already installed stop loading, because the folder holding them is no longer the one being mounted.',
+        t: 'Dota records voice in four languages and ships a folder for three of them: <code>dota_russian</code>, <code>dota_koreana</code>, <code>dota_schinese</code>. English is the fourth and it has no folder, because English speech sits inside <code>dota/pak01</code> with the rest of the base game. Switch your audio to English and the mods you already installed stop loading, because the folder holding them is no longer mounted.',
       },
       {
         k: 'p',
-        t: 'The short fix is to put the audio language back to one Valve does ship a folder for. Change it in Dota\'s own settings, or start the game once with <code>-language russian</code> in your launch options and then take the argument out again. It writes the setting, and the setting stays.',
+        t: 'You cannot add the folder yourself either, and this is worth saying plainly because the internet suggests it. Valve\'s own <code>gameinfo.gi</code> mounts the language path only when the game is running a specific language, and English is not one of those. Create <code>game\\dota_english\\</code>, give it a correct <code>gameinfo.gi</code> copied from a real language folder, fill it with mods, and Dota still never looks inside. That has been tried.',
       },
       {
         k: 'p',
-        t: 'If it was the English speech you wanted rather than the Russian, you can have both. Keep the mods in that folder and rename Valve\'s <code>pak01_dir.vpk</code> inside it. The speech falls back to the English in <code>dota/pak01</code> and every mod stays mounted. Only the index has to move: the numbered volumes beside it are unreadable without it, so you rename a few hundred kilobytes and leave the gigabytes where they are. Rename it back to undo, or verify the game files in Steam.',
+        t: 'The fix is to set the audio language to Russian, Korean or Chinese, in Dota\'s own settings or by starting once with <code>-language russian</code> and then removing the argument. The folder mounts and the mods come back.',
+      },
+      {
+        k: 'note',
+        t: '<b>You keep English voices anyway</b>, as long as you never downloaded that language\'s voice pack. Steam decides what gets downloaded and Dota decides what gets mounted, and the two are separate settings. With no <code>pak01_*</code> inside, the folder has no speech to give, so the game falls back to the English in <code>dota/pak01</code> while your mods load from the same folder.',
       },
       {
         k: 'p',
-        t: 'There is a longer way, for anybody who would rather have a real <code>dota_english</code>. An empty folder will not do: each of Valve\'s language folders carries its own <code>gameinfo.gi</code> that layers it onto <code>dota</code>, and the engine never looks inside one without that file. Create <code>game\\dota_english\\</code> and save this in it as <code>gameinfo.gi</code>.',
-      },
-      {
-        k: 'code',
-        t: '"GameInfo"\n{\n\tLayeredOnMod\tdota\n\n\tFileSystem\n\t{\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t\tdota_english\n\t\t\tGame\t\t\tdota\n\t\t\tGame\t\t\tcore\n\n\t\t\tMod\t\t\t\tdota_english\n\t\t\tMod\t\t\t\tdota\n\n\t\t\tAddonRoot\t\tdota_addons\n\n\t\t\tPublicContent\tcore\n\t\t}\n\t}\n}',
+        t: 'If you did download that voice pack and want the English speech back, rename Valve\'s <code>pak01_dir.vpk</code> inside the folder. Only the index has to move: the numbered volumes beside it are unreadable without it, so you rename a few hundred kilobytes and leave the gigabytes where they are. Rename it back to undo, or verify the game files in Steam.',
       },
 
       { k: 'h2', t: 'Free cosmetics take one more step', id: 'schema' },
@@ -619,7 +619,7 @@ const ru: Record<DocSlug, Doc> = {
           ],
           [
             'Открой нужную папку',
-            'Русская озвучка означает <code>game\\dota_russian\\</code>, немецкая <code>game\\dota_german\\</code>, и так далее по языкам, для которых Valve записала озвучку. Там уже лежит <code>pak01_dir.vpk</code> и его нумерованные части, их не трогай: это валвовская локализованная речь. <b>У английской озвучки папки нет вообще</b>, и это отдельный случай, он ниже.',
+            'Таких папок всего три, потому что озвучку Дота пишет на четырёх языках, а английский папку не получает: <code>game\\dota_russian\\</code>, <code>game\\dota_koreana\\</code>, <code>game\\dota_schinese\\</code>. Если озвучка скачана, там же лежит <code>pak01_dir.vpk</code> с нумерованными частями, их не трогай: это валвовская речь. <b>У английской озвучки папки нет вообще</b>, и это отдельный случай, он ниже.',
           ],
           [
             'Переименуй мод и положи туда',
@@ -639,23 +639,23 @@ const ru: Record<DocSlug, Doc> = {
       { k: 'h2', t: 'Английская озвучка: отдельный случай', id: 'english' },
       {
         k: 'p',
-        t: 'Английская речь лежит внутри <code>dota/pak01</code>, поэтому папки <code>dota_english</code> Valve не поставляет: класть туда было бы нечего. Переключишь озвучку на английскую - и уже поставленные моды перестанут грузиться, потому что папка, в которой они лежат, больше не та, которую монтирует игра.',
+        t: 'Дота пишет озвучку на четырёх языках и поставляет папку для трёх из них: <code>dota_russian</code>, <code>dota_koreana</code>, <code>dota_schinese</code>. Английский четвёртый, и папки у него нет, потому что английская речь лежит внутри <code>dota/pak01</code> вместе с остальной базовой игрой. Переключишь озвучку на английскую - и уже поставленные моды перестанут грузиться, потому что их папка больше не монтируется.',
       },
       {
         k: 'p',
-        t: 'Короткое решение - вернуть язык озвучки на тот, для которого папка есть. Поменяй его в настройках самой Доты или запусти игру один раз с <code>-language russian</code> в параметрах запуска, а потом убери аргумент обратно. Он пишет настройку, и настройка остаётся.',
+        t: 'Создать папку самому тоже нельзя, и это стоит сказать прямо, потому что интернет советует именно так. Валвовский <code>gameinfo.gi</code> монтирует языковой путь только когда игра запущена с конкретным языком, а английский к таким не относится. Создай <code>game\\dota_english\\</code>, положи туда правильный <code>gameinfo.gi</code>, скопированный из настоящей языковой папки, набей модами - Дота всё равно внутрь не заглянет. Это проверено.',
       },
       {
         k: 'p',
-        t: 'Если тебе нужна была именно английская речь, а не русская, можно получить и то и другое. Оставь моды в этой папке, а валвовский <code>pak01_dir.vpk</code> внутри неё переименуй. Речь откатится на английскую из <code>dota/pak01</code>, а все моды останутся смонтированными. Двигать надо только индекс: нумерованные тома рядом без него не читаются, так что ты переименовываешь несколько сотен килобайт и не трогаешь гигабайты. Обратно - тем же переименованием или проверкой целостности файлов в Steam.',
+        t: 'Решение - поставить язык озвучки на русский, корейский или китайский, в настройках самой Доты или одним запуском с <code>-language russian</code>, после которого аргумент убирается. Папка монтируется, моды возвращаются.',
+      },
+      {
+        k: 'note',
+        t: '<b>Английские голоса при этом остаются</b>, если ты никогда не качал озвучку этого языка. Steam решает, что скачано, а Дота решает, что монтируется, и это две разные настройки. Если внутри папки нет <code>pak01_*</code>, речи в ней нет, и игра берёт английскую из <code>dota/pak01</code>, а моды грузятся из той же папки.',
       },
       {
         k: 'p',
-        t: 'Есть путь длиннее, для тех, кому нужна настоящая <code>dota_english</code>. Пустой папки мало: в каждой валвовской языковой папке лежит свой <code>gameinfo.gi</code>, который накладывает её на <code>dota</code>, и в папку без этого файла движок не заглядывает. Создай <code>game\\dota_english\\</code> и положи внутрь вот это под именем <code>gameinfo.gi</code>.',
-      },
-      {
-        k: 'code',
-        t: '"GameInfo"\n{\n\tLayeredOnMod\tdota\n\n\tFileSystem\n\t{\n\t\tSearchPaths\n\t\t{\n\t\t\tGame\t\t\tdota_english\n\t\t\tGame\t\t\tdota\n\t\t\tGame\t\t\tcore\n\n\t\t\tMod\t\t\t\tdota_english\n\t\t\tMod\t\t\t\tdota\n\n\t\t\tAddonRoot\t\tdota_addons\n\n\t\t\tPublicContent\tcore\n\t\t}\n\t}\n}',
+        t: 'Если озвучка всё-таки скачана, а английская речь нужна, переименуй валвовский <code>pak01_dir.vpk</code> внутри папки. Двигать надо только индекс: нумерованные тома рядом без него не читаются, так что ты переименовываешь несколько сотен килобайт и не трогаешь гигабайты. Обратно - тем же переименованием или проверкой целостности файлов в Steam.',
       },
 
       { k: 'h2', t: 'Бесплатной косметике нужен ещё один шаг', id: 'schema' },
