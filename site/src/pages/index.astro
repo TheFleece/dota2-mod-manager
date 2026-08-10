@@ -15,6 +15,13 @@ const jsonLd = landingSchema('en');
   description={description}
   path="/"
 >
+  {/* Ownership token for the OLD address, thefleece.github.io/dota2-mod-manager/, and not for
+      this one. That page cannot answer with a 301 on GitHub Pages, so it carries an instant
+      meta refresh instead, and Search Console's verifier treats that as a redirect and follows
+      it here. The token has to sit where the verifier lands. English homepage only: the refresh
+      points at the root, and a token repeated on fourteen pages is fourteen places to wonder
+      about later. */}
+  <meta slot="head" name="google-site-verification" content="4Lj6jQPFBoJFamznrXfyhg-TwaPUfZqb5Wkpx8rvlf8" />
   {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
   <Landing lang="en" />
 </Base>
