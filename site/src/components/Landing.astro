@@ -7,13 +7,15 @@
  * is also the phrase somebody types into a search box. The sentence explaining it comes
  * second, where a sentence belongs.
  *
- * The numbers under it are the ones people read before they read anything: they are real and
- * checkable (see src/i18n/landing.ts), which is the only kind worth printing.
+ * The numbers under it are the ones people read before they read anything, so the build counts
+ * them from the catalog and the releases API rather than trusting anybody's memory: see
+ * src/lib/stats.ts. A checkable number is the only kind worth printing.
  *
  * The order after that answers a stranger's questions in the order they ask them: what does
  * it look like, what does it do, why should I run an unsigned .exe, and the usual worries.
  */
 import { landing } from '../i18n/landing';
+import { siteStats } from '../lib/stats';
 import Shots from './Shots.astro';
 import Tour from './Tour.astro';
 import Stand from './Stand.astro';
@@ -43,6 +45,34 @@ try {
   if (r.ok) latestTag = (await r.json()).tag_name ?? null;
 } catch { /* offline build: no badge */ }
 
+const stats = await siteStats();
+const nf = new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'en-US');
+// Intl decides which plural form a number takes, so "1 мод", "22 мода" and "1090 модов" all
+// come out right without anybody writing the rule down.
+const plural = new Intl.PluralRules(lang === 'ru' ? 'ru-RU' : 'en-US');
+const word = (n: number, forms: readonly [string, string, string]) => {
+  const form = plural.select(n);
+  return form === 'one' ? forms[0] : form === 'few' ? forms[1] : forms[2];
+};
+
+const heroLead = c.heroLead
+  .replace('{mods}', nf.format(stats.mods))
+  .replace('{word}', word(stats.mods, c.statWords[0]));
+
+const tiles = [
+  { n: stats.mods, forms: c.statWords[0], label: c.statLabels[0] },
+  { n: stats.downloads, forms: c.statWords[1], label: c.statLabels[1] },
+  { n: stats.releases, forms: c.statWords[2], label: c.statLabels[2] },
+].map((t) => ({ value: nf.format(t.n), to: t.n, label: t.label.replace('{word}', word(t.n, t.forms)) }));
+// The last tile is not a count of anything, so it has no number to climb to.
+const statTiles = [...tiles, { value: '100%', to: 0, label: c.statLabels[3] }];
+
+// Sorted by what is actually in the catalog, so the band stays in order as it grows.
+const marquee = c.marquee
+  .map(([id, label]) => [label, stats.byCategory[id] ?? 0] as const)
+  .filter(([, n]) => n > 0)
+  .sort((a, b) => b[1] - a[1]);
+
 // the app is bilingual, so the window in the picture speaks the reader's language
 const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
 
@@ -68,7 +98,7 @@ const shots = [
       <span class="t1">{c.heroTitle}</span>
       <span class="t2">{c.heroTitleAccent}</span>
     </h1>
-    <p class="lead">{c.heroLead}</p>
+    <p class="lead">{heroLead}</p>
 
     <div class="btn-row">
       <a class="btn btn-glow" href={RELEASES} rel="noopener">
@@ -91,15 +121,14 @@ const shots = [
         of its opacity until somebody scrolled, which looks like a page that failed to load
         rather than like an entrance. Above the fold, things are simply there. */}
     <ul class="stats lit-group">
-      {c.stats.map(([n, label]) => {
+      {statTiles.map(({ value, to, label }) => {
         // A number worth counting up to is one that is large enough for the climb to mean
-        // something. "27 releases" counting from zero is a parody of the effect, so only the
+        // something. "29 releases" counting from zero is a parody of the effect, so only the
         // four-figure ones get it; the rest are simply printed.
-        const to = Number(n.replace(/\D/g, ''));
         const climbs = to >= 1000;
         return (
           <li class="lit">
-            <b data-to={climbs ? to : undefined} data-final={climbs ? n : undefined}>{n}</b>
+            <b data-to={climbs ? to : undefined} data-final={climbs ? value : undefined}>{value}</b>
             <span>{label}</span>
           </li>
         );
@@ -182,8 +211,8 @@ const shots = [
   <div class="marquee-track">
     {[0, 1].map(() => (
       <div class="marquee-run">
-        {c.marquee.map(([name, n]) => (
-          <span class="marquee-item"><b>{n}</b>{name}</span>
+        {marquee.map(([name, n]) => (
+          <span class="marquee-item"><b>{nf.format(n)}</b>{name}</span>
         ))}
       </div>
     ))}

@@ -7,19 +7,27 @@
  * untrue - the old footer promised a code-signing certificate from an application that has
  * since been turned down.
  *
- * The numbers are real and checkable: 27 releases and 17,515 installer downloads, read off
- * the GitHub releases API on 2026-08-07. Stars and forks are deliberately absent - there are
- * eight of them, and a number that small argues against the thing it is meant to support.
+ * No numbers live here any more. They were typed in on 2026-08-07 and had all drifted three
+ * days later, so the build counts them instead: see src/lib/stats.ts. What stays here is the
+ * words around them, including the plural forms, because Russian needs the noun to agree with
+ * a number nobody knows in advance.
+ *
+ * Stars and forks are deliberately absent - there are ten of them, and a number that small
+ * argues against the thing it is meant to support.
  */
 export interface Landing {
   heroKicker: string;
   heroTitle: string;
   heroTitleAccent: string;
+  /** Carries {mods} and {word}: the count and the noun that has to agree with it. */
   heroLead: string;
   download: string;
   source: string;
   heroMeta: string;
-  stats: Array<[string, string]>;
+  /** Under each number. {word} is filled from statWords so the noun matches the count. */
+  statLabels: [string, string, string, string];
+  /** Singular / few / many, for the first three tiles. English repeats itself, Russian does not. */
+  statWords: [[string, string, string], [string, string, string], [string, string, string]];
   latest: string;
 
   filmTitle: string;
@@ -63,7 +71,8 @@ export interface Landing {
   ctaTitle: string;
   ctaLead: string;
   ctaMeta: string;
-  /** The scrolling band above the finale: what is in the catalog, with real counts. */
+  /** The scrolling band above the finale: [catalog category id, what to call it]. The counts
+      come from the catalog itself, so this list only has to say which ones to show. */
   marquee: Array<[string, string]>;
   linkGithub: [string, string];
   linkDiscord: [string, string];
@@ -74,15 +83,15 @@ export const landing: Record<'en' | 'ru', Landing> = {
     heroKicker: 'Free · open source · Windows',
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
-    heroLead: '1100+ mods in one place. One click to install, one to take back. Plus the cosmetics your account already owns and setups you can send as a link.',
+    heroLead: '{mods} {word} in one place. One click to install, one to take back. Plus the cosmetics your account already owns and setups you can send as a link.',
     download: 'Download for Windows',
     source: 'Source code',
     heroMeta: 'Windows 10/11 · no account · updates itself',
-    stats: [
-      ['1150', 'mods in the catalog'],
-      ['17,515', 'downloads'],
-      ['27', 'releases'],
-      ['100%', 'free'],
+    statLabels: ['{word} in the catalog', '{word}', '{word}', 'free'],
+    statWords: [
+      ['mod', 'mods', 'mods'],
+      ['download', 'downloads', 'downloads'],
+      ['release', 'releases', 'releases'],
     ],
     latest: 'latest',
 
@@ -144,10 +153,12 @@ export const landing: Record<'en' | 'ru', Landing> = {
     ctaLead: 'Windows 10 or 11. No account. It updates itself from here on.',
     ctaMeta: 'Free forever. GPL-3.0. Built in the open.',
     marquee: [
-      ['Heroes', '463'], ['Backgrounds', '62'], ['Mega-kills', '35'], ['Cursors', '34'],
-      ['Shaders', '32'], ['Couriers', '25'], ['Hero sounds', '24'], ['Terrains', '20'],
-      ['River', '20'], ['Trees', '18'], ['Emblems', '16'], ['Music', '15'],
-      ['Roshan', '10'], ['Fonts', '10'], ['Sounds', '9'], ['Announcers', '7'],
+      ['heroes', 'Heroes'], ['hero-items', 'Hero items'], ['backgrounds', 'Backgrounds'],
+      ['mega-kill', 'Mega-kills'], ['cursors', 'Cursors'], ['shaders', 'Shaders'],
+      ['hero-sounds', 'Hero sounds'], ['couriers', 'Couriers'], ['item-effects', 'Item effects'],
+      ['terrains', 'Terrains'], ['river', 'River'], ['trees', 'Trees'],
+      ['emblems', 'Emblems'], ['music', 'Music'], ['sounds', 'Sounds'],
+      ['roshan', 'Roshan'], ['fonts', 'Fonts'], ['announcers', 'Announcers'],
     ],
     linkGithub: ['Read the source', 'Every line, every release, every build log.'],
     linkDiscord: ['Come to Discord', 'Ask, report a bug, show the setup you made.'],
@@ -157,15 +168,15 @@ export const landing: Record<'en' | 'ru', Landing> = {
     heroKicker: 'Бесплатно · открытый код · Windows',
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
-    heroLead: '1100+ модов в одном месте. Один клик поставить, один - убрать. Плюс косметика, которая у тебя и так есть, и сборки, которые отправляются ссылкой.',
+    heroLead: '{mods} {word} в одном месте. Один клик поставить, один - убрать. Плюс косметика, которая у тебя и так есть, и сборки, которые отправляются ссылкой.',
     download: 'Скачать для Windows',
     source: 'Исходный код',
     heroMeta: 'Windows 10/11 · без аккаунта · обновляется само',
-    stats: [
-      ['1150', 'модов в каталоге'],
-      ['17 515', 'скачиваний'],
-      ['27', 'релизов'],
-      ['100%', 'бесплатно'],
+    statLabels: ['{word} в каталоге', '{word}', '{word}', 'бесплатно'],
+    statWords: [
+      ['мод', 'мода', 'модов'],
+      ['скачивание', 'скачивания', 'скачиваний'],
+      ['релиз', 'релиза', 'релизов'],
     ],
     latest: 'последняя',
 
@@ -227,10 +238,12 @@ export const landing: Record<'en' | 'ru', Landing> = {
     ctaLead: 'Windows 10 или 11. Без аккаунта. Дальше обновляется само.',
     ctaMeta: 'Бесплатно навсегда. GPL-3.0. Собирается на виду.',
     marquee: [
-      ['Герои', '463'], ['Фоны меню', '62'], ['Мега-киллы', '35'], ['Курсоры', '34'],
-      ['Шейдеры', '32'], ['Курьеры', '25'], ['Звуки героев', '24'], ['Ландшафты', '20'],
-      ['Река', '20'], ['Деревья', '18'], ['Эмблемы', '16'], ['Музыка', '15'],
-      ['Рошан', '10'], ['Шрифты', '10'], ['Звуки', '9'], ['Комментаторы', '7'],
+      ['heroes', 'Герои'], ['hero-items', 'Предметы героев'], ['backgrounds', 'Фоны меню'],
+      ['mega-kill', 'Мега-киллы'], ['cursors', 'Курсоры'], ['shaders', 'Шейдеры'],
+      ['hero-sounds', 'Звуки героев'], ['couriers', 'Курьеры'], ['item-effects', 'Эффекты предметов'],
+      ['terrains', 'Ландшафты'], ['river', 'Река'], ['trees', 'Деревья'],
+      ['emblems', 'Эмблемы'], ['music', 'Музыка'], ['sounds', 'Звуки'],
+      ['roshan', 'Рошан'], ['fonts', 'Шрифты'], ['announcers', 'Комментаторы'],
     ],
     linkGithub: ['Читать исходники', 'Каждая строчка, каждый релиз, каждый лог сборки.'],
     linkDiscord: ['Зайти в Discord', 'Спросить, сообщить о баге, показать свою сборку.'],
