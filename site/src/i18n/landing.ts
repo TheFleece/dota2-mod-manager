@@ -133,11 +133,11 @@ export const landing: Record<'en' | 'ru', Landing> = {
     faqTitle: 'Questions',
     faq: [
       ['Is this a cheat?', 'No. The mods change how things look on your screen only. Nobody else in the match sees them.'],
-      ['Will I get banned?', 'Nobody can promise anything here: these are client-side mods, and you run them at your own risk, same as any other Dota mod. The app never touches your account, and there is no login unless you want your name on a shared setup.'],
-      ['My antivirus said something.', 'It happens to unsigned installers with no reputation yet. Microsoft reviewed one such report about this app in August 2026 and removed the detection. If yours complains, the file you downloaded is built in the open by GitHub Actions and you can check the workflow that made it.'],
-      ['How do I remove a mod?', 'Delete it in My mods and the game goes back to how it was. Fonts and cursors are restored from the backup the app made before installing.'],
+      ['Will I get banned?', 'Nobody can promise anything here: these are client-side mods, and you run them at your own risk, same as any other Dota mod. The app never touches your account, and there is no login unless you want your name on a shared setup. <a href="~/docs/safe/#ban">The longer answer</a>.'],
+      ['My antivirus said something.', 'It happens to unsigned installers with no reputation yet. Microsoft reviewed one such report about this app in August 2026 and removed the detection. If yours complains, the file you downloaded is built in the open by GitHub Actions and you can check the workflow that made it. <a href="~/docs/safe/#smartscreen">Why Windows warns you</a>.'],
+      ['How do I remove a mod?', 'Delete it in My mods and the game goes back to how it was. Fonts and cursors are restored from the backup the app made before installing. <a href="~/docs/install/#remove">Doing it by hand</a>.'],
       ['Where do the mods come from?', 'The Dota2PornFx catalog. The app reads it directly, so new mods appear without an app update.'],
-      ['Does it work after a Dota update?', 'Yes. After a game patch the app puts back what the update wiped, and warns you when something needs attention.'],
+      ['Does it work after a Dota update?', 'Yes. After a game patch the app puts back what the update wiped, and warns you when something needs attention. <a href="~/docs/troubleshooting/">What to do when something breaks</a>.'],
     ],
 
     ctaTitle: 'Get it',
@@ -216,11 +216,11 @@ export const landing: Record<'en' | 'ru', Landing> = {
     faqTitle: 'Вопросы',
     faq: [
       ['Это чит?', 'Нет. Моды меняют только картинку у тебя на экране. Соперники и союзники ничего этого не видят.'],
-      ['Забанят?', 'Гарантий тут не даёт никто: это клиентские моды, ставишь на свой страх и риск, как и любые другие моды для доты. Приложение не трогает твой аккаунт, вход нужен только если хочешь подписать свою сборку ником.'],
-      ['Антивирус что-то сказал.', 'Так бывает с неподписанными установщиками без репутации. Microsoft разобрала одно такое обращение по этой программе в августе 2026 и сняла детект. Если ругается твой - файл собран на виду в GitHub Actions, и workflow, который его собрал, можно открыть и прочитать.'],
-      ['Как убрать мод?', 'Кнопка «Удалить» в «Моих модах» возвращает игру к исходному виду. Шрифты и курсоры восстанавливаются из копии, которую приложение сделало до установки.'],
+      ['Забанят?', 'Гарантий тут не даёт никто: это клиентские моды, ставишь на свой страх и риск, как и любые другие моды для доты. Приложение не трогает твой аккаунт, вход нужен только если хочешь подписать свою сборку ником. <a href="~/docs/safe/#ban">Развёрнутый ответ</a>.'],
+      ['Антивирус что-то сказал.', 'Так бывает с неподписанными установщиками без репутации. Microsoft разобрала одно такое обращение по этой программе в августе 2026 и сняла детект. Если ругается твой - файл собран на виду в GitHub Actions, и workflow, который его собрал, можно открыть и прочитать. <a href="~/docs/safe/#smartscreen">Почему ругается Windows</a>.'],
+      ['Как убрать мод?', 'Кнопка «Удалить» в «Моих модах» возвращает игру к исходному виду. Шрифты и курсоры восстанавливаются из копии, которую приложение сделало до установки. <a href="~/docs/install/#remove">Как это делается руками</a>.'],
       ['Откуда моды?', 'Каталог Dota2PornFx. Приложение читает его напрямую, поэтому новые моды появляются без обновления программы.'],
-      ['А после патча доты работает?', 'Да. После обновления игры приложение возвращает на место то, что патч стёр, и предупреждает, если что-то требует внимания.'],
+      ['А после патча доты работает?', 'Да. После обновления игры приложение возвращает на место то, что патч стёр, и предупреждает, если что-то требует внимания. <a href="~/docs/troubleshooting/">Что делать, если что-то сломалось</a>.'],
     ],
 
     ctaTitle: 'Забрать',

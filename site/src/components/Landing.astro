@@ -24,6 +24,10 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 const c = landing[lang];
 
+/** Copy links are written as "~/docs/safe/" and get their language prefix here, the same
+    way the guides do, so one string serves both halves of the site. */
+const link = (html: string) => html.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
+
 const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
 const RELEASES = `${GITHUB}/releases/latest`;
 const WORKFLOW = `${GITHUB}/actions`;
@@ -168,7 +172,7 @@ const shots = [
     {c.faq.map(([q, a]) => (
       <details class="faq reveal">
         <summary>{q}</summary>
-        <p>{a}</p>
+        <p set:html={link(a)} />
       </details>
     ))}
   </div>

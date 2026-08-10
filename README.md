@@ -85,6 +85,12 @@ The app follows the same installation mechanics as the Dota2PornFx guides:
 Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in
 `manifest.json` next to it.
 
+The same mechanics written for people rather than for a README:
+[installing mods](https://dota2modmanager.com/docs/install/),
+[what a VPK is and how the pak number decides which mod wins](https://dota2modmanager.com/docs/vpk/),
+[what the item schema unlocks](https://dota2modmanager.com/docs/cosmetics/),
+[whether any of it is safe](https://dota2modmanager.com/docs/safe/).
+
 ## Установка (Russian)
 
 1. Скачай **[Dota 2 Mod Manager Setup](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe)** (прямая ссылка, всегда последняя версия)
@@ -101,6 +107,11 @@ Windows скажет, что издатель неизвестен: устано
 монтирует только папку языка озвучки. Английские голоса включаются тумблером в Настройках, и
 моды при этом остаются на месте. Параметр `-language` после июльского апдейта Dota 2026 ни на
 что не влияет, его можно убрать из свойств Steam.
+
+Подробнее и по-человечески: [установка модов](https://dota2modmanager.com/ru/docs/install/),
+[что такое VPK и почему побеждает меньший номер pak](https://dota2modmanager.com/ru/docs/vpk/),
+[что открывает таблица предметов](https://dota2modmanager.com/ru/docs/cosmetics/),
+[безопасно ли это](https://dota2modmanager.com/ru/docs/safe/).
 
 ## Development
 
