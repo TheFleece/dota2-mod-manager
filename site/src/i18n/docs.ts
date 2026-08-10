@@ -308,6 +308,33 @@ const en: Record<DocSlug, Doc> = {
         t: 'That also fixes the ceiling. No mod gives you vision, changes cooldowns or shows anything the client was not already sent. A tool that claims otherwise is doing something else and lying about the category.',
       },
 
+      { k: 'h2', t: 'Two mechanisms, and only one of them is contested', id: 'methods' },
+      {
+        k: 'p',
+        t: 'Two different things get called a mod, and the difference matters more than anything else on this page.',
+      },
+      {
+        k: 'cards',
+        items: [
+          [
+            'A VPK override',
+            'The engine\'s own layering, the same one that loads localized voice. You put an archive in a folder Dota already mounts and it reads yours first. Nothing is bypassed and no Valve file changes. Skins, terrains, announcers, music, cursors.',
+          ],
+          [
+            'An item schema edit',
+            'Showing a cosmetic your account does not own needs <code>scripts/items/items_game.txt</code>, which a language folder cannot reach. Getting a file there means registering a second content folder in <code>gameinfo_branchspecific.gi</code> and writing the patched file\'s hash into <code>dota.signatures</code>, the list the client checks at startup.',
+          ],
+        ],
+      },
+      {
+        k: 'p',
+        t: 'People who have worked on Dota modding for years draw a hard line between the two and call the second one unsafe, on the grounds that it touches a check the client performs on itself. That is a fair description of what it does, and you should know it before you switch anything on.',
+      },
+      {
+        k: 'p',
+        t: 'Where this app sits: skins never need the second mechanism, and the app installs them without it. The schema patch runs only for free cosmetics, it copies both Valve files before its first write and puts them back byte for byte when you undo it, and the code that does it is <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">one file of four hundred lines</a> that you can read end to end, rather than something you have to take on faith. Whether that is enough is your call to make, and the rest of the app works with it switched off.',
+      },
+
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
       {
         k: 'p',
@@ -771,6 +798,33 @@ const ru: Record<DocSlug, Doc> = {
       {
         k: 'p',
         t: 'Отсюда же и потолок. Ни один мод не даст обзора, не поменяет кулдауны и не покажет того, чего клиенту и так не прислали. Инструмент, который обещает обратное, занимается чем-то другим и врёт о категории.',
+      },
+
+      { k: 'h2', t: 'Механизма два, и спорный из них один', id: 'methods' },
+      {
+        k: 'p',
+        t: 'Модом называют две разные вещи, и разница между ними важнее всего остального на этой странице.',
+      },
+      {
+        k: 'cards',
+        items: [
+          [
+            'Переопределение через VPK',
+            'Родное наслоение движка, то же самое, которым грузится локализованная озвучка. Ты кладёшь архив в папку, которую Дота и так монтирует, и она читает твой файл первым. Ничего не обходится, ни один валвовский файл не меняется. Скины, ландшафты, комментаторы, музыка, курсоры.',
+          ],
+          [
+            'Правка таблицы предметов',
+            'Показать косметику, которой у аккаунта нет, можно только через <code>scripts/items/items_game.txt</code>, а до него из языковой папки не дотянуться. Чтобы файл туда попал, надо зарегистрировать вторую папку контента в <code>gameinfo_branchspecific.gi</code> и вписать хеш изменённого файла в <code>dota.signatures</code>, список, который клиент проверяет при запуске.',
+          ],
+        ],
+      },
+      {
+        k: 'p',
+        t: 'Люди, которые занимаются моддингом Доты годами, проводят между этими двумя вещами жёсткую границу и называют вторую небезопасной на том основании, что она трогает проверку, которую клиент делает сам над собой. Это честное описание происходящего, и знать его стоит до того, как что-то включать.',
+      },
+      {
+        k: 'p',
+        t: 'Где в этой картине приложение: скинам второй механизм не нужен вообще, и оно ставит их без него. Патч схемы работает только ради бесплатной косметики, оба валвовских файла копируются до первой записи и возвращаются побайтово при откате, а код, который это делает, - <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">один файл на четыреста строк</a>, который читается целиком, а не то, что приходится принимать на веру. Достаточно этого или нет, решаешь ты, и всё остальное работает с выключенным патчем.',
       },
 
       { k: 'h2', t: 'Забанят ли', id: 'ban' },
