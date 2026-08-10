@@ -56,7 +56,7 @@ function packThumbGridHtml(rec) {
   if (!members.some((m) => recPreviewUrl(m))) return fallbackThumbHtml('generic:pack', 'auto_awesome', 'lib-thumb');
   const cells = members.slice(0, 4).map((m) => {
     const p = recPreviewUrl(m);
-    if (!p) return `<div class="pack-thumb-cell"><span class="ms">${catIcon(m.categoryId)}</span></div>`;
+    if (!p) return `<div class="pack-thumb-cell"><span class="ms">${esc(catIcon(m.categoryId))}</span></div>`;
     return isVideo(p)
       ? `<video src="${esc(p)}" muted playsinline preload="metadata"></video>`
       : `<img src="${esc(p)}" loading="lazy" alt="">`;
