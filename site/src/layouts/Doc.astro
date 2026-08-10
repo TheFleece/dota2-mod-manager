@@ -15,6 +15,7 @@
 import Base from './Base.astro';
 import { pathIn, type Lang } from '../i18n/ui';
 import { docs, docsIndex, docSlugs, type Doc, type DocSlug } from '../i18n/docs';
+import { plainText } from '../lib/text';
 
 interface Props {
   lang: Lang;
@@ -33,7 +34,6 @@ const abs = (p: string) => new URL(pathIn(lang, p), site).href;
 
 /** "~/docs/vpk/" -> "/docs/vpk/" in English, "/ru/docs/vpk/" in Russian. */
 const link = (html: string) => html.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
-const plain = (html: string) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 
 const steps = doc.blocks.filter((b) => b.k === 'steps');
 const faqs = doc.blocks.filter((b) => b.k === 'faq');
@@ -69,8 +69,8 @@ if (faqs.length) {
     mainEntity: faqs.flatMap((b) =>
       b.items.map(([q, a]) => ({
         '@type': 'Question',
-        name: plain(q),
-        acceptedAnswer: { '@type': 'Answer', text: plain(a) },
+        name: plainText(q),
+        acceptedAnswer: { '@type': 'Answer', text: plainText(a) },
       })),
     ),
   });
@@ -86,8 +86,8 @@ if (steps.length) {
     step: steps[0].items.map(([name, text], i) => ({
       '@type': 'HowToStep',
       position: i + 1,
-      name: plain(name),
-      text: plain(text),
+      name: plainText(name),
+      text: plainText(text),
     })),
   });
 }

@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { landing } from '../i18n/landing';
+import { plainText } from './text';
 
 /** The app's version, read from the repository at build time so it cannot go stale. */
 function appVersion(): string {
@@ -19,8 +20,6 @@ function appVersion(): string {
   const pkg = path.resolve(here, '..', '..', '..', 'package.json');
   return JSON.parse(fs.readFileSync(pkg, 'utf-8')).version;
 }
-
-const strip = (html: string) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 
 export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager.com') {
   const url = lang === 'en' ? `${origin}/` : `${origin}/${lang}/`;
@@ -66,8 +65,8 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     '@type': 'FAQPage',
     mainEntity: t.faq.map(([q, a]) => ({
       '@type': 'Question',
-      name: strip(q),
-      acceptedAnswer: { '@type': 'Answer', text: strip(a) },
+      name: plainText(q),
+      acceptedAnswer: { '@type': 'Answer', text: plainText(a) },
     })),
   };
 
