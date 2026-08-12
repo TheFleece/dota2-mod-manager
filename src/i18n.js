@@ -73,6 +73,7 @@ const EN = {
   'Порт {0} занят — закрой другой вход и попробуй снова': 'Port {0} is busy — close the other sign-in and try again',
   'Discord не отдал профиль (HTTP {0})': 'Discord did not return the profile (HTTP {0})',
   'exe не найден в папке инструмента': 'No .exe found in the tool folder',
+  'Инструмент не найден': 'Tool not found',
   'Сохранить отчёт для поддержки': 'Save the support report',
   'Отчёт диагностики': 'Diagnostics report',
 

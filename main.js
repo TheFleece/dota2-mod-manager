@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, shell, dialog, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { pathToFileURL } = require('url');
 const { execFile } = require('child_process');
 const AdmZip = require('adm-zip');
 
@@ -82,7 +83,36 @@ function createWindow() {
       backgroundThrottling: false,
     },
   });
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  const appPage = path.join(__dirname, 'renderer', 'index.html');
+  win.loadFile(appPage);
+
+  /* The window shows one page and never another.
+   *
+   * A preload script is attached to the webContents, not to the document, so a page the
+   * window navigates to inherits window.api - the whole IPC surface, install and runTool
+   * included. Nothing in the app navigates anywhere, but the catalog's own HTML lands in
+   * the interface (guides), and one <meta http-equiv="refresh"> in it would be enough to
+   * hand that surface to whoever wrote the markup. CSP does not cover navigation, so this
+   * does: the app's own file is the only thing this window is allowed to load, and a link
+   * that wants a browser gets the browser.
+   */
+  const appUrl = pathToFileURL(appPage).href;
+  const leavesForBrowser = (url) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url).catch(() => {});
+  };
+  win.webContents.on('will-navigate', (event, url) => {
+    if (url === appUrl) return; // a reload of the page itself
+    event.preventDefault();
+    diag(`blocked navigation to ${String(url).slice(0, 200)}`);
+    leavesForBrowser(url);
+  });
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    diag(`blocked window.open to ${String(url).slice(0, 200)}`);
+    leavesForBrowser(url);
+    return { action: 'deny' };
+  });
+  // A webview or a nested frame would be a second way in with the same preload on it.
+  win.webContents.on('will-attach-webview', (event) => event.preventDefault());
 
   win.on('maximize', () => win.webContents.send('win:maximized', true));
   win.on('unmaximize', () => win.webContents.send('win:maximized', false));
@@ -2423,7 +2453,15 @@ function registerIpc() {
   ipcMain.handle('misc:runTool', (e, toolDirName) => {
     // find first exe inside the tool folder and launch it
     try {
-      const dir = path.join(installer.toolsDir, toolDirName);
+      // The name has to be one of the tool folders this app installed and nothing else:
+      // joined unchecked, "../../.." pointed this at any folder on the disk, and what it
+      // does with a folder is run the first .exe in it.
+      const name = String(toolDirName || '');
+      const known = library.list().some((rec) => (rec.files || [])
+        .some((f) => f.root === 'tools' && f.relPath === name));
+      if (!known) return { error: t('Инструмент не найден') };
+      const dir = path.join(installer.toolsDir, name);
+      if (path.dirname(dir) !== path.resolve(installer.toolsDir)) return { error: t('Инструмент не найден') };
       const findExe = (d) => {
         for (const f of fs.readdirSync(d)) {
           const full = path.join(d, f);

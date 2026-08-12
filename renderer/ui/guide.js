@@ -8,7 +8,8 @@
  * The markup inside is the catalog's own HTML, written for the author's site: <fcode> is his
  * filename style and <span id="tg"> his highlight. Neither means anything here, and that id
  * would repeat a dozen times in one window, so both are turned into our own classes on the
- * way in. The rest of the HTML is trusted the same way the old screen trusted it.
+ * way in. The rest goes through a whitelist (see fromCatalogHtml): it is somebody else's
+ * markup arriving over the network, and it is the one thing in this app that does.
  */
 import { state } from '../core/store.js';
 import { GUIDE_ALSO } from '../core/constants.js';
@@ -33,10 +34,56 @@ function blocksOf(guide) {
   return (window.I18N_LANG === 'en' ? (c.en || c.ru) : (c.ru || c.en)) || [];
 }
 
+/* What a guide is allowed to be made of.
+ *
+ * Everything below arrives from the catalog repository, over mirrors, and lands in
+ * innerHTML: it is third-party markup by definition. The four tags the catalog actually
+ * uses are code, a, span and fcode (counted over the whole guides.json), and the rest of
+ * this list is the ordinary text markup a future guide might reach for. Anything else
+ * loses its tag and keeps its words, so a guide that grows a table still reads - and a
+ * guide that grows a <meta refresh>, an <iframe> or a style attribute does nothing at all.
+ */
+const GUIDE_TAGS = {
+  a: ['href'], code: [], span: ['class'], b: [], strong: [], i: [], em: [],
+  br: [], p: [], ul: [], ol: [], li: [],
+};
+
+const ELEMENT_NODE = 1;
+const COMMENT_NODE = 8;
+
+function sanitizeGuideHtml(html) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html; // inert: a template's content loads nothing and runs nothing
+  const walk = (node) => {
+    for (const child of [...node.childNodes]) {
+      if (child.nodeType === COMMENT_NODE) { child.remove(); continue; }
+      if (child.nodeType !== ELEMENT_NODE) continue; // text is text
+      walk(child); // clean the inside before deciding what happens to the outside
+      const allowed = GUIDE_TAGS[child.tagName.toLowerCase()];
+      if (!allowed) { child.replaceWith(...child.childNodes); continue; }
+      for (const attr of [...child.attributes]) {
+        if (!allowed.includes(attr.name.toLowerCase())) child.removeAttribute(attr.name);
+      }
+      // a link the user can be sent to is an http(s) link and nothing else, and the only
+      // class a guide may wear is the highlight its own <span id="tg"> was turned into
+      if (child.tagName === 'A' && !/^https?:\/\//i.test(child.getAttribute('href') || '')) {
+        child.removeAttribute('href');
+      }
+      if (child.tagName === 'SPAN' && child.getAttribute('class') !== 'g-hl') {
+        child.removeAttribute('class');
+      }
+    }
+  };
+  walk(tpl.content);
+  return tpl.innerHTML;
+}
+
+// The catalog's own dialect first (<fcode> is the author's filename style and <span id="tg">
+// his highlight, neither means anything here), then the whitelist above.
 function fromCatalogHtml(html) {
-  return String(html)
+  return sanitizeGuideHtml(String(html)
     .replace(/<(\/?)fcode>/gi, '<$1code>')
-    .replace(/<span\s+id=(["'])tg\1\s*>/gi, '<span class="g-hl">');
+    .replace(/<span\s+id=(["'])tg\1\s*>/gi, '<span class="g-hl">'));
 }
 
 function noteHtml(icon, html, cls = '') {
