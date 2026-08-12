@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { fetchText } = require('./net');
+const signature = require('./catalog-signature');
 
 const RAW_BASE = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main';
 const DATA_FILES = ['mods.json', 'constants.json', 'guides.json'];
@@ -67,7 +68,17 @@ class Catalog {
     for (const name of DATA_FILES) {
       // through the mirrors: this is the one fetch that has to work before the app can show
       // anything at all, and raw.githubusercontent is not reachable everywhere
-      const text = await fetchText(`${RAW_BASE}/assets/data/${name}`);
+      const url = `${RAW_BASE}/assets/data/${name}`;
+      const text = await fetchText(url);
+      // A mirror can rewrite anything it carries. Once the catalog's author publishes a
+      // signature next to each file, that is what decides whether these bytes are his -
+      // and a file that fails leaves the last good cache in place (see load()).
+      if (signature.configured()) {
+        const sig = await fetchText(`${url}${signature.SIG_SUFFIX}`);
+        if (!signature.verify(text, sig)) {
+          throw new Error(`${name}: signature does not match the catalog's key`);
+        }
+      }
       JSON.parse(text); // validate before persisting
       fs.writeFileSync(this.cachePath(name), text);
     }
