@@ -21,8 +21,8 @@
   "license": "GPL-3.0",
   "homepage": "https://github.com/TheFleece/dota2-mod-manager",
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3"
   },
   "dependencies": {
     "adm-zip": "^0.6.0",
