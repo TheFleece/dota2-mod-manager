@@ -2,6 +2,50 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.2.0
+
+Mostly work you will not see. Update anyway.
+
+### The app trusts the catalog less than it used to
+
+Mods, previews and guides come from a repository this app does not own, and when GitHub is
+blocked they arrive through public proxies instead. That path used to be treated as friendly.
+It is not, and this release stops treating it that way.
+
+Guide text now passes through a fixed list of allowed tags, so a guide carries words and links
+and nothing else. The window refuses to navigate away from its own page. A file name that
+arrives with a catalog entry is used as a name and can no longer become a path. The one program
+the app downloads and runs, the Source 2 reader, may now only come from that project's own
+releases, and the file pinning its version is fetched from GitHub with no proxy in between.
+
+The interface looks the same. Everything above is in the commit history if you want the detail.
+
+### A current browser engine underneath
+
+The app draws its window with the same engine a browser uses, and this one had been left ten
+major versions behind, which means two years of published fixes it never received. It now runs
+Electron 43, and the installer that ships it was rebuilt from scratch to check nothing broke on
+the way.
+
+### Mods follow the speech your game is set to
+
+Dota mounts the folder named after your audio language, and the app used to answer that by
+writing "russian" into your game for everyone. Korean speech now puts mods in `dota_koreana`,
+Chinese in `dota_schinese`, Russian where it always went. Nothing is asked and nothing about
+your game is changed.
+
+English is the one language Valve mounts no folder for, so those mods go to `dota_russian` and
+you hear no difference: Steam decides what gets downloaded, Dota decides what gets mounted, and
+a folder with no voice pack in it serves mods while the speech keeps coming from the game's own
+files. The English-voices switch is gone with it. Set English in Steam, which is where that
+belongs.
+
+### The program says who wrote it
+
+A `NOTICE` file, a line in Settings under About, and two additional terms allowed by section 7
+of the GPL: keep the credit, and give your version its own name. The licence is unchanged and
+the app stays free software. Fork it, sell it, gut it. Say whose it was.
+
 ## 2.1.0
 
 Everything here came from what people said after 2.0.
