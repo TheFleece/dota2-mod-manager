@@ -75,6 +75,27 @@ function fileUrl(categoryId, fileRef) {
   return `${RAW_BASE}/assets/files/${categoryId}/${encodeURIComponent(fileRef)}`;
 }
 
+/* A name from the catalog is a name, never a path.
+ *
+ * What a mod is called on disk used to be decodeURIComponent(last segment of the URL), and
+ * a catalog entry pointing at ".../..%2F..%2F..%2Fsomething" decoded straight back into
+ * "../../../something" - a file the app then wrote wherever that landed. Slashes cannot
+ * survive this, so nothing here can climb out of the folder it was given.
+ *
+ * Spaces, brackets and Cyrillic are left alone on purpose: real catalog files are called
+ * things like "Red Abaddon (v2).zip", they are the keys of the download cache, and
+ * scrubbing them would re-download every mod on disk to no benefit.
+ */
+function safeFileName(raw, fallback) {
+  const flat = String(raw || '').replace(/\\/g, '/');
+  const last = flat.slice(flat.lastIndexOf('/') + 1);
+  const cleaned = [...last]
+    .filter((ch) => ch >= ' ' && !'<>:"|?*'.includes(ch)) // what Windows refuses in a name
+    .join('')
+    .slice(0, 150);
+  return /^\.*$/.test(cleaned) ? fallback : cleaned; // "", "." and ".." are not names
+}
+
 class Installer {
   /**
    * @param {object} opts
@@ -167,8 +188,12 @@ class Installer {
 
   async download(categoryId, fileRef, label) {
     const url = fileUrl(categoryId, fileRef);
-    const safeName = decodeURIComponent(url.split('/').pop());
-    const destDir = path.join(this.downloadsDir, categoryId);
+    // the last URL segment without its query, decoded, and then made into a plain name
+    const tail = url.split(/[?#]/)[0].split('/').pop();
+    let decoded = tail;
+    try { decoded = decodeURIComponent(tail); } catch { /* a stray % is not an escape */ }
+    const safeName = safeFileName(decoded, 'mod');
+    const destDir = path.join(this.downloadsDir, safeFileName(categoryId, 'other'));
     fs.mkdirSync(destDir, { recursive: true });
     const dest = path.join(destDir, safeName);
     const key = `${categoryId}/${safeName}`;
