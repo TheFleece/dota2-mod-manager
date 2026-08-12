@@ -1,0 +1,45 @@
+Dota 2 Mod Manager
+Copyright (C) 2026 Mykhailo Lynnyk (https://github.com/TheFleece)
+
+This program is free software: you can redistribute it and modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or any later version. LICENSE holds
+the full text.
+
+The program comes with no warranty of any kind, not even an implied one that it
+is fit to sell or fit for the job you have in mind. Read section 15 of the
+License before you rely on it.
+
+
+If you build on this code
+
+GPL-3.0 asks four things of anyone who ships a version of this program
+(sections 4 and 5 spell them out):
+
+  keep this file and the copyright line at the top of it;
+  say in your project that you changed the code, and give the date you did;
+  release your version under GPL-3.0 too, with its source;
+  keep the notice the interface itself shows, in Settings under "About", so the
+    people using your build can find out where the program came from.
+
+Fork it, rename it, sell it. Just leave the line that says who wrote it.
+
+
+Catalog and content
+
+The mods, previews and guides this app reads are not part of it and are not
+covered by the copyright above. They come from the Dota2PornFxWeb repository by
+h6rd (https://github.com/h6rd/Dota2PornFxWeb), itself GPL-3.0, and from the mod
+authors credited on every card in the app. Republishing that catalog, in whole
+or in part, means crediting h6rd and the authors under the terms of their own
+license.
+
+
+Third-party software
+
+Source2Viewer-CLI, from ValveResourceFormat by SteamDatabase, MIT licensed. The
+app downloads it when a feature needs it and never bundles it:
+https://github.com/SteamDatabase/ValveResourceFormat
+
+The npm packages the build depends on carry their own licenses, listed in their
+own folders under node_modules and inside the installer.

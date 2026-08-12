@@ -144,7 +144,13 @@ publishes it. Installed apps pick the update up on their own.
 
 ## License
 
-[GPL-3.0](LICENSE), free to use, modify and share. Catalog content carries the same license in the
-[upstream repository](https://github.com/h6rd/Dota2PornFxWeb).
+[GPL-3.0](LICENSE). Copyright (C) 2026 Mykhailo Lynnyk.
+
+Fork it, change it, ship your own. GPL-3.0 asks you to keep the copyright line, to say in your
+project that you changed the code and when, and to open your version under the same license.
+[NOTICE](NOTICE) lists all four terms in plain words.
+
+Catalog content belongs to [h6rd](https://github.com/h6rd/Dota2PornFxWeb) and the mod authors,
+under the same license in their repository.
 
 *Not affiliated with Valve Corporation. You modify game files at your own risk.*

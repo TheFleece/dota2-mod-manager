@@ -144,6 +144,7 @@ export async function renderSettings() {
       <div class="settings-row">
         <button class="btn btn-sm" id="whatsNewBtn"><span class="ms">auto_awesome</span>${L`Что нового`}</button>
       </div>
+      <div class="settings-hint">© 2026 Mykhailo Lynnyk · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
     </div>
   `; });
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));

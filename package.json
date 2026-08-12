@@ -39,7 +39,9 @@
       "renderer/**/*",
       "package.json",
       "CHANGELOG.md",
-      "CHANGELOG.ru.md"
+      "CHANGELOG.ru.md",
+      "LICENSE",
+      "NOTICE"
     ],
     "protocols": [
       {

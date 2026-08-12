@@ -572,6 +572,7 @@ const EN = {
 
   // ---------- what's new ----------
   'Что нового': 'What\'s new',
+  'свободная программа без каких-либо гарантий': 'free software with no warranty of any kind',
   'версия {0}': 'version {0}',
   'Понятно': 'Got it',
   'Для этой версии заметок нет': 'No notes for this version',
