@@ -22,10 +22,67 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Make the release before anything is uploaded into it.
+      #
+      # electron-builder creates one per artifact when it finds none, and on 2.2.0 two of them
+      # were created in the same second: the installer and latest.yml landed on one, the
+      # blockmap on the other. GitHub then answered /releases/latest with the release holding
+      # only the blockmap, so every installed copy looked for latest.yml, did not find it, and
+      # stopped updating. A release that already exists is one electron-builder uploads into
+      # rather than races to create. It also puts the notes on the page at creation, which the
+      # edit afterwards could not do while two releases shared a tag.
+      - name: Open the release with its notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          awk -v v="${TAG#v}" '
+            $0 ~ "^## " v "([^0-9.]|$)" { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::warning::CHANGELOG.md has no section for $TAG - the release page will be empty"
+            printf '' > notes.md
+          fi
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo "release already exists, leaving it alone"
+          else
+            gh release create "$TAG" --repo "$REPO" --title "${TAG#v}" --notes-file notes.md
+          fi
+
       - name: Build and publish installer
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ github.token }}
+
+      # What broke on 2.2.0 was invisible until somebody looked at the API by hand: the
+      # workflow was green, the installer was on a page, and the app could not update. These
+      # three checks are that look, done by the machine on every release.
+      - name: Check the release is one release and can be updated to
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          count=$(gh api "repos/$REPO/releases" --jq "[.[] | select(.tag_name == \"$TAG\")] | length")
+          if [ "$count" != "1" ]; then
+            echo "::error::$count releases carry the tag $TAG - GitHub will answer /releases/latest with the wrong one"
+            exit 1
+          fi
+          latest=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
+          if [ "$latest" != "$TAG" ]; then
+            echo "::error::/releases/latest says $latest, not $TAG - installed copies follow that endpoint"
+            exit 1
+          fi
+          for want in latest.yml Dota-2-Mod-Manager-Setup.exe; do
+            gh api "repos/$REPO/releases/latest" --jq '[.assets[].name]' | grep -q "$want" \
+              || { echo "::error::$want is missing from the release the updater reads"; exit 1; }
+          done
+          echo "one release, it is the latest, and it carries the installer and the manifest"
 
   # Notify Discord after the release is published. This lives in the same workflow as the
   # build because a release published by the default GITHUB_TOKEN does NOT trigger a separate
@@ -41,9 +98,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # electron-builder publishes the release with an empty body, so the page said nothing
-      # about what changed. The section CHANGELOG.md carries for this tag becomes the
-      # release notes, and the Discord post repeats them.
+      # The build job now opens the release with its notes already on it, so this reads the
+      # same section again for the Discord post and only touches the page if it somehow came
+      # out empty. `gh release edit` sends the tag with the change and GitHub refuses that
+      # with "Release.tag_name already exists" whenever a second release shares the tag, so
+      # the body goes in by id, which has no such opinion.
       - name: Take the release notes from CHANGELOG.md
         # never let this hold up the announcement: a release with no notes is a nuisance,
         # a release nobody hears about is worse
@@ -58,10 +117,17 @@ jobs:
             on && /^## / { exit }
             on { print }
           ' CHANGELOG.md | sed -e '/./,$!d' > notes.md
-          if [ -s notes.md ]; then
-            gh release edit "$TAG" --repo "$REPO" --notes-file notes.md
+          if [ ! -s notes.md ]; then
+            echo "::warning::CHANGELOG.md has no section for $TAG - the release page stays empty"
+            exit 0
+          fi
+          id=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.id')
+          have=$(gh api "repos/$REPO/releases/$id" --jq '.body | length')
+          if [ "$have" = "0" ]; then
+            gh api --method PATCH "repos/$REPO/releases/$id" --field body=@notes.md >/dev/null
+            echo "notes written to release $id"
           else
-            echo "::warning::CHANGELOG.md has no section for $TAG — the release page stays empty"
+            echo "release already carries its notes"
           fi
 
       - name: Send Discord notification
