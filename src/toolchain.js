@@ -42,13 +42,20 @@ const BUILT_IN_PINS = {
 
 const TOOL_NAMES = Object.keys(BUILT_IN_PINS);
 
-function validPin(pin) {
-  return !!(pin && typeof pin === 'object'
+// Whose releases a pin may point at. "Some GitHub release with a matching digest" is not a
+// pin: the digest travels in the same file as the URL, so a rewritten config could name any
+// repository on GitHub and hand over its own hash to check it against. The owner is what
+// makes the pin mean anything, and it is decided here rather than in a file off the network.
+const PIN_REPOS = { vrf: 'SteamDatabase/ValveResourceFormat' };
+
+function validPin(pin, name) {
+  const repo = PIN_REPOS[name];
+  const from = repo && new RegExp(`^https://github\\.com/${repo}/releases/download/`, 'i');
+  return !!(pin && typeof pin === 'object' && from
     && typeof pin.version === 'string' && pin.version
     && typeof pin.exe === 'string' && pin.exe && !pin.exe.includes('/') && !pin.exe.includes('\\')
     && typeof pin.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(pin.sha256)
-    // only from the project's own releases: a pin pointing anywhere else is not a pin
-    && typeof pin.url === 'string' && /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/releases\/download\//.test(pin.url));
+    && typeof pin.url === 'string' && from.test(pin.url));
 }
 
 /**
@@ -81,10 +88,10 @@ function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} })
     if (pinsFetched) return pins;
     pinsFetched = true;
     try {
-      const raw = JSON.parse(await fetchText(PINS_URL));
+      const raw = JSON.parse(await fetchText(PINS_URL, { trustedOnly: true }));
       for (const name of TOOL_NAMES) {
         const pin = raw && raw[name];
-        if (validPin(pin)) pins[name] = { ...BUILT_IN_PINS[name], ...pin };
+        if (validPin(pin, name)) pins[name] = { ...BUILT_IN_PINS[name], ...pin };
         else if (pin) log(`toolchain: pin for ${name} rejected, keeping the built-in one`);
       }
     } catch (err) {

@@ -78,9 +78,14 @@ function noteSuccess(host) {
  * @param {object} [opts]
  * @param {boolean} [opts.small] the file is JSON-sized, so size-capped mirrors may be used
  */
-function mirrorsFor(url, { small = false } = {}) {
+function mirrorsFor(url, { small = false, trustedOnly = false } = {}) {
   const isRaw = url.startsWith(RAW_HOST);
   const isRelease = RELEASE_RE.test(url);
+  // A mirror is a stranger who hands over bytes claiming they are GitHub's. That is a fair
+  // trade for a mod archive - it is checked against a digest, and a wrong one costs a broken
+  // hero model. It is not a fair trade for a file that decides which binary this app
+  // downloads and runs, so that one asks GitHub itself or does without.
+  if (trustedOnly) return [url];
   if (!isRaw && !isRelease) return [url];
   const out = [];
   for (const m of MIRRORS) {
@@ -108,8 +113,8 @@ function liveOrder(urls) {
  * @param {object} [opts.headers]
  * @param {(msg: string) => void} [opts.log]
  */
-async function fetchMirrored(url, { small = false, headers = {}, log = () => {} } = {}) {
-  const candidates = liveOrder(mirrorsFor(url, { small }));
+async function fetchMirrored(url, { small = false, trustedOnly = false, headers = {}, log = () => {} } = {}) {
+  const candidates = liveOrder(mirrorsFor(url, { small, trustedOnly }));
   let last = null;
   for (let pass = 0; pass < ATTEMPTS_PER_MIRROR; pass++) {
     for (const candidate of candidates) {

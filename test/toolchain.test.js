@@ -48,18 +48,30 @@ async function serve(t, data) {
 
 test('the built-in pins are the shape the code demands of a remote one', () => {
   for (const [name, pin] of Object.entries(BUILT_IN_PINS)) {
-    assert.ok(validPin(pin), `${name} pin is valid`);
+    assert.ok(validPin(pin, name), `${name} pin is valid`);
   }
 });
 
 test('a pin is refused unless it points at a project release with a real hash', () => {
   const good = BUILT_IN_PINS.vrf;
-  assert.equal(validPin({ ...good, url: 'https://example.com/tool.zip' }), false, 'any host will not do');
-  assert.equal(validPin({ ...good, url: 'https://github.com/someone/else/raw/main/tool.zip' }), false, 'a raw file is not a release');
-  assert.equal(validPin({ ...good, sha256: 'nope' }), false);
-  assert.equal(validPin({ ...good, sha256: undefined }), false, 'an unpinned tool is not a tool');
-  assert.equal(validPin({ ...good, exe: '../../evil.exe' }), false, 'the executable is a name, not a path');
-  assert.equal(validPin({ ...good, version: '' }), false);
+  assert.equal(validPin({ ...good, url: 'https://example.com/tool.zip' }, 'vrf'), false, 'any host will not do');
+  assert.equal(validPin({ ...good, url: 'https://github.com/someone/else/raw/main/tool.zip' }, 'vrf'), false, 'a raw file is not a release');
+  assert.equal(validPin({ ...good, sha256: 'nope' }, 'vrf'), false);
+  assert.equal(validPin({ ...good, sha256: undefined }, 'vrf'), false, 'an unpinned tool is not a tool');
+  assert.equal(validPin({ ...good, exe: '../../evil.exe' }, 'vrf'), false, 'the executable is a name, not a path');
+  assert.equal(validPin({ ...good, version: '' }, 'vrf'), false);
+});
+
+// The digest travels in the same file as the URL, so "a GitHub release whose hash matches"
+// is something anybody can produce with a repository of their own. Only the tool's own
+// project counts, and a config that names no tool at all counts for nothing.
+test('a pin may only point at the repository the tool actually comes from', () => {
+  const good = BUILT_IN_PINS.vrf;
+  const elsewhere = 'https://github.com/attacker/ValveResourceFormat/releases/download/19.2/cli-windows-x64.zip';
+  assert.equal(validPin({ ...good, url: elsewhere }, 'vrf'), false, 'somebody else’s release is not the tool');
+  assert.equal(validPin(good, 'unknown-tool'), false, 'a tool with no pinned repository has no valid pin');
+  assert.equal(validPin(good, undefined), false);
+  assert.ok(validPin(good, 'vrf'), 'the real one still passes');
 });
 
 test('a tool downloads, unpacks and is found where it says', async (t) => {

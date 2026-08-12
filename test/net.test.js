@@ -69,6 +69,14 @@ test('a URL that is not on GitHub raw is its own only mirror', () => {
   assert.deepEqual(net.mirrorsFor(other), [other]);
 });
 
+// A proxy hands over bytes claiming they are GitHub's, which is a fair trade for a mod
+// archive and not for the file that says which binary the app should download and run.
+test('a file asked for trusted-only goes to GitHub itself or nowhere', () => {
+  const pins = `${RAW_HOST}TheFleece/dota2-mod-manager/main/config/tools.json`;
+  assert.deepEqual(net.mirrorsFor(pins, { small: true, trustedOnly: true }), [pins]);
+  assert.ok(net.mirrorsFor(pins, { small: true }).length > 1, 'and the ordinary path still has its mirrors');
+});
+
 test('a mirror that is down is stepped over', async (t) => {
   const down = await serve(t, dead(500));
   const up = await serve(t, body('the catalog'));
