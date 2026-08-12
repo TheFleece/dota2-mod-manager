@@ -25,6 +25,26 @@ GPL-3.0 asks four things of anyone who ships a version of this program
 Fork it, rename it, sell it. Just leave the line that says who wrote it.
 
 
+Additional terms, under section 7 of the License
+
+Section 7 lets an author supplement the GPL with a short list of terms, and two
+of them are here. They apply to every file in this repository as of 12 August
+2026 and after. They take nothing away from what you may do with the code, and
+the program stays free software under an OSI-approved licence. What they cover
+is credit, not use.
+
+  7(b) and 7(c). Keep the copyright line above, and keep the notice the program
+  shows in Settings under "About". Mark your version as yours and as changed,
+  with the date, in the three places somebody actually looks: the readme, the
+  release page, and the interface itself. Do not present it as the original.
+
+  7(e). The name "Dota 2 Mod Manager", the icon and the domain
+  dota2modmanager.com are not licensed here. Whatever rights they carry stay
+  with the author. Give your version a name of its own.
+
+Copies you received under an earlier version keep the terms they came with.
+
+
 Catalog and content
 
 The mods, previews and guides this app reads are not part of it and are not

@@ -148,7 +148,9 @@ publishes it. Installed apps pick the update up on their own.
 
 Fork it, change it, ship your own. GPL-3.0 asks you to keep the copyright line, to say in your
 project that you changed the code and when, and to open your version under the same license.
-[NOTICE](NOTICE) lists all four terms in plain words.
+Section 7 of that license lets an author add two more, and this repository does: keep the credit
+the app shows, and pick your own name for your version. [NOTICE](NOTICE) puts all of it in plain
+words.
 
 Catalog content belongs to [h6rd](https://github.com/h6rd/Dota2PornFxWeb) and the mod authors,
 under the same license in their repository.

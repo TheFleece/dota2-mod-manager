@@ -3,7 +3,8 @@
  * Copyright (C) 2026 Mykhailo Lynnyk
  *
  * Free software under the GNU General Public License, version 3 or later. It comes with no
- * warranty whatsoever. LICENSE holds the terms, NOTICE says what they ask of a fork.
+ * warranty whatsoever. LICENSE holds the terms; NOTICE holds the additional terms this
+ * repository adds under section 7 of that License, about credit and the program's name.
  */
 const { app, BrowserWindow, ipcMain, shell, dialog, net } = require('electron');
 const path = require('path');
