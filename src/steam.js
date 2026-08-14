@@ -78,14 +78,20 @@ async function findDotaGamePath() {
  * installing into a corpse. The library listed everything, the game showed nothing, and the
  * app's own log said "pak01_dir.vpk not found" a thousand times without anyone acting on it.
  *
- * So the test is Valve's own content pak. It is the one file that cannot be there unless the
- * game is, the app already needs to read it for the item table, and its absence is what the
- * log was complaining about all along.
+ * So the test is Valve's own: the base content pak, or the executable. Either one is enough,
+ * and the leftovers of a move have neither.
+ *
+ * Two markers rather than one because a single file can be absent from a real install for a
+ * moment - mid-download, or while Steam verifies. Note which pak this is: game\dota\pak01_dir
+ * is the game's own content and is always there. The pak01 files in game\dota_<language> are
+ * the voice pack, which plenty of people never download, and testing for those would call a
+ * working install broken.
  */
 function validateGamePath(p) {
   if (!p) return false;
   try {
-    return fs.existsSync(path.join(p, 'dota', 'pak01_dir.vpk'));
+    return fs.existsSync(path.join(p, 'dota', 'pak01_dir.vpk'))
+      || fs.existsSync(path.join(p, 'bin', 'win64', 'dota2.exe'));
   } catch {
     return false;
   }

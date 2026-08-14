@@ -1460,7 +1460,7 @@ function registerIpc() {
     let p = res.filePaths[0];
     // allow picking "dota 2 beta" root as well
     if (!validateGamePath(p) && validateGamePath(path.join(p, 'game'))) p = path.join(p, 'game');
-    if (!validateGamePath(p)) return { error: t('В этой папке нет файлов Dota 2 (не найден dota\\pak01_dir.vpk)') };
+    if (!validateGamePath(p)) return { error: t('В этой папке нет файлов Dota 2 — нужна папка game внутри dota 2 beta') };
     settings.set('dotaGamePath', p);
     if (patchWatcher) patchWatcher.rearm();
     return { path: p };

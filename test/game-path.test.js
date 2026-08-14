@@ -45,6 +45,33 @@ test('a folder with the content pak in it is', (t) => {
   assert.equal(validateGamePath(realInstall(dir)), true);
 });
 
+// One marker can be absent from a working install for a moment, mid-download or while Steam
+// verifies, so either answers for the other.
+test('the executable alone is enough, and so is the pak alone', (t) => {
+  const dir = tmpDir(t);
+  const game = movedAway(dir);
+  assert.equal(validateGamePath(game), false, 'neither: not an install');
+
+  fs.mkdirSync(path.join(game, 'bin', 'win64'), { recursive: true });
+  fs.writeFileSync(path.join(game, 'bin', 'win64', 'dota2.exe'), 'exe');
+  assert.equal(validateGamePath(game), true, 'the executable on its own');
+
+  fs.rmSync(path.join(game, 'bin'), { recursive: true });
+  fs.writeFileSync(path.join(game, 'dota', 'pak01_dir.vpk'), 'pak');
+  assert.equal(validateGamePath(game), true, 'the pak on its own');
+});
+
+// The voice pack is not the game. Plenty of installs never download one, and testing for it
+// would call a working setup broken.
+test('a missing voice pack does not make an install invalid', (t) => {
+  const dir = tmpDir(t);
+  const game = realInstall(dir);
+  fs.mkdirSync(path.join(game, 'dota_russian'), { recursive: true });
+  fs.writeFileSync(path.join(game, 'dota_russian', 'pak12_dir.vpk'), 'somebody mod');
+  assert.equal(fs.existsSync(path.join(game, 'dota_russian', 'pak01_dir.vpk')), false, 'no voice pack');
+  assert.equal(validateGamePath(game), true);
+});
+
 test('nothing, a missing folder and a file all fail rather than throw', (t) => {
   const dir = tmpDir(t);
   const file = path.join(dir, 'a-file');
