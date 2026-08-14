@@ -3,13 +3,21 @@ import Base from '../../layouts/Base.astro';
 import Landing from '../../components/Landing.astro';
 import { landingSchema } from '../../lib/schema';
 
-const description = 'Бесплатная программа для модов Dota 2: скины, ландшафты, комментаторы и музыка из общего каталога, косметика и сборка, которой делишься ссылкой.';
+/*
+ * The Russian title and description carry the words a Russian actually types.
+ *
+ * They did not before, and that was the whole reason this page was nowhere on the query
+ * "дота 2 мод менеджер": across 5,333 words of Russian the site said "менеджер" three times
+ * and never wrote "Дота" in a title, a heading or an alt at all. The brand stays first,
+ * because the brand is what Google reads as the name of the site.
+ */
+const description = 'Бесплатный менеджер модов для Доты 2: скины на героев, ландшафты, комментаторы и музыка, бесплатная косметика из инвентаря и сборка, которой делишься ссылкой.';
 
 const jsonLd = landingSchema('ru');
 ---
 
 <Base
-  title="Dota 2 Mod Manager - моды и косметика для Dota 2 в один клик"
+  title="Dota 2 Mod Manager - мод-менеджер для Доты 2: моды и косметика"
   description={description}
   path="/"
 >

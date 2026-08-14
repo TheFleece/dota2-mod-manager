@@ -61,6 +61,7 @@ export interface Landing {
 
   trustTitle: string;
   trustLead: string;
+  /** One of these carries {releases}/{downloads} and their agreeing nouns, filled from stats. */
   trustFacts: Array<[string, string]>;
   smartscreenTitle: string;
   smartscreen: string;
@@ -83,7 +84,7 @@ export const landing: Record<'en' | 'ru', Landing> = {
     heroKicker: 'Free · open source · Windows',
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
-    heroLead: '{mods} {word} in one place. One click to install, one to take back. Plus the cosmetics your account already owns and setups you can send as a link.',
+    heroLead: 'A mod manager for Dota 2: {mods} {word} from the Dota2PornFx catalog in one place. One click to install, one to take back. Plus the cosmetics your account already owns and setups you can send as a link.',
     download: 'Download for Windows',
     source: 'Source code',
     heroMeta: 'Windows 10/11 · no account · updates itself',
@@ -133,7 +134,7 @@ export const landing: Record<'en' | 'ru', Landing> = {
     trustFacts: [
       ['Open source, GPL-3.0', 'Every line is in the repository. Not "source available on request" - readable right now.'],
       ['Built by GitHub Actions', 'Releases are built from that source by a public workflow, not uploaded from somebody\'s desktop.'],
-      ['27 releases, 17,500+ downloads', 'It has been in the open since long before you found it, and the whole history is there.'],
+      ['{releases} {relWord}, {downloads} {dlWord}', 'It has been in the open since long before you found it, and the whole history is there.'],
       ['No account, no telemetry', 'Signing in is optional and only puts your name on a setup you share. Nothing is collected.'],
     ],
     smartscreenTitle: 'Windows will warn you, and here is why',
@@ -142,10 +143,11 @@ export const landing: Record<'en' | 'ru', Landing> = {
     faqTitle: 'Questions',
     faq: [
       ['Is this a cheat?', 'No. The mods change how things look on your screen only. Nobody else in the match sees them.'],
+      ['What kinds of mods are there?', 'Hero skins, terrains, announcers, music, cursors, fonts, item effects, trees, the river, Roshan, mega-kills. All of it lives in the Dota2PornFx catalog, which the community keeps adding to. <a href="~/docs/catalog/">What that catalog is</a>.'],
       ['Will I get banned?', 'Nobody can promise anything here: these are client-side mods, and you run them at your own risk, same as any other Dota mod. The app never touches your account, and there is no login unless you want your name on a shared setup. <a href="~/docs/safe/#ban">The longer answer</a>.'],
       ['My antivirus said something.', 'It happens to unsigned installers with no reputation yet. Microsoft reviewed one such report about this app in August 2026 and removed the detection. If yours complains, the file you downloaded is built in the open by GitHub Actions and you can check the workflow that made it. <a href="~/docs/safe/#smartscreen">Why Windows warns you</a>.'],
       ['How do I remove a mod?', 'Delete it in My mods and the game goes back to how it was. Fonts and cursors are restored from the backup the app made before installing. <a href="~/docs/install/#remove">Doing it by hand</a>.'],
-      ['Where do the mods come from?', 'The Dota2PornFx catalog. The app reads it directly, so new mods appear without an app update.'],
+      ['Where do the mods come from?', 'The Dota2PornFx catalog: the largest open collection of Dota 2 mods there is, run by h6rd with the community for over a year. The app reads it directly, so new mods appear without an app update. <a href="~/docs/catalog/">About the catalog and its author</a>.'],
       ['Does it work after a Dota update?', 'Yes. After a game patch the app puts back what the update wiped, and warns you when something needs attention. <a href="~/docs/troubleshooting/">What to do when something breaks</a>.'],
     ],
 
@@ -168,7 +170,7 @@ export const landing: Record<'en' | 'ru', Landing> = {
     heroKicker: 'Бесплатно · открытый код · Windows',
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
-    heroLead: '{mods} {word} в одном месте. Один клик поставить, один - убрать. Плюс косметика, которая у тебя и так есть, и сборки, которые отправляются ссылкой.',
+    heroLead: 'Мод-менеджер для Доты 2: {mods} {word} из каталога Dota2PornFx в одном месте. Один клик поставить, один - убрать. Плюс косметика, которая у тебя и так есть, и сборки, которые отправляются ссылкой.',
     download: 'Скачать для Windows',
     source: 'Исходный код',
     heroMeta: 'Windows 10/11 · без аккаунта · обновляется само',
@@ -180,11 +182,11 @@ export const landing: Record<'en' | 'ru', Landing> = {
     ],
     latest: 'последняя',
 
-    filmTitle: 'Один дубль, от начала до конца',
+    filmTitle: 'Как ставится мод на Доту 2: один дубль, от начала до конца',
     filmCaption: 'Находим героя, берём сет, берём второй, ставим оба. Без склеек и без ускорения.',
     filmPlay: 'Включить ролик',
 
-    standTitle: 'Потрогай то, на чём все спотыкаются',
+    standTitle: 'Порядок модов: потрогай то, на чём все спотыкаются',
     standLead: 'Два мода с одним и тем же файлом не могут выиграть оба. Игра грузит тот, что лежит в паке с меньшим номером. Повключай их, перетащи в другом порядке и посмотри, чей файл возьмёт игра.',
     standSlots: 'В папке игры',
     standEmpty: 'Ничего не включено. Игра ровно такая, какой её выпустила Valve.',
@@ -193,17 +195,17 @@ export const landing: Record<'en' | 'ru', Landing> = {
     standHint: 'Приложение показывает это же для твоих настоящих модов и там же даёт поменять порядок.',
     standMove: 'Перетащи или двигай стрелками',
 
-    shotsTitle: 'Как это выглядит',
-    shotCatalog: 'Каталог: всё, что есть в общей коллекции, в том порядке, в котором это разложили её авторы.',
+    shotsTitle: 'Как выглядит менеджер модов для Доты 2',
+    shotCatalog: 'Каталог: все моды и скины из коллекции Dota2PornFx, в том порядке, в котором это разложили её авторы.',
     shotLibrary: 'Мои моды: выключил перед каткой, включил после. Приложение говорит, когда один мод перекрывает другой.',
-    shotHeroes: 'Всё по одному герою в одном месте, с чипами, которые говорят, что мод меняет на самом деле.',
+    shotHeroes: 'Все скины на одного героя Доты 2 в одном месте, с чипами, которые говорят, что мод меняет на самом деле.',
     shotLabels: ['Каталог', 'Герои', 'Мои моды'],
     shotsTablist: 'Экраны приложения',
 
     huntComplete: 'Ты нашёл всех. Сайт надел все палитры разом.',
     huntShared: 'Кто-то нашёл всех восьмерых. У тебя они ещё спрятаны.',
 
-    whatTitle: 'Что это даёт',
+    whatTitle: 'Что умеет мод-менеджер',
     cards: [
       ['Поставил и убрал в один клик', 'Приложение само качает мод, кладёт его в свободный слот и убирает за собой. Не надо копировать файлы и переименовывать pak51_dir.vpk руками.'],
       ['Выключить, а не удалять', 'Выключи мод перед каткой и включи обратно после. Библиотека остаётся, папка игры чистая.'],
@@ -218,23 +220,24 @@ export const landing: Record<'en' | 'ru', Landing> = {
     trustFacts: [
       ['Открытый код, GPL-3.0', 'Каждая строчка лежит в репозитории. Не «исходники по запросу», а прямо сейчас.'],
       ['Собирает GitHub Actions', 'Релизы собираются из этого кода публичным workflow, а не заливаются с чьего-то компьютера.'],
-      ['27 релизов, 17 500+ скачиваний', 'Программа лежит на виду задолго до того, как ты о ней узнал, и вся история там же.'],
+      ['{releases} {relWord}, {downloads} {dlWord}', 'Программа лежит на виду задолго до того, как ты о ней узнал, и вся история там же.'],
       ['Без аккаунта и без телеметрии', 'Вход нужен только чтобы подписать своим ником сборку, которой делишься. Ничего не собирается.'],
     ],
     smartscreenTitle: 'Windows будет ругаться, и вот почему',
     smartscreen: 'Установщик не подписан платным сертификатом, поэтому SmartScreen пишет «неизвестный издатель». Нажми <b>Подробнее</b>, затем <b>Выполнить в любом случае</b>. Сертификат стоит несколько сотен долларов в год, а программа бесплатная; бесплатная программа подписи для открытых проектов заявку отклонила - проект пока недостаточно известен.',
 
-    faqTitle: 'Вопросы',
+    faqTitle: 'Вопросы про моды в Доте 2',
     faq: [
       ['Это чит?', 'Нет. Моды меняют только картинку у тебя на экране. Соперники и союзники ничего этого не видят.'],
+      ['Какие моды бывают?', 'Скины на героев, ландшафты (в народе терраины), комментаторы, музыка, курсоры, шрифты, эффекты предметов, деревья, река, Рошан, мега-киллы. Всё это лежит в каталоге Dota2PornFx, и его пополняет сообщество. <a href="~/docs/catalog/">Что это за каталог</a>.'],
       ['Забанят?', 'Гарантий тут не даёт никто: это клиентские моды, ставишь на свой страх и риск, как и любые другие моды для доты. Приложение не трогает твой аккаунт, вход нужен только если хочешь подписать свою сборку ником. <a href="~/docs/safe/#ban">Развёрнутый ответ</a>.'],
       ['Антивирус что-то сказал.', 'Так бывает с неподписанными установщиками без репутации. Microsoft разобрала одно такое обращение по этой программе в августе 2026 и сняла детект. Если ругается твой - файл собран на виду в GitHub Actions, и workflow, который его собрал, можно открыть и прочитать. <a href="~/docs/safe/#smartscreen">Почему ругается Windows</a>.'],
       ['Как убрать мод?', 'Кнопка «Удалить» в «Моих модах» возвращает игру к исходному виду. Шрифты и курсоры восстанавливаются из копии, которую приложение сделало до установки. <a href="~/docs/install/#remove">Как это делается руками</a>.'],
-      ['Откуда моды?', 'Каталог Dota2PornFx. Приложение читает его напрямую, поэтому новые моды появляются без обновления программы.'],
+      ['Откуда моды?', 'Каталог Dota2PornFx: самая большая открытая коллекция модов для Доты 2, её больше года ведёт h6rd вместе с сообществом. Приложение читает каталог напрямую, поэтому новые моды появляются без обновления программы. <a href="~/docs/catalog/">Про каталог и его автора</a>.'],
       ['А после патча доты работает?', 'Да. После обновления игры приложение возвращает на место то, что патч стёр, и предупреждает, если что-то требует внимания. <a href="~/docs/troubleshooting/">Что делать, если что-то сломалось</a>.'],
     ],
 
-    ctaTitle: 'Забрать',
+    ctaTitle: 'Скачать мод-менеджер для Доты 2',
     ctaLead: 'Windows 10 или 11. Без аккаунта. Дальше обновляется само.',
     ctaMeta: 'Бесплатно навсегда. GPL-3.0. Собирается на виду.',
     marquee: [

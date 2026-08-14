@@ -67,6 +67,18 @@ const tiles = [
 // The last tile is not a count of anything, so it has no number to climb to.
 const statTiles = [...tiles, { value: '100%', to: 0, label: c.statLabels[3] }];
 
+// The trust list claims the history is checkable, so its own figures are counted rather than
+// typed: the pair sitting here said "27 releases, 17,500+ downloads" for long enough that the
+// answer bots quoting this page were repeating a number two releases out of date.
+const trustFacts = c.trustFacts.map(([title, body]) => [
+  title
+    .replace('{releases}', nf.format(stats.releases))
+    .replace('{relWord}', word(stats.releases, c.statWords[2]))
+    .replace('{downloads}', nf.format(stats.downloads))
+    .replace('{dlWord}', word(stats.downloads, c.statWords[1])),
+  body,
+]);
+
 // Sorted by what is actually in the catalog, so the band stays in order as it grows.
 const marquee = c.marquee
   .map(([id, label]) => [label, stats.byCategory[id] ?? 0] as const)
@@ -76,10 +88,26 @@ const marquee = c.marquee
 // the app is bilingual, so the window in the picture speaks the reader's language
 const shot = (name: string) => `/screenshots/${lang}-${name}.webp`;
 
+// An alt that repeats the label teaches an image search nothing. These say which screen it is,
+// what is in it and what the picture is of, because that sentence is the only thing an image
+// crawler has to go on and the only thing a screen reader reads out.
+const alts = {
+  ru: [
+    'Каталог модов для Доты 2 в окне Dota 2 Mod Manager: карточки скинов из коллекции Dota2PornFx с превью и тегами',
+    'Экран героев: все скины и моды на одного героя Доты 2 одним списком',
+    'Мои моды: установленные моды Доты 2 с переключателями и порядком загрузки',
+  ],
+  en: [
+    'The Dota 2 mod catalog inside Dota 2 Mod Manager: cards from the Dota2PornFx collection with previews and tags',
+    'The heroes screen: every skin and mod for one Dota 2 hero in a single list',
+    'My mods: installed Dota 2 mods with toggles and their load order',
+  ],
+}[lang];
+
 const shots = [
-  { file: 'catalog', caption: c.shotCatalog, label: c.shotLabels[0], alt: lang === 'ru' ? 'Каталог модов в приложении' : 'The mod catalog inside the app' },
-  { file: 'heroes', caption: c.shotHeroes, label: c.shotLabels[1], alt: lang === 'ru' ? 'Моды, сгруппированные по героям' : 'Mods grouped by hero' },
-  { file: 'library', caption: c.shotLibrary, label: c.shotLabels[2], alt: lang === 'ru' ? 'Список установленных модов' : 'The list of installed mods' },
+  { file: 'catalog', caption: c.shotCatalog, label: c.shotLabels[0], alt: alts[0] },
+  { file: 'heroes', caption: c.shotHeroes, label: c.shotLabels[1], alt: alts[1] },
+  { file: 'library', caption: c.shotLibrary, label: c.shotLabels[2], alt: alts[2] },
 ];
 ---
 
@@ -178,7 +206,7 @@ const shots = [
     <h2 class="reveal">{c.trustTitle}</h2>
     <p class="lead reveal">{c.trustLead}</p>
     <ul class="facts">
-      {c.trustFacts.map(([title, body]) => (
+      {trustFacts.map(([title, body]) => (
         <li class="reveal">
           <b>{title}</b>
           <span>{body}</span>
