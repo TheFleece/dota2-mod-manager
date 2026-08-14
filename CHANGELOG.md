@@ -2,6 +2,46 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.3.0
+
+### A portable build, for people who would rather not install anything
+
+The release now carries a second file, `Dota-2-Mod-Manager-Portable.exe`. It runs from wherever
+you put it, including a stick, and writes nothing into your system.
+
+Portable here means the data comes with it. Your settings, your mod library and the download
+cache go into a folder next to the exe, so the same stick on another machine comes up with
+everything you already had. If that folder cannot be written to, which is what happens if you
+drop it in Program Files, it falls back to the usual place and keeps working.
+
+The one thing it cannot do is replace its own exe. So instead of updating in place it fetches
+the new build, puts it beside the old one and tells you it is there. Nothing on your disk gets
+rewritten, and the installer version updates itself exactly as before.
+
+### Mods can no longer be installed where there is no game
+
+Somebody moved his Steam library from C to F. Steam left the empty folder tree behind, as it
+does. The app checked whether a folder named `dota` existed, decided it had found the game, and
+installed forty-three mods into the leftovers. All forty-three were listed as installed. None of
+them were anywhere the game could see.
+
+The check is now for Valve's own files, not for a folder name, and it runs in three places: at
+startup, where a path that stopped being an install gets replaced by the real one automatically;
+in the folder picker; and before a download starts, so a mod with nowhere to go no longer costs
+you 300 MB first.
+
+If Dota cannot be found at all, the app says so and installs nothing. It always meant to. The
+warning simply never appeared, because the old check called those leftovers a game.
+
+### Small things
+
+The release page could not be updated for a few minutes after 2.2.0 went out, which also left
+its own update manifest split across two pages. Both are fixed, and the release now checks
+itself before it is called done.
+
+There is a `SECURITY.md` and a `security.txt` now, so anybody who finds a hole has a private
+way to report it instead of a public issue.
+
 ## 2.2.0
 
 Mostly work you will not see. Update anyway.
