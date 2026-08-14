@@ -580,6 +580,7 @@ const EN = {
   // ---------- progress + updates ----------
   'Скачивание: {0}': 'Downloading: {0}',
   'Найдено обновление v{0} — скачиваю в фоне…': 'Update v{0} found — downloading in the background…',
+  'Вышла версия v{0} — скачай новую портативную сборку на dota2modmanager.com': 'Version v{0} is out — grab the new portable build from dota2modmanager.com',
   'Обновление ': 'Update ',
   ' готово к установке': ' is ready to install',
   'Перезапустить и обновить': 'Restart and update',

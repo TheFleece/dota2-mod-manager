@@ -42,6 +42,29 @@ const gamelang = require('./src/gamelang');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
+/* Portable mode (issue #2).
+ *
+ * electron-builder's portable target unpacks the app into a temp folder and runs it from
+ * there, setting PORTABLE_EXECUTABLE_DIR to the folder the exe was actually launched from.
+ * Without using that, "portable" would only mean "no installer": the settings, the mod
+ * library and the download cache would still sit in %APPDATA%, and somebody carrying the exe
+ * on a stick would find none of it on the next machine. So the data goes next to the exe,
+ * which is what the word promises.
+ *
+ * A folder that cannot be written to falls back to the ordinary location rather than failing.
+ * That is what happens when the exe is dropped into Program Files, and a working app with
+ * its data in the usual place beats a dead one.
+ */
+const IS_PORTABLE = !!process.env.PORTABLE_EXECUTABLE_DIR;
+if (IS_PORTABLE) {
+  try {
+    const beside = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'Dota 2 Mod Manager Data');
+    fs.mkdirSync(beside, { recursive: true });
+    fs.accessSync(beside, fs.constants.W_OK);
+    app.setPath('userData', beside);
+  } catch { /* read-only folder: the default userData still works */ }
+}
+
 let win;
 let settings, catalog, installer, library, fingerprints, presence, schemaService, icons, remoteConfig;
 let toolchain, gameIcons, modPreviews, modId;
@@ -493,9 +516,14 @@ app.whenReady().then(async () => {
 // ---- auto-update via GitHub Releases (packaged builds only) ----
 function setupAutoUpdate() {
   if (!autoUpdater || !app.isPackaged) return;
-  autoUpdater.autoDownload = true;
+  // A portable exe cannot replace itself. electron-updater installs by handing the download
+  // to the NSIS installer, and a portable build has none, so it would download 100 MB and
+  // then fail quietly. It still looks, and says where the new copy lives.
+  autoUpdater.autoDownload = !IS_PORTABLE;
   autoUpdater.on('update-available', (info) => {
-    if (win && !win.isDestroyed()) win.webContents.send('update', { type: 'available', version: info.version });
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update', { type: IS_PORTABLE ? 'portable' : 'available', version: info.version });
+    }
   });
   autoUpdater.on('update-downloaded', (info) => {
     if (win && !win.isDestroyed()) win.webContents.send('update', { type: 'downloaded', version: info.version });

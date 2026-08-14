@@ -60,10 +60,15 @@
     ],
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ],
       "icon": "build/icon.ico",
       "artifactName": "Dota-2-Mod-Manager-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "Dota-2-Mod-Manager-Portable.${ext}",
+      "requestExecutionLevel": "user"
     },
     "nsis": {
       "oneClick": true,

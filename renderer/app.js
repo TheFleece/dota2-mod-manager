@@ -276,6 +276,9 @@ window.api.onProgress((evt) => {
 window.api.update.onUpdate((evt) => {
   if (evt.type === 'available') {
     toast(L`Найдено обновление v${evt.version} — скачиваю в фоне…`, 'ok', 6000);
+  } else if (evt.type === 'portable') {
+    // portable build: it cannot replace its own exe, so it points at the download instead
+    toast(L`Вышла версия v${evt.version} — скачай новую портативную сборку на dota2modmanager.com`, 'ok', 9000);
   } else if (evt.type === 'downloaded') {
     const bar = document.createElement('div');
     bar.className = 'update-bar';
