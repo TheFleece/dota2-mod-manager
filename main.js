@@ -408,10 +408,21 @@ app.whenReady().then(async () => {
     log: diag,
   });
 
-  // auto-detect dota on first run
+  // Auto-detect on first run, and re-detect whenever the saved path stopped being a Dota
+  // install - a library moved to another drive leaves the old tree behind, and writing mods
+  // into it looks like success and changes nothing in the game.
   if (!validateGamePath(settings.get('dotaGamePath'))) {
+    const stale = settings.get('dotaGamePath');
     const found = await findDotaGamePath();
-    if (found) settings.set('dotaGamePath', found);
+    if (found) {
+      if (stale && stale !== found) diag(`game path ${stale} is no longer an install, moved to ${found}`);
+      settings.set('dotaGamePath', found);
+    } else if (stale) {
+      // Nothing valid anywhere. Forget the dead path rather than keep it: every write below
+      // refuses without a path, and refusing is the honest answer here.
+      diag(`game path ${stale} is not an install and Dota was not found; clearing it`);
+      settings.set('dotaGamePath', null);
+    }
   }
 
   // put the mods where the game will look for them, and make the game look there
@@ -1449,7 +1460,7 @@ function registerIpc() {
     let p = res.filePaths[0];
     // allow picking "dota 2 beta" root as well
     if (!validateGamePath(p) && validateGamePath(path.join(p, 'game'))) p = path.join(p, 'game');
-    if (!validateGamePath(p)) return { error: t('В этой папке не найдена Dota 2 (нет подпапки dota)') };
+    if (!validateGamePath(p)) return { error: t('В этой папке нет файлов Dota 2 (не найден dota\\pak01_dir.vpk)') };
     settings.set('dotaGamePath', p);
     if (patchWatcher) patchWatcher.rearm();
     return { path: p };

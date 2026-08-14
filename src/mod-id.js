@@ -26,6 +26,7 @@ const { heroDisplayName } = require('./vpk');
 function createModIdentity({ getGamePath, log = () => {} }) {
   let index = null;      // "models/items/…/x.vmdl" -> [{ name, slot, heroes }]
   let indexStamp = null; // which build of the game it was built from
+  let lastUnreadable = null; // the last complaint made, so it is not repeated per record
 
   /**
    * Every cosmetic the game knows, keyed by the model file it owns. Walking 25k item blocks
@@ -39,7 +40,14 @@ function createModIdentity({ getGamePath, log = () => {} }) {
     if (index && stamp && stamp === indexStamp) return index;
     let text;
     try { ({ text } = schema.readGameSchema(game)); } catch (err) {
-      log(`mod id: item table unreadable (${err.message || err})`);
+      // Once per reason, not once per mod. This is called for every record in the library, so
+      // a missing item table wrote the same line a thousand times: a support report of 166 KB
+      // in which the one useful sentence was hidden by its own repetitions.
+      const why = String(err.message || err);
+      if (why !== lastUnreadable) {
+        lastUnreadable = why;
+        log(`mod id: item table unreadable (${why})`);
+      }
       return null;
     }
     const map = new Map();

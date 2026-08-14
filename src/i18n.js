@@ -77,6 +77,8 @@ const EN = {
   'Это не портативная сборка': 'This is not a portable build',
   'Обновления нет': 'There is no update',
   'Файл не найден': 'File not found',
+  'По сохранённому пути нет файлов Dota 2 — укажи папку игры заново в настройках': 'The saved path holds no Dota 2 files — set the game folder again in Settings',
+  'В этой папке нет файлов Dota 2 (не найден dota\\pak01_dir.vpk)': 'No Dota 2 files in this folder (dota\\pak01_dir.vpk is missing)',
   'Сохранить отчёт для поддержки': 'Save the support report',
   'Отчёт диагностики': 'Diagnostics report',
 

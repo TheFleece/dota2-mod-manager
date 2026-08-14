@@ -65,15 +65,27 @@ async function findDotaGamePath() {
     if (!lib || seen.has(lib.toLowerCase())) continue;
     seen.add(lib.toLowerCase());
     const game = path.join(lib, 'steamapps', 'common', 'dota 2 beta', 'game');
-    if (fs.existsSync(path.join(game, 'dota'))) return game;
+    if (validateGamePath(game)) return game; // the leftovers of a moved library are not a hit
   }
   return null;
 }
 
+/* A folder called "dota" is not a Dota install.
+ *
+ * This used to check for the subfolder and nothing else, and that is exactly how a user lost
+ * 43 mods (2026-08-14). He had moved his library from C to F; Steam left the empty tree behind
+ * on C, as it does; the app looked at "...\dota 2 beta\game\dota", said yes, and spent weeks
+ * installing into a corpse. The library listed everything, the game showed nothing, and the
+ * app's own log said "pak01_dir.vpk not found" a thousand times without anyone acting on it.
+ *
+ * So the test is Valve's own content pak. It is the one file that cannot be there unless the
+ * game is, the app already needs to read it for the item table, and its absence is what the
+ * log was complaining about all along.
+ */
 function validateGamePath(p) {
   if (!p) return false;
   try {
-    return fs.existsSync(path.join(p, 'dota'));
+    return fs.existsSync(path.join(p, 'dota', 'pak01_dir.vpk'));
   } catch {
     return false;
   }

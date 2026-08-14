@@ -23,6 +23,7 @@ const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
 ].join('|') + ')');
 const { ensureLangFolder } = require('./gamelang');
 const { openZip, safeJoin } = require('./safe-zip');
+const { validateGamePath } = require('./steam');
 const { FileTx } = require('./file-tx');
 const { downloadFile } = require('./net');
 const { t } = require('./i18n');
@@ -169,6 +170,12 @@ class Installer {
   ensureLangFolder() {
     const game = this.getGamePath();
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
+    // Last gate before anything is created. mkdir is recursive, so a wrong path does not fail
+    // here, it quietly builds the whole tree and installs into it: that is how a user ended up
+    // with 43 mods in the leftovers of a library he had moved to another drive.
+    if (!validateGamePath(game)) {
+      throw new Error(t('По сохранённому пути нет файлов Dota 2 — укажи папку игры заново в настройках'));
+    }
     return ensureLangFolder(game, this.getLangSuffix());
   }
 
