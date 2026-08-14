@@ -14,6 +14,19 @@ import { fileURLToPath } from 'node:url';
 import { landing } from '../i18n/landing';
 import { plainText } from './text';
 import { ogPath } from './og';
+import {
+  shotNames,
+  shotUrl,
+  shotAlt,
+  shotTitle,
+  tourUrl,
+  tourPoster,
+  tourText,
+  TOUR_ISO,
+  TOUR_UPLOADED,
+  SHOT_SIZE,
+  TOUR_SIZE,
+} from './media';
 
 /** The app's version, read from the repository at build time so it cannot go stale. */
 function appVersion(): string {
@@ -63,7 +76,18 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     // The card image, not a screenshot: it is the one picture here that still reads at the
     // size a search result shows, and it is what Google is being offered as the thumbnail.
     image: `${origin}${ogPath(lang, '/')}`,
-    screenshot: [`${origin}/screenshots/${lang}-catalog.webp`, `${origin}/screenshots/${lang}-library.webp`],
+    // Every screen, as a described object rather than a bare address. A screenshot listed as a
+    // URL is a file; one with a caption and a size is a picture an image search can place.
+    screenshot: shotNames.map((name) => ({
+      '@type': 'ImageObject',
+      url: `${origin}${shotUrl(lang, name)}`,
+      contentUrl: `${origin}${shotUrl(lang, name)}`,
+      name: shotTitle[lang][name],
+      caption: shotAlt[lang][name],
+      width: SHOT_SIZE.width,
+      height: SHOT_SIZE.height,
+      encodingFormat: 'image/webp',
+    })),
     featureList: t.cards.map(([title]) => title),
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     author: { '@id': author['@id'] },
@@ -96,6 +120,33 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     publisher: { '@id': author['@id'] },
   };
 
+  /**
+   * The clip on the landing, declared.
+   *
+   * Google will not put a page in the video results for having a <video> tag in it: it wants a
+   * name, a description, a thumbnail and a date, and it reads them from here. The search for
+   * "dota 2 mod manager" fills its video row with other people's tutorials, and this is the
+   * half of the fix that lives on the site. The other half is a video sitemap, in astro.config.
+   */
+  const video = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: tourText[lang].name,
+    description: tourText[lang].description,
+    thumbnailUrl: [`${origin}${tourPoster(lang)}`],
+    contentUrl: `${origin}${tourUrl(lang)}`,
+    uploadDate: TOUR_UPLOADED,
+    duration: TOUR_ISO,
+    width: TOUR_SIZE.width,
+    height: TOUR_SIZE.height,
+    encodingFormat: 'video/webm',
+    inLanguage: lang,
+    isFamilyFriendly: true,
+    author: { '@id': author['@id'] },
+    publisher: { '@id': author['@id'] },
+    embedUrl: url,
+  };
+
   const faq = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -106,5 +157,5 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     })),
   };
 
-  return [{ '@context': 'https://schema.org', ...author }, software, website, faq];
+  return [{ '@context': 'https://schema.org', ...author }, software, website, video, faq];
 }

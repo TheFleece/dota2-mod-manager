@@ -21,6 +21,7 @@
  * A clip that starts moving by itself is exactly what that setting is about.
  */
 import type { Lang } from '../i18n/ui';
+import { tourUrl, tourPoster, tourText, TOUR_SIZE } from '../lib/media';
 
 interface Props {
   lang: Lang;
@@ -29,6 +30,7 @@ interface Props {
   play: string;
 }
 const { lang, title, caption, play } = Astro.props;
+const film = tourText[lang];
 ---
 
 <section class="tour-film">
@@ -38,16 +40,17 @@ const { lang, title, caption, play } = Astro.props;
       <div class="win">
         <video
           id="film"
-          width="880"
-          height="556"
-          poster={`/video/${lang}-tour.webp`}
+          width={TOUR_SIZE.width}
+          height={TOUR_SIZE.height}
+          poster={tourPoster(lang)}
           muted
           loop
           playsinline
           preload="none"
+          title={film.name}
           aria-label={caption}
         >
-          <source src={`/video/${lang}-tour.webm`} type="video/webm" />
+          <source src={tourUrl(lang)} type="video/webm" />
         </video>
         <button class="film-play" id="filmPlay" type="button" hidden>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>

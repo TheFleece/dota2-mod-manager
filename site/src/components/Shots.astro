@@ -26,15 +26,15 @@
  * radius, the lit top edge, the layered shadow - so the frame stayed and the bar went.
  */
 import type { Lang } from '../i18n/ui';
+import { SHOT_SIZE } from '../lib/media';
 
 interface Props {
   lang: Lang;
-  shots: Array<{ file: string; caption: string; alt: string; label: string }>;
+  shots: Array<{ src: string; caption: string; alt: string; label: string }>;
   /** Accessible name for the tab list, e.g. "Screens of the app". */
   tablist: string;
 }
-const { lang, shots, tablist } = Astro.props;
-const src = (name: string) => `/screenshots/${lang}-${name}.webp`;
+const { shots, tablist } = Astro.props;
 ---
 
 <div class="tour" id="tour">
@@ -62,9 +62,9 @@ const src = (name: string) => `/screenshots/${lang}-${name}.webp`;
     >
       <div class="win">
         <img
-          src={src(s.file)}
-          width="1360"
-          height="860"
+          src={s.src}
+          width={SHOT_SIZE.width}
+          height={SHOT_SIZE.height}
           loading={i === 0 ? 'eager' : 'lazy'}
           decoding="async"
           fetchpriority={i === 0 ? 'high' : undefined}
