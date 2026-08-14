@@ -1,0 +1,99 @@
+---
+/**
+ * The fact sheet.
+ *
+ * Same shape as a guide - blocks as data, one structure serving both languages - with one
+ * block a guide does not have: a list of label-and-value pairs. It reuses the trust section's
+ * grid rather than inventing a table, because a fact sheet is a page of short answers and a
+ * table would make it look like a spreadsheet of them.
+ *
+ * The numbers are substituted here, in one pass over the text, so a figure quoted in the
+ * opening paragraph and the same figure in the list below it cannot disagree.
+ */
+import { facts, type FactBlock } from '../i18n/facts';
+import { siteStats } from '../lib/stats';
+import { appVersion } from '../lib/schema';
+import type { Lang } from '../i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const page = facts[lang];
+
+const stats = await siteStats();
+const locale = lang === 'ru' ? 'ru-RU' : 'en-US';
+const nf = new Intl.NumberFormat(locale);
+
+/* Russian makes the noun agree with the number, and the number is not known until the build
+   runs: 1,102 takes "мода", 1,105 takes "модов", and 41 categories is "в 41 категории" while
+   43 would be "в 43 категориях". Intl knows which form; the three spellings are listed here. */
+const pr = new Intl.PluralRules(locale);
+const agree = (n: number, forms: [string, string, string]) => {
+  const form = pr.select(n);
+  return form === 'one' ? forms[0] : form === 'few' ? forms[1] : forms[2];
+};
+
+const nouns: Record<'en' | 'ru', { mods: [string, string, string]; cats: [string, string, string] }> = {
+  en: { mods: ['mod', 'mods', 'mods'], cats: ['category', 'categories', 'categories'] },
+  ru: { mods: ['мод', 'мода', 'модов'], cats: ['категории', 'категориях', 'категориях'] },
+};
+
+const numbers: Record<string, string> = {
+  '{version}': appVersion(),
+  '{mods}': nf.format(stats.mods),
+  '{modsWord}': agree(stats.mods, nouns[lang].mods),
+  '{categories}': nf.format(stats.categories),
+  '{categoriesWord}': agree(stats.categories, nouns[lang].cats),
+  '{releases}': nf.format(stats.releases),
+  '{downloads}': nf.format(stats.downloads),
+};
+
+/** Fills the counts and gives copy links their language prefix, the way the guides do. */
+const fill = (s: string) => {
+  let out = s.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
+  for (const [key, value] of Object.entries(numbers)) out = out.replaceAll(key, value);
+  return out;
+};
+
+const blocks: FactBlock[] = page.blocks;
+---
+
+<article class="doc wrap">
+  <h1>{fill(page.h1)}</h1>
+  <p class="lead">{fill(page.lead)}</p>
+
+  {
+    blocks.map((b) => {
+      if (b.k === 'h2') return <h2 id={b.id}>{b.t}</h2>;
+      if (b.k === 'p') return <p set:html={fill(b.t)} />;
+      if (b.k === 'rows')
+        return (
+          <ul class="facts">
+            {b.items.map(([label, value]) => (
+              <li>
+                <b>{label}</b>
+                <span set:html={fill(value)} />
+              </li>
+            ))}
+          </ul>
+        );
+      if (b.k === 'list')
+        return (
+          <ul class="doc-list">
+            {b.items.map((it) => (
+              <li set:html={fill(it)} />
+            ))}
+          </ul>
+        );
+      return (
+        <div class="cards doc-cards">
+          {b.items.map(([title, text]) => (
+            <div class="card">
+              <h3>{title}</h3>
+              <p set:html={fill(text)} />
+            </div>
+          ))}
+        </div>
+      );
+    })
+  }
+</article>

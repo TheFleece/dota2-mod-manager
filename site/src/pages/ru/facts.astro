@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+import Facts from '../../components/Facts.astro';
+import { facts } from '../../i18n/facts';
+import { factsSchema } from '../../lib/schema';
+
+const page = facts.ru;
+const jsonLd = factsSchema('ru');
+---
+
+<Base title={page.title} description={page.description} path="/facts/">
+  {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
+  <Facts lang="ru" />
+</Base>

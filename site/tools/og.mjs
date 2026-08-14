@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { ogPath } from '../src/lib/og.ts';
 import { docs, docsIndex, docSlugs } from '../src/i18n/docs.ts';
+import { facts } from '../src/i18n/facts.ts';
 import { landing } from '../src/i18n/landing.ts';
 import { siteStats } from '../src/lib/stats.ts';
 
@@ -196,6 +197,13 @@ for (const lang of ['en', 'ru']) {
     title: docsIndex[lang].h1,
     sub: docsIndex[lang].lead,
     section: guides,
+  });
+
+  jobs.push({
+    file: path.basename(ogPath(lang, '/facts/')),
+    title: facts[lang].h1,
+    sub: facts[lang].lead,
+    section: lang === 'ru' ? 'Цифры и факты' : 'Facts',
   });
 
   for (const slug of docSlugs) {

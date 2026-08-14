@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { docs, docsIndex } from './src/i18n/docs.ts';
+import { facts } from './src/i18n/facts.ts';
 import {
   shotNames,
   shotUrl,
@@ -42,6 +43,7 @@ function cardText(lang, path) {
     };
   }
   if (path === '/docs/') return { title: docsIndex[lang].h1, caption: docsIndex[lang].description };
+  if (path === '/facts/') return { title: facts[lang].h1, caption: facts[lang].description };
   const doc = docs[lang][path.split('/')[2]];
   return doc ? { title: doc.h1, caption: doc.description } : null;
 }

@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { landing } from '../i18n/landing';
+import { facts } from '../i18n/facts';
 import { plainText } from './text';
 import { ogPath } from './og';
 import {
@@ -29,7 +30,7 @@ import {
 } from './media';
 
 /** The app's version, read from the repository at build time so it cannot go stale. */
-function appVersion(): string {
+export function appVersion(): string {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const pkg = path.resolve(here, '..', '..', '..', 'package.json');
   return JSON.parse(fs.readFileSync(pkg, 'utf-8')).version;
@@ -52,14 +53,16 @@ export function authorNode(origin = 'https://dota2modmanager.com') {
   };
 }
 
-export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager.com') {
+/** The app itself, with an @id so the landing and the fact sheet describe one thing twice. */
+export function softwareNode(lang: 'en' | 'ru', origin = 'https://dota2modmanager.com') {
   const url = lang === 'en' ? `${origin}/` : `${origin}/${lang}/`;
   const t = landing[lang];
   const author = authorNode(origin);
 
-  const software = {
+  return {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
+    '@id': `${origin}/#app`,
     name: 'Dota 2 Mod Manager',
     alternateName: lang === 'ru' ? 'Менеджер модов для Dota 2' : 'Dota 2 Mods Manager',
     applicationCategory: 'GameApplication',
@@ -97,6 +100,53 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
       publisher: { '@type': 'Organization', name: 'Valve Corporation' },
     },
   };
+}
+
+/**
+ * The fact sheet's markup.
+ *
+ * The page exists to be quoted, so it says the same things twice: once in prose for a reader
+ * and once here for whatever reads pages instead of people. The app node is the same @id the
+ * landing uses, so this is one product described in more detail, not a second product.
+ */
+export function factsSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager.com') {
+  const page = facts[lang];
+  const author = authorNode(origin);
+  const url = lang === 'en' ? `${origin}/facts/` : `${origin}/${lang}/facts/`;
+  const home = lang === 'en' ? `${origin}/` : `${origin}/${lang}/`;
+
+  return [
+    { '@context': 'https://schema.org', ...author },
+    softwareNode(lang, origin),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': url,
+      url,
+      name: page.h1,
+      description: page.description,
+      inLanguage: lang,
+      isPartOf: { '@id': `${origin}/#website` },
+      about: { '@id': `${origin}/#app` },
+      author: { '@id': author['@id'] },
+      publisher: { '@id': author['@id'] },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Dota 2 Mod Manager', item: home },
+        { '@type': 'ListItem', position: 2, name: page.h1, item: url },
+      ],
+    },
+  ];
+}
+
+export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager.com') {
+  const url = lang === 'en' ? `${origin}/` : `${origin}/${lang}/`;
+  const t = landing[lang];
+  const author = authorNode(origin);
+  const software = softwareNode(lang, origin);
 
   /**
    * The name Google prints above a result.

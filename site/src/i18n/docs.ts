@@ -370,7 +370,7 @@ const en: Record<DocSlug, Doc> = {
         items: [
           ['Read the source', 'Not "source available on request". A link to a repository you can open right now, with the code that matches the release.'],
           ['Check who built the file', 'A release built by a public CI workflow has a log you can read. One uploaded from somebody\'s desktop has your word for it.'],
-          ['Look at the history', 'Twenty-seven releases over a year and an issue tracker with real complaints in it beats a fresh repository with one binary.'],
+          ['Look at the history', 'A year of releases and an issue tracker with real complaints in it beats a fresh repository with one binary.'],
           ['Watch what it asks for', 'A mod installer needs the game folder. It does not need your Steam password, your inventory or a login.'],
         ],
       },
@@ -862,7 +862,7 @@ const ru: Record<DocSlug, Doc> = {
         items: [
           ['Прочитай исходники', 'Не «исходники по запросу», а ссылка на репозиторий, который открывается прямо сейчас, с кодом, из которого собран релиз.'],
           ['Посмотри, кто собрал файл', 'У релиза, собранного публичным CI, есть лог, который можно открыть. У залитого с чьего-то компьютера есть только чьё-то слово.'],
-          ['Посмотри историю', 'Двадцать семь релизов за год и трекер с настоящими жалобами весят больше, чем свежий репозиторий с одним бинарником.'],
+          ['Посмотри историю', 'Год релизов и трекер с настоящими жалобами весят больше, чем свежий репозиторий с одним бинарником.'],
           ['Следи, что просят', 'Установщику модов нужна папка игры. Ему не нужен пароль от Steam, инвентарь или вход в аккаунт.'],
         ],
       },

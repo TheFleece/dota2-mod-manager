@@ -16,6 +16,7 @@ export const ui = {
     'site.tagline': 'Dota 2 mods, installed properly',
 
     'nav.docs': 'Docs',
+    'nav.facts': 'Facts',
     'nav.faq': 'FAQ',
     'nav.github': 'GitHub',
     'nav.discord': 'Discord',
@@ -46,6 +47,7 @@ export const ui = {
     'site.tagline': 'Моды для Dota 2, поставленные по-человечески',
 
     'nav.docs': 'Документация',
+    'nav.facts': 'Цифры и факты',
     'nav.faq': 'Вопросы',
     'nav.github': 'GitHub',
     'nav.discord': 'Discord',
