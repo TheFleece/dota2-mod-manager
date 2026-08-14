@@ -16,6 +16,7 @@ import Base from './Base.astro';
 import { pathIn, type Lang } from '../i18n/ui';
 import { docs, docsIndex, docSlugs, type Doc, type DocSlug } from '../i18n/docs';
 import { plainText } from '../lib/text';
+import { authorNode } from '../lib/schema';
 
 interface Props {
   lang: Lang;
@@ -38,7 +39,10 @@ const link = (html: string) => html.replaceAll('~/', lang === 'en' ? '/' : `/${l
 const steps = doc.blocks.filter((b) => b.k === 'steps');
 const faqs = doc.blocks.filter((b) => b.k === 'faq');
 
+const author = authorNode(site.origin);
+
 const jsonLd: Record<string, unknown>[] = [
+  { '@context': 'https://schema.org', ...author },
   {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
@@ -48,7 +52,11 @@ const jsonLd: Record<string, unknown>[] = [
     datePublished: UPDATED,
     dateModified: UPDATED,
     mainEntityOfPage: abs(`/docs/${doc.slug}/`),
-    author: { '@type': 'Person', name: 'Mykhailo Lynnyk', url: 'https://github.com/TheFleece' },
+    // One entity behind the site, the app and every guide, said once and pointed at from
+    // here: a guide written by a name-shaped string is a guide by nobody in particular.
+    author: { '@id': author['@id'] },
+    publisher: { '@id': author['@id'] },
+    isPartOf: { '@id': `${site.origin}/#website` },
     about: { '@type': 'VideoGame', name: 'Dota 2', publisher: { '@type': 'Organization', name: 'Valve Corporation' } },
   },
   {

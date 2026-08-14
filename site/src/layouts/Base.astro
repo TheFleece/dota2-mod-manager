@@ -6,7 +6,9 @@
  * declare its pairs is two sites competing with each other in search results, so every page
  * states its canonical address and both alternates, and x-default points at English.
  */
+import fs from 'node:fs';
 import { langFromUrl, useTranslations, pathIn, type Lang } from '../i18n/ui';
+import { ogPath } from '../lib/og';
 import Backdrop from '../components/Backdrop.astro';
 import Cursor from '../components/Cursor.astro';
 import '../styles/site.css';
@@ -31,6 +33,12 @@ const alternates = [
 ];
 const other: Lang = lang === 'ru' ? 'en' : 'ru';
 
+/* This page's own link-preview card, drawn by tools/og.mjs and committed under public/og/.
+   A page whose card has not been drawn yet falls back to the shared one rather than pointing
+   at a 404: an og:image that does not resolve is a link with no picture at all. */
+const card = ogPath(lang, path);
+const ogImage = fs.existsSync(new URL(`../../public${card}`, import.meta.url)) ? card : '/og.png';
+
 const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
 const DISCORD = 'https://discord.gg/dota2pornfx';
 const RELEASES = `${GITHUB}/releases/latest`;
@@ -51,8 +59,12 @@ const RELEASES = `${GITHUB}/releases/latest`;
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL('/og.png', site).href} />
+    <meta property="og:image" content={new URL(ogImage, site).href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={title} />
     <meta property="og:locale" content={lang === 'ru' ? 'ru_RU' : 'en_US'} />
+    <meta property="og:locale:alternate" content={lang === 'ru' ? 'en_US' : 'ru_RU'} />
     <meta name="twitter:card" content="summary_large_image" />
 
     {/* Google asks for a square favicon that is a multiple of 48px and fetches /favicon.ico as

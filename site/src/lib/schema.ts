@@ -13,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { landing } from '../i18n/landing';
 import { plainText } from './text';
+import { ogPath } from './og';
 
 /** The app's version, read from the repository at build time so it cannot go stale. */
 function appVersion(): string {
@@ -21,9 +22,27 @@ function appVersion(): string {
   return JSON.parse(fs.readFileSync(pkg, 'utf-8')).version;
 }
 
+/**
+ * The one person behind this, as a node other nodes can point at.
+ *
+ * Given an @id, the author of a guide, the publisher of the site and the author of the app are
+ * one entity rather than three copies of a name, which is the difference between a search
+ * engine knowing who made this and reading the same string three times.
+ */
+export function authorNode(origin = 'https://dota2modmanager.com') {
+  return {
+    '@type': 'Person',
+    '@id': `${origin}/#author`,
+    name: 'Mykhailo Lynnyk',
+    url: 'https://github.com/TheFleece',
+    sameAs: ['https://github.com/TheFleece'],
+  };
+}
+
 export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager.com') {
   const url = lang === 'en' ? `${origin}/` : `${origin}/${lang}/`;
   const t = landing[lang];
+  const author = authorNode(origin);
 
   const software = {
     '@context': 'https://schema.org',
@@ -43,11 +62,11 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     softwareHelp: { '@type': 'CreativeWork', url: `${url}docs/` },
     // The card image, not a screenshot: it is the one picture here that still reads at the
     // size a search result shows, and it is what Google is being offered as the thumbnail.
-    image: `${origin}/og.png`,
+    image: `${origin}${ogPath(lang, '/')}`,
     screenshot: [`${origin}/screenshots/${lang}-catalog.webp`, `${origin}/screenshots/${lang}-library.webp`],
     featureList: t.cards.map(([title]) => title),
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    author: { '@type': 'Person', name: 'Mykhailo Lynnyk', url: 'https://github.com/TheFleece' },
+    author: { '@id': author['@id'] },
     about: {
       '@type': 'VideoGame',
       name: 'Dota 2',
@@ -55,12 +74,26 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     },
   };
 
+  /**
+   * The name Google prints above a result.
+   *
+   * It shows "dota2modmanager" there, not "Dota 2 Mod Manager", which is what a domain three
+   * weeks old gets by default: the algorithm falls back to the address until enough agrees
+   * with it. Everything it reads to decide is stated here and matched by og:site_name, the
+   * <title> and the H1 - name, the other names people use, and who publishes it.
+   */
   const website = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    '@id': `${origin}/#website`,
     name: 'Dota 2 Mod Manager',
+    alternateName:
+      lang === 'ru'
+        ? ['Менеджер модов для Dota 2', 'Мод-менеджер для Доты 2', 'D2MM']
+        : ['Dota 2 Mods Manager', 'D2MM'],
     url: `${origin}/`,
     inLanguage: lang,
+    publisher: { '@id': author['@id'] },
   };
 
   const faq = {
@@ -73,5 +106,5 @@ export function landingSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanag
     })),
   };
 
-  return [software, website, faq];
+  return [{ '@context': 'https://schema.org', ...author }, software, website, faq];
 }

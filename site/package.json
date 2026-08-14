@@ -11,7 +11,8 @@
     "deploy:preview": "astro build && wrangler pages deploy dist --project-name dota2modmanager --branch preview --commit-dirty=true",
     "deploy": "astro build && wrangler pages deploy dist --project-name dota2modmanager --branch main --commit-dirty=true && npm run indexnow",
     "indexnow": "node tools/indexnow.mjs",
-    "icons": "node tools/icons.mjs"
+    "icons": "node tools/icons.mjs",
+    "og": "node tools/og.mjs"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.6.0",
