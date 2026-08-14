@@ -78,7 +78,7 @@ jobs:
             echo "::error::/releases/latest says $latest, not $TAG - installed copies follow that endpoint"
             exit 1
           fi
-          for want in latest.yml Dota-2-Mod-Manager-Setup.exe; do
+          for want in latest.yml Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe; do
             gh api "repos/$REPO/releases/latest" --jq '[.assets[].name]' | grep -q "$want" \
               || { echo "::error::$want is missing from the release the updater reads"; exit 1; }
           done

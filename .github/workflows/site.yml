@@ -1,0 +1,70 @@
+# The site rebuilds itself, because its numbers go stale on their own.
+#
+# The landing counts mods, downloads and releases at build time (site/src/lib/stats.ts), so a
+# static page is only ever as true as its last build. It was deployed by hand, which meant the
+# day after 2.2.0 shipped the page still said 2.1.0, 20,046 downloads and 1,090 mods while the
+# real figures were 2.2.0, 23,838 and 1,101. Nobody forgot: there was simply nothing to remind
+# anyone.
+#
+# Three reasons to rebuild, and all three are here:
+#   a release went out, so the version badge and the download count are wrong;
+#   the catalogue grew, which happens on its own schedule and needs no release at all;
+#   somebody edited the site.
+#
+# The Pages project takes direct uploads rather than building from git, so there is no deploy
+# hook to poke: the build happens here and wrangler uploads the result.
+name: Site
+
+on:
+  # after a release, not at the same time as one - the release workflow has to finish
+  # publishing before the download count means anything
+  workflow_run:
+    workflows: ['Release']
+    types: [completed]
+  schedule:
+    - cron: '17 5 * * *'
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/site.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install
+        working-directory: site
+        run: npm ci
+
+      # The build reaches out to the catalogue and to the GitHub API for the four numbers on
+      # the landing. If either is unreachable it falls back to committed figures rather than
+      # failing, so a bad minute at GitHub costs freshness and not a deploy.
+      - name: Build
+        working-directory: site
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        working-directory: site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy dist --project-name dota2modmanager --branch main
+
+      # Bing and Yandex are told the pages changed. Google does not take part and finds them
+      # its own way, so a failure here is a slower crawl and nothing more.
+      - name: Tell IndexNow
+        working-directory: site
+        continue-on-error: true
+        run: npm run indexnow

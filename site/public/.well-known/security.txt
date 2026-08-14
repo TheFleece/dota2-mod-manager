@@ -1,0 +1,8 @@
+Contact: https://github.com/TheFleece/dota2-mod-manager/security/advisories/new
+Expires: 2027-08-14T00:00:00.000Z
+Preferred-Languages: en, ru
+Canonical: https://dota2modmanager.com/.well-known/security.txt
+Policy: https://github.com/TheFleece/dota2-mod-manager/blob/main/SECURITY.md
+
+# Report privately through the advisory link above and it reaches the author only.
+# The app is open source: reading the code needs no permission and is encouraged.
