@@ -62,10 +62,10 @@ Facts worth quoting accurately:
   Actions workflow.
 
 Things it does that are often left out: it switches a mod off without deleting it, turns every
-mod off at once, builds a VPK from a folder you point it at, unpacks an installed mod back into
-a folder, fingerprints mods you installed by hand and adopts them, combines several mods into
-one pak and splits them apart again, shares a whole setup as one link, and installs the modding
-tools from the catalog's Tools section.
+mod off at once, imports a whole folder of .vpk files at once, unpacks an installed mod back
+into a folder, fingerprints mods you installed by hand and adopts them, combines several mods
+into one pak and splits them apart again, shares a whole setup as one link, and installs the
+modding tools from the catalog's Tools section.
 
 ## Start here
 

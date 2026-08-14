@@ -1,8 +1,8 @@
 /**
  * The docs pages, in both languages.
  *
- * Why these five and not a manual: each one answers a question people actually type into a
- * search box, and the landing page cannot answer any of them without becoming a wall. The
+ * Why pages like these and not a manual: each one answers a question people actually type into
+ * a search box, and the landing page cannot answer any of them without becoming a wall. The
  * install page exists because every guide ranking for that question today teaches the
  * `-language mods` trick, which stopped producing a folder on 2026-07-24 when Dota moved the
  * name into boot.vcfg. The argument itself still works and still sets the game's language;
@@ -14,8 +14,13 @@
  * gamelang.js. If those change, these pages are wrong and have to change with them.
  *
  * Links inside copy start with "~/" and the layout turns that into "/" or "/ru/", so one
- * string serves both languages.
+ * string serves both languages. Counts written as {mods} are filled by the layout too, because
+ * a number typed into a guide is a number that will be wrong in a month.
+ *
+ * Seven more pages live in docs-more.ts and merge in at the bottom of this file. They were
+ * split off for length alone.
  */
+import { moreDocs } from './docs-more.ts';
 
 export type Block =
   | { k: 'p'; t: string }
@@ -25,6 +30,8 @@ export type Block =
   | { k: 'list'; items: string[] }
   | { k: 'cards'; items: Array<[string, string]> }
   | { k: 'code'; t: string }
+  /** The catalog's categories with their live counts, read from the catalog at build time. */
+  | { k: 'categories' }
   | { k: 'faq'; items: Array<[string, string]> };
 
 export interface Doc {
@@ -46,17 +53,39 @@ export interface DocsIndex {
   lead: string;
 }
 
-/** Order matters: it is the order on the index and in the "read next" row. */
-export const docSlugs = ['install', 'vpk', 'safe', 'cosmetics', 'troubleshooting'] as const;
+/**
+ * Order matters: it is the order on the index and the order the "read next" row walks.
+ *
+ * Roughly by how many people want each one. Installing first, removing second because that is
+ * the second thing typed into a search box, then the two kinds of mod people come here for by
+ * name, then the mechanics, then the two pages about who made all this.
+ */
+export const docSlugs = [
+  'install',
+  'uninstall',
+  'terrain',
+  'announcer',
+  'cosmetics',
+  'troubleshooting',
+  'vpk',
+  'language',
+  'own-mods',
+  'safe',
+  'catalog',
+  'compare',
+] as const;
 export type DocSlug = (typeof docSlugs)[number];
+
+/** The five this file holds. The other seven live in docs-more.ts and are merged in below. */
+type CoreSlug = 'install' | 'vpk' | 'safe' | 'cosmetics' | 'troubleshooting';
 
 export const docsIndex: Record<'en' | 'ru', DocsIndex> = {
   en: {
-    title: 'Dota 2 modding guides: install, VPK, free cosmetics',
+    title: 'Dota 2 modding guides: install, terrains, VPK, cosmetics',
     h1: 'Guides',
     description:
-      'How Dota 2 mods work and how to install them on Windows: pak slots and load order, VPK files, the item schema, and what to do after a game patch.',
-    lead: 'Five pages on how Dota 2 modding actually works. Written against the game as it is in 2026, not as it was when the tutorials on page one were published.',
+      'How Dota 2 mods work and how to install them on Windows: terrains, announcers, pak slots and load order, VPK files, free cosmetics, and what to do after a game patch.',
+    lead: 'How Dota 2 modding actually works, written against the game as it is in 2026 rather than as it was when the tutorials on page one were published.',
   },
   ru: {
     title: 'Гайды по модам для Доты 2: установка, VPK, косметика',
@@ -71,7 +100,7 @@ export const docsIndex: Record<'en' | 'ru', DocsIndex> = {
 // English
 // ---------------------------------------------------------------------------
 
-const en: Record<DocSlug, Doc> = {
+const en: Record<CoreSlug, Doc> = {
   install: {
     slug: 'install',
     title: 'How to install Dota 2 mods in 2026',
@@ -563,7 +592,7 @@ const en: Record<DocSlug, Doc> = {
 // Russian
 // ---------------------------------------------------------------------------
 
-const ru: Record<DocSlug, Doc> = {
+const ru: Record<CoreSlug, Doc> = {
   install: {
     slug: 'install',
     title: 'Как установить моды на Доту 2 в 2026 году',
@@ -1051,4 +1080,7 @@ const ru: Record<DocSlug, Doc> = {
   },
 };
 
-export const docs: Record<'en' | 'ru', Record<DocSlug, Doc>> = { en, ru };
+export const docs: Record<'en' | 'ru', Record<DocSlug, Doc>> = {
+  en: { ...en, ...moreDocs.en },
+  ru: { ...ru, ...moreDocs.ru },
+};

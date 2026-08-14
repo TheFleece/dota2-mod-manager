@@ -16,7 +16,9 @@ import Base from './Base.astro';
 import { pathIn, type Lang } from '../i18n/ui';
 import { docs, docsIndex, docSlugs, type Doc, type DocSlug } from '../i18n/docs';
 import { plainText } from '../lib/text';
-import { authorNode } from '../lib/schema';
+import { authorNode, appVersion } from '../lib/schema';
+import { siteStats } from '../lib/stats';
+import { landing } from '../i18n/landing';
 
 interface Props {
   lang: Lang;
@@ -28,13 +30,50 @@ const doc: Doc = docs[lang][slug];
 const index = docsIndex[lang];
 
 /** Last time somebody checked these pages against the game. Shown, and given to crawlers. */
-const UPDATED = '2026-08-09';
+const UPDATED = '2026-08-14';
 
 const site = Astro.site ?? new URL('https://dota2modmanager.com');
 const abs = (p: string) => new URL(pathIn(lang, p), site).href;
 
-/** "~/docs/vpk/" -> "/docs/vpk/" in English, "/ru/docs/vpk/" in Russian. */
-const link = (html: string) => html.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
+/**
+ * "~/docs/vpk/" -> "/docs/vpk/" in English, "/ru/docs/vpk/" in Russian, and any count written
+ * as {mods} filled from the catalog.
+ *
+ * Guides quote numbers too, and a number typed into a guide is a number that will be wrong in
+ * a month. Russian also wants the noun to agree with a figure nobody knows before the build,
+ * so the agreeing forms come along with the digits.
+ */
+const stats = await siteStats();
+const locale = lang === 'ru' ? 'ru-RU' : 'en-US';
+const nf = new Intl.NumberFormat(locale);
+const pr = new Intl.PluralRules(locale);
+const agree = (n: number, forms: readonly [string, string, string]) => {
+  const form = pr.select(n);
+  return form === 'one' ? forms[0] : form === 'few' ? forms[1] : forms[2];
+};
+const catWords: Record<Lang, [string, string, string]> = {
+  en: ['category', 'categories', 'categories'],
+  ru: ['категории', 'категориях', 'категориях'],
+};
+const counts: Record<string, string> = {
+  '{version}': appVersion(),
+  '{mods}': nf.format(stats.mods),
+  '{modsWord}': agree(stats.mods, landing[lang].statWords[0]),
+  '{categories}': nf.format(stats.categories),
+  '{categoriesWord}': agree(stats.categories, catWords[lang]),
+};
+
+const link = (html: string) => {
+  let out = html.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
+  for (const [key, value] of Object.entries(counts)) out = out.replaceAll(key, value);
+  return out;
+};
+
+/** The catalog by category, biggest first, using the names the landing already translates. */
+const categories = landing[lang].marquee
+  .map(([id, label]) => [label, stats.byCategory[id] ?? 0] as const)
+  .filter(([, n]) => n > 0)
+  .sort((a, b) => b[1] - a[1]);
 
 const steps = doc.blocks.filter((b) => b.k === 'steps');
 const faqs = doc.blocks.filter((b) => b.k === 'faq');
@@ -100,8 +139,15 @@ if (steps.length) {
   });
 }
 
-/** The other four, in the order the index lists them. */
-const others = docSlugs.filter((s) => s !== slug).map((s) => docs[lang][s]);
+/**
+ * Three more, taken from where this one sits in the list and wrapping round.
+ *
+ * It used to be every other page, which was fine at five and a wall at twelve. Three is a row,
+ * and walking forward from here means a reader who follows them lands somewhere new each time
+ * instead of on the same first three from every page.
+ */
+const at = docSlugs.indexOf(slug);
+const others = [1, 2, 3].map((n) => docs[lang][docSlugs[(at + n) % docSlugs.length]]);
 
 const backLabel = lang === 'ru' ? 'Все гайды' : 'All guides';
 const updatedLabel = lang === 'ru' ? 'Проверено' : 'Checked';
@@ -136,6 +182,17 @@ const updatedHuman = new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-GB', 
         if (b.k === 'p') return <p set:html={link(b.t)} />;
         if (b.k === 'note') return <p class="doc-note" set:html={link(b.t)} />;
         if (b.k === 'code') return <pre class="doc-code"><code>{b.t}</code></pre>;
+        if (b.k === 'categories')
+          return (
+            <ul class="facts">
+              {categories.map(([label, n]) => (
+                <li>
+                  <b>{label}</b>
+                  <span>{nf.format(n)}</span>
+                </li>
+              ))}
+            </ul>
+          );
         if (b.k === 'list')
           return (
             <ul class="doc-list">

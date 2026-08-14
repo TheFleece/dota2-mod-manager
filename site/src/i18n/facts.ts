@@ -90,7 +90,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
           ],
           [
             'Takes your own files',
-            'Drag a .vpk in, or point it at a folder and it builds the VPK for you. It also unpacks an installed mod back into a folder, which is where editing one starts.',
+            'Drag a .vpk in, or point it at a whole folder of mods you already had and it takes every archive out of it at once. It also unpacks an installed mod back into a folder, which is where editing one starts.',
           ],
           [
             'Recognises mods you installed by hand',
@@ -240,7 +240,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
           ],
           [
             'Принимает твои файлы',
-            'Перетащи .vpk, или укажи папку - программа соберёт VPK сама. Установленный мод она же распаковывает обратно в папку: с этого начинается правка чужого мода.',
+            'Перетащи .vpk в окно, или укажи целую папку со старыми модами - программа заберёт из неё все архивы разом. Установленный мод она же распаковывает обратно в папку: с этого начинается правка чужого мода.',
           ],
           [
             'Узнаёт моды, поставленные руками',
