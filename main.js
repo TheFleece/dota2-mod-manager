@@ -35,6 +35,7 @@ const { createToolchain } = require('./src/toolchain');
 const { createGameIcons } = require('./src/game-icons');
 const { createModPreviews } = require('./src/mod-preview');
 const { createModIdentity } = require('./src/mod-id');
+const portableUpdater = require('./src/portable-update');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport, renderSummary, renderDetailed } = require('./src/diagnostics');
@@ -252,6 +253,13 @@ function createWindow() {
               await new Promise((r) => setTimeout(r, 400));
             }
           }
+          if (process.env.MM_UPDATE) {
+            // dev-only: MM_UPDATE=portable:2.3.0 raises the update bar without waiting for a
+            // real release, so the three states it can be in stay checkable from a screenshot
+            const [type, version] = String(process.env.MM_UPDATE).split(':');
+            win.webContents.send('update', { type, version: version || '0.0.0' });
+            await new Promise((r) => setTimeout(r, 900));
+          }
           if (process.env.MM_SCROLL) {
             // dev-only: scroll the scrollable pane by N px before capture (long views)
             await win.webContents.executeJavaScript(`(() => {
@@ -346,6 +354,8 @@ function appendLog(line) {
 // from two thousand lines of ordinary log (see diag:rendererError).
 const rendererErrors = [];
 let lastUpdateError = null;
+// version a portable copy was told about, so the renderer can ask for it by name later
+let portableUpdate = null;
 
 const DIAG = process.env.MM_DIAG;
 function diag(msg) {
@@ -521,6 +531,7 @@ function setupAutoUpdate() {
   // then fail quietly. It still looks, and says where the new copy lives.
   autoUpdater.autoDownload = !IS_PORTABLE;
   autoUpdater.on('update-available', (info) => {
+    if (IS_PORTABLE) portableUpdate = info.version;
     if (win && !win.isDestroyed()) {
       win.webContents.send('update', { type: IS_PORTABLE ? 'portable' : 'available', version: info.version });
     }
@@ -1281,6 +1292,34 @@ function registerIpc() {
   ipcMain.handle('win:isMaximized', () => win.isMaximized());
 
   // ----- updates -----
+  // Portable copies cannot install over themselves (see src/portable-update.js). This puts the
+  // new build next to the current one and hands back where it landed, so the user closes this
+  // window and double-clicks that instead of visiting the site.
+  ipcMain.handle('update:fetchPortable', async () => {
+    if (!IS_PORTABLE) return { error: t('Это не портативная сборка') };
+    if (!portableUpdate) return { error: t('Обновления нет') };
+    try {
+      const got = await portableUpdater.fetchBeside(portableUpdate, {
+        onProgress: (loaded, total) => sendProgress({ type: 'download', label: `v${portableUpdate}`, loaded, total }),
+        log: diag,
+      });
+      sendProgress({ type: 'done', label: `v${portableUpdate}` });
+      diag(`portable update fetched: ${got.name}`);
+      return { ok: true, name: got.name, path: got.path, already: !!got.already };
+    } catch (err) {
+      sendProgress({ type: 'error', label: `v${portableUpdate}`, message: String(err.message || err) });
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('update:revealPortable', (e, filePath) => {
+    // only ever the file this app just wrote, next to the running exe
+    const dir = portableUpdater.portableDir();
+    if (!dir || path.dirname(path.resolve(filePath)) !== path.resolve(dir)) return { error: t('Файл не найден') };
+    shell.showItemInFolder(filePath);
+    return { ok: true };
+  });
+
   ipcMain.handle('update:install', () => {
     if (autoUpdater) autoUpdater.quitAndInstall();
   });

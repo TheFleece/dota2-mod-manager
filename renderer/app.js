@@ -277,8 +277,30 @@ window.api.update.onUpdate((evt) => {
   if (evt.type === 'available') {
     toast(L`Найдено обновление v${evt.version} — скачиваю в фоне…`, 'ok', 6000);
   } else if (evt.type === 'portable') {
-    // portable build: it cannot replace its own exe, so it points at the download instead
-    toast(L`Вышла версия v${evt.version} — скачай новую портативную сборку на dota2modmanager.com`, 'ok', 9000);
+    // A portable copy cannot install over itself, so the new build is fetched to sit beside it
+    // and this turns into "it is there, go run it". Nothing on disk is replaced.
+    const bar = document.createElement('div');
+    bar.className = 'update-bar';
+    bar.innerHTML = `
+      <span class="ms">system_update_alt</span>
+      <span>${L`Вышла версия `}<b>v${esc(evt.version)}</b></span>
+      <button class="btn btn-sm btn-primary" id="portableGetBtn">${L`Скачать рядом`}</button>
+      <button class="btn btn-sm btn-ghost" id="portableLaterBtn">${L`Позже`}</button>`;
+    document.body.appendChild(bar);
+    bar.querySelector('#portableLaterBtn').addEventListener('click', () => bar.remove());
+    bar.querySelector('#portableGetBtn').addEventListener('click', async (ev) => {
+      const btn = ev.currentTarget;
+      btn.disabled = true;
+      const r = await window.api.update.fetchPortable();
+      if (r?.error) { toast(r.error, 'error', 7000); btn.disabled = false; return; }
+      bar.innerHTML = `
+        <span class="ms">check_circle</span>
+        <span>${L`Новая версия лежит рядом: `}<b>${esc(r.name)}</b>${L`. Закрой это окно и запусти её.`}</span>
+        <button class="btn btn-sm btn-primary" id="portableShowBtn">${L`Показать файл`}</button>
+        <button class="btn btn-sm btn-ghost" id="portableCloseBtn">${L`Понятно`}</button>`;
+      bar.querySelector('#portableShowBtn').addEventListener('click', () => window.api.update.revealPortable(r.path));
+      bar.querySelector('#portableCloseBtn').addEventListener('click', () => bar.remove());
+    });
   } else if (evt.type === 'downloaded') {
     const bar = document.createElement('div');
     bar.className = 'update-bar';

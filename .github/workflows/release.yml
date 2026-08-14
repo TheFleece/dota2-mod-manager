@@ -58,6 +58,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      # The portable build cannot install over itself, so the app downloads the new one and
+      # leaves it beside the old one. That download is only worth anything if there is
+      # something to check it against, and this is it: name, size and SHA-256 of the exe this
+      # run built. The app fetches it from GitHub with no mirror in the way.
+      - name: Publish the portable manifest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          node tools/portable-manifest.js dist "${TAG#v}"
+          gh release upload "$TAG" dist/portable.yml --repo "$REPO" --clobber
+
       # What broke on 2.2.0 was invisible until somebody looked at the API by hand: the
       # workflow was green, the installer was on a page, and the app could not update. These
       # three checks are that look, done by the machine on every release.
@@ -78,7 +92,7 @@ jobs:
             echo "::error::/releases/latest says $latest, not $TAG - installed copies follow that endpoint"
             exit 1
           fi
-          for want in latest.yml Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe; do
+          for want in latest.yml portable.yml Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe; do
             gh api "repos/$REPO/releases/latest" --jq '[.assets[].name]' | grep -q "$want" \
               || { echo "::error::$want is missing from the release the updater reads"; exit 1; }
           done

@@ -74,6 +74,9 @@ const EN = {
   'Discord не отдал профиль (HTTP {0})': 'Discord did not return the profile (HTTP {0})',
   'exe не найден в папке инструмента': 'No .exe found in the tool folder',
   'Инструмент не найден': 'Tool not found',
+  'Это не портативная сборка': 'This is not a portable build',
+  'Обновления нет': 'There is no update',
+  'Файл не найден': 'File not found',
   'Сохранить отчёт для поддержки': 'Save the support report',
   'Отчёт диагностики': 'Diagnostics report',
 

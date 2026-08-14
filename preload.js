@@ -129,6 +129,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   update: {
     install: () => ipcRenderer.invoke('update:install'),
+    fetchPortable: () => ipcRenderer.invoke('update:fetchPortable'),
+    revealPortable: (p) => ipcRenderer.invoke('update:revealPortable', p),
     version: () => ipcRenderer.invoke('app:version'),
     notes: (lang) => ipcRenderer.invoke('app:notes', lang),
     notesSeen: () => ipcRenderer.invoke('app:notesSeen'),
