@@ -167,16 +167,24 @@ class Installer {
 
   // Called before writing into the folder. English is the one language Valve ships no
   // folder for, so there we also lay down the layer definition it would have had.
-  ensureLangFolder() {
+  /**
+   * There is a game to install into, or there is nothing to do.
+   *
+   * mkdir is recursive, so a wrong path never failed on its own: it built the whole tree and
+   * filled it. That is how a user ended up with 43 mods in the leftovers of a library he had
+   * moved to another drive, reported as installed and visible to nobody.
+   */
+  requireGameFolder() {
     const game = this.getGamePath();
     if (!game) throw new Error(t('Путь к Dota 2 не задан'));
-    // Last gate before anything is created. mkdir is recursive, so a wrong path does not fail
-    // here, it quietly builds the whole tree and installs into it: that is how a user ended up
-    // with 43 mods in the leftovers of a library he had moved to another drive.
     if (!validateGamePath(game)) {
       throw new Error(t('По сохранённому пути нет файлов Dota 2 — укажи папку игры заново в настройках'));
     }
-    return ensureLangFolder(game, this.getLangSuffix());
+    return game;
+  }
+
+  ensureLangFolder() {
+    return ensureLangFolder(this.requireGameFolder(), this.getLangSuffix());
   }
 
   // ---------- download ----------
@@ -488,6 +496,10 @@ class Installer {
    * [{ root: 'lang'|'fonts'|'cursor'|'tools', relPath, backup? }]
    */
   async install({ categoryId, modName, fileRef }) {
+    // Before the download, not after it. The folder check used to happen at the write, so a
+    // mod with nowhere to go still cost the user a 300 MB download first and only then said
+    // no. Tools are the exception: they live in the app's own folder and need no game.
+    if (categoryId !== 'tools') this.requireGameFolder();
     const local = await this.download(categoryId, fileRef, modName);
     this.onProgress({ type: 'stage', label: modName, stage: t('установка') });
     // A mod is rarely one file, and everything below writes into somebody else's game

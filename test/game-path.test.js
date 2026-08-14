@@ -97,6 +97,26 @@ test('the installer refuses to make a mods folder where the game is not', (t) =>
   assert.equal(fs.existsSync(path.join(game, 'dota_russian')), false, 'and it created nothing');
 });
 
+// "Приложение вообще не должно скачивать моды" - the check has to come before the download,
+// not at the write, or a mod with nowhere to go still costs a 300 MB download first.
+test('nothing is downloaded when there is nowhere to install it', async (t) => {
+  const dir = tmpDir(t);
+  const inst = new Installer({
+    userDataDir: tmpDir(t),
+    getGamePath: () => movedAway(dir),
+    getLangSuffix: () => 'russian',
+    onProgress: () => {},
+  });
+  let asked = false;
+  inst.download = async () => { asked = true; return 'never'; };
+
+  await assert.rejects(
+    () => inst.install({ categoryId: 'heroes', modName: 'Some Mod', fileRef: 'mod.vpk' }),
+    /Dota 2/,
+  );
+  assert.equal(asked, false, 'the download was never started');
+});
+
 test('with a real install it makes the folder as before', (t) => {
   const dir = tmpDir(t);
   const game = realInstall(dir);
