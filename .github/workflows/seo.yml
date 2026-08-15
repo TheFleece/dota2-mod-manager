@@ -6,8 +6,9 @@ name: SEO report
 # that went badly can be replied to. One issue with a comment per week rather than a new issue
 # each time, so the whole run of them reads top to bottom.
 #
-# Nothing here is read without a key. With no BING_API_KEY the report still posts and says so,
-# which is better than a workflow that quietly does nothing for a month.
+# Nothing here is read without a key. A console whose secret is missing still gets its heading
+# and a line saying which secret it wants, which is better than a workflow that quietly does
+# nothing for a month.
 
 on:
   schedule:
@@ -15,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       raw:
-        description: 'Print one Bing method raw instead of posting a report, e.g. GetCrawlStats'
+        description: 'Print one endpoint raw instead of posting a report: GetCrawlStats, google:sites, yandex:user'
         required: false
         default: ''
 
@@ -46,6 +47,8 @@ jobs:
         if: inputs.raw != ''
         env:
           BING_API_KEY: ${{ secrets.BING_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          YANDEX_OAUTH_TOKEN: ${{ secrets.YANDEX_OAUTH_TOKEN }}
           RAW: ${{ inputs.raw }}
         run: node tools/seo-report.mjs --raw "$RAW"
 
@@ -55,6 +58,8 @@ jobs:
         if: inputs.raw == ''
         env:
           BING_API_KEY: ${{ secrets.BING_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          YANDEX_OAUTH_TOKEN: ${{ secrets.YANDEX_OAUTH_TOKEN }}
         run: |
           node tools/seo-report.mjs
           cat seo-report.md
