@@ -7,3 +7,6 @@ dist/
 # Throwaway Dota tree and downloaded mods built by tools/sandbox.js. The list of what a
 # sandbox should hold travels with the repo in tools/sandbox-mods.json; the files do not.
 sandbox/
+
+# The weekly search report is a build product: it is posted as an issue comment, not kept.
+seo-report.md

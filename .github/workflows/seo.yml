@@ -1,0 +1,68 @@
+name: SEO report
+
+# Once a week, what the search engines are seeing, as a comment on one tracking issue.
+#
+# An issue rather than a file: it arrives by notification, it keeps its own history, and a week
+# that went badly can be replied to. One issue with a comment per week rather than a new issue
+# each time, so the whole run of them reads top to bottom.
+#
+# Nothing here is read without a key. With no BING_API_KEY the report still posts and says so,
+# which is better than a workflow that quietly does nothing for a month.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: seo-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Read the consoles
+        env:
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
+        run: node tools/seo-report.mjs
+
+      - name: Post it on the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Search visibility"
+          number=$(gh issue list --state open --search "$title in:title" --json number,title \
+            --jq ".[] | select(.title == \"$title\") | .number" | head -1)
+          if [ -z "$number" ]; then
+            number=$(gh issue create --title "$title" \
+              --body "Weekly reports from the webmaster consoles land here, posted by .github/workflows/seo.yml. Each comment is one week." \
+              --json number --jq .number 2>/dev/null || true)
+            # Older gh versions print the URL rather than JSON, so fall back to the last segment.
+            if [ -z "$number" ]; then
+              number=$(gh issue list --state open --search "$title in:title" --json number,title \
+                --jq ".[] | select(.title == \"$title\") | .number" | head -1)
+            fi
+          fi
+          gh issue comment "$number" --body-file seo-report.md
+
+      # Next week's report compares against this one.
+      - name: Remember this week's numbers
+        run: |
+          if ! git diff --quiet -- seo-state.json || [ -n "$(git ls-files --others --exclude-standard -- seo-state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add seo-state.json
+            git commit -m "Update the search snapshot"
+            git push
+          fi

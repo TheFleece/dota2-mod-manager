@@ -28,6 +28,11 @@ on:
     paths: ['site/**', '.github/workflows/site.yml']
   workflow_dispatch:
 
+# The deploy itself needs nothing from the repository, but the IndexNow ledger is committed
+# back at the end so the next run knows what has already been announced.
+permissions:
+  contents: write
+
 concurrency:
   group: site-deploy
   cancel-in-progress: false
@@ -68,3 +73,17 @@ jobs:
         working-directory: site
         continue-on-error: true
         run: npm run indexnow
+
+      # Which addresses went out, so the next deploy announces what changed rather than all
+      # 358 again. Kept at the repository root on purpose: a commit under site/ would match
+      # this workflow's own path filter.
+      - name: Remember what was announced
+        continue-on-error: true
+        run: |
+          if ! git diff --quiet -- indexnow.state.json || [ -n "$(git ls-files --others --exclude-standard -- indexnow.state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add indexnow.state.json
+            git commit -m "Update the IndexNow ledger"
+            git push
+          fi
