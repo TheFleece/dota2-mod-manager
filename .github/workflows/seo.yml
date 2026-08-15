@@ -32,29 +32,37 @@ jobs:
         with:
           node-version: 24
 
+      # The report is echoed into the log as well as posted, so a run that goes wrong can be
+      # read here. Nothing secret reaches it: the key is never printed, including in errors.
       - name: Read the consoles
         env:
           BING_API_KEY: ${{ secrets.BING_API_KEY }}
-        run: node tools/seo-report.mjs
+        run: |
+          node tools/seo-report.mjs
+          cat seo-report.md
 
+      # Find the issue by listing and matching exactly, not with --search: GitHub's search index
+      # is eventually consistent, so an issue created seconds ago is not findable yet, and the
+      # first run would create a second one on every attempt.
+      #
+      # `gh issue create` prints the new issue's URL and takes no --json, so the number comes
+      # off the end of that URL.
       - name: Post it on the tracking issue
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           title="Search visibility"
-          number=$(gh issue list --state open --search "$title in:title" --json number,title \
-            --jq ".[] | select(.title == \"$title\") | .number" | head -1)
+          number=$(gh issue list --state open --limit 100 --json number,title \
+            --jq "map(select(.title == \"$title\")) | first | .number // empty")
           if [ -z "$number" ]; then
-            number=$(gh issue create --title "$title" \
-              --body "Weekly reports from the webmaster consoles land here, posted by .github/workflows/seo.yml. Each comment is one week." \
-              --json number --jq .number 2>/dev/null || true)
-            # Older gh versions print the URL rather than JSON, so fall back to the last segment.
-            if [ -z "$number" ]; then
-              number=$(gh issue list --state open --search "$title in:title" --json number,title \
-                --jq ".[] | select(.title == \"$title\") | .number" | head -1)
-            fi
+            url=$(gh issue create --title "$title" \
+              --body "Weekly reports from the webmaster consoles land here, posted by .github/workflows/seo.yml. Each comment is one week.")
+            number="${url##*/}"
+            echo "created issue #$number"
           fi
           gh issue comment "$number" --body-file seo-report.md
+          echo "posted to issue #$number"
 
       # Next week's report compares against this one.
       - name: Remember this week's numbers
