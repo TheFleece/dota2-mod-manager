@@ -15,6 +15,10 @@ import {
   TOUR_UPLOADED,
 } from './src/lib/media.ts';
 import { ogPath } from './src/lib/og.ts';
+import { heroCopy } from './src/i18n/heroes.ts';
+import heroData from './src/data/heroes.json' with { type: 'json' };
+
+const heroBySlug = new Map(heroData.heroes.map((h) => [h.slug, h]));
 
 /**
  * dota2modmanager.com
@@ -44,6 +48,7 @@ function cardText(lang, path) {
   }
   if (path === '/docs/') return { title: docsIndex[lang].h1, caption: docsIndex[lang].description };
   if (path === '/facts/') return { title: facts[lang].h1, caption: facts[lang].description };
+  if (path === '/heroes/') return { title: heroCopy[lang].indexH1, caption: heroCopy[lang].indexDescription };
   const doc = docs[lang][path.split('/')[2]];
   return doc ? { title: doc.h1, caption: doc.description } : null;
 }
@@ -76,6 +81,24 @@ export default defineConfig({
        */
       serialize(item) {
         const [lang, path] = split(item.url);
+
+        // A hero page's pictures are the page. Each one goes in with the mod's own name and a
+        // caption naming the hero, which is the only thing an image search has to place it by.
+        const heroMatch = /^\/heroes\/([^/]+)\/$/.exec(path);
+        if (heroMatch) {
+          const hero = heroBySlug.get(heroMatch[1]);
+          if (hero) {
+            item.img = hero.mods
+              .filter((m) => m.image)
+              .map((m) => ({
+                url: abs(m.image.src),
+                title: m.name,
+                caption: heroCopy[lang].alt.replace('{mod}', m.name).replace('{hero}', hero.name),
+              }));
+          }
+          return item;
+        }
+
         const card = cardText(lang, path);
 
         const img = card

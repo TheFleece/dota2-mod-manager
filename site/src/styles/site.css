@@ -844,3 +844,67 @@ section { padding: 44px 0; }
 .doc-card-link:hover { text-decoration: none; border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
 .doc-card-link h3 { color: var(--primary); }
 
+
+/* Hero pages.
+ *
+ * A hero with thirty mods is thirty pictures, so the list is one column of wide cards rather
+ * than a gallery grid: the picture is a 16:9 render of a set, and shrunk into a third of a
+ * column it shows nothing. The image keeps its own aspect ratio from the width and height on
+ * the tag, so nothing jumps while the page loads. */
+.mods { list-style: none; padding: 0; margin: 2em 0 0; display: grid; gap: 20px; }
+.mod {
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.mod img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface-low);
+  border-bottom: 1px solid var(--border);
+}
+.mod-body { padding: 16px 20px 18px; }
+.mod-body h2 {
+  font-size: 19px;
+  margin: 0 0 6px;
+  scroll-margin-top: 84px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mod-style {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-primary);
+  background: var(--primary);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.mod-meta {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-faint);
+  display: flex;
+  gap: 6px 18px;
+  flex-wrap: wrap;
+}
+
+/* The hero list, and the row of neighbours at the foot of each hero page. */
+.hero-links { list-style: none; padding: 0; margin: 1.4em 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.hero-grid { margin-top: 2em; }
+.hero-links a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-container);
+  color: var(--text);
+  transition: border-color 180ms ease, color 180ms ease;
+}
+.hero-links a:hover { text-decoration: none; border-color: color-mix(in srgb, var(--primary) 45%, transparent); color: var(--primary); }
+.hero-links span { font-size: 13px; color: var(--text-faint); font-variant-numeric: tabular-nums; }

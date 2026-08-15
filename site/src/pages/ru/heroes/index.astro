@@ -1,0 +1,40 @@
+---
+import Base from '../../../layouts/Base.astro';
+import HeroIndex from '../../../components/HeroIndex.astro';
+import { heroCopy } from '../../../i18n/heroes';
+import { heroes } from '../../../lib/heroes';
+import { authorNode } from '../../../lib/schema';
+
+const c = heroCopy.ru;
+const author = authorNode();
+const url = 'https://dota2modmanager.com/ru/heroes/';
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': url,
+    url,
+    name: c.indexH1,
+    description: c.indexDescription,
+    inLanguage: 'ru',
+    isPartOf: { '@id': 'https://dota2modmanager.com/#website' },
+    publisher: { '@id': author['@id'] },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: heroes.length,
+      itemListElement: heroes.map((h, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: h.name,
+        url: `https://dota2modmanager.com/ru/heroes/${h.slug}/`,
+      })),
+    },
+  },
+];
+---
+
+<Base title={c.indexTitle} description={c.indexDescription} path="/heroes/">
+  {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
+  <HeroIndex lang="ru" />
+</Base>

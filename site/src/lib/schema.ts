@@ -13,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { landing } from '../i18n/landing';
 import { facts } from '../i18n/facts';
+import { heroCopy } from '../i18n/heroes';
 import { plainText } from './text';
 import { ogPath } from './og';
 import {
@@ -137,6 +138,69 @@ export function factsSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Dota 2 Mod Manager', item: home },
         { '@type': 'ListItem', position: 2, name: page.h1, item: url },
+      ],
+    },
+  ];
+}
+
+/**
+ * A hero page, said in markup.
+ *
+ * An ItemList of the mods, each an ImageObject with its own caption and, where the catalog
+ * records one, its author. That last part is not decoration: the pictures are somebody else's
+ * work shown here with permission, and crediting them in the markup is the same courtesy as
+ * crediting them on the page.
+ */
+export function heroSchema(
+  lang: 'en' | 'ru',
+  hero: { name: string; slug: string; mods: Array<{ name: string; image: { src: string; width: number; height: number } | null; author: string | null; authorUrl: string | null }> },
+  origin = 'https://dota2modmanager.com',
+) {
+  const c = heroCopy[lang];
+  const prefix = lang === 'en' ? '' : `/${lang}`;
+  const url = `${origin}${prefix}/heroes/${hero.slug}/`;
+  const author = authorNode(origin);
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      '@id': url,
+      url,
+      name: c.h1.replace('{hero}', hero.name),
+      description: c.description.replace('{hero}', hero.name),
+      inLanguage: lang,
+      isPartOf: { '@id': `${origin}/#website` },
+      about: { '@id': `${origin}/#app` },
+      publisher: { '@id': author['@id'] },
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: hero.mods.length,
+        itemListElement: hero.mods
+          .filter((m) => m.image)
+          .map((m, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            item: {
+              '@type': 'ImageObject',
+              name: m.name,
+              caption: c.alt.replace('{mod}', m.name).replace('{hero}', hero.name),
+              contentUrl: `${origin}${m.image!.src}`,
+              width: m.image!.width,
+              height: m.image!.height,
+              encodingFormat: 'image/webp',
+              ...(m.author ? { author: { '@type': 'Person', name: m.author, ...(m.authorUrl ? { url: m.authorUrl } : {}) } } : {}),
+            },
+          })),
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Dota 2 Mod Manager', item: `${origin}${prefix}/` },
+        { '@type': 'ListItem', position: 2, name: c.indexH1, item: `${origin}${prefix}/heroes/` },
+        { '@type': 'ListItem', position: 3, name: hero.name, item: url },
       ],
     },
   ];

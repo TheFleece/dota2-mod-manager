@@ -28,6 +28,7 @@ import sharp from 'sharp';
 import { ogPath } from '../src/lib/og.ts';
 import { docs, docsIndex, docSlugs } from '../src/i18n/docs.ts';
 import { facts } from '../src/i18n/facts.ts';
+import { heroCopy } from '../src/i18n/heroes.ts';
 import { landing } from '../src/i18n/landing.ts';
 import { siteStats } from '../src/lib/stats.ts';
 
@@ -204,6 +205,15 @@ for (const lang of ['en', 'ru']) {
     title: facts[lang].h1,
     sub: facts[lang].lead,
     section: lang === 'ru' ? 'Цифры и факты' : 'Facts',
+  });
+
+  // The hero index gets a card; the 126 hero pages send the mod art instead, which is a
+  // better picture than their own name set in type would be.
+  jobs.push({
+    file: path.basename(ogPath(lang, '/heroes/')),
+    title: heroCopy[lang].indexH1,
+    sub: heroCopy[lang].indexLead,
+    section: lang === 'ru' ? 'Герои' : 'Heroes',
   });
 
   for (const slug of docSlugs) {

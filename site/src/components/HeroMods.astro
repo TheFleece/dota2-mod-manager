@@ -1,0 +1,100 @@
+---
+/**
+ * One hero's page: everything made for them, with a picture of each.
+ *
+ * The list is the page. The sentences around it are the same on all 126 of these, which is
+ * only a problem if the list is thin, so this is the one place on the site where the content
+ * comes from data rather than from someone typing it.
+ *
+ * Every picture is the catalog's own preview, copied onto this domain with h6rd's permission
+ * and credited to whoever the catalog names as the author, with a link to their profile where
+ * one is recorded. The first two load eagerly and the rest lazily: a hero with thirty mods is
+ * thirty images, and all of them at once is a slow page for no benefit.
+ */
+import { pathIn, type Lang } from '../i18n/ui';
+import { heroCopy, slotNames } from '../i18n/heroes';
+import { neighbours, type Hero } from '../lib/heroes';
+
+interface Props { lang: Lang; hero: Hero }
+const { lang, hero } = Astro.props;
+
+const c = heroCopy[lang];
+const slots = slotNames[lang];
+const nf = new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'en-US');
+const pr = new Intl.PluralRules(lang === 'ru' ? 'ru-RU' : 'en-US');
+const word = (n: number) => {
+  const f = pr.select(n);
+  return f === 'one' ? c.modsWord[0] : f === 'few' ? c.modsWord[1] : c.modsWord[2];
+};
+
+const fill = (s: string) =>
+  s
+    .replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`)
+    .replaceAll('{hero}', hero.name)
+    .replaceAll('{count}', nf.format(hero.mods.length))
+    .replaceAll('{word}', word(hero.mods.length));
+
+const others = neighbours(hero.slug);
+---
+
+<article class="doc wrap">
+  <nav class="crumbs" aria-label={c.indexH1}>
+    <a href={pathIn(lang, '/heroes/')}>{c.back}</a>
+  </nav>
+
+  <h1>{fill(c.h1)}</h1>
+  <p class="lead">{fill(c.lead)}</p>
+  <p set:html={fill(c.intro)} />
+
+  <ul class="mods">
+    {
+      hero.mods.map((m, i) => (
+        <li class="mod">
+          {m.image && (
+            <img
+              src={m.image.src}
+              width={m.image.width}
+              height={m.image.height}
+              loading={i < 2 ? 'eager' : 'lazy'}
+              decoding="async"
+              alt={c.alt.replace('{mod}', m.name).replace('{hero}', hero.name)}
+            />
+          )}
+          <div class="mod-body">
+            <h2>
+              {m.name}
+              {m.styleLabel && <span class="mod-style">{m.styleLabel}</span>}
+            </h2>
+            <p class="mod-meta">
+              <span>
+                {c.changes}: {m.slots.length ? m.slots.map((s) => slots[s] ?? s).join(', ') : c.noSlots}
+              </span>
+              {m.author && (
+                <span>
+                  {c.by}{' '}
+                  {m.authorUrl ? <a href={m.authorUrl} rel="noopener nofollow">{m.author}</a> : m.author}
+                </span>
+              )}
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2 id="install">{c.install}</h2>
+  <p set:html={fill(c.installBody)} />
+
+  <aside class="doc-next">
+    <h2>{c.otherHeroes}</h2>
+    <ul class="hero-links">
+      {others.map((h) => (
+        <li>
+          <a href={pathIn(lang, `/heroes/${h.slug}/`)}>
+            {h.name} <span>{nf.format(h.mods.length)}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </aside>
+</article>

@@ -18,9 +18,11 @@ interface Props {
   description: string;
   /** Path without a language prefix, e.g. "/docs/quick-start/". */
   path: string;
+  /** Overrides the drawn card, for pages that have a real picture of their own. */
+  image?: { src: string; width: number; height: number };
 }
 
-const { title, description, path } = Astro.props;
+const { title, description, path, image } = Astro.props;
 const lang: Lang = langFromUrl(Astro.url);
 const t = useTranslations(lang);
 
@@ -34,10 +36,14 @@ const alternates = [
 const other: Lang = lang === 'ru' ? 'en' : 'ru';
 
 /* This page's own link-preview card, drawn by tools/og.mjs and committed under public/og/.
-   A page whose card has not been drawn yet falls back to the shared one rather than pointing
-   at a 404: an og:image that does not resolve is a link with no picture at all. */
+   A page with a real picture of its own passes one instead - a hero page sends the art rather
+   than a card with the hero's name set in type. Anything with neither falls back to the front
+   page's card rather than pointing at a 404: an og:image that does not resolve is a link with
+   no picture at all. */
 const card = ogPath(lang, path);
-const ogImage = fs.existsSync(new URL(`../../public${card}`, import.meta.url)) ? card : '/og.png';
+const drawn = fs.existsSync(new URL(`../../public${card}`, import.meta.url)) ? card : ogPath(lang, '/');
+const ogImage = image?.src ?? drawn;
+const ogSize = image ? { w: image.width, h: image.height } : { w: 1200, h: 630 };
 
 const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
 const DISCORD = 'https://discord.gg/dota2pornfx';
@@ -60,8 +66,8 @@ const RELEASES = `${GITHUB}/releases/latest`;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={new URL(ogImage, site).href} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content={String(ogSize.w)} />
+    <meta property="og:image:height" content={String(ogSize.h)} />
     <meta property="og:image:alt" content={title} />
     <meta property="og:locale" content={lang === 'ru' ? 'ru_RU' : 'en_US'} />
     <meta property="og:locale:alternate" content={lang === 'ru' ? 'en_US' : 'ru_RU'} />
@@ -122,6 +128,7 @@ const RELEASES = `${GITHUB}/releases/latest`;
         </p>
         <nav class="foot-links" aria-label={t('site.name')}>
           <a href={pathIn(lang, '/docs/')}>{t('nav.docs')}</a>
+          <a href={pathIn(lang, '/heroes/')}>{t('nav.heroes')}</a>
           <a href={pathIn(lang, '/facts/')}>{t('nav.facts')}</a>
           <a href={GITHUB} rel="noopener">{t('nav.github')}</a>
           <a href={`${GITHUB}/releases`} rel="noopener">{t('foot.releases')}</a>

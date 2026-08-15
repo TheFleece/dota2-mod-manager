@@ -17,6 +17,7 @@ export const ui = {
 
     'nav.docs': 'Docs',
     'nav.facts': 'Facts',
+    'nav.heroes': 'Mods by hero',
     'nav.faq': 'FAQ',
     'nav.github': 'GitHub',
     'nav.discord': 'Discord',
@@ -48,6 +49,7 @@ export const ui = {
 
     'nav.docs': 'Документация',
     'nav.facts': 'Цифры и факты',
+    'nav.heroes': 'Моды по героям',
     'nav.faq': 'Вопросы',
     'nav.github': 'GitHub',
     'nav.discord': 'Discord',

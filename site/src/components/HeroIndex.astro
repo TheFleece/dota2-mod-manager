@@ -1,0 +1,38 @@
+---
+/**
+ * The list of heroes, biggest first.
+ *
+ * Sorted by how much exists rather than alphabetically, because somebody arriving here is
+ * browsing, not looking up a name they already have. The count next to each is the point of
+ * the page: it answers "is there anything for my hero" before the click.
+ */
+import { pathIn, type Lang } from '../i18n/ui';
+import { heroCopy } from '../i18n/heroes';
+import { heroes, totalHeroMods } from '../lib/heroes';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const c = heroCopy[lang];
+const nf = new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'en-US');
+---
+
+<article class="doc wrap">
+  <h1>{c.indexH1}</h1>
+  <p class="lead">{c.indexLead}</p>
+  <p class="muted">
+    {c.indexCount.replace('{count}', nf.format(heroes.length))} · {nf.format(totalHeroMods)}
+  </p>
+
+  <ul class="hero-links hero-grid">
+    {
+      heroes.map((h) => (
+        <li>
+          <a href={pathIn(lang, `/heroes/${h.slug}/`)}>
+            {h.name} <span>{nf.format(h.mods.length)}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</article>
