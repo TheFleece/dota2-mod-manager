@@ -89,8 +89,8 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
             'Weather, couriers, wards, loading screens, announcers, mega-kills. Read out of the game\'s own item table, so anything Valve adds appears without an app update.',
           ],
           [
-            'Takes your own files',
-            'Drag a .vpk in, or point it at a whole folder of mods you already had and it takes every archive out of it at once. It also unpacks an installed mod back into a folder, which is where editing one starts.',
+            'Takes your own files, and packs a mod from a folder',
+            'Drag a .vpk in, or point it at a folder. Archives inside come in all at once; a folder of loose game files is packed into a VPK for you, so an author needs no separate packer. It also unpacks an installed mod back into a folder, which is where editing one starts.',
           ],
           [
             'Recognises mods you installed by hand',
@@ -239,8 +239,8 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
             'Погода, курьеры, варды, экраны загрузки, аннонсеры, мега-киллы. Читается из таблицы предметов самой игры, поэтому новое от Valve появляется без обновления программы.',
           ],
           [
-            'Принимает твои файлы',
-            'Перетащи .vpk в окно, или укажи целую папку со старыми модами - программа заберёт из неё все архивы разом. Установленный мод она же распаковывает обратно в папку: с этого начинается правка чужого мода.',
+            'Принимает твои файлы и собирает мод из папки',
+            'Перетащи .vpk в окно или укажи папку. Есть внутри архивы - заберёт все разом; лежат сырые файлы игры - соберёт из них VPK сама, так что автору не нужен отдельный упаковщик. Установленный мод она же распаковывает обратно в папку: с этого начинается правка чужого мода.',
           ],
           [
             'Узнаёт моды, поставленные руками',

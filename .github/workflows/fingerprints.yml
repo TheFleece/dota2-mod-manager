@@ -38,12 +38,12 @@ jobs:
 
       - name: Commit if changed
         run: |
-          if git diff --quiet -- fingerprints.json fingerprints.state.json; then
+          if git diff --quiet -- fingerprints.json fingerprints.state.json hero-index.json; then
             echo "fingerprints unchanged"
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add fingerprints.json fingerprints.state.json
+            git add fingerprints.json fingerprints.state.json hero-index.json
             git commit -m "Update mod fingerprints"
             git push
           fi

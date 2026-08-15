@@ -343,7 +343,17 @@ const en: Record<Slug, Doc> = {
       { k: 'h2', t: 'A whole folder at once', id: 'folder' },
       {
         k: 'p',
-        t: 'If you have been installing mods by hand for a while, point the app at the folder they are in and it takes every archive out of it in one go, rather than asking you to add them one at a time.',
+        t: 'If you have been installing mods by hand for a while, point the app at the folder they are in and it takes every archive out of it in one go, rather than asking you to add them one at a time. It looks a few levels down, because packs from other tools unzip into a whole game tree with the file you want buried in it.',
+      },
+
+      { k: 'h2', t: 'A folder with no archive in it: your own mod', id: 'pack' },
+      {
+        k: 'p',
+        t: 'Point it at a folder holding loose game files rather than a VPK, and it packs them into one for you and imports the result. This is the case an author has and no installer covers: you have been editing files in a working folder and had nothing to point anything at. The folder\'s own name becomes the mod\'s name.',
+      },
+      {
+        k: 'p',
+        t: 'It works out where your content actually starts, so a wrapper folder left by unzipping, or a game-shaped <code>MyMod/game/dota_russian/models/</code>, both resolve to the same archive. Folders of your own sitting next to the game\'s come along too.',
       },
 
       { k: 'h2', t: 'It recognises mods you installed by hand', id: 'adopt' },
@@ -859,7 +869,17 @@ const ru: Record<Slug, Doc> = {
       { k: 'h2', t: 'Целую папку разом', id: 'folder' },
       {
         k: 'p',
-        t: 'Если ты давно ставишь моды руками, укажи программе папку, где они лежат, и она заберёт из неё все архивы за один раз, а не попросит добавлять их по одному.',
+        t: 'Если ты давно ставишь моды руками, укажи программе папку, где они лежат, и она заберёт из неё все архивы за один раз, а не попросит добавлять их по одному. Смотрит она и на несколько уровней вглубь: паки от других инструментов распаковываются в целое дерево игры, и нужный файл лежит где-то внутри.',
+      },
+
+      { k: 'h2', t: 'Папка без архива: свой мод из сырых файлов', id: 'pack' },
+      {
+        k: 'p',
+        t: 'Укажи папку, где лежат не VPK, а сами файлы игры, и программа соберёт из них архив сама и тут же его поставит. Это случай автора, который не закрывает ни один установщик: ты правишь файлы в рабочей папке, и указать инструменту было не на что. Именем мода становится имя папки.',
+      },
+      {
+        k: 'p',
+        t: 'Где начинается контент, она определяет сама, поэтому и обёртка, оставшаяся от распаковки, и путь игрового вида <code>МойМод/game/dota_russian/models/</code> сводятся к одному и тому же архиву. Твои собственные папки рядом с игровыми тоже поедут внутрь.',
       },
 
       { k: 'h2', t: 'Программа узнаёт моды, поставленные руками', id: 'adopt' },

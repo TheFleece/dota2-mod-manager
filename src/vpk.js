@@ -220,6 +220,9 @@ const HERO_ALIAS = {
   doom: 'doom_bringer', io: 'wisp', zeus: 'zuus', necrophos: 'necrolyte', magnus: 'magnataur',
   treant_protector: 'treant', underlord: 'abyssal_underlord', lifestealer: 'life_stealer',
   centaur_warrunner: 'centaur', vengeful_spirit: 'vengefulspirit', shadow_fiend: 'nevermore',
+  // Merges by key already, but has no display name of its own, so a mod that uses only this
+  // spelling announced itself as "Shadowshaman".
+  shadowshaman: 'shadow_shaman',
 };
 
 function heroDisplayName(id) {
