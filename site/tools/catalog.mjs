@@ -150,6 +150,20 @@ async function download(categoryId, preview, dest) {
   try {
     const meta = await sharp(bytes).metadata();
     if (!meta.width || !meta.height) return null;
+
+    // Downscale what is bigger than the page can use. The card is about 640px wide, so a
+    // 1920px render is three times the pixels nobody sees, and these are committed to a public
+    // repository that keeps every version of every file forever: the untouched set came to
+    // 51 MB and would grow with the catalog. MAX is double the display width, which covers a
+    // dense screen with room to spare, and 82 is the quality where the difference stops being
+    // visible on artwork like this.
+    const MAX = 1280;
+    if (meta.width > MAX) {
+      const out = await sharp(bytes).resize({ width: MAX, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
+      const resized = await sharp(out).metadata();
+      fs.writeFileSync(dest, out);
+      return { width: resized.width, height: resized.height };
+    }
     fs.writeFileSync(dest, bytes);
     return { width: meta.width, height: meta.height };
   } catch {
@@ -274,6 +288,80 @@ for (const [, entry] of merged) {
 }
 
 heroes.sort((a, b) => b.mods.length - a.mods.length || a.name.localeCompare(b.name));
+
+// ---------------------------------------------------------------------------
+// The same again, by category.
+//
+// Heroes answer "what is there for Pudge". Categories answer the other half of what people
+// type: terrains, trees, the river, shaders, cursors, fonts, the menu background, creep deny.
+// Those are searched by somebody who does not yet know the word "mod" - they are looking for
+// how to change a thing in their game - which is exactly the visitor this site never had a
+// page for.
+//
+// Categories that hold no mods are skipped: tools are programs, guides are text, `sites` and
+// `news` are links. A page listing those would be a page about nothing.
+
+const NOT_MODS = new Set(['tools', 'guides', 'sites', 'news', 'other']);
+
+const categories = [];
+for (const [categoryId, data] of Object.entries(mods.modsData)) {
+  if (NOT_MODS.has(categoryId)) continue;
+  if (categoryId === 'heroes') continue; // those have their own pages
+
+  const arr = Array.isArray(data) ? data : (data?.groups ? data.groups.flatMap((g) => g.mods || []) : []);
+  const list = [];
+
+  for (const mod of arr) {
+    if (!mod?.name) continue;
+    const entries = Array.isArray(mod.styles) && mod.styles.length
+      ? mod.styles.map((st) => ({ styleLabel: st.label || null, preview: st.preview || mod.preview }))
+      : [{ styleLabel: null, preview: mod.preview }];
+
+    for (const e of entries) {
+      const key = `${categoryId} ${mod.name} ${e.styleLabel || ''}`;
+      const meta = catalog.get(key);
+      let image = imageFor.get(key) ?? null;
+
+      if (!image && e.preview) {
+        const file = `${uniqueSlug(e.styleLabel ? `${mod.name} ${e.styleLabel}` : mod.name, imageSlugs)}.webp`;
+        const dest = path.join(IMG_DIR, file);
+        let size = fs.existsSync(dest) ? await measure(dest) : null;
+        if (size) reused++;
+        else if (!SKIP_IMAGES) {
+          size = await download(categoryId, e.preview, dest);
+          if (size) {
+            fetched++;
+            if (fetched % 25 === 0) console.log(`  ${fetched} previews`);
+          }
+        }
+        if (size) {
+          image = { src: `/mods/${file}`, ...size };
+          imageFor.set(key, image);
+        } else missing++;
+      }
+
+      list.push({
+        name: mod.name,
+        styleLabel: e.styleLabel,
+        image,
+        author: meta?.author ?? null,
+        authorUrl: meta?.author ? profile(meta.author) : null,
+        date: meta?.date ?? null,
+      });
+    }
+  }
+
+  if (!list.length) continue;
+  list.sort((a, b) => (b.date ?? 0) - (a.date ?? 0) || a.name.localeCompare(b.name));
+  categories.push({ id: categoryId, mods: list });
+}
+
+categories.sort((a, b) => b.mods.length - a.mods.length || a.id.localeCompare(b.id));
+fs.writeFileSync(
+  path.join(siteRoot, 'src', 'data', 'categories.json'),
+  JSON.stringify({ categories }, null, 0),
+);
+console.log(`\n${categories.length} categories, ${categories.reduce((n, c) => n + c.mods.length, 0)} mod entries`);
 
 // No timestamp: this file is committed, and one that changes on every run is a commit that
 // says nothing. Same rule the fingerprints and the hero index follow.

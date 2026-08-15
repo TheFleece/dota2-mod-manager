@@ -14,6 +14,9 @@ import { fileURLToPath } from 'node:url';
 import { landing } from '../i18n/landing';
 import { facts } from '../i18n/facts';
 import { heroCopy } from '../i18n/heroes';
+import { heroText, type Hero } from './heroes';
+import { categoryText } from '../i18n/categories';
+import { categories, type Category } from './categories';
 import { plainText } from './text';
 import { ogPath } from './og';
 import {
@@ -151,12 +154,10 @@ export function factsSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager
  * work shown here with permission, and crediting them in the markup is the same courtesy as
  * crediting them on the page.
  */
-export function heroSchema(
-  lang: 'en' | 'ru',
-  hero: { name: string; slug: string; mods: Array<{ name: string; image: { src: string; width: number; height: number } | null; author: string | null; authorUrl: string | null }> },
-  origin = 'https://dota2modmanager.com',
-) {
+export function heroSchema(lang: 'en' | 'ru', hero: Hero, origin = 'https://dota2modmanager.com') {
   const c = heroCopy[lang];
+  // The same words the page prints, nickname and all, rather than a second phrasing of them.
+  const text = heroText(lang, hero);
   const prefix = lang === 'en' ? '' : `/${lang}`;
   const url = `${origin}${prefix}/heroes/${hero.slug}/`;
   const author = authorNode(origin);
@@ -167,8 +168,8 @@ export function heroSchema(
       '@type': 'CollectionPage',
       '@id': url,
       url,
-      name: c.h1.replace('{hero}', hero.name),
-      description: c.description.replace('{hero}', hero.name),
+      name: text.h1,
+      description: text.description,
       inLanguage: lang,
       isPartOf: { '@id': `${origin}/#website` },
       about: { '@id': `${origin}/#app` },
@@ -202,6 +203,87 @@ export function heroSchema(
         { '@type': 'ListItem', position: 2, name: c.indexH1, item: `${origin}${prefix}/heroes/` },
         { '@type': 'ListItem', position: 3, name: hero.name, item: url },
       ],
+    },
+  ];
+}
+
+/** A category page: the same shape as a hero page, listing the mods in one kind. */
+export function categorySchema(lang: 'en' | 'ru', category: Category, origin = 'https://dota2modmanager.com') {
+  const c = categoryText(lang, category.id);
+  const prefix = lang === 'en' ? '' : `/${lang}`;
+  const url = `${origin}${prefix}/catalog/${category.id}/`;
+  const author = authorNode(origin);
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      '@id': url,
+      url,
+      name: c.h1,
+      description: c.description,
+      inLanguage: lang,
+      isPartOf: { '@id': `${origin}/#website` },
+      about: { '@id': `${origin}/#app` },
+      publisher: { '@id': author['@id'] },
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: category.mods.length,
+        itemListElement: category.mods
+          .filter((m) => m.image)
+          .map((m, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            item: {
+              '@type': 'ImageObject',
+              name: m.name,
+              caption: `${m.name}: ${c.name}`,
+              contentUrl: `${origin}${m.image!.src}`,
+              width: m.image!.width,
+              height: m.image!.height,
+              encodingFormat: 'image/webp',
+              ...(m.author ? { author: { '@type': 'Person', name: m.author, ...(m.authorUrl ? { url: m.authorUrl } : {}) } } : {}),
+            },
+          })),
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Dota 2 Mod Manager', item: `${origin}${prefix}/` },
+        { '@type': 'ListItem', position: 2, name: lang === 'ru' ? 'Каталог' : 'Catalog', item: `${origin}${prefix}/catalog/` },
+        { '@type': 'ListItem', position: 3, name: c.name, item: url },
+      ],
+    },
+  ];
+}
+
+export function catalogIndexSchema(lang: 'en' | 'ru', origin = 'https://dota2modmanager.com') {
+  const prefix = lang === 'en' ? '' : `/${lang}`;
+  const url = `${origin}${prefix}/catalog/`;
+  const author = authorNode(origin);
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      '@id': url,
+      url,
+      name: lang === 'ru' ? 'Каталог модов для Доты 2' : 'The Dota 2 mod catalog',
+      inLanguage: lang,
+      isPartOf: { '@id': `${origin}/#website` },
+      publisher: { '@id': author['@id'] },
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: categories.length,
+        itemListElement: categories.map((c, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: categoryText(lang, c.id).name,
+          url: `${origin}${prefix}/catalog/${c.id}/`,
+        })),
+      },
     },
   ];
 }

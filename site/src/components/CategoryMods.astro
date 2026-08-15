@@ -1,0 +1,98 @@
+---
+/**
+ * One category of the catalog: every mod in it, newest first, with a picture of each.
+ *
+ * Same card as a hero page, and for the same reason: the list is the page. What differs is who
+ * arrives. A hero page is found by somebody who already knows about mods; these are found by
+ * somebody searching how to change the river, and who will only learn the word "mod" from
+ * reading this. So the paragraph under the heading says what this kind of mod does before the
+ * pictures start, and the install section does not assume they have the app.
+ */
+import { pathIn, type Lang } from '../i18n/ui';
+import { categoryText } from '../i18n/categories';
+import { heroCopy } from '../i18n/heroes';
+import { otherCategories, type Category } from '../lib/categories';
+
+interface Props { lang: Lang; category: Category }
+const { lang, category } = Astro.props;
+
+const c = categoryText(lang, category.id);
+const h = heroCopy[lang];
+const nf = new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'en-US');
+const pr = new Intl.PluralRules(lang === 'ru' ? 'ru-RU' : 'en-US');
+const word = (n: number) => {
+  const f = pr.select(n);
+  return f === 'one' ? h.modsWord[0] : f === 'few' ? h.modsWord[1] : h.modsWord[2];
+};
+
+const link = (s: string) => s.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
+const others = otherCategories(category.id);
+
+const count = nf.format(category.mods.length);
+const intro =
+  lang === 'ru'
+    ? `В каталоге Dota2PornFx <b>${count} ${word(category.mods.length)}</b> в этой категории. Каждый меняет картинку только у тебя на экране: соперники и союзники видят свою игру.`
+    : `The Dota2PornFx catalog has <b>${count} ${word(category.mods.length)}</b> in this category. Each changes what you see on your own screen; everyone else sees their own game.`;
+
+const backLabel = lang === 'ru' ? 'Весь каталог' : 'The whole catalog';
+const moreLabel = lang === 'ru' ? 'Другие категории' : 'Other categories';
+---
+
+<article class="doc wrap">
+  <nav class="crumbs" aria-label={backLabel}>
+    <a href={pathIn(lang, '/catalog/')}>{backLabel}</a>
+  </nav>
+
+  <h1>{c.h1}</h1>
+  {c.about && <p class="lead">{c.about}</p>}
+  <p set:html={intro} />
+
+  <ul class="mods">
+    {
+      category.mods.map((m, i) => (
+        <li class="mod">
+          {m.image && (
+            <img
+              src={m.image.src}
+              width={m.image.width}
+              height={m.image.height}
+              loading={i < 2 ? 'eager' : 'lazy'}
+              decoding="async"
+              alt={`${m.name}: ${c.name} — ${lang === 'ru' ? 'мод для Доты 2' : 'a Dota 2 mod'}`}
+            />
+          )}
+          <div class="mod-body">
+            <h2>
+              {m.name}
+              {m.styleLabel && <span class="mod-style">{m.styleLabel}</span>}
+            </h2>
+            {m.author && (
+              <p class="mod-meta">
+                <span>
+                  {h.by}{' '}
+                  {m.authorUrl ? <a href={m.authorUrl} rel="noopener nofollow">{m.author}</a> : m.author}
+                </span>
+              </p>
+            )}
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2 id="install">{h.install}</h2>
+  <p set:html={link(h.installBody)} />
+
+  <aside class="doc-next">
+    <h2>{moreLabel}</h2>
+    <ul class="hero-links">
+      {others.map((o) => (
+        <li>
+          <a href={pathIn(lang, `/catalog/${o.id}/`)}>
+            {categoryText(lang, o.id).name} <span>{nf.format(o.mods.length)}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </aside>
+</article>

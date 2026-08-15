@@ -1,0 +1,52 @@
+---
+/**
+ * The catalog's categories, biggest first, plus the way into the hero pages.
+ *
+ * The one page on the site that answers "what kinds of mods even exist for Dota", which is the
+ * question somebody has before they know what to search for.
+ */
+import { pathIn, type Lang } from '../i18n/ui';
+import { categoryText } from '../i18n/categories';
+import { categories, totalCategoryMods } from '../lib/categories';
+import { heroes, totalHeroMods } from '../lib/heroes';
+import { heroCopy } from '../i18n/heroes';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const nf = new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'en-US');
+const ru = lang === 'ru';
+
+const h1 = ru ? 'Каталог модов для Доты 2' : 'The Dota 2 mod catalog';
+const lead = ru
+  ? 'Что вообще бывает: ландшафты, деревья, река, шейдеры, курсоры, шрифты, фон меню, звуки, крипы и остальное. Всё из открытого каталога Dota2PornFx и всё ставится в один клик.'
+  : 'What exists, by kind: terrains, trees, the river, shaders, cursors, fonts, the menu background, sounds, creeps and the rest. All from the open Dota2PornFx catalog, all installed in one click.';
+const heroesLine = ru
+  ? `Скины на конкретного героя лежат отдельно: ${nf.format(heroes.length)} героев, ${nf.format(totalHeroMods)} модов.`
+  : `Skins for a particular hero have their own pages: ${nf.format(heroes.length)} heroes, ${nf.format(totalHeroMods)} mods.`;
+---
+
+<article class="doc wrap">
+  <h1>{h1}</h1>
+  <p class="lead">{lead}</p>
+  <p class="muted">
+    {ru ? 'Категорий' : 'Categories'}: {nf.format(categories.length)} · {nf.format(totalCategoryMods)}
+  </p>
+
+  <ul class="hero-links hero-grid">
+    {
+      categories.map((c) => (
+        <li>
+          <a href={pathIn(lang, `/catalog/${c.id}/`)}>
+            {categoryText(lang, c.id).name} <span>{nf.format(c.mods.length)}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2>{heroCopy[lang].indexH1}</h2>
+  <p>
+    {heroesLine} <a href={pathIn(lang, '/heroes/')}>{heroCopy[lang].back}</a>.
+  </p>
+</article>

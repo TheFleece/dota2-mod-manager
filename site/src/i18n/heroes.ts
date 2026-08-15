@@ -7,9 +7,11 @@
  * hero, what each one replaces, who made it, and a picture of it. The sentences around that
  * are the same everywhere, and that is fine - the list is the page.
  *
- * Hero names stay in the game's own spelling on both halves of the site. Dota has no official
- * Russian names for heroes, players type the Latin ones as often as any transliteration, and
- * inventing 126 Cyrillic spellings would be guessing at what somebody searches for.
+ * Hero names carry the game's own spelling on both halves, and the Russian half adds the
+ * nickname the hero is played under where there is one: "моды на Пуджа" is the query, and a
+ * page that only ever writes "Pudge" has nothing for it to match. The nicknames and their
+ * accusative forms live in hero-names.ts; a hero missing from that table reads exactly as it
+ * did before, because inventing a nickname nobody uses helps nobody.
  */
 export interface HeroCopy {
   indexTitle: string;
@@ -24,6 +26,12 @@ export interface HeroCopy {
   title: string;
   h1: string;
   description: string;
+  /** The same three for a hero with a Russian nickname: {ru} names him, {ruAcc} asks for him. */
+  titleAka: string;
+  h1Aka: string;
+  descriptionAka: string;
+  /** "Его же пишут как {alts}." Only when the hero has other spellings on file. */
+  aka: string;
   lead: string;
   /** Carries {hero} and {count} plus the agreeing noun in {word}. */
   intro: string;
@@ -52,6 +60,12 @@ export const heroCopy: Record<'en' | 'ru', HeroCopy> = {
     h1: '{hero} mods for Dota 2',
     description:
       'Every {hero} skin and mod in the Dota2PornFx catalog, with previews and what each one replaces. Free, and installed in one click.',
+    // English has no second name for a hero, so these are the same three strings.
+    titleAka: '{hero} mods and skins for Dota 2',
+    h1Aka: '{hero} mods for Dota 2',
+    descriptionAka:
+      'Every {hero} skin and mod in the Dota2PornFx catalog, with previews and what each one replaces. Free, and installed in one click.',
+    aka: '',
     lead: 'What has been made for {hero}, what each one changes, and who made it.',
     intro:
       'There are <b>{count} {word}</b> for {hero} in the Dota2PornFx catalog. Each one is a cosmetic change on your own screen: nobody else in the match sees it, and your Steam inventory is untouched.',
@@ -80,9 +94,14 @@ export const heroCopy: Record<'en' | 'ru', HeroCopy> = {
     h1: 'Моды на {hero} в Доте 2',
     description:
       'Все скины и моды на {hero} из каталога Dota2PornFx: превью и что каждый мод заменяет. Бесплатно и в один клик.',
-    lead: 'Что сделано на {hero}, что каждый мод меняет и кто его автор.',
+    titleAka: 'Моды на {ruAcc}: скины на {hero} для Доты 2',
+    h1Aka: 'Моды на {ruAcc} в Доте 2',
+    descriptionAka:
+      'Все скины и моды на {ruAcc} ({hero}) из каталога Dota2PornFx: превью и что каждый мод заменяет. Бесплатно и в один клик.',
+    aka: 'Его же пишут как {alts}.',
+    lead: 'Что сделано на {ruAcc} ({hero}), что каждый мод меняет и кто его автор.',
     intro:
-      'На {hero} в каталоге Dota2PornFx <b>{count} {word}</b>. Каждый - косметическая правка на твоём экране: соперники и союзники её не видят, инвентарь Steam не трогается.',
+      'На {ruAcc} в каталоге Dota2PornFx <b>{count} {word}</b>. Каждый - косметическая правка на твоём экране: соперники и союзники её не видят, инвентарь Steam не трогается.',
     changes: 'Меняет',
     by: 'автор',
     install: 'Как поставить любой из них',

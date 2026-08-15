@@ -13,7 +13,7 @@
  */
 import { pathIn, type Lang } from '../i18n/ui';
 import { heroCopy, slotNames } from '../i18n/heroes';
-import { neighbours, type Hero } from '../lib/heroes';
+import { neighbours, heroText, type Hero } from '../lib/heroes';
 
 interface Props { lang: Lang; hero: Hero }
 const { lang, hero } = Astro.props;
@@ -27,10 +27,11 @@ const word = (n: number) => {
   return f === 'one' ? c.modsWord[0] : f === 'few' ? c.modsWord[1] : c.modsWord[2];
 };
 
+const text = heroText(lang, hero);
+
 const fill = (s: string) =>
   s
     .replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`)
-    .replaceAll('{hero}', hero.name)
     .replaceAll('{count}', nf.format(hero.mods.length))
     .replaceAll('{word}', word(hero.mods.length));
 
@@ -42,9 +43,10 @@ const others = neighbours(hero.slug);
     <a href={pathIn(lang, '/heroes/')}>{c.back}</a>
   </nav>
 
-  <h1>{fill(c.h1)}</h1>
-  <p class="lead">{fill(c.lead)}</p>
-  <p set:html={fill(c.intro)} />
+  <h1>{text.h1}</h1>
+  <p class="lead">{text.lead}</p>
+  <p set:html={fill(text.intro)} />
+  {text.aka && <p class="muted">{text.aka}</p>}
 
   <ul class="mods">
     {

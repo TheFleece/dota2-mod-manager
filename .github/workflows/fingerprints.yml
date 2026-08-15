@@ -4,6 +4,14 @@ name: Fingerprints
 # fingerprinted, unchanged ones are skipped (state is checkpointed in the repo), and the
 # result is committed only when it actually changes. Pushes to main here don't build a
 # release (that workflow triggers on v* tags only).
+#
+# It also rebuilds the site's hero pages, because they are made of the same downloads. The job
+# already opens every archive to fingerprint it and works out which heroes each one is about;
+# the site then needs the catalog's preview for those same mods. Doing it anywhere else means
+# fetching the catalog twice and having two answers to when it last changed.
+#
+# Node 24 rather than 20: tools/catalog.mjs imports the site's TypeScript directly, which older
+# Node cannot read.
 
 on:
   schedule:
@@ -25,7 +33,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install deps (skip the electron binary — not needed here)
@@ -36,14 +44,23 @@ jobs:
       - name: Regenerate fingerprints (incremental)
         run: node tools/gen-fingerprints.js --conc 8
 
+      # sharp, for reading each preview's size and for refusing the two catalog entries that
+      # are mp4 files wearing a .webp name
+      - name: Install the site's deps
+        run: npm ci --prefix site
+
+      - name: Rebuild the hero and category pages
+        run: npm run catalog --prefix site
+
       - name: Commit if changed
         run: |
-          if git diff --quiet -- fingerprints.json fingerprints.state.json hero-index.json; then
-            echo "fingerprints unchanged"
+          paths="fingerprints.json fingerprints.state.json hero-index.json site/src/data/heroes.json site/src/data/categories.json site/public/mods"
+          if git diff --quiet -- $paths && [ -z "$(git ls-files --others --exclude-standard -- $paths)" ]; then
+            echo "catalog unchanged"
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add fingerprints.json fingerprints.state.json hero-index.json
-            git commit -m "Update mod fingerprints"
+            git add $paths
+            git commit -m "Update mod fingerprints and hero pages"
             git push
           fi

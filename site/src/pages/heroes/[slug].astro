@@ -1,8 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import HeroMods from '../../components/HeroMods.astro';
-import { heroCopy } from '../../i18n/heroes';
-import { heroes } from '../../lib/heroes';
+import { heroes, heroText } from '../../lib/heroes';
 import { heroSchema } from '../../lib/schema';
 
 export function getStaticPaths() {
@@ -10,13 +9,13 @@ export function getStaticPaths() {
 }
 
 const { hero } = Astro.props;
-const c = heroCopy.en;
+const text = heroText('en', hero);
 const jsonLd = heroSchema('en', hero);
 ---
 
 <Base
-  title={c.title.replace('{hero}', hero.name)}
-  description={c.description.replace('{hero}', hero.name)}
+  title={text.title}
+  description={text.description}
   path={`/heroes/${hero.slug}/`}
   image={hero.mods.find((m) => m.image)?.image ?? undefined}
 >

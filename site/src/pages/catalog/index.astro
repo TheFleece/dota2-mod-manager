@@ -1,0 +1,16 @@
+---
+import Base from '../../layouts/Base.astro';
+import CatalogIndex from '../../components/CatalogIndex.astro';
+import { catalogIndexSchema } from '../../lib/schema';
+
+const jsonLd = catalogIndexSchema('en');
+---
+
+<Base
+  title="The Dota 2 mod catalog: every kind of mod there is"
+  description="Terrains, trees, the river, shaders, cursors, fonts, menu backgrounds, sounds and creeps: every category of Dota 2 mod, with previews. Free."
+  path="/catalog/"
+>
+  {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
+  <CatalogIndex lang="en" />
+</Base>

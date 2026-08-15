@@ -1,0 +1,16 @@
+---
+import Base from '../../../layouts/Base.astro';
+import CatalogIndex from '../../../components/CatalogIndex.astro';
+import { catalogIndexSchema } from '../../../lib/schema';
+
+const jsonLd = catalogIndexSchema('ru');
+---
+
+<Base
+  title="Каталог модов для Доты 2: все виды модов"
+  description="Ландшафты, деревья, река, шейдеры, курсоры, шрифты, фоны меню, звуки и крипы: все категории модов для Дота 2 с превью. Бесплатно."
+  path="/catalog/"
+>
+  {jsonLd.map((node) => <script type="application/ld+json" slot="head" set:html={JSON.stringify(node)} />)}
+  <CatalogIndex lang="ru" />
+</Base>

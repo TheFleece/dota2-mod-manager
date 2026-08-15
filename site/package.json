@@ -13,7 +13,7 @@
     "indexnow": "node tools/indexnow.mjs",
     "icons": "node tools/icons.mjs",
     "og": "node tools/og.mjs",
-    "heroes": "node tools/heroes.mjs"
+    "catalog": "node tools/catalog.mjs"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.6.0",

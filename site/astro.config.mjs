@@ -16,9 +16,12 @@ import {
 } from './src/lib/media.ts';
 import { ogPath } from './src/lib/og.ts';
 import { heroCopy } from './src/i18n/heroes.ts';
+import { categoryText } from './src/i18n/categories.ts';
 import heroData from './src/data/heroes.json' with { type: 'json' };
+import categoryData from './src/data/categories.json' with { type: 'json' };
 
 const heroBySlug = new Map(heroData.heroes.map((h) => [h.slug, h]));
+const categoryById = new Map(categoryData.categories.map((c) => [c.id, c]));
 
 /**
  * dota2modmanager.com
@@ -49,6 +52,7 @@ function cardText(lang, path) {
   if (path === '/docs/') return { title: docsIndex[lang].h1, caption: docsIndex[lang].description };
   if (path === '/facts/') return { title: facts[lang].h1, caption: facts[lang].description };
   if (path === '/heroes/') return { title: heroCopy[lang].indexH1, caption: heroCopy[lang].indexDescription };
+  if (path === '/catalog/') return { title: lang === 'ru' ? 'Каталог модов для Доты 2' : 'The Dota 2 mod catalog', caption: '' };
   const doc = docs[lang][path.split('/')[2]];
   return doc ? { title: doc.h1, caption: doc.description } : null;
 }
@@ -95,6 +99,18 @@ export default defineConfig({
                 title: m.name,
                 caption: heroCopy[lang].alt.replace('{mod}', m.name).replace('{hero}', hero.name),
               }));
+          }
+          return item;
+        }
+
+        const catMatch = /^\/catalog\/([^/]+)\/$/.exec(path);
+        if (catMatch) {
+          const cat = categoryById.get(catMatch[1]);
+          if (cat) {
+            const name = categoryText(lang, cat.id).name;
+            item.img = cat.mods
+              .filter((m) => m.image)
+              .map((m) => ({ url: abs(m.image.src), title: m.name, caption: `${m.name}: ${name}` }));
           }
           return item;
         }

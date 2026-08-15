@@ -210,6 +210,15 @@ for (const lang of ['en', 'ru']) {
   // The hero index gets a card; the 126 hero pages send the mod art instead, which is a
   // better picture than their own name set in type would be.
   jobs.push({
+    file: path.basename(ogPath(lang, '/catalog/')),
+    title: lang === 'ru' ? 'Каталог модов для Доты 2' : 'The Dota 2 mod catalog',
+    sub: lang === 'ru'
+      ? 'Ландшафты, деревья, река, шейдеры, курсоры, шрифты, фоны меню, звуки, крипы.'
+      : 'Terrains, trees, the river, shaders, cursors, fonts, menu backgrounds, sounds, creeps.',
+    section: lang === 'ru' ? 'Каталог' : 'Catalog',
+  });
+
+  jobs.push({
     file: path.basename(ogPath(lang, '/heroes/')),
     title: heroCopy[lang].indexH1,
     sub: heroCopy[lang].indexLead,
