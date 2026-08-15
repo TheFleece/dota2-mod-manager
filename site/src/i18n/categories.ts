@@ -266,6 +266,13 @@ export const categoryCopy: Record<Lang, Record<string, CategoryCopy>> = {
       description: 'Replace the Tormentor model in Dota 2. Free, with previews.',
       about: 'The Tormentor, replaced.',
     },
+    other: {
+      name: 'Useful extras',
+      title: 'Useful Dota 2 mods: radii, click colour, profile',
+      h1: 'Useful Dota 2 mods',
+      description: 'The Dota 2 mods people find by searching for a problem: a visible tower re-aggro radius, the Techies mine radius, the colour of your click, the dummy in your profile.',
+      about: 'These are the ones nobody goes looking for as "mods". Somebody wants to see how far a tower re-aggros, or is tired of losing their own click on a bright map, and finds their way here hours later. Every one of them is a file in the game folder like any other mod, on and off in a click.',
+    },
     'high-five': {
       name: 'High fives',
       title: 'Dota 2 high five mods',
@@ -513,6 +520,13 @@ export const categoryCopy: Record<Lang, Record<string, CategoryCopy>> = {
       h1: 'Моды на Торментора в Доте 2',
       description: 'Замена модели Торментора в Дота 2. Бесплатно, с превью.',
       about: 'Торментор, заменённый.',
+    },
+    other: {
+      name: 'Полезное',
+      title: 'Полезные моды для Доты 2: радиусы, цвет клика, профиль',
+      h1: 'Полезные моды для Доты 2',
+      description: 'Моды для Дота 2, которые находят, когда ищут проблему: видимый радиус реагра тавера, радиус мин Течиса, цвет клика, мишень в профиле.',
+      about: 'Это те моды, которые никто не ищет словом «моды». Человек хочет видеть, с какого расстояния вышка переагривается, или устал терять свой клик на светлой карте, и добирается сюда часами позже. Каждый из них - такой же файл в папке игры, как любой другой мод, и так же включается и выключается одним кликом.',
     },
     'high-five': {
       name: 'Пятюни',

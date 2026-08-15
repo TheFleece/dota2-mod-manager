@@ -300,8 +300,13 @@ heroes.sort((a, b) => b.mods.length - a.mods.length || a.name.localeCompare(b.na
 //
 // Categories that hold no mods are skipped: tools are programs, guides are text, `sites` and
 // `news` are links. A page listing those would be a page about nothing.
+//
+// `other` is emphatically not one of them, though it looks like it. It holds the mods somebody
+// finds by searching for a problem rather than for a mod: the Techies mine radius, the tower
+// re-aggro radius, the colour of your click, the dummy in your profile. Skipping it as a
+// junk drawer hid the ten mods this whole idea is best demonstrated by.
 
-const NOT_MODS = new Set(['tools', 'guides', 'sites', 'news', 'other']);
+const NOT_MODS = new Set(['tools', 'guides', 'sites', 'news']);
 
 const categories = [];
 for (const [categoryId, data] of Object.entries(mods.modsData)) {
