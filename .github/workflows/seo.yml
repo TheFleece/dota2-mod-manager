@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: '0 6 * * 1'   # Mondays, 06:00 UTC
   workflow_dispatch:
+    inputs:
+      raw:
+        description: 'Print one Bing method raw instead of posting a report, e.g. GetCrawlStats'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -32,9 +37,22 @@ jobs:
         with:
           node-version: 24
 
+      # Answering "what does this endpoint really return" without anybody pasting the key into
+      # a terminal. The key already lives here as a secret; a shell history is a worse place
+      # for it. The method name goes through the environment rather than into the command,
+      # because a dispatch input interpolated straight into a shell is an injection waiting to
+      # be found.
+      - name: Print one endpoint raw
+        if: inputs.raw != ''
+        env:
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
+          RAW: ${{ inputs.raw }}
+        run: node tools/seo-report.mjs --raw "$RAW"
+
       # The report is echoed into the log as well as posted, so a run that goes wrong can be
       # read here. Nothing secret reaches it: the key is never printed, including in errors.
       - name: Read the consoles
+        if: inputs.raw == ''
         env:
           BING_API_KEY: ${{ secrets.BING_API_KEY }}
         run: |
@@ -48,6 +66,7 @@ jobs:
       # `gh issue create` prints the new issue's URL and takes no --json, so the number comes
       # off the end of that URL.
       - name: Post it on the tracking issue
+        if: inputs.raw == ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -66,6 +85,7 @@ jobs:
 
       # Next week's report compares against this one.
       - name: Remember this week's numbers
+        if: inputs.raw == ''
         run: |
           if ! git diff --quiet -- seo-state.json || [ -n "$(git ls-files --others --exclude-standard -- seo-state.json)" ]; then
             git config user.name "github-actions[bot]"
