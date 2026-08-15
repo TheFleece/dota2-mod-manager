@@ -12,6 +12,7 @@ import { pathIn, type Lang } from '../i18n/ui';
 import { categoryText } from '../i18n/categories';
 import { heroCopy } from '../i18n/heroes';
 import { otherCategories, type Category } from '../lib/categories';
+import { aliasesFor } from '../i18n/mod-aliases';
 
 interface Props { lang: Lang; category: Category }
 const { lang, category } = Astro.props;
@@ -66,6 +67,9 @@ const moreLabel = lang === 'ru' ? 'Другие категории' : 'Other cat
               {m.name}
               {m.styleLabel && <span class="mod-style">{m.styleLabel}</span>}
             </h2>
+            {lang === 'ru' && aliasesFor(m.name).length > 0 && (
+              <p class="mod-alias">Ищут как: {aliasesFor(m.name).join(', ')}</p>
+            )}
             {m.author && (
               <p class="mod-meta">
                 <span>

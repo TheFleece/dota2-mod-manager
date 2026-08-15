@@ -14,6 +14,7 @@
 import { pathIn, type Lang } from '../i18n/ui';
 import { heroCopy, slotNames } from '../i18n/heroes';
 import { neighbours, heroText, type Hero } from '../lib/heroes';
+import { aliasesFor } from '../i18n/mod-aliases';
 
 interface Props { lang: Lang; hero: Hero }
 const { lang, hero } = Astro.props;
@@ -67,6 +68,9 @@ const others = neighbours(hero.slug);
               {m.name}
               {m.styleLabel && <span class="mod-style">{m.styleLabel}</span>}
             </h2>
+            {lang === 'ru' && aliasesFor(m.name).length > 0 && (
+              <p class="mod-alias">Ищут как: {aliasesFor(m.name).join(', ')}</p>
+            )}
             <p class="mod-meta">
               <span>
                 {c.changes}: {m.slots.length ? m.slots.map((s) => slots[s] ?? s).join(', ') : c.noSlots}
