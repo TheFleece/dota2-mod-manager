@@ -194,32 +194,44 @@ if (!BING_KEY) {
 
     /* How much of the site Bing actually holds. The site went from 14 addresses to 358, and
        the question that matters is how many of them it has taken. */
+    /* Field names read off the API rather than guessed: the first version asked for
+       CrawledCount and HttpCode404, which do not exist, so both printed a confident zero.
+       They are CrawledPages and Code4xx. Dump the shape with --raw before adding more. */
     const crawl = await bing('GetCrawlStats');
     const crawlRows = (Array.isArray(crawl) ? crawl : [])
       .map((r) => ({
         date: asDate(r.Date),
-        crawled: num(r.CrawledCount),
+        crawled: num(r.CrawledPages),
         inIndex: num(r.InIndex),
         blocked: num(r.BlockedByRobotsTxt),
-        notFound: num(r.HttpCode404),
+        notFound: num(r.Code4xx),
+        serverErrors: num(r.Code5xx),
+        errors: num(r.CrawlErrors) + num(r.DnsFailures) + num(r.ConnectionTimeout),
       }))
       .filter((r) => r.date)
       .sort((a, b) => a.date.localeCompare(b.date));
 
     const last = crawlRows.at(-1);
     if (last) {
+      // Crawling is a rate, so the week's worth of it says more than the last day's.
+      const crawledWeek = crawlRows.slice(-7).reduce((n, r) => n + r.crawled, 0);
       now.bingIndex = last.inIndex;
+      now.bingCrawled = crawledWeek;
+
       lines.push('| Crawl | value | vs last week |');
       lines.push('|---|---|---|');
       lines.push(`| In the index | ${fmt(last.inIndex)} | ${movement(last.inIndex, was.bingIndex)} |`);
-      lines.push(`| Crawled in a day | ${fmt(last.crawled)} | |`);
-      lines.push(`| 404s | ${fmt(last.notFound)} | |`);
+      lines.push(`| Pages crawled in 7 days | ${fmt(crawledWeek)} | ${movement(crawledWeek, was.bingCrawled)} |`);
+      lines.push(`| 4xx | ${fmt(last.notFound)} | |`);
+      lines.push(`| 5xx | ${fmt(last.serverErrors)} | |`);
       lines.push(`| Blocked by robots.txt | ${fmt(last.blocked)} | |`);
       lines.push('');
-      if (last.inIndex && last.inIndex < 300) {
-        notes.push(`Bing holds ${fmt(last.inIndex)} pages of the 358 in the sitemap.`);
-      }
-      if (last.notFound > 0) notes.push(`Bing hit ${fmt(last.notFound)} pages that answered 404.`);
+
+      if (last.inIndex < 300) notes.push(`Bing holds ${fmt(last.inIndex)} pages of the 358 in the sitemap.`);
+      if (last.notFound > 0) notes.push(`${fmt(last.notFound)} pages answered 4xx.`);
+      if (last.serverErrors > 0) notes.push(`${fmt(last.serverErrors)} pages answered 5xx, which is ours to fix.`);
+      if (last.errors > 0) notes.push(`${fmt(last.errors)} crawl failures (DNS, timeouts).`);
+      if (last.blocked > 0) notes.push(`${fmt(last.blocked)} pages blocked by robots.txt.`);
     }
   } catch (err) {
     lines.push('### Bing');
