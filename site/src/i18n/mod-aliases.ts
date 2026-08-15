@@ -11,6 +11,7 @@
  * ask for by a Russian name. Keyed by the catalog's exact mod name.
  */
 export const modAliases: Record<string, string[]> = {
+  'Techies Mine Radius': ['радиус мин Течиса', 'как включить радиус мин у Течиса'],
   'Tiny Banana': ['банан для Тини', 'Тини банан'],
   'Gopo Pudge': ['гопник Пудж', 'Пудж в адидасе'],
   'Gopo Tidehunter': ['гопник Тайдхантер', 'Тайд гопник'],
