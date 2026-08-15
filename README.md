@@ -18,7 +18,7 @@
     </a>
   </p>
 
-  <img src="site/public/screenshots/en-catalog.webp" alt="The catalog" width="100%">
+  <img src="site/public/screenshots/dota-2-mod-manager-catalog-en.webp" alt="The catalog" width="100%">
 </div>
 
 > **Why not just copy the files yourself?** You can, and people do. What the app adds is
@@ -45,8 +45,8 @@
 | **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
 
 <div align="center">
-  <img src="site/public/screenshots/en-heroes.webp" alt="Mods grouped hero by hero" width="49%">
-  <img src="site/public/screenshots/en-library.webp" alt="Installed mods, with the load order" width="49%">
+  <img src="site/public/screenshots/dota-2-mod-manager-heroes-en.webp" alt="Mods grouped hero by hero" width="49%">
+  <img src="site/public/screenshots/dota-2-mod-manager-my-mods-en.webp" alt="Installed mods, with the load order" width="49%">
 </div>
 
 ## Installation
