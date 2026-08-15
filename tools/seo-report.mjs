@@ -81,6 +81,15 @@ function delta(now, before) {
   return `${fmt(now)} (${sign}${rounded})`;
 }
 
+/** Just the movement, for a column that sits next to the number itself. */
+function movement(now, before) {
+  if (before === undefined || before === null) return 'first week';
+  const d = now - before;
+  if (Math.abs(d) < 0.005) return 'no change';
+  const sign = d > 0 ? '+' : '';
+  return Number.isInteger(now) && Number.isInteger(before) ? `${sign}${fmt(d)}` : `${sign}${d.toFixed(1)}`;
+}
+
 function loadState() {
   try {
     return JSON.parse(fs.readFileSync(STATE, 'utf-8'));
@@ -137,8 +146,8 @@ if (!BING_KEY) {
     lines.push('');
     lines.push('| | last 7 days | vs the week before |');
     lines.push('|---|---|---|');
-    lines.push(`| Clicks | ${fmt(clicks)} | ${delta(clicks, was.bing?.clicks)} |`);
-    lines.push(`| Impressions | ${fmt(impressions)} | ${delta(impressions, was.bing?.impressions)} |`);
+    lines.push(`| Clicks | ${fmt(clicks)} | ${movement(clicks, was.bing?.clicks)} |`);
+    lines.push(`| Impressions | ${fmt(impressions)} | ${movement(impressions, was.bing?.impressions)} |`);
     lines.push('');
 
     /* Queries. The interesting part is not the top ten, which barely move, but what appeared
@@ -202,7 +211,7 @@ if (!BING_KEY) {
       now.bingIndex = last.inIndex;
       lines.push('| Crawl | value | vs last week |');
       lines.push('|---|---|---|');
-      lines.push(`| In the index | ${fmt(last.inIndex)} | ${delta(last.inIndex, was.bingIndex)} |`);
+      lines.push(`| In the index | ${fmt(last.inIndex)} | ${movement(last.inIndex, was.bingIndex)} |`);
       lines.push(`| Crawled in a day | ${fmt(last.crawled)} | |`);
       lines.push(`| 404s | ${fmt(last.notFound)} | |`);
       lines.push(`| Blocked by robots.txt | ${fmt(last.blocked)} | |`);
