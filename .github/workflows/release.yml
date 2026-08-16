@@ -98,11 +98,51 @@ jobs:
           done
           echo "one release, it is the latest, and it carries the installer and the manifest"
 
+  # Linux ships from the same tag, and after the Windows job rather than beside it.
+  # electron-builder creates a release when it finds none, and two builds creating one for the
+  # same tag is exactly what left 2.2.0 with its update file on a second page. By the time this
+  # runs the release exists and there is only something to upload into.
+  linux:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and publish the AppImage
+        run: npx electron-builder --linux --publish always
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # The same look the Windows job takes at itself. latest-linux.yml is what an installed
+      # AppImage reads to find out there is a newer one.
+      - name: Check the Linux assets are on the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          for want in Dota-2-Mod-Manager.AppImage latest-linux.yml; do
+            gh api "repos/$REPO/releases/tags/$TAG" --jq '[.assets[].name]' | grep -q "$want" \
+              || { echo "::error::$want is missing from the release"; exit 1; }
+          done
+          echo "the AppImage and its update file are on the page"
+
   # Notify Discord after the release is published. This lives in the same workflow as the
   # build because a release published by the default GITHUB_TOKEN does NOT trigger a separate
   # "on: release" workflow (GitHub blocks token-triggered workflows to avoid recursion).
   notify:
-    needs: build
+    needs: [build, linux]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     # editing the release body needs write; the default for a job is the repo's own

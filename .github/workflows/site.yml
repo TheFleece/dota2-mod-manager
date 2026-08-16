@@ -42,6 +42,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Pushed back with the owner's token where there is one. main's ruleset asks for a
+          # green test run before any push, and the workflow's own token is not an admin, so a
+          # commit made here is refused. The owner is on the bypass list. With no secret set
+          # this is the default token and the behaviour it had before.
+          token: ${{ secrets.BOT_PUSH_TOKEN || github.token }}
 
       - uses: actions/setup-node@v4
         with:
@@ -84,6 +90,8 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add indexnow.state.json
-            git commit -m "Update the IndexNow ledger"
+            # [skip ci] because a push made with a real token starts workflows and the
+            # default one never did. Nothing here is worth a run of anything.
+            git commit -m "Update the IndexNow ledger [skip ci]"
             git push
           fi

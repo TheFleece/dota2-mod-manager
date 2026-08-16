@@ -60,6 +60,11 @@
 3. It finds your Dota 2 installation on its own (you can change the path in Settings)
 4. That is all. No launch options and no Steam properties to edit
 
+**On Linux** the same app ships as an
+[AppImage](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager.AppImage):
+`chmod +x` it and run it. Dota's Linux build keeps its mods in the same folders, and the app
+finds Steam wherever your distribution put it, including the flatpak one.
+
 Windows will warn you that the publisher is unknown, because the installer is not signed with
 a paid certificate. Click **More info**, then **Run anyway**. Every release is built from this
 source by a [public workflow](https://github.com/TheFleece/dota2-mod-manager/actions), not
@@ -101,6 +106,10 @@ The same mechanics written for people rather than for a README:
 2. Запусти. Приложение установится, создаст ярлык и откроется
 3. Путь к Dota 2 находится автоматически
 4. Всё. Никаких параметров запуска и правок свойств Steam
+
+**На Linux** это [AppImage](https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager.AppImage):
+`chmod +x` и запускай. Моды у линуксовой Доты лежат в тех же папках, Steam приложение находит
+само, включая flatpak.
 
 Windows скажет, что издатель неизвестен: установщик не подписан платным сертификатом. Нажми
 **Подробнее**, затем **Выполнить в любом случае**. Каждый релиз собирается из этих исходников

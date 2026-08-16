@@ -78,7 +78,7 @@
       ],
       "icon": "build/icon.png",
       "category": "Game",
-      "artifactName": "Dota-2-Mod-Manager-${version}.${ext}",
+      "artifactName": "Dota-2-Mod-Manager.${ext}",
       "synopsis": "Mods for Dota 2, without the file juggling"
     },
     "nsis": {
