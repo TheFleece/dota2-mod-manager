@@ -11,6 +11,10 @@
     <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe">
       <img src="https://img.shields.io/github/v/release/TheFleece/dota2-mod-manager?style=for-the-badge&color=8b6ff0&label=Download" alt="Download the latest release">
     </a>
+    <img src="https://img.shields.io/github/downloads/TheFleece/dota2-mod-manager/Dota-2-Mod-Manager-Setup.exe?style=for-the-badge&color=2a2440&label=Installs" alt="Installer downloads">
+    <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/TheFleece/dota2-mod-manager/test.yml?style=for-the-badge&color=c4b5fd&label=Tests" alt="Test status">
+    </a>
     <img src="https://img.shields.io/badge/Windows-10%2F11-201c2c?style=for-the-badge" alt="Windows">
     <img src="https://img.shields.io/badge/License-GPL--3.0-c4b5fd?style=for-the-badge" alt="License">
     <a href="https://dota2modmanager.com">
@@ -133,6 +137,15 @@ real catalog mods into it, `npm run start:sandbox` runs the app against it, and
 
 Releases build automatically: push a `v*` tag and GitHub Actions compiles the installer and
 publishes it. Installed apps pick the update up on their own.
+
+[ARCHITECTURE.md](ARCHITECTURE.md) is the map: how a mod gets from a click to a file in the game
+folder, why every write is a transaction, and what each module owns.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the rest, including the one rule that matters most, which
+is that you test against the sandbox and never against your own installation.
+
+Pull requests are welcome. Issues tagged
+[good first issue](https://github.com/TheFleece/dota2-mod-manager/labels/good%20first%20issue) are
+the ones with a known shape and no archaeology needed.
 
 ## Credits
 

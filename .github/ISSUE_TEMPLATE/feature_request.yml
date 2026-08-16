@@ -1,0 +1,39 @@
+name: Feature request
+description: Something the app should be able to do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write in English or Russian, both are read.
+
+        New mods belong in the catalog, not here: they come from
+        [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) and its authors.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: |
+        The situation, not the solution. Half the features in this app exist because somebody
+        described a chore rather than a button, and the chore had a better answer than the
+        button would have been.
+      placeholder: |
+        I run eighty mods and reinstall Windows twice a year. Getting the same set back takes
+        an evening of clicking.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: How you imagine it working
+      description: Optional. A rough sketch is fine.
+
+  - type: checkboxes
+    id: offer
+    attributes:
+      label: Would you like to build it
+      options:
+        - label: I would like to open a pull request for this
+          required: false

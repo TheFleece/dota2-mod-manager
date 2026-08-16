@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in the app is broken or a mod did not end up where it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write in English or Russian, both are read.
+
+        If mods stopped working right after a Dota update, open the app first: it repairs that
+        by itself, and the report is only worth filing if it did not.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you saw, and what you expected instead.
+      placeholder: |
+        Installed two terrains, switched the first one off, the second one stopped loading too.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings, at the bottom, or the window title.
+      placeholder: "2.3.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: build
+    attributes:
+      label: Which build
+      options:
+        - Installed (Setup.exe)
+        - Portable
+        - Built from source
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic archive
+      description: |
+        The app writes one: help menu, then Diagnostics. It carries the log, the manifest, the
+        load order and what the app believes about your installation. Drag the file into this
+        box. Most reports become a same-day fix with it, and a week of guessing without it.
+
+  - type: checkboxes
+    id: sanity
+    attributes:
+      label: Before you send it
+      options:
+        - label: I am on the latest version, or I said above why I am not
+          required: true
+        - label: I searched the open issues for the same thing
+          required: false

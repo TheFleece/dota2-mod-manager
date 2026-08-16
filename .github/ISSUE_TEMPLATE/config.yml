@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question about installing or using mods
+    url: https://dota2modmanager.com/docs/
+    about: Installing, load order, free cosmetics, what to do after a Dota patch.
+  - name: Chat
+    url: https://discord.gg/PBvG8D9MxT
+    about: The catalog's Discord. The #mod-manager channel is where this app is discussed.
+  - name: A mod is broken or missing
+    url: https://github.com/h6rd/Dota2PornFxWeb
+    about: Mods come from the Dota2PornFx catalog. Their authors maintain them, not this app.
+  - name: Security problem
+    url: https://github.com/TheFleece/dota2-mod-manager/security/policy
+    about: Report it privately instead of opening an issue.

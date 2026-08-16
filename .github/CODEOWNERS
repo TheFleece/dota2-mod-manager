@@ -1,0 +1,11 @@
+# Every pull request goes to the author for review. The modules that write into somebody's game
+# folder are listed again on purpose: a change there is the one that has to be read twice.
+
+*                   @TheFleece
+
+src/patcher.js      @TheFleece
+src/vpk.js          @TheFleece
+src/gamelang.js     @TheFleece
+src/schema.js       @TheFleece
+src/file-tx.js      @TheFleece
+.github/workflows/  @TheFleece
