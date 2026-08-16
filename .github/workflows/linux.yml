@@ -42,6 +42,19 @@ jobs:
       - name: Build
         run: npx electron-builder --linux --publish never
 
+      # An AppImage carries its own .desktop file, and that file is what tells a Linux session
+      # which program owns a d2mm:// link. Whether the session then honours it depends on the
+      # desktop, but whether we shipped the claim at all is checkable right here.
+      - name: The desktop entry claims the preset scheme
+        run: |
+          set -euo pipefail
+          cd dist
+          chmod +x ./*.AppImage
+          ./*.AppImage --appimage-extract > /dev/null
+          entry=$(ls squashfs-root/*.desktop | head -1)
+          cat "$entry"
+          grep -q 'x-scheme-handler/d2mm' "$entry"
+
       - uses: actions/upload-artifact@v4
         with:
           name: AppImage

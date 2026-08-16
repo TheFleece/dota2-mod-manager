@@ -516,7 +516,10 @@ app.whenReady().then(async () => {
   registerIpc();
   // only the installed build claims the scheme — a dev run must not point the system's
   // d2mm:// handler at a local electron binary
-  if (app.isPackaged) app.setAsDefaultProtocolClient(SCHEME);
+  if (app.isPackaged) {
+    installDesktopEntry();
+    app.setAsDefaultProtocolClient(SCHEME);
+  }
   createWindow();
   diag('createWindow done');
   // launched BY a link (cold start): the renderer has to exist before it can be told
@@ -565,6 +568,49 @@ app.on('before-quit', () => {
 });
 
 // ---------- d2mm:// links ----------
+
+/* Linux has to be told this program exists before it can send it a link.
+ *
+ * On Windows the installer registers the scheme and on macOS the bundle declares it, but an
+ * AppImage is one file somebody copied into a folder, and the session knows nothing about it.
+ * The convention is a .desktop file in ~/.local/share/applications describing the program and
+ * the schemes it handles, pointing at the file the user actually ran, which is what $APPIMAGE
+ * holds. setAsDefaultProtocolClient below then has something to point d2mm:// at.
+ *
+ * Best effort on purpose. A read-only home, a distribution with no update-desktop-database, a
+ * desktop environment that ignores the directory: each of those ends with the app running
+ * normally and preset links opening nothing, which is where Linux stood before this existed.
+ */
+function installDesktopEntry() {
+  if (process.platform !== 'linux') return;
+  const exe = process.env.APPIMAGE || process.execPath;
+  try {
+    const dir = path.join(app.getPath('home'), '.local', 'share', 'applications');
+    const file = path.join(dir, 'dota2-mod-manager.desktop');
+    const entry = [
+      '[Desktop Entry]',
+      'Type=Application',
+      'Name=Dota 2 Mod Manager',
+      'Comment=Mods for Dota 2, without the file juggling',
+      // %u passes the clicked link through; the quotes are for a path with a space in it
+      `Exec="${exe}" %u`,
+      'Icon=dota2-mod-manager',
+      'Categories=Game;',
+      'Terminal=false',
+      `MimeType=x-scheme-handler/${SCHEME};application/x-d2mm;`,
+      '',
+    ].join('\n');
+
+    if (fs.existsSync(file) && fs.readFileSync(file, 'utf-8') === entry) return;
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, entry);
+    // Missing on a minimal system, and the file still counts on most desktops without it.
+    execFile('update-desktop-database', [dir], () => {});
+    diag('desktop entry written: ' + file);
+  } catch (e) {
+    diag('desktop entry skipped: ' + e.message);
+  }
+}
 
 // A preset link clicked anywhere on the system lands here. Nothing installs: it parks in
 // the Presets tab exactly like a dropped file, and the user decides.

@@ -56,7 +56,8 @@
       {
         "ext": "d2mm",
         "name": "Dota 2 Mod Manager preset",
-        "role": "Editor"
+        "role": "Editor",
+        "mimeType": "application/x-d2mm"
       }
     ],
     "win": {
@@ -77,6 +78,9 @@
       ],
       "icon": "build/icon.png",
       "category": "Game",
+      "mimeTypes": [
+        "x-scheme-handler/d2mm"
+      ],
       "artifactName": "Dota-2-Mod-Manager-${version}.${ext}",
       "synopsis": "Mods for Dota 2, without the file juggling"
     },
