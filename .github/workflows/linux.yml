@@ -1,0 +1,105 @@
+# Does this thing work on Linux at all?
+#
+# Dota has a native Linux build, the mods are the same files in the same folders, and the only
+# Windows-shaped parts of the app were finding Steam and asking whether the game is running.
+# Both now have a Linux branch, and a branch nobody runs is a branch that rots, so this builds
+# the AppImage and starts the app against the sandbox on every change to the code.
+#
+# Nothing here is published. The release still ships Windows only, because "supported" means
+# somebody has run it on a real desktop, and the artifacts below are how that person gets a
+# build to try without installing a toolchain.
+name: Linux
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'main.js'
+      - 'preload.js'
+      - 'src/**'
+      - 'renderer/**'
+      - 'tools/sandbox.js'
+      - 'package.json'
+      - '.github/workflows/linux.yml'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build the AppImage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # --publish never on purpose: this proves the build works, it does not ship it.
+      - name: Build
+        run: npx electron-builder --linux --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AppImage
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  start:
+    name: Start it against the sandbox
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Electron needs an X server that a runner does not have, and the Chromium sandbox needs
+      # kernel permissions that a runner will not give it. Both are CI problems rather than
+      # app problems.
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      # The tree only: the mods themselves are a few hundred megabytes and prove nothing about
+      # whether the app starts.
+      - name: Seed the sandbox
+        run: node tools/sandbox.js seed --no-mods
+
+      # MM_SHOT is the app's own screenshot harness: it draws, saves the window and leaves the
+      # process running, so the wait is for the file rather than for the exit.
+      - name: Start the app and photograph it
+        run: |
+          set -euo pipefail
+          MM_SHOT="$PWD/linux-start.png" xvfb-run -a npx electron . \
+            --user-data-dir=sandbox/userdata --no-sandbox > electron.log 2>&1 &
+          pid=$!
+          for _ in $(seq 1 90); do
+            [ -s linux-start.png ] && break
+            sleep 1
+          done
+          kill "$pid" 2>/dev/null || true
+          if [ ! -s linux-start.png ]; then
+            echo "the window never got as far as a screenshot:"
+            # The harness writes what went wrong next to the picture it could not take.
+            cat linux-start.png.err.txt 2>/dev/null || true
+            cat electron.log
+            exit 1
+          fi
+
+      - name: What it looked like
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-window
+          path: |
+            linux-start.png
+            linux-start.png.err.txt
+            electron.log
+          if-no-files-found: warn

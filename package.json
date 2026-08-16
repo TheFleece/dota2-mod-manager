@@ -7,6 +7,7 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
     "test": "node --test \"test/**/*.test.js\"",
     "sandbox:seed": "node tools/sandbox.js seed",
     "sandbox:reset": "node tools/sandbox.js reset",
@@ -69,6 +70,15 @@
     "portable": {
       "artifactName": "Dota-2-Mod-Manager-Portable.${ext}",
       "requestExecutionLevel": "user"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "build/icon.png",
+      "category": "Game",
+      "artifactName": "Dota-2-Mod-Manager-${version}.${ext}",
+      "synopsis": "Mods for Dota 2, without the file juggling"
     },
     "nsis": {
       "oneClick": true,

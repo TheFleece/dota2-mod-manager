@@ -1135,10 +1135,19 @@ function packableRecord(rec) {
 
 // Dota reads boot.vcfg once at startup and rewrites it on exit, so language changes must be
 // made while it is closed or the game would just overwrite them.
+//
+// Two answers to one question, because Windows and Linux have nothing in common here: one
+// filters a table by image name, the other matches a process name exactly (pgrep -f would
+// also match the Steam command line that mentions the game, and every browser tab about it).
+// A missing tool answers "not running", which is what this returned on any non-Windows
+// machine before there was a second branch at all.
 function dotaIsRunning() {
+  const [cmd, args, hit] = process.platform === 'win32'
+    ? ['tasklist', ['/FI', 'IMAGENAME eq dota2.exe', '/NH'], /dota2\.exe/i]
+    : ['pgrep', ['-x', 'dota2'], /\d/];
   return new Promise((resolve) => {
-    execFile('tasklist', ['/FI', 'IMAGENAME eq dota2.exe', '/NH'], (err, stdout) => {
-      resolve(!err && /dota2\.exe/i.test(stdout || ''));
+    execFile(cmd, args, (err, stdout) => {
+      resolve(!err && hit.test(stdout || ''));
     });
   });
 }

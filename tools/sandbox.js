@@ -216,6 +216,10 @@ function buildGameTree() {
     path.join(GAME, 'dota_russian'),
     path.join(GAME, 'core'),
     path.join(GAME, 'bin', 'win64'),
+    // The signature file the patcher reads lives next to the game's executable, and that
+    // folder has a different name on Linux. Both are made here so the same seeded tree works
+    // whichever platform the app is run against it from.
+    path.join(GAME, 'bin', 'linuxsteamrt64'),
     LIB,
   ]) mkdir(p);
 
@@ -241,7 +245,10 @@ function buildGameTree() {
   take(['dota', 'gameinfo_branchspecific.gi'], BRANCHSPECIFIC);
 
   const branchText = fs.readFileSync(path.join(GAME, 'dota', 'gameinfo_branchspecific.gi'), 'utf-8');
-  fs.writeFileSync(path.join(GAME, 'bin', 'win64', 'dota.signatures'), signaturesFor(branchText));
+  const signatures = signaturesFor(branchText);
+  for (const bin of ['win64', 'linuxsteamrt64']) {
+    fs.writeFileSync(path.join(GAME, 'bin', bin, 'dota.signatures'), signatures);
+  }
   fs.writeFileSync(path.join(GAME, 'dota', 'cfg', 'boot.vcfg'), BOOT_VCFG);
   fs.writeFileSync(path.join(GAME, 'dota', 'steam.inf'), STEAM_INF);
   fs.writeFileSync(path.join(LIB, 'appmanifest_570.acf'), APPMANIFEST);
@@ -395,7 +402,11 @@ async function seed() {
   buildGameTree();
   snapshotPristine();
   seedUserData();
-  await downloadMods();
+  // The tree is what the app writes into; the mods are what it writes. A run that only needs
+  // to prove the app starts and finds the game does not need a few hundred megabytes of them,
+  // which is the difference between a minute of CI and ten.
+  if (process.argv.includes('--no-mods')) log('skipping the mod download (--no-mods)');
+  else await downloadMods();
   log('\nseeded. run the app against it:  npm run start:sandbox');
 }
 

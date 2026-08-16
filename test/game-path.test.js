@@ -12,7 +12,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { validateGamePath } = require('../src/steam.js');
+const { validateGamePath, findDotaGamePath } = require('../src/steam.js');
 const { Installer } = require('../src/installer.js');
 
 function tmpDir(t) {
@@ -70,6 +70,46 @@ test('a missing voice pack does not make an install invalid', (t) => {
   fs.writeFileSync(path.join(game, 'dota_russian', 'pak12_dir.vpk'), 'somebody mod');
   assert.equal(fs.existsSync(path.join(game, 'dota_russian', 'pak01_dir.vpk')), false, 'no voice pack');
   assert.equal(validateGamePath(game), true);
+});
+
+// Same question on Linux, different file: the game ships as bin/linuxsteamrt64/dota2 there,
+// which is the name src/patcher.js already patches around.
+test('the Linux executable counts as an install too', (t) => {
+  const dir = tmpDir(t);
+  const game = movedAway(dir);
+  fs.mkdirSync(path.join(game, 'bin', 'linuxsteamrt64'), { recursive: true });
+  fs.writeFileSync(path.join(game, 'bin', 'linuxsteamrt64', 'dota2'), 'elf');
+  assert.equal(validateGamePath(game), true);
+});
+
+// Discovery on Linux, where there is no registry to ask. XDG_DATA_HOME is the one root that
+// can be pointed at a temporary folder, so it is the one the test drives.
+test('a library under XDG_DATA_HOME is found', { skip: process.platform === 'win32' }, async (t) => {
+  const dir = tmpDir(t);
+  const was = process.env.XDG_DATA_HOME;
+  process.env.XDG_DATA_HOME = dir;
+  t.after(() => { if (was === undefined) delete process.env.XDG_DATA_HOME; else process.env.XDG_DATA_HOME = was; });
+
+  const game = path.join(dir, 'Steam', 'steamapps', 'common', 'dota 2 beta', 'game');
+  fs.mkdirSync(path.join(game, 'dota'), { recursive: true });
+  fs.writeFileSync(path.join(game, 'dota', 'pak01_dir.vpk'), 'pak');
+
+  assert.equal(await findDotaGamePath(), game);
+});
+
+// Steam spelled it SteamApps for years, and a case-sensitive filesystem does not forgive the
+// difference. An install from that era still has to be found.
+test('the old SteamApps spelling is found as well', { skip: process.platform === 'win32' }, async (t) => {
+  const dir = tmpDir(t);
+  const was = process.env.XDG_DATA_HOME;
+  process.env.XDG_DATA_HOME = dir;
+  t.after(() => { if (was === undefined) delete process.env.XDG_DATA_HOME; else process.env.XDG_DATA_HOME = was; });
+
+  const game = path.join(dir, 'Steam', 'SteamApps', 'common', 'dota 2 beta', 'game');
+  fs.mkdirSync(path.join(game, 'bin', 'linuxsteamrt64'), { recursive: true });
+  fs.writeFileSync(path.join(game, 'bin', 'linuxsteamrt64', 'dota2'), 'elf');
+
+  assert.equal(await findDotaGamePath(), game);
 });
 
 test('nothing, a missing folder and a file all fail rather than throw', (t) => {
