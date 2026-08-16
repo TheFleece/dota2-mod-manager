@@ -2,6 +2,30 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.4.0
+
+### It runs on Linux now
+
+The release carries an AppImage. Make it executable, run it, and that is the whole installation.
+
+Dota's Linux build keeps its mods in the same folders as the Windows one, so nothing about how
+mods work changes. What had to learn a second platform is everything around them. The app finds
+Steam where your distribution keeps it rather than in the Windows registry: the `~/.steam`
+symlink, the XDG folder, the flatpak home, and both spellings of the steamapps directory, which
+Windows forgives and Linux does not. It knows the game is running by asking for the process
+instead of running a Windows tool. And it tells your desktop that it owns `d2mm://` links, so a
+preset somebody sends you opens the app the same way it does everywhere else.
+
+Being straight about how new this is: every change is built and started against a throwaway game
+tree on Linux by our own CI, and somebody ran this build on a real desktop before it shipped.
+That is a week of Linux against a year of Windows. If something looks wrong, the issue tracker is
+the place, and it will be fixed faster than it was found.
+
+### Small things
+
+A Shadow Shaman mod whose folder is spelled `shadowshaman` said it was for "Shadowshaman". It
+says Shadow Shaman.
+
 ## 2.3.0
 
 ### A portable build, for people who would rather not install anything
