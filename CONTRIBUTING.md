@@ -79,7 +79,13 @@ it, so a new string is two edits, not one:
 - `src/i18n.js` for native dialogs, menus and tray text
 
 A string with no English twin falls back to Russian, which means an English speaker sees Cyrillic
-in the middle of their app. Please check both before opening the PR.
+in the middle of their app and nothing crashes to tell anybody. A checker finds those:
+
+```bash
+node tools/check-i18n.js
+```
+
+`npm test` runs it too, so a missing translation fails the pull request rather than shipping.
 
 New languages are welcome. Say so in an issue first, so two people do not translate the same file
 in the same week.
