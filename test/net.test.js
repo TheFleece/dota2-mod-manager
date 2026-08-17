@@ -64,6 +64,21 @@ test('a GitHub raw URL gets mirrors, and a size-capped one only for small files'
   assert.ok(big.some((u) => u.startsWith('https://ghproxy.net/')), 'the proxies wrap the whole raw URL');
 });
 
+// Every other mirror is a proxy in front of GitHub and dies with it. This one is the site,
+// which is deployed elsewhere, and it carries the four files the app cannot start without.
+test('the four startup files can also come from the site, and nothing else can', () => {
+  const catalog = `${RAW_HOST}h6rd/Dota2PornFxWeb/main/assets/data/mods.json`;
+  const prints = `${RAW_HOST}TheFleece/dota2-mod-manager/main/fingerprints.json`;
+  for (const url of [catalog, prints]) {
+    const list = net.mirrorsFor(url, { small: true });
+    assert.ok(list.includes(`https://dota2modmanager.com/mirror/${url.split('/').pop()}`), url);
+    assert.equal(list[0], url, 'GitHub is still asked first');
+  }
+  const mod = `${RAW_HOST}h6rd/Dota2PornFxWeb/main/assets/files/heroes/some-mod.zip`;
+  assert.ok(!net.mirrorsFor(mod, { small: true }).some((u) => u.includes('dota2modmanager.com')),
+    'a mod archive is not on the site and must not be asked for there');
+});
+
 test('a URL that is not on GitHub raw is its own only mirror', () => {
   const other = 'https://example.com/some/mod.zip';
   assert.deepEqual(net.mirrorsFor(other), [other]);

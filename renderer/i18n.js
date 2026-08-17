@@ -591,6 +591,7 @@ const EN = {
   'Позже': 'Later',
   'Обновляю каталог…': 'Refreshing the catalog…',
   'Каталог обновлён': 'Catalog updated',
+  'Каталог не обновился, показан последний загруженный': 'Could not update the catalog, showing the last one downloaded',
 
   // ---------- diagnostics ----------
   'Диагностика': 'Diagnostics',

@@ -39,8 +39,28 @@ const jsdelivr = (url) => {
   return m ? `https://cdn.jsdelivr.net/gh/${m[1]}/${m[2]}@${m[3]}/${m[4]}` : null;
 };
 
+/* Our own copy of the four files the app cannot start without.
+ *
+ * Every other mirror on this list is a proxy standing in front of GitHub, so when GitHub
+ * itself goes down they go with it - three hours of exactly that on 2026-08-17, with the
+ * catalog empty for anybody whose cache had expired. The site is built and deployed
+ * elsewhere, which makes this the one entry here that does not share GitHub's fate. It
+ * carries nothing else: mod archives are gigabytes and belong where they are.
+ */
+const MIRRORED = {
+  'h6rd/Dota2PornFxWeb/main/assets/data/mods.json': 'mods.json',
+  'h6rd/Dota2PornFxWeb/main/assets/data/constants.json': 'constants.json',
+  'h6rd/Dota2PornFxWeb/main/assets/data/guides.json': 'guides.json',
+  'TheFleece/dota2-mod-manager/main/fingerprints.json': 'fingerprints.json',
+};
+const ourSite = (url) => {
+  const name = url.startsWith(RAW_HOST) && MIRRORED[url.slice(RAW_HOST.length)];
+  return name ? `https://dota2modmanager.com/mirror/${name}` : null;
+};
+
 const DEFAULT_MIRRORS = [
   { host: 'raw.githubusercontent.com', map: (url) => url },
+  { host: 'dota2modmanager.com', map: ourSite, smallOnly: true },
   { host: 'cdn.jsdelivr.net', map: jsdelivr, smallOnly: true },
   { host: 'ghproxy.net', map: proxy('ghproxy.net') },
   { host: 'gh-proxy.com', map: proxy('gh-proxy.com') },

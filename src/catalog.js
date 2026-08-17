@@ -86,10 +86,21 @@ class Catalog {
   }
 
   async load({ forceRefresh = false } = {}) {
+    let stale = null;
     if (forceRefresh || !this.hasCache()) {
-      await this.refresh();
+      try {
+        await this.refresh();
+      } catch (e) {
+        // A catalog that could not be fetched is not the same as no catalog. GitHub was down
+        // for three hours on 2026-08-17 and the window came up empty for everyone whose cache
+        // had passed half an hour, when yesterday's list of mods would have done fine. With
+        // nothing on disk there is still nothing to show, and that error goes up as before.
+        if (!this.hasCache()) throw e;
+        stale = String(e.message || e);
+      }
     }
     const out = { fetchedAt: this.cacheInfo().fetchedAt };
+    if (stale) out.stale = stale;
     for (const name of DATA_FILES) {
       out[name.replace('.json', '')] = JSON.parse(fs.readFileSync(this.cachePath(name), 'utf-8'));
     }

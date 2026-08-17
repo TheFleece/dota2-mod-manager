@@ -119,7 +119,7 @@ export const ruHeroNames: Record<string, RuHeroName> = {
   'Broodmother': { nom: 'Брудка', acc: 'Брудку', alt: ['Паучиха'] },
   'Chaos Knight': { nom: 'ЦК', acc: 'ЦК', alt: ['Хаос найт'] },
   'Bounty Hunter': { nom: 'БХ', acc: 'БХ' },
-  'Spirit Breaker': { nom: 'Барат', acc: 'Барата', alt: ['СБ'] },
+  'Spirit Breaker': { nom: 'Баратрум', acc: 'Баратрума', alt: ['СБ', 'Барат'] },
   'Magnus': { nom: 'Магнус', acc: 'Магнуса' },
   'Timbersaw': { nom: 'Тимбер', acc: 'Тимбера' },
   'Underlord': { nom: 'Андер', acc: 'Андера', alt: ['Андерлорд'] },

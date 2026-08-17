@@ -1666,7 +1666,10 @@ export async function loadCatalog(force = false) {
   state.catalog = await window.api.catalog.load(force);
   if (!state.catalog.error) buildModIndex();
   if (state.view === 'catalog') renderCatalog();
-  if (force && !state.catalog.error) toast(L`Каталог обновлён`);
+  // The list is on screen and it is yesterday's: say so once rather than pretend it is fresh
+  // or throw the whole thing away, which is what an empty window during a GitHub outage is.
+  if (state.catalog.stale) toast(L`Каталог не обновился, показан последний загруженный`, 'warn');
+  else if (force && !state.catalog.error) toast(L`Каталог обновлён`);
 
   // cached catalog goes stale fast (new mods appear upstream) — refresh in the background
   if (!force && !state.catalog.error && Date.now() - (state.catalog.fetchedAt || 0) > CATALOG_MAX_AGE) {
