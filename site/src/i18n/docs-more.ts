@@ -394,8 +394,8 @@ const en: Record<Slug, Doc> = {
 
   catalog: {
     slug: 'catalog',
-    title: 'The Dota2PornFx catalog: what it is and who runs it',
-    h1: 'The Dota2PornFx catalog',
+    title: 'The D2PFX catalog: what it is and who runs it',
+    h1: 'The D2PFX catalog',
     description:
       'The open catalog of Dota 2 mods this app installs from: how many mods, which categories, who maintains it, where its wiki and Discord are, and why the app reads it live.',
     lead: 'Every mod this app installs comes from one place, and I did not make that place. This page is about what the catalog is, who runs it, and why it is the best open collection of Dota 2 mods there is.',
@@ -404,7 +404,11 @@ const en: Record<Slug, Doc> = {
       { k: 'h2', t: 'What it is', id: 'what' },
       {
         k: 'p',
-        t: 'Dota2PornFx is an open catalog of cosmetic mods for Dota 2, run by <b>h6rd</b> with the community. {mods} {modsWord} in {categories} {categoriesWord}: hero skins, hero items, terrains, trees, the river, shaders, effects, couriers, wards, announcers, music, cursors, fonts, Roshan, mega-kills. Every mod carries a preview, tags saying what it really changes, an author and a date. It has been going for over a year and grows on its own schedule rather than in releases.',
+        t: 'D2PFX is an open catalog of cosmetic mods for Dota 2, run by <b>h6rd</b> with the community. {mods} {modsWord} in {categories} {categoriesWord}: hero skins, hero items, terrains, trees, the river, shaders, effects, couriers, wards, announcers, music, cursors, fonts, Roshan, mega-kills. Every mod carries a preview, tags saying what it really changes, an author and a date. It has been going for over a year and grows on its own schedule rather than in releases.',
+      },
+      {
+        k: 'p',
+        t: 'D2PFX is short for the catalog\'s own name, which is spelled out on <a href="https://github.com/h6rd/Dota2PornFxWeb">its repository</a>. The short form is used here because search engines and video platforms read the full one as adult content and quietly hide whatever page carries it, which helps nobody and least of all the people who made these mods.',
       },
 
       { k: 'h2', t: 'What is in it right now', id: 'inside' },
@@ -494,7 +498,7 @@ const en: Record<Slug, Doc> = {
           '<b>Source:</b> GPL-3.0, the whole repository, every release tagged.',
           '<b>Builds:</b> GitHub Actions, workflow and logs public.',
           '<b>Asks for:</b> the game folder. Signing in with Discord is optional and only puts your name on a setup you share.',
-          '<b>Mods:</b> read live from the Dota2PornFx catalog, {mods} of them. <a href="~/docs/catalog/">What that is</a>.',
+          '<b>Mods:</b> read live from the D2PFX catalog, {mods} of them. <a href="~/docs/catalog/">What that is</a>.',
           '<b>Collisions:</b> named on screen, with the load order editable from the same place.',
           '<b>Cost:</b> free, with nothing paid inside and no ads.',
         ],
@@ -920,8 +924,8 @@ const ru: Record<Slug, Doc> = {
 
   catalog: {
     slug: 'catalog',
-    title: 'Каталог Dota2PornFx: что это и кто его ведёт',
-    h1: 'Каталог Dota2PornFx',
+    title: 'Каталог D2PFX: что это и кто его ведёт',
+    h1: 'Каталог D2PFX',
     description:
       'Открытый каталог модов для Доты 2, из которого программа ставит моды: сколько модов, какие категории, кто его ведёт, где вики и Discord и почему приложение читает его напрямую.',
     lead: 'Все моды, которые ставит эта программа, лежат в одном месте, и это место сделал не я. Страница о том, что это за каталог, кто его ведёт и почему он лучшая открытая коллекция модов для Доты.',
@@ -930,7 +934,11 @@ const ru: Record<Slug, Doc> = {
       { k: 'h2', t: 'Что это', id: 'what' },
       {
         k: 'p',
-        t: 'Dota2PornFx - открытый каталог косметических модов для Доты 2, который ведёт <b>h6rd</b> вместе с сообществом. {mods} {modsWord} в {categories} {categoriesWord}: скины на героев, предметы, ландшафты, деревья, река, шейдеры, эффекты, курьеры, варды, аннонсеры, музыка, курсоры, шрифты, Рошан, мега-киллы. У каждого мода есть превью, теги, которые говорят, что он меняет на самом деле, автор и дата. Каталогу больше года, и он растёт своим ходом, а не релизами.',
+        t: 'D2PFX - открытый каталог косметических модов для Доты 2, который ведёт <b>h6rd</b> вместе с сообществом. {mods} {modsWord} в {categories} {categoriesWord}: скины на героев, предметы, ландшафты, деревья, река, шейдеры, эффекты, курьеры, варды, аннонсеры, музыка, курсоры, шрифты, Рошан, мега-киллы. У каждого мода есть превью, теги, которые говорят, что он меняет на самом деле, автор и дата. Каталогу больше года, и он растёт своим ходом, а не релизами.',
+      },
+      {
+        k: 'p',
+        t: 'D2PFX - это сокращение от полного названия каталога, оно написано целиком в <a href="https://github.com/h6rd/Dota2PornFxWeb">его репозитории</a>. Сокращение используется потому, что поисковики и видеоплатформы читают полное название как взрослый контент и тихо прячут страницу, которая его несёт. От этого не выигрывает никто, и меньше всех - авторы этих модов.',
       },
 
       { k: 'h2', t: 'Что в нём сейчас', id: 'inside' },
@@ -1020,7 +1028,7 @@ const ru: Record<Slug, Doc> = {
           '<b>Исходники:</b> GPL-3.0, весь репозиторий, каждый релиз с тегом.',
           '<b>Сборка:</b> GitHub Actions, workflow и логи публичные.',
           '<b>Просит:</b> папку игры. Вход через Discord необязателен и нужен только чтобы подписать своим ником сборку, которой делишься.',
-          '<b>Моды:</b> читаются вживую из каталога Dota2PornFx, {mods} штук. <a href="~/docs/catalog/">Что это</a>.',
+          '<b>Моды:</b> читаются вживую из каталога D2PFX, {mods} штук. <a href="~/docs/catalog/">Что это</a>.',
           '<b>Конфликты:</b> называются на экране, порядок загрузки правится там же.',
           '<b>Цена:</b> бесплатно, платного внутри нет, рекламы нет.',
         ],

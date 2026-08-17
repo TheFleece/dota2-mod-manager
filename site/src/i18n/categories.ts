@@ -548,14 +548,14 @@ export function categoryText(lang: Lang, id: string): CategoryCopy {
         name,
         title: `${name} для Доты 2: моды с превью`,
         h1: `${name}: моды для Доты 2`,
-        description: `Моды категории «${name}» из каталога Dota2PornFx, с превью. Бесплатно и в один клик.`,
+        description: `Моды категории «${name}» из каталога D2PFX, с превью. Бесплатно и в один клик.`,
         about: '',
       }
     : {
         name,
         title: `Dota 2 ${name.toLowerCase()} mods`,
         h1: `Dota 2 ${name.toLowerCase()} mods`,
-        description: `Mods in the ${name} category of the Dota2PornFx catalog, with previews. Free, and installed in one click.`,
+        description: `Mods in the ${name} category of the D2PFX catalog, with previews. Free, and installed in one click.`,
         about: '',
       };
 }

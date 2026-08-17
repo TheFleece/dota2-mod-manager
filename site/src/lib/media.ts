@@ -39,13 +39,13 @@ export const SHOT_SIZE = { width: 1360, height: 860 };
 export const shotAlt: Record<Lang, Record<ShotName, string>> = {
   en: {
     catalog:
-      'The Dota 2 mod catalog inside Dota 2 Mod Manager: cards from the Dota2PornFx collection with previews and tags',
+      'The Dota 2 mod catalog inside Dota 2 Mod Manager: cards from the D2PFX collection with previews and tags',
     heroes: 'The heroes screen: every skin and mod for one Dota 2 hero in a single list',
     'my-mods': 'My mods: installed Dota 2 mods with toggles and their load order',
   },
   ru: {
     catalog:
-      'Каталог модов для Доты 2 в окне Dota 2 Mod Manager: карточки скинов из коллекции Dota2PornFx с превью и тегами',
+      'Каталог модов для Доты 2 в окне Dota 2 Mod Manager: карточки скинов из коллекции D2PFX с превью и тегами',
     heroes: 'Экран героев: все скины и моды на одного героя Доты 2 одним списком',
     'my-mods': 'Мои моды: установленные моды Доты 2 с переключателями и порядком загрузки',
   },

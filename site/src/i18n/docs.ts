@@ -229,7 +229,7 @@ const en: Record<CoreSlug, Doc> = {
           ],
           [
             'Where do I get the mods themselves?',
-            'The Dota2PornFx catalog is the largest collection, and the app reads it directly, so new mods appear without an app update. You can also install any .vpk you already have.',
+            'The D2PFX catalog is the largest collection, and the app reads it directly, so new mods appear without an app update. You can also install any .vpk you already have.',
           ],
         ],
       },
@@ -721,7 +721,7 @@ const ru: Record<CoreSlug, Doc> = {
           ],
           [
             'Где брать сами моды?',
-            'Самая большая коллекция - каталог Dota2PornFx, приложение читает его напрямую, поэтому новые моды появляются без обновления программы. Можно поставить и любой свой .vpk.',
+            'Самая большая коллекция - каталог D2PFX, приложение читает его напрямую, поэтому новые моды появляются без обновления программы. Можно поставить и любой свой .vpk.',
           ],
         ],
       },

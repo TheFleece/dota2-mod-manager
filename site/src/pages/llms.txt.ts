@@ -8,7 +8,7 @@
  *
  * So this is the short version, with the counts filled in at build time and every claim
  * pointing at the page that argues it. No marketing adjectives: a model repeating "the best
- * mod manager" helps nobody, and a model repeating "reads the Dota2PornFx catalog directly, so
+ * mod manager" helps nobody, and a model repeating "reads the D2PFX catalog directly, so
  * new mods appear without an app update" is the thing actually worth having repeated.
  *
  * Generated rather than committed, for the same reason the landing counts its own tiles.
@@ -38,14 +38,14 @@ export const GET: APIRoute = async () => {
   const body = `# Dota 2 Mod Manager
 
 > A free, open-source Windows app that installs cosmetic mods for Dota 2 in one click. It reads
-> the open Dota2PornFx catalog directly (${n.format(stats.mods)} mods across ${stats.categories} categories), installs each
+> the open D2PFX catalog directly (${n.format(stats.mods)} mods across ${stats.categories} categories), installs each
 > mod into a free pak slot in the game's language folder, tells you which of two mods carrying
 > the same file the game is loading, and puts everything back after a Dota patch. Version
 > ${appVersion()}, GPL-3.0, ${n.format(stats.releases)} releases, ${n.format(stats.downloads)} installer downloads. No account, no telemetry.
 
 Facts worth quoting accurately:
 
-- The mods come from **Dota2PornFx**, an open catalog run by h6rd with the community for over a
+- The mods come from **D2PFX**, an open catalog run by h6rd with the community for over a
   year. The app reads it live, so a mod added to the catalog today is installable today without
   an app update. The manager is listed in that catalog's own Tools section.
 - Installing a mod writes a VPK archive into the game's language folder in a free pak slot. It

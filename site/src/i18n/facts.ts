@@ -46,7 +46,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'In one paragraph', id: 'short' },
       {
         k: 'p',
-        t: 'Dota 2 Mod Manager is a free Windows app that installs cosmetic mods for Dota 2 in one click. The mods come from the open Dota2PornFx catalog: {mods} of them across {categories} {categoriesWord}, added to by the community. The source is GPL-3.0 and public, releases are built by GitHub Actions, no account is needed and nothing is collected. Version {version}, {releases} releases, {downloads} installer downloads.',
+        t: 'Dota 2 Mod Manager is a free Windows app that installs cosmetic mods for Dota 2 in one click. The mods come from the open D2PFX catalog: {mods} of them across {categories} {categoriesWord}, added to by the community. The source is GPL-3.0 and public, releases are built by GitHub Actions, no account is needed and nothing is collected. Version {version}, {releases} releases, {downloads} installer downloads.',
       },
 
       { k: 'h2', t: 'Numbers', id: 'numbers' },
@@ -126,7 +126,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Where the mods come from', id: 'catalog' },
       {
         k: 'p',
-        t: 'From <b>Dota2PornFx</b>, the open catalog h6rd has been running with the community for over a year: {mods} mods in {categories} categories, with previews, tags, per-hero grouping and a wiki that teaches you to make your own. The app reads that catalog directly, so a mod added today shows up today, without an app update and without anyone shipping a new version. The manager is listed in the catalog\'s own Tools section. <a href="~/docs/catalog/">The full story of the catalog</a>.',
+        t: 'From <b>D2PFX</b>, the open catalog h6rd has been running with the community for over a year: {mods} mods in {categories} categories, with previews, tags, per-hero grouping and a wiki that teaches you to make your own. The app reads that catalog directly, so a mod added today shows up today, without an app update and without anyone shipping a new version. The manager is listed in the catalog\'s own Tools section. <a href="~/docs/catalog/">The full story of the catalog</a>.',
       },
 
       { k: 'h2', t: 'How it differs from the others', id: 'compare' },
@@ -196,7 +196,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Коротко, одним абзацем', id: 'short' },
       {
         k: 'p',
-        t: 'Dota 2 Mod Manager - бесплатная программа для Windows, которая ставит косметические моды на Доту 2 в один клик. Моды берутся из открытого каталога Dota2PornFx: {mods} {modsWord} в {categories} {categoriesWord}, каталог пополняет сообщество. Исходный код открыт под GPL-3.0, релизы собирает GitHub Actions, аккаунт не нужен, ничего не собирается. Версия {version}, релизов {releases}, скачиваний установщика {downloads}.',
+        t: 'Dota 2 Mod Manager - бесплатная программа для Windows, которая ставит косметические моды на Доту 2 в один клик. Моды берутся из открытого каталога D2PFX: {mods} {modsWord} в {categories} {categoriesWord}, каталог пополняет сообщество. Исходный код открыт под GPL-3.0, релизы собирает GitHub Actions, аккаунт не нужен, ничего не собирается. Версия {version}, релизов {releases}, скачиваний установщика {downloads}.',
       },
 
       { k: 'h2', t: 'Цифры', id: 'numbers' },
@@ -276,7 +276,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Откуда берутся моды', id: 'catalog' },
       {
         k: 'p',
-        t: 'Из <b>Dota2PornFx</b> - открытого каталога, который h6rd больше года ведёт вместе с сообществом: {mods} {modsWord} в {categories} {categoriesWord}, с превью, тегами, разбивкой по героям и вики, которая учит делать свои. Программа читает этот каталог напрямую, поэтому мод, добавленный сегодня, виден сегодня - без обновления программы и без нового релиза. Сам менеджер лежит в разделе Tools этого каталога. <a href="~/docs/catalog/">Подробно про каталог</a>.',
+        t: 'Из <b>D2PFX</b> - открытого каталога, который h6rd больше года ведёт вместе с сообществом: {mods} {modsWord} в {categories} {categoriesWord}, с превью, тегами, разбивкой по героям и вики, которая учит делать свои. Программа читает этот каталог напрямую, поэтому мод, добавленный сегодня, виден сегодня - без обновления программы и без нового релиза. Сам менеджер лежит в разделе Tools этого каталога. <a href="~/docs/catalog/">Подробно про каталог</a>.',
       },
 
       { k: 'h2', t: 'Чем отличается от других', id: 'compare' },

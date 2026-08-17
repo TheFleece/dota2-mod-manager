@@ -50,25 +50,25 @@ export const heroCopy: Record<'en' | 'ru', HeroCopy> = {
     indexTitle: 'Dota 2 mods by hero: skins for every hero',
     indexH1: 'Dota 2 mods by hero',
     indexDescription:
-      'Every Dota 2 hero with the skins and mods that exist for them, from the open Dota2PornFx catalog. Pick a hero and see what is there, with previews.',
+      'Every Dota 2 hero with the skins and mods that exist for them, from the open D2PFX catalog. Pick a hero and see what is there, with previews.',
     indexLead:
-      'Every hero somebody has made something for, with how many mods there are. All of it from the Dota2PornFx catalog, and all of it installable in one click.',
+      'Every hero somebody has made something for, with how many mods there are. All of it from the D2PFX catalog, and all of it installable in one click.',
     indexCount: '{count} heroes have something made for them',
     modsWord: ['mod', 'mods', 'mods'],
 
     title: '{hero} mods and skins for Dota 2',
     h1: '{hero} mods for Dota 2',
     description:
-      'Every {hero} skin and mod in the Dota2PornFx catalog, with previews and what each one replaces. Free, and installed in one click.',
+      'Every {hero} skin and mod in the D2PFX catalog, with previews and what each one replaces. Free, and installed in one click.',
     // English has no second name for a hero, so these are the same three strings.
     titleAka: '{hero} mods and skins for Dota 2',
     h1Aka: '{hero} mods for Dota 2',
     descriptionAka:
-      'Every {hero} skin and mod in the Dota2PornFx catalog, with previews and what each one replaces. Free, and installed in one click.',
+      'Every {hero} skin and mod in the D2PFX catalog, with previews and what each one replaces. Free, and installed in one click.',
     aka: '',
     lead: 'What has been made for {hero}, what each one changes, and who made it.',
     intro:
-      'There are <b>{count} {word}</b> for {hero} in the Dota2PornFx catalog. Each one is a cosmetic change on your own screen: nobody else in the match sees it, and your Steam inventory is untouched.',
+      'There are <b>{count} {word}</b> for {hero} in the D2PFX catalog. Each one is a cosmetic change on your own screen: nobody else in the match sees it, and your Steam inventory is untouched.',
     changes: 'Replaces',
     by: 'by',
     install: 'Installing any of these',
@@ -84,24 +84,24 @@ export const heroCopy: Record<'en' | 'ru', HeroCopy> = {
     indexTitle: 'Моды на героев Доты 2: скины по каждому герою',
     indexH1: 'Моды Доты 2 по героям',
     indexDescription:
-      'Все герои Доты 2 и скины, которые для них сделаны, из открытого каталога Dota2PornFx. Выбери героя и посмотри, что есть, с превью.',
+      'Все герои Доты 2 и скины, которые для них сделаны, из открытого каталога D2PFX. Выбери героя и посмотри, что есть, с превью.',
     indexLead:
-      'Каждый герой, для которого кто-то что-то сделал, и сколько на него модов. Всё из каталога Dota2PornFx и всё ставится в один клик.',
+      'Каждый герой, для которого кто-то что-то сделал, и сколько на него модов. Всё из каталога D2PFX и всё ставится в один клик.',
     indexCount: 'Героев, для которых что-то сделано: {count}',
     modsWord: ['мод', 'мода', 'модов'],
 
     title: 'Моды и скины на {hero} для Доты 2',
     h1: 'Моды на {hero} в Доте 2',
     description:
-      'Все скины и моды на {hero} из каталога Dota2PornFx: превью и что каждый мод заменяет. Бесплатно и в один клик.',
+      'Все скины и моды на {hero} из каталога D2PFX: превью и что каждый мод заменяет. Бесплатно и в один клик.',
     titleAka: 'Моды на {ruAcc}: скины на {hero} для Доты 2',
     h1Aka: 'Моды на {ruAcc} в Доте 2',
     descriptionAka:
-      'Все скины и моды на {ruAcc} ({hero}) из каталога Dota2PornFx: превью и что каждый мод заменяет. Бесплатно и в один клик.',
+      'Все скины и моды на {ruAcc} ({hero}) из каталога D2PFX: превью и что каждый мод заменяет. Бесплатно и в один клик.',
     aka: 'Его же пишут как {alts}.',
     lead: 'Что сделано на {ruAcc} ({hero}), что каждый мод меняет и кто его автор.',
     intro:
-      'На {ruAcc} в каталоге Dota2PornFx <b>{count} {word}</b>. Каждый - косметическая правка на твоём экране: соперники и союзники её не видят, инвентарь Steam не трогается.',
+      'На {ruAcc} в каталоге D2PFX <b>{count} {word}</b>. Каждый - косметическая правка на твоём экране: соперники и союзники её не видят, инвентарь Steam не трогается.',
     changes: 'Меняет',
     by: 'автор',
     install: 'Как поставить любой из них',
