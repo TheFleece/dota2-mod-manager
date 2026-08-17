@@ -1,0 +1,5 @@
+# The site answers on both www and the bare domain, and both returned 200. Search Console has
+# been quietly filing nine pages under "alternative page with proper canonical tag" ever since:
+# Google worked out which one we meant and skipped the rest. The canonical was doing its job,
+# but making the duplicate a redirect says it in the one language nobody has to interpret.
+https://www.dota2modmanager.com/* https://dota2modmanager.com/:splat 301!
