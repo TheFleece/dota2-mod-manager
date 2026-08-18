@@ -514,19 +514,27 @@ const en: Record<Slug, Doc> = {
         items: [
           [
             'DOTA Mods Installer (dota2mods.com)',
-            'The big one. Its site states over 3,400 mods and over 8,300 mod parts, Windows only, with a shuffle mode, a texture and particle editor, and user uploads. It is not open source, and the site offers a donation to remove ads. If catalog size is what decides it for you, it is larger than ours.',
+            'The big one. Its site states over 3,400 mods and over 8,300 mod parts, Windows only, with a shuffle mode, a texture and particle editor, and user uploads. It is not open source, and the site offers a donation to remove ads. If catalog size is what decides it for you, it is larger than ours. What it is not is a manager: it builds a pack, and putting that pack into the game folder, taking it back out and keeping track of what is in it stays your job.',
           ],
           [
             'd2mm (github.com/SebRut/d2mm)',
-            'Open source under MIT, and genuinely early: install ordering and a package creator. Its last commit is from January 2015, five Dota engines ago.',
+            'Open source under MIT, and genuinely early: install ordering and a package creator. Its last commit is from January 2015, which is five Dota engines and one whole game version ago. It does not work with the game as it ships today.',
           ],
           [
             'd2modmanager (github.com/philface)',
             'Open source, "without vpk injection", last touched in February 2015. Of historical interest.',
           ],
           [
-            'Skin changers and inventory changers',
-            'A different category of thing. Those advertise unlocking items you do not own, and several ask for a Steam login to do it. That is the one question above with a clear answer.',
+            'Dota 2 SkinChanger (dota2changer.com)',
+            'A website rather than a program: you pick mods in a browser, it generates a VPK pack, and you place that pack in the game folder yourself. Part of its collection is behind a paid tier. Nothing updates itself afterwards, and a pack built last month is the pack you keep.',
+          ],
+          [
+            'Skin changers and inventory changers (Overplus, MetaSkins and the like)',
+            'A different category of thing. They advertise unlocking items you do not own, they are closed source with no public build to check, and several ask for a Steam login to do it. Where this app adds a file next to the game and can take it back, these change the files of the game itself, and you have their word for what else they touch.',
+          ],
+          [
+            'Umbrella and other cheat platforms',
+            'Not a mod manager at all. Those sell scripts and automation that play parts of the match for you, which is the one thing in this whole area that Valve does ban accounts for. If a page offers you mods and scripts from the same download, close it.',
           ],
         ],
       },
@@ -535,7 +543,7 @@ const en: Record<Slug, Doc> = {
       {
         k: 'list',
         items: [
-          'Windows only. There is no Mac build and no Linux build.',
+          'Windows first. There is a Linux AppImage since 2.4.0, tested by one person on one desktop rather than by a year of use, and no Mac build at all.',
           'The catalog is smaller than the largest one out there. It is curated, previewed and open, which is a different trade.',
           'The installer is unsigned, so Windows warns about it on first run. <a href="~/docs/safe/#smartscreen">Why, and what to do</a>.',
           'It does not edit textures. Recolouring a mod is a job for the catalog\'s tools. <a href="~/docs/own-mods/#tools">Those</a>.',
@@ -1044,19 +1052,27 @@ const ru: Record<Slug, Doc> = {
         items: [
           [
             'DOTA Mods Installer (dota2mods.com)',
-            'Самый крупный. На своём сайте заявляет больше 3400 модов и больше 8300 частей модов, только Windows, режим случайного выбора, редактор текстур и частиц, загрузка своих работ. Исходников нет, на сайте есть пожертвование за отключение рекламы. Если решает размер каталога, у него он больше нашего.',
+            'Самый крупный. На своём сайте заявляет больше 3400 модов и больше 8300 частей модов, только Windows, режим случайного выбора, редактор текстур и частиц, загрузка своих работ. Исходников нет, на сайте есть пожертвование за отключение рекламы. Если решает размер каталога, у него он больше нашего. Чего он не делает, так это не управляет модами: он собирает пак, а положить его в игру, убрать обратно и помнить, что внутри, остаётся твоей заботой.',
           ],
           [
             'd2mm (github.com/SebRut/d2mm)',
-            'Открытый код под MIT, и по-настоящему ранний: порядок установки и сборка пакетов. Последний коммит - январь 2015 года.',
+            'Открытый код под MIT, и по-настоящему ранний: порядок установки и сборка пакетов. Последний коммит - январь 2015 года, это пять движков Доты назад. С сегодняшней игрой он не работает.',
           ],
           [
             'd2modmanager (github.com/philface)',
             'Открытый код, «без инъекции vpk», последняя правка - февраль 2015 года. Представляет исторический интерес.',
           ],
           [
-            'Скинченджеры и инвентарь-ченджеры',
-            'Другая категория вещей. Они обещают открыть предметы, которыми ты не владеешь, и часть из них просит для этого логин Steam. Это тот самый вопрос выше, у которого ответ однозначный.',
+            'Dota 2 SkinChanger (dota2changer.com)',
+            'Не программа, а сайт: моды выбираются в браузере, он собирает VPK-пак, а класть его в папку игры ты идёшь сам. Часть коллекции платная. Дальше ничего не обновляется: собранный месяц назад пак таким у тебя и остаётся.',
+          ],
+          [
+            'Скинченджеры и инвентарь-ченджеры (Overplus, MetaSkins и подобные)',
+            'Другая категория вещей. Они обещают открыть предметы, которыми ты не владеешь, у них закрытый код и нет публичной сборки, которую можно проверить, а часть просит логин Steam. Разница простая: эта программа кладёт файл рядом с игрой и умеет его забрать, а они меняют файлы самой игры, и что там ещё затронуто, известно только с их слов.',
+          ],
+          [
+            'Umbrella и прочие читы',
+            'Это вообще не мод-менеджеры. Там продают скрипты и автоматизацию, которые играют за тебя, и это единственное во всей теме, за что Valve действительно банит аккаунты. Если на одной странице предлагают и моды, и скрипты, эту страницу лучше закрыть.',
           ],
         ],
       },
@@ -1065,7 +1081,7 @@ const ru: Record<Slug, Doc> = {
       {
         k: 'list',
         items: [
-          'Только Windows. Сборок под Mac и Linux нет.',
+          'Сначала Windows. С версии 2.4.0 есть AppImage под Linux, но его проверил один человек на одном рабочем столе, а не год использования. Сборки под Mac нет вовсе.',
           'Каталог меньше самого крупного из существующих. Он отобранный, с превью и открытый - это другой обмен.',
           'Установщик не подписан, поэтому Windows ругается при первом запуске. <a href="~/docs/safe/#smartscreen">Почему и что делать</a>.',
           'Она не редактирует текстуры. Перекрасить мод - работа для инструментов каталога. <a href="~/docs/own-mods/#tools">Вот они</a>.',
