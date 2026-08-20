@@ -16,6 +16,7 @@
       <img src="https://img.shields.io/github/actions/workflow/status/TheFleece/dota2-mod-manager/test.yml?style=for-the-badge&color=c4b5fd&label=Tests" alt="Test status">
     </a>
     <img src="https://img.shields.io/badge/Windows-10%2F11-201c2c?style=for-the-badge" alt="Windows">
+    <img src="https://img.shields.io/badge/Linux-AppImage-201c2c?style=for-the-badge" alt="Linux">
     <img src="https://img.shields.io/badge/License-GPL--3.0-c4b5fd?style=for-the-badge" alt="License">
     <a href="https://dota2modmanager.com">
       <img src="https://img.shields.io/badge/Site-dota2modmanager.com-2a2440?style=for-the-badge" alt="Website">
@@ -47,6 +48,7 @@
 | **Fonts and cursors** | Installed into the game files with a backup of the originals; removing them restores vanilla |
 | **It survives Dota patches** | The app notices a game update when it lands, puts back what the patch wiped, and never writes to the game folder while Dota is running |
 | **Auto-updates** | The app checks GitHub Releases and installs new versions itself |
+| **Windows and Linux** | Both ship with every release: an installer and a portable build for Windows, an AppImage for Linux. Steam is found wherever your distribution keeps it, flatpak included |
 
 <div align="center">
   <img src="site/public/screenshots/dota-2-mod-manager-heroes-en.webp" alt="Mods grouped hero by hero" width="49%">

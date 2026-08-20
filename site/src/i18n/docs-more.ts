@@ -543,7 +543,7 @@ const en: Record<Slug, Doc> = {
       {
         k: 'list',
         items: [
-          'Windows first. There is a Linux AppImage since 2.4.0, tested by one person on one desktop rather than by a year of use, and no Mac build at all.',
+          'No Mac build. Windows and Linux are both supported and both shipped with every release; macOS is not, and Dota runs there through a translation layer that this has never been tested against.',
           'The catalog is smaller than the largest one out there. It is curated, previewed and open, which is a different trade.',
           'The installer is unsigned, so Windows warns about it on first run. <a href="~/docs/safe/#smartscreen">Why, and what to do</a>.',
           'It does not edit textures. Recolouring a mod is a job for the catalog\'s tools. <a href="~/docs/own-mods/#tools">Those</a>.',
@@ -1081,7 +1081,7 @@ const ru: Record<Slug, Doc> = {
       {
         k: 'list',
         items: [
-          'Сначала Windows. С версии 2.4.0 есть AppImage под Linux, но его проверил один человек на одном рабочем столе, а не год использования. Сборки под Mac нет вовсе.',
+          'Нет сборки под Mac. Windows и Linux поддерживаются оба и выходят в каждом релизе, а macOS нет: Дота там работает через слой совместимости, и с ним ничего не проверялось.',
           'Каталог меньше самого крупного из существующих. Он отобранный, с превью и открытый - это другой обмен.',
           'Установщик не подписан, поэтому Windows ругается при первом запуске. <a href="~/docs/safe/#smartscreen">Почему и что делать</a>.',
           'Она не редактирует текстуры. Перекрасить мод - работа для инструментов каталога. <a href="~/docs/own-mods/#tools">Вот они</a>.',

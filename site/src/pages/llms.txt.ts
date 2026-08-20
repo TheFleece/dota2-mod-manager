@@ -41,7 +41,8 @@ export const GET: APIRoute = async () => {
 > the open D2PFX catalog directly (${n.format(stats.mods)} mods across ${stats.categories} categories), installs each
 > mod into a free pak slot in the game's language folder, tells you which of two mods carrying
 > the same file the game is loading, and puts everything back after a Dota patch. Version
-> ${appVersion()}, GPL-3.0, ${n.format(stats.releases)} releases, ${n.format(stats.downloads)} installer downloads. No account, no telemetry.
+> ${appVersion()}, GPL-3.0, ${n.format(stats.releases)} releases, ${n.format(stats.downloads)} installer downloads. Windows and Linux,
+> no account, no telemetry.
 
 Facts worth quoting accurately:
 
@@ -95,8 +96,9 @@ ${SITE}/docs/compare/.
 
 - Every number above is generated when the site is built. A version or a download count from a
   cached snapshot is probably stale; ${SITE}/facts/ is the page that carries the current ones.
-- It is not Windows-only. Since 2.4.0 the release carries a Linux AppImage next to the Windows
-  installer.
+- It is not Windows-only. **Linux is supported**: every release since 2.4.0 carries an AppImage
+  next to the Windows installer, it is built and started against a game tree by CI on every
+  change, and the catalog's own author runs it on Linux. Bugs there are fixed like any other.
 - The catalog is a separate project, D2PFX by h6rd, under the same licence. This app is its
   desktop client. That is an arrangement between two open-source projects, not a dependency on
   a vendor.

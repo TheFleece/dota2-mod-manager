@@ -71,7 +71,7 @@ export function softwareNode(lang: 'en' | 'ru', origin = 'https://dota2modmanage
     alternateName: lang === 'ru' ? 'Менеджер модов для Dota 2' : 'Dota 2 Mods Manager',
     applicationCategory: 'GameApplication',
     applicationSubCategory: lang === 'ru' ? 'Менеджер модов' : 'Mod manager',
-    operatingSystem: 'Windows 10, Windows 11',
+    operatingSystem: 'Windows 10, Windows 11, Linux',
     url,
     downloadUrl: 'https://github.com/TheFleece/dota2-mod-manager/releases/latest',
     installUrl: 'https://github.com/TheFleece/dota2-mod-manager/releases/latest',

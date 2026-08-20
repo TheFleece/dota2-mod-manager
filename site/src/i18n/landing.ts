@@ -81,13 +81,13 @@ export interface Landing {
 
 export const landing: Record<'en' | 'ru', Landing> = {
   en: {
-    heroKicker: 'Free · open source · Windows',
+    heroKicker: 'Free · open source · Windows and Linux',
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
     heroLead: 'A mod manager for Dota 2: {mods} {word} from the D2PFX catalog in one place. One click to install, one to take back. Plus the cosmetics your account already owns and setups you can send as a link.',
     download: 'Download for Windows',
     source: 'Source code',
-    heroMeta: 'Windows 10/11 · no account · updates itself',
+    heroMeta: 'Windows 10/11 and Linux · no account · updates itself',
     statLabels: ['{word} in the catalog', '{word}', '{word}', 'free'],
     statWords: [
       ['mod', 'mods', 'mods'],
@@ -167,13 +167,13 @@ export const landing: Record<'en' | 'ru', Landing> = {
   },
 
   ru: {
-    heroKicker: 'Бесплатно · открытый код · Windows',
+    heroKicker: 'Бесплатно · открытый код · Windows и Linux',
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
     heroLead: 'Мод-менеджер для Доты 2: {mods} {word} из каталога D2PFX в одном месте. Один клик поставить, один - убрать. Плюс косметика, которая у тебя и так есть, и сборки, которые отправляются ссылкой.',
     download: 'Скачать для Windows',
     source: 'Исходный код',
-    heroMeta: 'Windows 10/11 · без аккаунта · обновляется само',
+    heroMeta: 'Windows 10/11 и Linux · без аккаунта · обновляется само',
     statLabels: ['{word} в каталоге', '{word}', '{word}', 'бесплатно'],
     statWords: [
       ['мод', 'мода', 'модов'],
