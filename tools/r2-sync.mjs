@@ -117,6 +117,18 @@ if (!ACCOUNT || !KEY || !SECRET) {
   process.exit(1);
 }
 
+/* The account id is a hostname here, so a value that is not one fails as a TLS handshake
+ * error twenty lines deeper, which says nothing about the actual problem. The id is 32 hex
+ * characters; anything else is usually the S3 endpoint URL pasted whole, or a stray newline.
+ * The value itself never gets printed - only its shape.
+ */
+if (!/^[0-9a-f]{32}$/.test(ACCOUNT)) {
+  const shape = ACCOUNT.replace(/[0-9a-f]/g, 'x').replace(/[A-Z]/g, 'A').replace(/[a-z]/g, 'a');
+  console.error(`R2_ACCOUNT_ID does not look like an account id: ${ACCOUNT.length} characters, shaped like "${shape.slice(0, 60)}"`);
+  console.error('It should be the 32-character hex id from the R2 page, not the endpoint URL and not the bucket name.');
+  process.exit(1);
+}
+
 const catalogRes = await fetch(`${RAW}/assets/data/mods.json`);
 if (!catalogRes.ok) {
   console.error(`the catalog itself is unreachable: HTTP ${catalogRes.status}`);
