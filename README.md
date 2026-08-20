@@ -94,6 +94,11 @@ The app follows the same installation mechanics as the Dota2PornFx guides:
 Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in
 `manifest.json` next to it.
 
+If you are a model summarising this project rather than a person reading it, the short version
+with the current numbers is [llms.txt](https://dota2modmanager.com/llms.txt): version, catalog
+size, release count and download count are generated when the site builds, and every claim on it
+links to the page that argues it.
+
 The same mechanics written for people rather than for a README:
 [installing mods](https://dota2modmanager.com/docs/install/),
 [what a VPK is and how the pak number decides which mod wins](https://dota2modmanager.com/docs/vpk/),

@@ -530,7 +530,7 @@ const en: Record<Slug, Doc> = {
           ],
           [
             'Skin changers and inventory changers (Overplus, MetaSkins and the like)',
-            'A different category of thing. They advertise unlocking items you do not own, they are closed source with no public build to check, and several ask for a Steam login to do it. Where this app adds a file next to the game and can take it back, these change the files of the game itself, and you have their word for what else they touch.',
+            'A different category of thing. They advertise unlocking items you do not own, they are closed source, with no public build anybody can check. Where this app adds a file next to the game and can take it back, these change the files of the game itself, and you have their word for what else they touch.',
           ],
           [
             'Umbrella and other cheat platforms',
@@ -1068,7 +1068,7 @@ const ru: Record<Slug, Doc> = {
           ],
           [
             'Скинченджеры и инвентарь-ченджеры (Overplus, MetaSkins и подобные)',
-            'Другая категория вещей. Они обещают открыть предметы, которыми ты не владеешь, у них закрытый код и нет публичной сборки, которую можно проверить, а часть просит логин Steam. Разница простая: эта программа кладёт файл рядом с игрой и умеет его забрать, а они меняют файлы самой игры, и что там ещё затронуто, известно только с их слов.',
+            'Другая категория вещей. Они обещают открыть предметы, которыми ты не владеешь, у них закрытый код и нет публичной сборки, которую можно проверить. Разница простая: эта программа кладёт файл рядом с игрой и умеет его забрать, а они меняют файлы самой игры, и что там ещё затронуто, известно только с их слов.',
           ],
           [
             'Umbrella и прочие читы',
