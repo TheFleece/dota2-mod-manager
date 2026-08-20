@@ -122,10 +122,18 @@ if (!ACCOUNT || !KEY || !SECRET) {
  * characters; anything else is usually the S3 endpoint URL pasted whole, or a stray newline.
  * The value itself never gets printed - only its shape.
  */
-if (!/^[0-9a-f]{32}$/.test(ACCOUNT)) {
-  const shape = ACCOUNT.replace(/[0-9a-f]/g, 'x').replace(/[A-Z]/g, 'A').replace(/[a-z]/g, 'a');
-  console.error(`R2_ACCOUNT_ID does not look like an account id: ${ACCOUNT.length} characters, shaped like "${shape.slice(0, 60)}"`);
-  console.error('It should be the 32-character hex id from the R2 page, not the endpoint URL and not the bucket name.');
+const shapeOf = (v) => v.replace(/[0-9]/g, '0').replace(/[a-f]/g, 'x').replace(/[g-z]/g, 'a').replace(/[A-Z]/g, 'A');
+const wrong = [];
+if (!/^[0-9a-f]{32}$/.test(ACCOUNT)) wrong.push(['R2_ACCOUNT_ID', ACCOUNT, '32 hex characters, the id in the dashboard URL right after dash.cloudflare.com/']);
+if (!/^[0-9a-f]{32}$/.test(KEY)) wrong.push(['R2_ACCESS_KEY_ID', KEY, '32 hex characters, shown once when the R2 API token is created']);
+if (!/^[0-9a-f]{64}$/.test(SECRET)) wrong.push(['R2_SECRET_ACCESS_KEY', SECRET, '64 hex characters, shown next to the access key id']);
+if (wrong.length) {
+  // The account id is part of the hostname, so a wrong value comes back as an SSL handshake
+  // failure from a socket, which tells nobody anything. Shapes are printed, never values.
+  for (const [name, value, want] of wrong) {
+    console.error(`${name}: ${value.length} characters, shaped like "${shapeOf(value).slice(0, 60)}" - expected ${want}`);
+  }
+  console.error('Shapes only, no values. 0 is a digit, x is a-f, a is any other letter, A is uppercase.');
   process.exit(1);
 }
 
