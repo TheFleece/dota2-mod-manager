@@ -152,7 +152,16 @@ for (const [categoryId, list] of Object.entries(byCategory)) {
   for (const mod of list) {
     const ref = mod?.file;
     if (typeof ref !== 'string' || !/\.(vpk|zip)$/i.test(ref)) continue;
-    wanted.push({ path: `assets/files/${categoryId}/${ref}`, rank: rank(categoryId) });
+    /* Some entries carry a whole URL rather than a file name: the catalog keeps its heaviest
+       mods on Hugging Face. The key stays the shape the app asks for, so the app does not have
+       to know where the original came from. */
+    const absolute = /^https?:\/\//i.test(ref);
+    const name = absolute ? decodeURIComponent(ref.split('/').pop()) : ref;
+    wanted.push({
+      path: `assets/files/${categoryId}/${name}`,
+      source: absolute ? ref : null,
+      rank: rank(categoryId),
+    });
   }
 }
 wanted.sort((a, b) => a.rank - b.rank);
@@ -175,7 +184,7 @@ for (const item of wanted) {
   if (used >= BUDGET) { stopped = 'budget'; break; }
 
   try {
-    const res = await fetch(`${RAW}/${item.path}`);
+    const res = await fetch(item.source || `${RAW}/${item.path}`);
     if (!res.ok) throw new Error(`source HTTP ${res.status}`);
     const body = Buffer.from(await res.arrayBuffer());
     if (body.length > MAX_FILE) { tooBig++; continue; }
