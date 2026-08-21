@@ -40,8 +40,12 @@ const flag = (name, fallback) => {
 const DRY = args.includes('--dry');
 const LIMIT = Number(flag('--limit', '0')) || Infinity;
 const BUDGET = Number(flag('--budget', '9')) * 1024 ** 3;
-// One archive is not worth a tenth of the whole budget.
-const MAX_FILE = 400 * 1024 ** 2;
+/* A cap on one archive, so a single mod cannot eat the bucket. It started at 400 MB, which
+ * turned out to exclude exactly one thing: a 1.02 GB voice pack. The catalog fits in 5.6 GB,
+ * there is room, and the point of the mirror is that an install works when GitHub does not -
+ * including that one.
+ */
+const MAX_FILE = Number(flag('--max-file', '1200')) * 1024 ** 2;
 
 /* Categories in the order they are worth having a second copy of: what somebody installs in
  * their first hour, then everything else in catalog order.
