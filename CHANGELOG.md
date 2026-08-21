@@ -2,6 +2,26 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.5.0
+
+### The day GitHub is down is no longer your problem
+
+On 17 August GitHub was out for three hours. Everything this app reads lives there: the
+catalog, the mod archives, the file that recognises mods you installed by hand. The mirrors it
+already had are all proxies standing in front of GitHub, so they went down with it. The window
+opened, the catalog was empty, and nothing could be installed.
+
+There are two more places to look now, and neither is GitHub. The catalog and its data are
+copied onto the app's own site every time that site is built. All 915 mod archives sit in
+object storage behind `cdn.dota2modmanager.com`, refreshed nightly. GitHub is still asked
+first, because it is the source; the others answer when it cannot.
+
+### A catalog that fails to update no longer disappears
+
+If the app could not fetch a fresh catalog, it used to show you nothing, even with a perfectly
+good copy already on your disk from an hour before. Now it shows the one it has and says so in
+a line at the top. An old list of mods beats an empty window.
+
 ## 2.4.0
 
 ### It runs on Linux now
