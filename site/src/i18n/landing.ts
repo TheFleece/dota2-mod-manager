@@ -24,6 +24,11 @@ export interface Landing {
   download: string;
   source: string;
   heroMeta: string;
+  /** The download button and the three files behind it. */
+  dlInstaller: { title: string; note: string };
+  dlPortable: { title: string; note: string };
+  dlLinux: { title: string; note: string };
+  dlAll: string;
   /** Under each number. {word} is filled from statWords so the noun matches the count. */
   statLabels: [string, string, string, string];
   /** Singular / few / many, for the first three tiles. English repeats itself, Russian does not. */
@@ -85,7 +90,11 @@ export const landing: Record<'en' | 'ru', Landing> = {
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
     heroLead: 'A mod manager for Dota 2: {mods} {word} from the D2PFX catalog in one place. One click to install, one to take back. Plus the cosmetics your account already owns and setups you can send as a link.',
-    download: 'Download for Windows',
+    download: 'Download',
+    dlInstaller: { title: 'Windows installer', note: 'Installs, adds a shortcut, updates itself' },
+    dlPortable: { title: 'Windows portable', note: 'One file, runs from anywhere, nothing installed' },
+    dlLinux: { title: 'Linux AppImage', note: 'chmod +x and run it' },
+    dlAll: 'All files, checksums and release notes on GitHub',
     source: 'Source code',
     heroMeta: 'Windows 10/11 and Linux · no account · updates itself',
     statLabels: ['{word} in the catalog', '{word}', '{word}', 'free'],
@@ -171,7 +180,11 @@ export const landing: Record<'en' | 'ru', Landing> = {
     heroTitle: 'DOTA 2 MOD',
     heroTitleAccent: 'MANAGER',
     heroLead: 'Мод-менеджер для Доты 2: {mods} {word} из каталога D2PFX в одном месте. Один клик поставить, один - убрать. Плюс косметика, которая у тебя и так есть, и сборки, которые отправляются ссылкой.',
-    download: 'Скачать для Windows',
+    download: 'Скачать',
+    dlInstaller: { title: 'Windows, установщик', note: 'Поставит, сделает ярлык, обновляется сам' },
+    dlPortable: { title: 'Windows, портативная', note: 'Один файл, запускается откуда угодно' },
+    dlLinux: { title: 'Linux, AppImage', note: 'chmod +x и запускай' },
+    dlAll: 'Все файлы, хеши и список изменений на GitHub',
     source: 'Исходный код',
     heroMeta: 'Windows 10/11 и Linux · без аккаунта · обновляется само',
     statLabels: ['{word} в каталоге', '{word}', '{word}', 'бесплатно'],

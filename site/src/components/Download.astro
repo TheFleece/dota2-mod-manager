@@ -1,0 +1,130 @@
+---
+/**
+ * The download button, with the three files behind it.
+ *
+ * It used to say "Download for Windows" and take you to the releases page on GitHub, which is
+ * a list of twelve files with names like blockmap and latest.yml. Two of those twelve are what
+ * a person came for, and which two depends on their machine. So the button opens instead, the
+ * three real answers are named in plain words, and each one is a direct link to the file: the
+ * browser starts downloading and nobody visits GitHub at all.
+ *
+ * Built on <details> rather than JavaScript, so it works before the script runs and keeps
+ * working if the script never does. The script only adds what markup cannot: closing when you
+ * click elsewhere or press Escape, and marking the entry that matches the machine you are on.
+ */
+import type { LandingCopy } from '../i18n/landing';
+
+interface Props {
+  copy: LandingCopy;
+  big?: boolean;
+  /** Only one of the two on a page can carry the anchor the header points at. */
+  anchor?: boolean;
+}
+const { copy, big = false, anchor = false } = Astro.props;
+
+const RELEASE = 'https://github.com/TheFleece/dota2-mod-manager/releases/latest/download';
+const items = [
+  { os: 'win', file: `${RELEASE}/Dota-2-Mod-Manager-Setup.exe`, ...copy.dlInstaller },
+  { os: 'win', file: `${RELEASE}/Dota-2-Mod-Manager-Portable.exe`, ...copy.dlPortable },
+  { os: 'linux', file: `${RELEASE}/Dota-2-Mod-Manager.AppImage`, ...copy.dlLinux },
+];
+---
+
+<details class:list={['dl', { big }]} id={anchor ? 'download' : undefined}>
+  <summary class:list={['btn', 'btn-glow', { 'btn-big': big }]}>
+    <svg width={big ? 20 : 18} height={big ? 20 : 18} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+    {copy.download}
+  </summary>
+
+  <div class="dl-menu" role="menu">
+    {items.map((item) => (
+      <a class="dl-item" role="menuitem" href={item.file} data-os={item.os} download>
+        <b>{item.title}</b>
+        <span>{item.note}</span>
+      </a>
+    ))}
+    <a class="dl-all" href="https://github.com/TheFleece/dota2-mod-manager/releases/latest" rel="noopener">{copy.dlAll}</a>
+  </div>
+</details>
+
+<style>
+  .dl { position: relative; display: inline-block; }
+  .dl > summary { list-style: none; cursor: pointer; }
+  .dl > summary::-webkit-details-marker { display: none; }
+  .dl > summary::after {
+    content: '';
+    width: 7px; height: 7px; margin-left: 2px;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform .18s ease;
+  }
+  .dl[open] > summary::after { transform: translateY(1px) rotate(-135deg); }
+
+  .dl-menu {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max(280px, 100%);
+    padding: 6px;
+    text-align: left;
+    background: var(--surface-container);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 45%);
+    animation: dl-in .16s cubic-bezier(.2, 0, 0, 1);
+  }
+  @keyframes dl-in { from { opacity: 0; transform: translateX(-50%) translateY(-6px); } }
+
+  .dl-item {
+    display: block;
+    padding: 10px 12px;
+    border-radius: calc(var(--radius) - 6px);
+    color: var(--text);
+    text-decoration: none;
+  }
+  .dl-item b { display: block; font-size: 15px; font-weight: 600; }
+  .dl-item span { font-size: 13px; color: var(--text-dim); }
+  .dl-item:hover, .dl-item:focus-visible { background: var(--surface-high); text-decoration: none; }
+  /* The one that matches the machine reading the page, marked by the script below. */
+  .dl-item.match b::after {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px; margin-left: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    vertical-align: middle;
+  }
+
+  .dl-all {
+    display: block;
+    padding: 8px 12px 4px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dl-menu { animation: none; }
+    .dl > summary::after { transition: none; }
+  }
+</style>
+
+<script>
+  for (const dl of document.querySelectorAll<HTMLDetailsElement>('.dl')) {
+    // Which file this visitor probably wants. Not a redirect and not a filter: the other two
+    // stay exactly where they are, this only saves reading three lines to find your own.
+    const ua = navigator.userAgent;
+    const os = /Linux|X11/.test(ua) && !/Android/.test(ua) ? 'linux' : /Windows/.test(ua) ? 'win' : '';
+    if (os) dl.querySelector(`.dl-item[data-os="${os}"]`)?.classList.add('match');
+
+    dl.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && dl.open) { dl.open = false; dl.querySelector('summary')?.focus(); }
+    });
+    document.addEventListener('click', (e) => {
+      if (dl.open && !dl.contains(e.target as Node)) dl.open = false;
+    });
+  }
+</script>

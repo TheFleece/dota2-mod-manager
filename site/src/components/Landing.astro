@@ -15,6 +15,7 @@
  * it look like, what does it do, why should I run an unsigned .exe, and the usual worries.
  */
 import { landing } from '../i18n/landing';
+import Download from './Download.astro';
 import { siteStats } from '../lib/stats';
 import { shotNames, shotUrl, shotAlt } from '../lib/media';
 import Shots from './Shots.astro';
@@ -114,12 +115,7 @@ const shots = shotNames.map((name, i) => ({
     <p class="lead">{heroLead}</p>
 
     <div class="btn-row">
-      <a class="btn btn-glow" href={RELEASES} rel="noopener">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-        {c.download}
-      </a>
+      <Download copy={c} anchor />
       <a class="btn ghost" href={GITHUB} rel="noopener">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.6-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z" />
@@ -239,12 +235,7 @@ const shots = shotNames.map((name, i) => ({
       <h2>{c.ctaTitle}</h2>
       <p class="lead">{c.ctaLead}</p>
       <div class="btn-row">
-        <a class="btn btn-glow btn-big" href={RELEASES} rel="noopener">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          {c.download}
-        </a>
+        <Download copy={c} big />
       </div>
       <p class="muted">{c.ctaMeta}</p>
     </div>

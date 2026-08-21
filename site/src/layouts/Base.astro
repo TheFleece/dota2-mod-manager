@@ -107,7 +107,7 @@ const RELEASES = `${GITHUB}/releases/latest`;
           <a href={GITHUB} rel="noopener">{t('nav.github')}</a>
           <a href={DISCORD} rel="noopener">{t('nav.discord')}</a>
           <a class="lang" href={pathIn(other, path)} lang={other} hreflang={other}>{t('lang.switch')}</a>
-          <a class="cta" href={RELEASES} rel="noopener">{t('nav.download')}</a>
+          <a class="cta" href={`${lang === "en" ? "/" : `/${lang}/`}#download`} rel="noopener">{t('nav.download')}</a>
         </nav>
       </div>
     </header>
