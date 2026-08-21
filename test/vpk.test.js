@@ -130,6 +130,27 @@ test('a hero whose folder only lent a texture is not what the mod is about', () 
   assert.deepEqual(vpk.subjectHeroes(analysis).map((h) => h.id), ['grimstroke']);
 });
 
+test('a persona is the hero it belongs to, not a hero of its own', () => {
+  // Real shape, from a Skinchanger pack that dresses Anti-Mage: the game files his Wei
+  // persona under models/heroes/antimage_female, so one skin came in reading as two heroes
+  // — named "Antimage, Antimage Female", and split in half on import, because an import of
+  // two to four heroes splits itself.
+  const analysis = vpk.analyzeVpkPaths([
+    'models/heroes/antimage/antimage.vmdl_c',
+    'models/heroes/antimage_female/am_persona_body.vmdl_c',
+    'particles/units/heroes/hero_antimage_female/am_persona_blink.vpcf_c',
+  ]);
+  assert.deepEqual(vpk.subjectHeroes(analysis).map((h) => h.name), ['Anti-Mage']);
+  assert.equal(vpk.nameFromAnalysis(analysis), 'Anti-Mage');
+});
+
+test('folder names the game kept from before a rename resolve to the hero', () => {
+  for (const [folder, name] of [['bard', 'Largo'], ['invoker_kid', 'Invoker'], ['lanaya', 'Templar Assassin'],
+    ['drow', 'Drow Ranger'], ['gyro', 'Gyrocopter'], ['tuskarr', 'Tusk'], ['pudge_cute', 'Pudge']]) {
+    assert.equal(vpk.heroDisplayName(folder), name, folder);
+  }
+});
+
 test('a mod that carries no models at all is still named by what it recolours', () => {
   // a plain retexture owns no model, so there is no better answer than the hero it paints
   const analysis = vpk.analyzeVpkPaths([

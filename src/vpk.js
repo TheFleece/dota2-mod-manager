@@ -201,7 +201,9 @@ const HERO_DISPLAY = {
   spirit_breaker: 'Spirit Breaker', faceless_void: 'Faceless Void', phantom_assassin: 'Phantom Assassin',
   phantom_lancer: 'Phantom Lancer', shadow_demon: 'Shadow Demon', shadow_shaman: 'Shadow Shaman',
   witch_doctor: 'Witch Doctor', crystal_maiden: 'Crystal Maiden', dragon_knight: 'Dragon Knight',
-  legion_commander: 'Legion Commander', ancient_apparition: 'Ancient Apparition', anti_mage: 'Anti-Mage',
+  legion_commander: 'Legion Commander', ancient_apparition: 'Ancient Apparition',
+  // the game's own folder is "antimage"; "anti_mage" is how people write it
+  antimage: 'Anti-Mage', anti_mage: 'Anti-Mage',
   sand_king: 'Sand King', death_prophet: 'Death Prophet', troll_warlord: 'Troll Warlord',
   templar_assassin: 'Templar Assassin', naga_siren: 'Naga Siren', ogre_magi: 'Ogre Magi',
   elder_titan: 'Elder Titan', arc_warden: 'Arc Warden', winter_wyvern: 'Winter Wyvern',
@@ -223,6 +225,18 @@ const HERO_ALIAS = {
   // Merges by key already, but has no display name of its own, so a mod that uses only this
   // spelling announced itself as "Shadowshaman".
   shadowshaman: 'shadow_shaman',
+  // A persona is the same hero in another body, and the game files it under a folder of its
+  // own: models/heroes/antimage_female is Anti-Mage's Wei, models/heroes/invoker_kid is
+  // Invoker's Acolyte. Without these a pack that dresses one hero looks like a pack that
+  // dresses two — it comes in named "Antimage, Antimage Female", and an import of two to
+  // four heroes splits itself, so a single Anti-Mage skin arrived as two half mods.
+  antimage_female: 'antimage', invoker_kid: 'invoker', pudge_cute: 'pudge',
+  crystal_maiden_persona: 'crystal_maiden', mirana_persona: 'mirana',
+  phantom_assassin_persona: 'phantom_assassin', dragon_knight_persona: 'dragon_knight',
+  // Folder names the game kept from before the hero was renamed, or shortened by hand.
+  drow: 'drow_ranger', gyro: 'gyrocopter', blood_seeker: 'bloodseeker', lanaya: 'templar_assassin',
+  tuskarr: 'tusk', vengeful: 'vengefulspirit', rikimaru: 'riki', siren: 'naga_siren',
+  bard: 'largo', sandking: 'sand_king',
 };
 
 function heroDisplayName(id) {
