@@ -144,6 +144,36 @@ test('a persona is the hero it belongs to, not a hero of its own', () => {
   assert.equal(vpk.nameFromAnalysis(analysis), 'Anti-Mage');
 });
 
+test('a prop borrowed from another hero is not a second subject', () => {
+  // Real shape, from a Clinkz set that hangs a Phoenix immortal off its bow. One model of
+  // his against five of Clinkz's used to read as two heroes, so the mod came in named
+  // "Clinkz, Phoenix" and split itself in half on import, bow in one part and hero in the
+  // other. Measured across 75 split mods: every borrowed prop was one model against five or
+  // more, and no real two-hero pack came near a quarter.
+  const analysis = vpk.analyzeVpkPaths([
+    'models/heroes/clinkz/clinkz_head.vmdl_c',
+    'models/heroes/clinkz/clinkz_horns.vmdl_c',
+    'models/heroes/clinkz/clinkz_pads.vmdl_c',
+    'models/items/clinkz/clinkz_ti9_immortal_weapon/clinkz_ti9_immortal_weapon.vmdl_c',
+    'models/items/clinkz/clinkz_ti9_immortal_back/clinkz_ti9_immortal_back.vmdl_c',
+    'models/items/phoenix/phoenix_ti10_immortal_back/phoenix_ti10_immortal_icarus_dive_fx.vmdl_c',
+  ]);
+  assert.equal(analysis.heroes.length, 2, 'both are still seen');
+  assert.deepEqual(vpk.subjectHeroes(analysis).map((h) => h.name), ['Clinkz']);
+  assert.equal(vpk.nameFromAnalysis(analysis), 'Clinkz');
+});
+
+test('two heroes a pack really dresses both stay subjects', () => {
+  const analysis = vpk.analyzeVpkPaths([
+    'models/heroes/pudge/pudge.vmdl_c',
+    'models/items/pudge/pudge_arcana/pudge_arcana_head.vmdl_c',
+    'models/items/pudge/pudge_arcana/pudge_arcana_belt.vmdl_c',
+    'models/heroes/juggernaut/juggernaut.vmdl_c',
+    'models/items/juggernaut/jugg_arcana/jugg_arcana_weapon.vmdl_c',
+  ]);
+  assert.deepEqual(vpk.subjectHeroes(analysis).map((h) => h.name).sort(), ['Juggernaut', 'Pudge']);
+});
+
 test('folder names the game kept from before a rename resolve to the hero', () => {
   for (const [folder, name] of [['bard', 'Largo'], ['invoker_kid', 'Invoker'], ['lanaya', 'Templar Assassin'],
     ['drow', 'Drow Ranger'], ['gyro', 'Gyrocopter'], ['tuskarr', 'Tusk'], ['pudge_cute', 'Pudge']]) {

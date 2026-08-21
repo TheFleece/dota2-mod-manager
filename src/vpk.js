@@ -415,10 +415,22 @@ const KIND_LABEL = { wards: 'варды', courier: 'курьер', ui: 'инте
  *
  * A hero the mod carries no model for is not the subject. When none of them has a model the
  * mod is a plain recolour, and then every hero it touches is as good an answer as there is.
+ *
+ * Nor is a hero the mod carries one model for while carrying eight of somebody else's. Skins
+ * borrow a prop from another hero - a Clinkz set hangs a Phoenix immortal off its bow, a Sven
+ * one wears Disruptor's back piece - and that single model used to make the mod read as two
+ * heroes. It came in named "Clinkz, Phoenix", and an import of two to four heroes splits
+ * itself, so the set arrived in two halves with the bow in one of them.
  */
 function subjectHeroes(a) {
   const carried = a.heroes.filter((h) => h.models > 0 || h.base);
-  return carried.length ? carried : a.heroes;
+  if (carried.length < 2) return carried.length ? carried : a.heroes;
+  // A quarter of the leading hero's models is the line between "this mod is also about him"
+  // and "it borrowed something of his": measured across 75 split mods, every borrowed prop
+  // was a single model against five to eight, and no real two-hero pack was near it.
+  const top = Math.max(...carried.map((h) => h.models));
+  const main = carried.filter((h) => h.base || h.models * 4 >= top);
+  return main.length ? main : carried;
 }
 
 // Human summary of a whole analysis: hero skins, or a coarse content kind.
