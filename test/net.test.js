@@ -75,8 +75,25 @@ test('the four startup files can also come from the site, and nothing else can',
     assert.equal(list[0], url, 'GitHub is still asked first');
   }
   const mod = `${RAW_HOST}h6rd/Dota2PornFxWeb/main/assets/files/heroes/some-mod.zip`;
-  assert.ok(!net.mirrorsFor(mod, { small: true }).some((u) => u.includes('dota2modmanager.com')),
+  // The bucket on cdn. holds the archives; the site itself must not be asked for one.
+  assert.ok(!net.mirrorsFor(mod, { small: true }).some((u) => u.startsWith('https://dota2modmanager.com/mirror/')),
     'a mod archive is not on the site and must not be asked for there');
+});
+
+// The archives live in a bucket now, which is the only entry on the list that is not GitHub
+// wearing a different hostname. The catalog JSON must not be asked for there and the bucket
+// must not be asked before the origin.
+test('a mod archive can come from the bucket, after GitHub and not before it', () => {
+  const mod = `${RAW_HOST}h6rd/Dota2PornFxWeb/main/assets/files/heroes/Gopo%20Pudge.zip`;
+  const list = net.mirrorsFor(mod);
+  assert.equal(list[0], mod, 'the origin is still asked first');
+  assert.equal(list[1], 'https://cdn.dota2modmanager.com/assets/files/heroes/Gopo%20Pudge.zip');
+  assert.ok(list.indexOf('https://cdn.dota2modmanager.com/assets/files/heroes/Gopo%20Pudge.zip')
+    < list.findIndex((u) => u.includes('ghproxy')), 'and before the proxies, which go down with GitHub');
+
+  const catalog = `${RAW_HOST}h6rd/Dota2PornFxWeb/main/assets/data/mods.json`;
+  assert.ok(!net.mirrorsFor(catalog, { small: true }).some((u) => u.includes('cdn.dota2modmanager.com')),
+    'the catalog json is on the site, not in the bucket');
 });
 
 test('a URL that is not on GitHub raw is its own only mirror', () => {

@@ -58,9 +58,23 @@ const ourSite = (url) => {
   return name ? `https://dota2modmanager.com/mirror/${name}` : null;
 };
 
+/* And the archives themselves, in a bucket rather than in front of GitHub.
+ *
+ * Every proxy above is GitHub wearing a different hostname, so during the outage on
+ * 2026-08-17 a mod could not be installed at all. tools/r2-sync.mjs keeps a copy of the whole
+ * catalog here and refreshes it nightly. It sits after the origin on purpose: GitHub is asked
+ * first, and a mod added to the catalog since last night costs one 404 here before the proxies
+ * get their turn, which is a fair price for the day GitHub is down.
+ */
+const CATALOG_FILES = `${RAW_HOST}h6rd/Dota2PornFxWeb/main/assets/files/`;
+const bucket = (url) => (url.startsWith(CATALOG_FILES)
+  ? `https://cdn.dota2modmanager.com/assets/files/${url.slice(CATALOG_FILES.length)}`
+  : null);
+
 const DEFAULT_MIRRORS = [
   { host: 'raw.githubusercontent.com', map: (url) => url },
   { host: 'dota2modmanager.com', map: ourSite, smallOnly: true },
+  { host: 'cdn.dota2modmanager.com', map: bucket },
   { host: 'cdn.jsdelivr.net', map: jsdelivr, smallOnly: true },
   { host: 'ghproxy.net', map: proxy('ghproxy.net') },
   { host: 'gh-proxy.com', map: proxy('gh-proxy.com') },
