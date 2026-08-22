@@ -144,10 +144,18 @@ export async function renderSettings() {
       <div class="settings-row">
         <button class="btn btn-sm" id="whatsNewBtn"><span class="ms">auto_awesome</span>${L`Что нового`}</button>
       </div>
+      <!-- The people the app owes something to and cannot pay. The catalog is credited in
+           its own block above; this row is for whoever else did the work. -->
+      <div class="settings-row spaced">
+        <span class="settings-label">${L`Спасибо`}</span>
+        <span>${L`hanta снял видео о менеджере`}</span>
+        <a class="settings-link" id="thanksLink">youtube.com/@hqnta</a>
+      </div>
       <div class="settings-hint">© 2026 Mykhailo Lynnyk · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
     </div>
   `; });
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
+  $('#thanksLink').addEventListener('click', () => window.api.misc.openExternal('https://www.youtube.com/@hqnta'));
   // 48 MB is a real download, so it says so and waits for the press
   $('#toolInstallBtn')?.addEventListener('click', async (ev) => {
     ev.currentTarget.disabled = true;

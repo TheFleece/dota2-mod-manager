@@ -170,6 +170,9 @@ the ones with a known shape and no archaeology needed.
   and the Dota 2 modding community. This app is a desktop client for their catalog.
   Each mod card in the app credits its author.
 - Community tools (VPKMerge, Background Changer, Compiler, ItemsFix) belong to their authors.
+- **[hanta](https://www.youtube.com/@hqnta)** filmed a
+  [walkthrough of the app](https://www.youtube.com/watch?v=Z_yalpuP6pA) in Russian, which
+  answers more questions than this README does for anyone who would rather watch than read.
 
 ## License
 

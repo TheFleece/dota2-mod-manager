@@ -593,6 +593,10 @@ const EN = {
   'Каталог обновлён': 'Catalog updated',
   'Каталог не обновился, показан последний загруженный': 'Could not update the catalog, showing the last one downloaded',
 
+  // ---------- thanks ----------
+  'Спасибо': 'Thanks',
+  'hanta снял видео о менеджере': 'hanta made a video about the manager',
+
   // ---------- diagnostics ----------
   'Диагностика': 'Diagnostics',
   'Экспортировать отчёт': 'Export report',
