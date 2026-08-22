@@ -174,6 +174,40 @@ test('two heroes a pack really dresses both stay subjects', () => {
   assert.deepEqual(vpk.subjectHeroes(analysis).map((h) => h.name).sort(), ['Juggernaut', 'Pudge']);
 });
 
+test('splitting refuses a mod that only borrowed a prop from another hero', () => {
+  // The split decision has to agree with what the mod is about, or the two disagree and the
+  // set comes apart anyway: naming said "Clinkz" while splitting still counted Phoenix and
+  // cut the bow off into a mod of its own.
+  const os = require('node:os');
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vpk-split-'));
+  try {
+    const one = path.join(dir, 'one_dir.vpk');
+    fs.writeFileSync(one, vpk.buildVpk([
+      entry('models/heroes/clinkz/clinkz_head.vmdl_c', 'a'),
+      entry('models/heroes/clinkz/clinkz_horns.vmdl_c', 'b'),
+      entry('models/heroes/clinkz/clinkz_pads.vmdl_c', 'c'),
+      entry('models/items/clinkz/ti9_weapon/ti9_weapon.vmdl_c', 'd'),
+      entry('models/items/clinkz/ti9_back/ti9_back.vmdl_c', 'e'),
+      entry('models/items/phoenix/ti10_back/ti10_icarus_fx.vmdl_c', 'f'),
+    ]));
+    assert.deepEqual(vpk.splitVpkByHero(one), [], 'one borrowed prop is not a second mod');
+
+    const two = path.join(dir, 'two_dir.vpk');
+    fs.writeFileSync(two, vpk.buildVpk([
+      entry('models/heroes/pudge/pudge.vmdl_c', 'a'),
+      entry('models/items/pudge/arcana/arcana_head.vmdl_c', 'b'),
+      entry('models/items/pudge/arcana/arcana_belt.vmdl_c', 'c'),
+      entry('models/heroes/juggernaut/juggernaut.vmdl_c', 'd'),
+      entry('models/items/juggernaut/arcana/arcana_weapon.vmdl_c', 'e'),
+    ]));
+    assert.deepEqual(vpk.splitVpkByHero(two).map((p) => p.name).sort(), ['Juggernaut', 'Pudge']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('folder names the game kept from before a rename resolve to the hero', () => {
   for (const [folder, name] of [['bard', 'Largo'], ['invoker_kid', 'Invoker'], ['lanaya', 'Templar Assassin'],
     ['drow', 'Drow Ranger'], ['gyro', 'Gyrocopter'], ['tuskarr', 'Tusk'], ['pudge_cute', 'Pudge']]) {

@@ -802,10 +802,10 @@ function splitVpkByHero(dirPath, archivePathFor) {
   const dirBuf = fs.readFileSync(dirPath);
   const entries = readVpkEntries(dirBuf, dirPath, archivePathFor);
   const paths = entries.map(entryPath);
-  // only heroes the file really carries models for can become a part of their own; a hero
-  // named by one stray material is a reference, and a "part" holding nothing but the
-  // shared leftovers is not a mod
-  const heroes = analyzeVpkPaths(paths).heroes.filter((h) => h.models > 0);
+  // Only a hero the file is really about can become a part of its own: one named by a stray
+  // material is a reference, one it borrowed a single prop from is a loan, and a "part"
+  // holding nothing but the shared leftovers is not a mod.
+  const heroes = subjectHeroes(analyzeVpkPaths(paths)).filter((h) => h.models > 0);
   if (heroes.length < 2) return [];
   const ids = heroes.map((h) => h.id);
   // Canonical layouts first. Then any folder named after a hero we already found in this

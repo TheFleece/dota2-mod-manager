@@ -1244,9 +1244,12 @@ class Installer {
       const told = this.describePaths(paths, a);
       return {
         info: told.info, heroes: a.heroes.length,
-        // heroes the file carries actual models for — the ones it could be split into.
-        // Every hero it merely mentions counts for the summary, not for splitting.
-        subjects: a.heroes.filter((h) => h.models > 0).length,
+        // What the file is actually about — the heroes it could be split into. Every hero it
+        // merely mentions counts for the summary, not for splitting, and neither does one it
+        // borrowed a prop from: subjectHeroes is what draws that line, and drawing it here a
+        // second time is how a Clinkz set with a Phoenix immortal on its bow kept splitting
+        // itself in half after the line had already moved.
+        subjects: subjectHeroes(a).filter((h) => h.models > 0).length,
         // the game's own names for what this replaces, when it recognises any of it
         items: told.items,
         // which hero(es) the content is for, by display name - lets the renderer show a
@@ -1455,7 +1458,7 @@ class Installer {
       const told = this.describePaths(paths, a);
       item.info = told.info;
       item.heroes = a.heroes.length;
-      item.subjects = a.heroes.filter((h) => h.models > 0).length;
+      item.subjects = subjectHeroes(a).filter((h) => h.models > 0).length;
       item.items = told.items;
       item.heroNames = told.heroNames;
       item.kindTag = a.kind;
