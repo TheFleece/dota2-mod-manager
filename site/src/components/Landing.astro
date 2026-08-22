@@ -20,6 +20,7 @@ import { siteStats } from '../lib/stats';
 import { shotNames, shotUrl, shotAlt } from '../lib/media';
 import Shots from './Shots.astro';
 import Tour from './Tour.astro';
+import Creator from './Creator.astro';
 import Stand from './Stand.astro';
 import Hunt from './Hunt.astro';
 import type { Lang } from '../i18n/ui';
@@ -147,6 +148,8 @@ const shots = shotNames.map((name, i) => ({
 </section>
 
 <Tour lang={lang} title={c.filmTitle} caption={c.filmCaption} play={c.filmPlay} />
+
+<Creator lang={lang} />
 
 <section class="shots">
   <div class="wrap">

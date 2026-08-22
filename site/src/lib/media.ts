@@ -31,6 +31,21 @@ export const TOUR_SIZE = { width: 880, height: 556 };
 export const SHOT_SIZE = { width: 1360, height: 860 };
 
 /**
+ * The walkthrough hanta filmed, and where its thumbnail lives.
+ *
+ * The picture is our own copy of his YouTube thumbnail rather than a hot-link, so a visitor
+ * who has not clicked anything is not announced to another domain. See Creator.astro for how
+ * to refresh it if he changes the artwork.
+ */
+export const CREATOR = {
+  id: 'Z_yalpuP6pA',
+  video: 'https://www.youtube.com/watch?v=Z_yalpuP6pA',
+  channel: 'https://www.youtube.com/@hqnta',
+  thumb: '/video/dota-2-mod-manager-review-hanta.webp',
+  size: { width: 1280, height: 720 },
+} as const;
+
+/**
  * What each picture is of, in a sentence.
  *
  * An alt that repeats the caption printed under the image teaches nothing twice. These say

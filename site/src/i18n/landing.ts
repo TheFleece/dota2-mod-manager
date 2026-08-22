@@ -39,6 +39,15 @@ export interface Landing {
   filmCaption: string;
   filmPlay: string;
 
+  /** The walkthrough somebody else filmed, and the credit that goes with it. */
+  creatorTitle: string;
+  creatorKicker: string;
+  creatorName: string;
+  creatorLead: string;
+  creatorWatch: string;
+  creatorChannel: string;
+  creatorAlt: string;
+
   /** The interactive panel: pak order, and who wins a shared file. */
   standTitle: string;
   standLead: string;
@@ -108,6 +117,14 @@ export const landing: Record<'en' | 'ru', Landing> = {
     filmTitle: 'One take, start to finish',
     filmCaption: 'Find a hero, take a set, take another, install both. No cuts and no speed-up.',
     filmPlay: 'Play the clip',
+
+    creatorTitle: 'Someone filmed a walkthrough',
+    creatorKicker: 'YouTube · hanta',
+    creatorName: 'Как ставить любые моды, шмотки и карты в Dota 2 еще легче? | Dota 2 Mod Manager',
+    creatorLead: 'hanta goes through the whole thing on camera: where the mods come from, how to put cosmetics and terrains in, what to click when the game will not take them. The video is in Russian. Thanks to him for making it.',
+    creatorWatch: 'Watch on YouTube',
+    creatorChannel: "hanta's channel",
+    creatorAlt: "Thumbnail of hanta's video about Dota 2 Mod Manager, with the app's mod catalog behind it",
 
     standTitle: 'Try the part people get wrong',
     standLead: 'Two mods carrying the same file cannot both win. The game loads the one in the lower pak slot. Switch these on and off, drag them into another order, and watch which one the game takes.',
@@ -198,6 +215,14 @@ export const landing: Record<'en' | 'ru', Landing> = {
     filmTitle: 'Как ставится мод на Доту 2: один дубль, от начала до конца',
     filmCaption: 'Находим героя, берём сет, берём второй, ставим оба. Без склеек и без ускорения.',
     filmPlay: 'Включить ролик',
+
+    creatorTitle: 'Про менеджер сняли видео',
+    creatorKicker: 'YouTube · hanta',
+    creatorName: 'Как ставить любые моды, шмотки и карты в Dota 2 еще легче? | Dota 2 Mod Manager',
+    creatorLead: 'hanta показал весь путь на камеру: откуда берутся моды, как поставить шмотки и ландшафты, куда нажимать, если игра их не берёт. Читать не обязательно, можно просто посмотреть. Спасибо ему за ролик.',
+    creatorWatch: 'Смотреть на YouTube',
+    creatorChannel: 'Канал hanta',
+    creatorAlt: 'Превью ролика hanta про Dota 2 Mod Manager, за ним каталог модов в окне приложения',
 
     standTitle: 'Порядок модов: потрогай то, на чём все спотыкаются',
     standLead: 'Два мода с одним и тем же файлом не могут выиграть оба. Игра грузит тот, что лежит в паке с меньшим номером. Повключай их, перетащи в другом порядке и посмотри, чей файл возьмёт игра.',

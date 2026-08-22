@@ -399,6 +399,49 @@ section { padding: 44px 0; }
 }
 .film-play:hover { background: #e0d0ff; }
 
+/* ---------- the walkthrough somebody else filmed ----------
+ *
+ * Two columns, thumbnail first, so the eye lands on the picture and the words explain it.
+ * The heading is left-aligned rather than centred like the clip above it: the two sections
+ * are next to each other and both centred would read as one long centred column, which is
+ * how a page stops having a shape.
+ *
+ * The play badge sits over the thumbnail and does nothing on its own. The whole picture is
+ * the link, and a button drawn inside a link is a second target for the same destination. */
+.creator-card {
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 28px; align-items: center;
+}
+@media (max-width: 820px) { .creator-card { grid-template-columns: 1fr; gap: 22px; } }
+
+.creator-thumb { display: block; position: relative; }
+.creator-thumb img { aspect-ratio: 16 / 9; object-fit: cover; }
+.creator-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: grid; place-items: center;
+  width: 62px; height: 62px; border-radius: 999px;
+  background: var(--primary); color: var(--on-primary);
+  box-shadow: 0 10px 34px color-mix(in srgb, var(--primary) 32%, transparent);
+  transition: transform 220ms cubic-bezier(0.2, 0, 0, 1), background 220ms ease;
+}
+/* the icon's own mass sits left of its bounding box, so the triangle is nudged back */
+.creator-play svg { margin-left: 3px; }
+.creator-thumb:hover .creator-play { transform: translate(-50%, -50%) scale(1.07); background: #e0d0ff; }
+
+.creator-kicker {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px; font-size: 14px; font-weight: 600;
+  color: var(--text-faint); letter-spacing: 0.02em;
+}
+.creator-kicker svg { color: #ff0033; }
+.creator-name {
+  margin-bottom: 12px; font-size: 17px; font-weight: 650;
+  color: var(--text); line-height: 1.35;
+}
+.creator-lead { color: var(--text-dim); max-width: 46ch; }
+.creator-card .btn-row { margin-top: 18px; }
+.creator-card .btn { padding: 12px 20px; font-size: 15px; }
+
 /* Light on the glass, following the pointer. The first version was a linear band at 105
    degrees, and a band has edges: it drew a visible diagonal seam across the screenshot. A
    round pool has no edge to see, and it ends in its own colour at zero alpha rather than in

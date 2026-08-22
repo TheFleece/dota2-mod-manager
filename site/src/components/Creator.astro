@@ -1,0 +1,67 @@
+---
+/**
+ * The walkthrough somebody else filmed, and the thank-you that goes with it.
+ *
+ * It sits right after our own clip on purpose. Ours is twenty-four seconds of the app working
+ * and answers "what does this look like"; hanta's is the long version and answers "show me,
+ * I am not going to read the guide". Two videos in a row would be a lot if they did the same
+ * job, and they do not.
+ *
+ * The thumbnail is a copy, served from our own domain rather than hot-linked off i.ytimg.com,
+ * so the page does not tell Google that a visitor was here before they have clicked anything.
+ * Refresh it with:
+ *   curl -o thumb.jpg https://i.ytimg.com/vi/<id>/maxresdefault.jpg
+ *   node -e "require('sharp')('thumb.jpg').resize(1280,720).webp({quality:78}).toFile('public/video/…')"
+ *
+ * Two links out, not one. The video is what the visitor came for; the channel is the part that
+ * is worth something to the person who made it.
+ */
+import type { Lang } from '../i18n/ui';
+import { landing } from '../i18n/landing';
+import { CREATOR } from '../lib/media';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const c = landing[lang];
+---
+
+<section class="creator">
+  <div class="wrap">
+    <h2 class="reveal">{c.creatorTitle}</h2>
+
+    <div class="creator-card reveal">
+      {/* The link's name is the video's, not the button's below it: a screen reader reading
+          "Watch on YouTube" twice in a row learns nothing the second time. */}
+      <a class="creator-thumb win" href={CREATOR.video} rel="noopener" aria-label={c.creatorName}>
+        <img
+          src={CREATOR.thumb}
+          width={CREATOR.size.width}
+          height={CREATOR.size.height}
+          alt={c.creatorAlt}
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="creator-play" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+        </span>
+      </a>
+
+      <div class="creator-say">
+        <p class="creator-kicker">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M23 12s0-3.8-.5-5.6a2.9 2.9 0 0 0-2-2C18.7 4 12 4 12 4s-6.7 0-8.5.4a2.9 2.9 0 0 0-2 2C1 8.2 1 12 1 12s0 3.8.5 5.6c.3 1 1 1.8 2 2C5.3 20 12 20 12 20s6.7 0 8.5-.4c1-.2 1.7-1 2-2C23 15.8 23 12 23 12zM9.8 15.4V8.6l5.9 3.4z" />
+          </svg>
+          {c.creatorKicker}
+        </p>
+        {/* His title, in his language, on both halves of the site. Tagged so the English page
+            does not hand a Russian sentence to a screen reader set to English. */}
+        <p class="creator-name" lang="ru">{c.creatorName}</p>
+        <p class="creator-lead">{c.creatorLead}</p>
+        <div class="btn-row">
+          <a class="btn" href={CREATOR.video} rel="noopener">{c.creatorWatch}</a>
+          <a class="btn ghost" href={CREATOR.channel} rel="noopener">{c.creatorChannel}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
