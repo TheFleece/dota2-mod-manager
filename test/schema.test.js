@@ -155,3 +155,51 @@ test('merging into a real-sized table keeps it valid', () => {
   assert.equal(out.applied.length, 1);
   assert.doesNotThrow(() => schema.validateSchema(out.text, base));
 });
+
+// ---------------------------------------------------------------- what counts as the mod's
+
+const withModel = (id, name, model) => `		"${id}"
+		{
+			"name"		"${name}"
+			"prefab"		"default_item"
+			"model_player"		"${model}"
+		}
+`;
+
+const table = (blocks) => `"items_game"
+{
+	"items"
+	{
+${blocks.join('')}	}
+}
+`;
+
+test('a block naming a file the mod ships is lifted', () => {
+  const mod = table([withModel('1', 'Changed', 'models/heroes/tinker/tinker_helmet.vmdl')]);
+  const base = table([withModel('1', 'Stock', 'models/heroes/tinker/tinker_cape.vmdl')]);
+  const out = schema.extractDeltas(mod, ['models/heroes/tinker/tinker_helmet.vmdl_c'], base);
+  assert.deepEqual(out.map((d) => d.id), ['1']);
+});
+
+test("a block pointing a slot at a Valve model the mod repaints is lifted too", () => {
+  // The author redirects the cape slot to Valve's Deep Sea Robot back and ships nothing of
+  // that item but its materials. The block names a model that is not in the mod at all.
+  const mod = table([withModel('467', "Tinker's Cape", 'models/items/tinker/deep_sea_robot_back/deep_sea_robot_back.vmdl')]);
+  const base = table([withModel('467', "Tinker's Cape", 'models/heroes/tinker/tinker_cape.vmdl')]);
+  const paths = ['materials/models/items/tinker/deep_sea_robot_back/deep_sea_robot_back.vmat_c'];
+  const out = schema.extractDeltas(mod, paths, base);
+  assert.deepEqual(out.map((d) => d.id), ['467']);
+});
+
+test('a block about an item the mod never touches is left alone', () => {
+  const mod = table([withModel('99', 'Someone else', 'models/items/pudge/pudge_hook/pudge_hook.vmdl')]);
+  const base = table([withModel('99', 'Someone else', 'models/heroes/pudge/pudge_weapon.vmdl')]);
+  const paths = ['materials/models/items/tinker/deep_sea_robot_back/deep_sea_robot_back.vmat_c'];
+  assert.deepEqual(schema.extractDeltas(mod, paths, base), []);
+});
+
+test('a block that matches the game byte for byte is not a delta', () => {
+  const same = table([withModel('1', 'Stock', 'models/heroes/tinker/tinker_helmet.vmdl')]);
+  const out = schema.extractDeltas(same, ['models/heroes/tinker/tinker_helmet.vmdl_c'], same);
+  assert.deepEqual(out, []);
+});

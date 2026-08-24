@@ -272,6 +272,12 @@ function ownedAssetNeedles(vpkPaths, opts = {}) {
     // Stock/global files carry no identity — they are in every export.
     if (/^(scripts\/|resource\/|panorama\/styles\/|materials\/default\/)/.test(clean)) continue;
     out.add(clean);
+    // A block can point a slot at one of Valve's own models and still belong to the mod: the
+    // author repaints that item by shipping its materials, and the block only names the model.
+    // Tinker's cape is that case - the mod carries nothing of deep_sea_robot_back but its
+    // textures, and without this the redirect was dropped and the back never appeared.
+    const item = /materials\/models\/items\/([a-z0-9_]+)\/([a-z0-9_]+)\//.exec(clean);
+    if (item) out.add(`models/items/${item[1]}/${item[2]}/`);
     const root = clean.split('/')[0];
     if (withRoots && /^\d{3,}$/.test(root)) out.add(root + '/');
   }
