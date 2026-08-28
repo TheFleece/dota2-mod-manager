@@ -36,6 +36,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "preload-uninstall.js",
       "src/**/*",
       "renderer/**/*",
       "package.json",
@@ -87,7 +88,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Dota 2 Mod Manager",
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh"
     },
     "publish": {
       "provider": "github",

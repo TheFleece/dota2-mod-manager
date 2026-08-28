@@ -14,7 +14,7 @@
 import { $ } from './core/dom.js';
 import { COSMETIC_PREFIX } from './core/constants.js';
 import { esc, fmtMB } from './ui/format.js';
-import { showWhatsNew, confirmDialog, safeModeDialog } from './ui/dialog.js';
+import { showWhatsNew, confirmDialog, safeModeDialog, toolchainDialog } from './ui/dialog.js';
 import { state } from './core/store.js';
 import { toast } from './ui/toast.js';
 import { render, switchView, invalidateViews } from './core/router.js';
@@ -148,6 +148,20 @@ $('#safeModeBtn')?.addEventListener('click', async () => {
     render();
   }
 });
+
+/* Fetching it is a download of somebody else's program, so it happens on a yes and never
+ * otherwise. Either answer is remembered: the question is asked once and Settings carries it
+ * from there, and a failed download does not re-ask on the next launch either - the row in
+ * Settings says what happened and offers the retry. */
+async function offerToolchain() {
+  let wanted = false;
+  try { wanted = await toolchainDialog(); } catch { /* nothing shown, nothing fetched */ }
+  await window.api.settings.set('toolsPromptSeen', true);
+  if (!wanted) return;
+  const r = await window.api.tools.install('vrf');
+  if (r?.error) toast(L`Не удалось скачать: ${r.error}. Попробовать снова можно в настройках.`, 'error', 8000);
+  else toast(L`Source 2 Viewer установлен — превью модов заработают`);
+}
 
 // global search
 let searchTimer = null;
@@ -368,6 +382,12 @@ window.api.patch.onRepair((st) => {
 
   // first launch, or first launch after this release — let the user pick a language
   if (!cfg.langPromptSeen) await showLanguagePicker();
+
+  // …and the one thing the app cannot do for itself: the fifty megabytes that read Dota's
+  // compiled formats. Asked once, on the same run as the language, because a mod with no
+  // picture is the first thing somebody notices and the last thing they think to go fix in
+  // Settings - which is where nobody ever pressed the button.
+  if (!cfg.toolsPromptSeen) await offerToolchain();
 
   // the app updates itself in the background, so this is the only place a user finds out
   // what changed while they were away

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- The window opened while the app is being removed. It talks to nothing but the main
+       process, so everything off this machine is refused outright - no images, no media, no
+       network of any kind. The fonts are the app's own, and even those come from the disk. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; form-action 'none'; base-uri 'none'">
+  <title>Dota 2 Mod Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block" rel="stylesheet">
+  <link rel="stylesheet" href="styles/themes.css">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/controls.css">
+  <link rel="stylesheet" href="styles/modal.css">
+</head>
+<body class="uninstall-body">
+  <div class="uninstall-shell">
+    <div class="uninstall-head">
+      <span class="ms">delete_sweep</span>
+      <div>
+        <h1 class="uninstall-title" id="title">Удалить Dota 2 Mod Manager</h1>
+        <p class="uninstall-sub" id="sub">Что забрать с собой</p>
+      </div>
+    </div>
+
+    <div class="uninstall-opts" id="opts"></div>
+
+    <p class="uninstall-note" id="note"></p>
+
+    <div class="confirm-actions">
+      <button class="btn" id="cancelBtn">Отмена</button>
+      <button class="btn btn-danger-solid" id="okBtn">Удалить</button>
+    </div>
+  </div>
+  <script src="i18n.js"></script>
+  <script src="uninstall.js"></script>
+</body>
+</html>

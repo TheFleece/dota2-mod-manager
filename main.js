@@ -57,6 +57,9 @@ const { t } = i18n;
  * its data in the usual place beats a dead one.
  */
 const IS_PORTABLE = !!process.env.PORTABLE_EXECUTABLE_DIR;
+// The uninstaller runs the app once with this flag to ask what should go along with it, and
+// reads the exit code for the answer. See the uninstall block below and build/installer.nsh.
+const IS_UNINSTALL = process.argv.includes('--uninstall');
 if (IS_PORTABLE) {
   try {
     const beside = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'Dota 2 Mod Manager Data');
@@ -525,6 +528,15 @@ app.whenReady().then(async () => {
     diag('build check skipped: ' + e.message);
   }
 
+  // Run by the uninstaller rather than by a person: ask what to take along, do it, and go.
+  // Nothing below this point belongs to that - no catalog, no auto-update, no patch watcher.
+  if (IS_UNINSTALL) {
+    const w = createUninstallWindow();
+    registerUninstallIpc(w);
+    diag('uninstall window up');
+    return;
+  }
+
   registerIpc();
   // only the installed build claims the scheme — a dev run must not point the system's
   // d2mm:// handler at a local electron binary
@@ -652,6 +664,145 @@ if (!app.requestSingleInstanceLock()) {
     handleDeepLink(firstLink(argv));
   });
   app.on('open-url', (e, url) => { e.preventDefault(); handleDeepLink(url); }); // macOS
+}
+
+/* ---------- being uninstalled ----------
+ *
+ * Removing the app used to leave everything it had done: the mods still in the game's
+ * language folder with nothing left to manage them, the app's folder with its settings,
+ * caches and the fifty-megabyte toolchain, and - if safe mode had been turned off -
+ * gameinfo_branchspecific.gi and dota.signatures still carrying our edit, with the one
+ * program that knows how to put them back now gone.
+ *
+ * The uninstaller therefore runs the app one last time (see build/installer.nsh) and this is
+ * what it runs: a window that asks what to take with it, and the work itself. Everything here
+ * goes through the same code the app uses day to day rather than deleting paths by hand, so
+ * a mod comes out the way removing it from the Library would, and the patch comes out the way
+ * the safe-mode switch would.
+ *
+ * Exit codes are the answer to the uninstaller: 3 means the person changed their mind and
+ * nothing should be removed at all, anything else means carry on.
+ */
+const UNINSTALL_CANCELLED = 3;
+const UNINSTALL_WIPE_DATA = 4;
+
+function folderSize(dir) {
+  let bytes = 0;
+  const walk = (at) => {
+    let names = [];
+    try { names = fs.readdirSync(at, { withFileTypes: true }); } catch { return; }
+    for (const e of names) {
+      const full = path.join(at, e.name);
+      if (e.isDirectory()) walk(full);
+      else { try { bytes += fs.statSync(full).size; } catch { /* vanished mid-walk */ } }
+    }
+  };
+  walk(dir);
+  return bytes;
+}
+
+/** What there is to remove, so the window can say it rather than ask in the abstract. */
+function uninstallPlan() {
+  const mods = library.list().filter((r) => r.categoryId !== 'cosmetic');
+  // installedSize takes one record: a disabled mod sits under .off and a pack under its own
+  // name, and only the installer knows where each of its files ended up
+  let modBytes = 0;
+  for (const rec of mods) {
+    try { modBytes += installer.installedSize(rec); } catch { /* removed by hand already */ }
+  }
+  return {
+    mods: mods.length,
+    modBytes,
+    patched: !!settings.get('schemaPatch'),
+    gamePath: settings.get('dotaGamePath') || null,
+    dataBytes: folderSize(app.getPath('userData')),
+    lang: settings.get('uiLang') === 'ru' ? 'ru' : 'en',
+  };
+}
+
+/* The app's own folder is not deleted here, though this is where it is decided.
+ *
+ * It is the folder this process is running out of: its log is open, so are Chromium's caches,
+ * and deleting around them leaves a scatter of locked files and an error on screen at the
+ * worst possible moment. The uninstaller can do it cleanly a second later, once this has
+ * exited, and it already knows how - so the answer travels back as the exit code and
+ * build/installer.nsh does the removing. */
+async function runUninstall({ revert, mods }) {
+  const errors = [];
+  // Order matters. The patch goes first because reverting reads the backups in the app's own
+  // folder, and mods go before that folder is wiped for the same reason: the manifest is the
+  // only record of which files in the game folder were ours.
+  if (revert && settings.get('schemaPatch')) {
+    try { schemaService.setEnabled(false); } catch (err) { errors.push(`patch: ${err.message || err}`); }
+  }
+  if (mods) {
+    for (const rec of [...library.list()]) {
+      try {
+        if (rec.kind === 'pack') installer.removePackFully(rec);
+        else installer.remove(rec.files, { recId: rec.id, deployed: rec.enabled !== false });
+        library.removeRecord(rec.id);
+      } catch (err) {
+        errors.push(`${rec.name}: ${err.message || err}`);
+      }
+    }
+  }
+  diag(`uninstall: revert=${revert} mods=${mods} errors=${errors.length}`);
+  return errors;
+}
+
+function createUninstallWindow() {
+  const w = new BrowserWindow({
+    width: 560,
+    height: 520,
+    resizable: false,
+    backgroundColor: '#050506',
+    autoHideMenuBar: true,
+    frame: false,
+    show: !process.env.MM_QUIET, // dev: see the note on the main window
+    webPreferences: {
+      preload: path.join(__dirname, 'preload-uninstall.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  w.loadFile(path.join(__dirname, 'renderer', 'uninstall.html'));
+  // dev: this window only ever opens from the uninstaller, so without a way to look at it
+  // it cannot be checked at all. Same MM_SHOT/MM_EVAL contract as the main window.
+  if (process.env.MM_SHOT) {
+    w.webContents.once('did-finish-load', () => setTimeout(async () => {
+      try {
+        if (process.env.MM_EVAL) {
+          const out = await w.webContents.executeJavaScript(`(async () => { ${process.env.MM_EVAL} })()`);
+          fs.writeFileSync(`${process.env.MM_SHOT}.eval.json`, JSON.stringify(out, null, 1));
+        }
+        fs.writeFileSync(process.env.MM_SHOT, (await w.webContents.capturePage()).toPNG());
+      } catch (e) {
+        fs.writeFileSync(process.env.MM_SHOT + '.err.txt', String(e));
+      }
+    }, 2500));
+  }
+  // closing the window is not an answer, so it counts as the safe one
+  w.on('closed', () => { if (!uninstallAnswered) app.exit(UNINSTALL_CANCELLED); });
+  return w;
+}
+
+let uninstallAnswered = false;
+
+function registerUninstallIpc(w) {
+  ipcMain.handle('uninstall:plan', () => uninstallPlan());
+  ipcMain.handle('uninstall:run', async (e, choices) => {
+    uninstallAnswered = true;
+    const errors = await runUninstall({ revert: !!choices?.revert, mods: !!choices?.mods });
+    return { ok: true, errors };
+  });
+  // The exit code is the whole answer to the uninstaller: whether to stop, and whether the
+  // app's folder goes with the program.
+  ipcMain.handle('uninstall:done', (e, wipeData) => {
+    uninstallAnswered = true;
+    app.exit(wipeData ? UNINSTALL_WIPE_DATA : 0);
+  });
+  ipcMain.handle('uninstall:cancel', () => { uninstallAnswered = true; app.exit(UNINSTALL_CANCELLED); });
+  ipcMain.handle('uninstall:close', () => { if (w && !w.isDestroyed()) w.close(); });
 }
 
 // register installer.importVpks/importVpkBuffers results into the library

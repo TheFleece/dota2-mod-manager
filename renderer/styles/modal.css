@@ -589,3 +589,105 @@ audio::-webkit-media-controls-panel { background: var(--surface-solid); }
 }
 .safe-risk .ms { color: var(--warning); }
 .safe-box .confirm-actions { margin-top: var(--space-5); }
+
+/* ============ The Source 2 toolchain, offered once ============
+   A first-run question rather than a screen, so it stays close to the plain confirm box:
+   what it is, what it buys, what it costs, two buttons. */
+.tool-box { width: min(520px, calc(90vw / var(--content-zoom))); text-align: left; }
+.tool-head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.tool-head .ms { font-size: var(--icon-xl); color: var(--primary-soft); }
+.tool-title {
+  font-family: var(--font-head);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+.tool-sub { font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1); }
+.tool-lede,
+.tool-cost {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+}
+.tool-cost { color: var(--text-faint); margin-top: var(--space-4); }
+.tool-gains {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.tool-gains li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+.tool-gains .ms { flex-shrink: 0; font-size: var(--icon-md); color: var(--primary-soft); }
+.tool-gains b { color: var(--text); font-weight: var(--weight-semibold); }
+.tool-box .confirm-actions { margin-top: var(--space-5); }
+
+/* ============ The window the uninstaller opens ============
+   Its own small page (renderer/uninstall.html), not a screen of the app: no titlebar, no
+   rail, no status bar, and it lives for a few seconds. It borrows the tokens and the buttons
+   so that the last thing somebody sees of this app still looks like it. */
+.uninstall-body {
+  background: var(--bg-base);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: drag; /* frameless, so the whole page moves the window */
+}
+.uninstall-shell {
+  -webkit-app-region: no-drag;
+  width: 100%;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+}
+.uninstall-head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); }
+.uninstall-head .ms { font-size: var(--icon-xl); color: var(--danger); }
+.uninstall-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+.uninstall-sub { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--text-muted); }
+.uninstall-opts { display: grid; gap: var(--space-3); }
+.uninstall-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+.uninstall-opt:hover { border-color: var(--border-strong); }
+.uninstall-opt input { margin-top: var(--space-px); accent-color: var(--primary); flex-shrink: 0; }
+.uninstall-opt-body { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.uninstall-opt-body b { font-size: var(--text-base); font-weight: var(--weight-semibold); }
+.uninstall-opt-body small {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+.uninstall-note {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-faint);
+  min-height: 1em;
+}
+.uninstall-shell .confirm-actions { margin-top: var(--space-5); }

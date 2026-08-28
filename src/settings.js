@@ -45,6 +45,10 @@ const DEFAULTS = {
   cosmetics: {},
   // items_game.txt build the deployed schema was made from, to spot a game update
   schemaStamp: null,
+  // One-time offer of the Source 2 toolchain, asked once on first run. False for fresh
+  // installs and for anybody updating from before it was offered, so everyone gets the
+  // question once; the Settings row is the way in afterwards either way.
+  toolsPromptSeen: false,
   // last version whose release notes the user was shown. Null on a fresh install, which is
   // why nobody gets a "what's new" popup for a version they just installed by hand.
   lastSeenVersion: null,

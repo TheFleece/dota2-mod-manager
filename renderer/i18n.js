@@ -446,6 +446,22 @@ const EN = {
   'Удалить пресет «{0}»?': 'Delete preset «{0}»?',
 
   // ---------- tools ----------
+  // the one-time offer on first run (renderer/ui/dialog.js, toolchainDialog)
+  'Скачать Source 2 Viewer?': 'Download Source 2 Viewer?',
+  'Открытая программа (MIT) от SteamDatabase, не наша': 'An open-source program (MIT) by SteamDatabase, not ours',
+  'Дота хранит почти всё в сжатых форматах Source 2. Простую половину приложение читает само, а остальное разбирает эта программа.':
+    'Dota keeps almost everything it draws in compiled Source 2 formats. The app reads the easy half itself; this program reads the rest.',
+  'Превью твоих модов': 'Pictures of your own mods',
+  ' — без неё их не видно вовсе': ' — without it there are none at all',
+  'Иконки предметов, которые игра хранит сжатыми': 'The item icons the game stores compressed',
+  ' — остальные приложение достаёт из игры само': ' — the app takes the rest out of the game on its own',
+  '48 МБ, качается один раз в папку приложения. Удалить можно когда угодно в настройках, ничего сломано не будет.':
+    '48 MB, downloaded once into the app\'s own folder. Remove it whenever you like in Settings; nothing breaks.',
+  'Не сейчас': 'Not now',
+  'Скачать': 'Download',
+  'Source 2 Viewer установлен — превью модов заработают': 'Source 2 Viewer installed — mod pictures will work now',
+  'Не удалось скачать: {0}. Попробовать снова можно в настройках.':
+    'Could not download it: {0}. Settings has the retry.',
   'Запустить': 'Run', 'Папка': 'Folder', 'Скачать': 'Download', 'Открыть сайт': 'Open site',
   'Скачивание…': 'Downloading…', '{0} готов': '{0} ready',
   'Открыть': 'Open', 'Исходники': 'Source code', 'Небезопасно': 'Not safe',
@@ -618,6 +634,26 @@ const EN = {
   // ---------- thanks ----------
   'Спасибо': 'Thanks',
   'hanta снял видео о менеджере': 'hanta made a video about the manager',
+
+  // ---------- being uninstalled (renderer/uninstall.js) ----------
+  'Удалить Dota 2 Mod Manager': 'Remove Dota 2 Mod Manager',
+  'Программа будет удалена. Отметь, что забрать вместе с ней.':
+    'The program is going. Tick what should go with it.',
+  'Вернуть файлы игры как были': 'Put the game files back',
+  'Безопасный режим сейчас выключен. gameinfo и подписи вернутся байт в байт, без следов.':
+    'Safe mode is off right now. gameinfo and the signatures go back byte for byte, with nothing left behind.',
+  'Удалить установленные моды': 'Remove the installed mods',
+  '{0} шт., {1} МБ в папке игры. Иначе останутся лежать там, и управлять ими будет нечем.':
+    '{0} of them, {1} MB inside the game folder. Left alone they stay there with nothing to manage them.',
+  'Модов не установлено.': 'No mods are installed.',
+  'Удалить данные приложения': 'Remove the app\'s own data',
+  'Настройки, библиотека, кэш картинок и скачанные инструменты — {0} МБ.':
+    'Settings, library, picture cache and downloaded tools: {0} MB.',
+  'Ничего не отмечено — будет удалена только сама программа.':
+    'Nothing ticked: only the program itself will go.',
+  'Удаляю…': 'Removing…',
+  'Не удалось убрать {0}: {1}': 'Could not remove {0}: {1}',
+  'Продолжить': 'Carry on',
 
   // ---------- diagnostics ----------
   'Диагностика': 'Diagnostics',

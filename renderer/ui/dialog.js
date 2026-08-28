@@ -217,3 +217,52 @@ export function safeModeDialog() {
     overlay.querySelector('[data-c="no"]').focus();
   });
 }
+
+// ---------- the Source 2 toolchain, offered once ----------
+
+/* Dota keeps most of what it draws in compiled Source 2 formats. The app reads the easy half
+ * itself - almost every item icon is a PNG sitting inside its .vtex_c (see src/vtex.js) - but
+ * the pictures inside a mod are real compiled textures, and those need the program Valve's
+ * own format was reverse-engineered into.
+ *
+ * It is fifty megabytes and somebody else's work, so it is not in the installer and it is not
+ * fetched behind anybody's back: this is the one place the app asks, on first run, with the
+ * size and the licence on screen. Declining costs the mod previews and nothing else, and
+ * Settings has the same button for later.
+ *
+ * Resolves true to fetch it.
+ */
+export function toolchainDialog() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-box tool-box" role="dialog" aria-modal="true" aria-labelledby="toolDlgTitle">
+        <div class="tool-head">
+          <span class="ms">extension</span>
+          <div>
+            <div class="tool-title" id="toolDlgTitle">${L`Скачать Source 2 Viewer?`}</div>
+            <div class="tool-sub">${L`Открытая программа (MIT) от SteamDatabase, не наша`}</div>
+          </div>
+        </div>
+        <p class="tool-lede">${L`Дота хранит почти всё в сжатых форматах Source 2. Простую половину приложение читает само, а остальное разбирает эта программа.`}</p>
+        <ul class="tool-gains">
+          <li><span class="ms">image</span><span><b>${L`Превью твоих модов`}</b>${L` — без неё их не видно вовсе`}</span></li>
+          <li><span class="ms">apps</span><span><b>${L`Иконки предметов, которые игра хранит сжатыми`}</b>${L` — остальные приложение достаёт из игры само`}</span></li>
+        </ul>
+        <p class="tool-cost">${L`48 МБ, качается один раз в папку приложения. Удалить можно когда угодно в настройках, ничего сломано не будет.`}</p>
+        <div class="confirm-actions">
+          <button class="btn" data-c="no">${L`Не сейчас`}</button>
+          <button class="btn btn-primary" data-c="yes">${L`Скачать`}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const done = (v) => { overlay.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(false); });
+    overlay.querySelector('[data-c="no"]').addEventListener('click', () => done(false));
+    overlay.querySelector('[data-c="yes"]').addEventListener('click', () => done(true));
+    const onKey = (e) => { if (e.key === 'Escape') done(false); };
+    document.addEventListener('keydown', onKey);
+    overlay.querySelector('[data-c="yes"]').focus();
+  });
+}
