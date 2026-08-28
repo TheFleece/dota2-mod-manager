@@ -270,6 +270,9 @@ export async function renderPresets() {
       card.innerHTML = sharedPresetCardHtml(p);
     } else {
       const recs = p.modIds.map((id) => byId.get(id)).filter(Boolean);
+      // A build names mods rather than installations, so a member can be absent - deleted,
+      // or never installed on this machine. Saying so beats a count that quietly shrank.
+      const absent = p.absent || [];
       const link = p.link || { count: 0, skipped: [] };
       const linkTitle = !link.count
         ? L`В пресете только свои моды — ссылка их не донесёт, отправь файлом`
@@ -280,6 +283,7 @@ export async function renderPresets() {
         <div class="preset-head">
           <div class="preset-name">${esc(p.name)}</div>
           <span class="text-meta">${recs.length} ${plural(recs.length, 'мод', 'мода', 'модов')}</span>
+          ${absent.length ? `<span class="text-meta preset-absent" title="${esc(absent.map((a) => a.name).join(', '))}">${L`${absent.length} не установлено`}</span>` : ''}
           <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
           <button class="btn btn-sm" data-share="${p.id}" title="${esc(linkTitle)}"><span class="ms">ios_share</span>${L`Поделиться`}</button>
         </div>

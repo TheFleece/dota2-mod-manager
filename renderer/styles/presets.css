@@ -150,3 +150,12 @@
 .empty-state > .ms { font-size: 44px; color: var(--text-faint); }
 .empty-title { font-family: var(--font-head); font-weight: 700; font-size: var(--text-md); color: var(--text); }
 .empty-body { max-width: 46ch; font-size: var(--text-sm); line-height: 1.5; }
+
+/* A member of a build that is not on this machine: deleted, or never installed here. Amber
+   rather than red - nothing is broken, the build simply has more in it than the folder. */
+.preset-absent {
+  color: var(--warning);
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-2);
+}

@@ -2400,9 +2400,16 @@ function registerIpc() {
       // an own preset says how much of it a link could carry, so the button can explain
       // itself instead of quietly disappearing
       const { mods, skipped } = presetLinkMods(p, cat);
-      // a preset saved before cosmetics were kept out still names picks: the screen shows
-      // what applying it would actually do, not what its stored list says
-      return { ...p, modIds: library.presetModIds(p), link: { count: mods.length, skipped } };
+      // A build names mods, not installations, so some of them may not be here right now.
+      // The screen shows the whole set and says which part of it is missing, rather than
+      // quietly listing the leftovers as if that were the build.
+      const members = library.presetMembers(p);
+      return {
+        ...p,
+        modIds: members.filter((m) => m.rec).map((m) => m.rec.id),
+        absent: members.filter((m) => !m.rec).map((m) => m.identity),
+        link: { count: mods.length, skipped },
+      };
     }));
   });
   ipcMain.handle('presets:save', (e, name) => {
@@ -2414,7 +2421,7 @@ function registerIpc() {
   ipcMain.handle('presets:update', (e, id) => {
     const p = library.updatePresetMods(id);
     if (!p) return { error: t('Пресет не найден') };
-    return { ok: true, count: p.modIds.length };
+    return { ok: true, count: (p.mods || []).length };
   });
 
   ipcMain.handle('presets:rename', (e, id, name) => {
@@ -2580,7 +2587,9 @@ function registerIpc() {
 
     // the picks a sender's file asked for are made, but they do not join the build: from
     // here this is an ordinary preset, and those hold mods only
-    preset.modIds = [...new Set(ids)].filter((id) => Library.inPreset(library.find(id)));
+    const landed = [...new Set(ids)].map((id) => library.find(id)).filter((r) => Library.inPreset(r));
+    preset.mods = landed.map(Library.identityOf);
+    delete preset.modIds;
     delete preset.wanted;                       // resolved: it's an ordinary preset now
     if (preset.source) preset.source.file = null;
     library.save();
@@ -2592,7 +2601,7 @@ function registerIpc() {
     if (schemaTouched) schemaService.refresh();
     afterDeployMaster();
     sendProgress({ type: 'done', label: preset.name });
-    return { ok: true, installed: preset.modIds.length, errors };
+    return { ok: true, installed: preset.mods.length, errors };
   });
 
   // ----- misc -----
