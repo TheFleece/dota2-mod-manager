@@ -916,12 +916,18 @@ async function bindLibrary(external) {
     const keys = [...librarySel];
     if (!keys.length) return;
     if (!await confirmDialog(L`Удалить выбранное (${keys.length})?`)) return;
-    for (const k of keys) {
-      if (isMemberKey(k)) { const [, packId, memberId] = k.split(':'); await window.api.packs.removeMember(packId, memberId); }
-      else await window.api.mods.remove(k);
+    // members belong to a pack and each one rebuilds it, so those stay one at a time;
+    // everything else goes in a single call and pays for the schema rebuild once
+    const members = keys.filter(isMemberKey);
+    const mods = keys.filter((k) => !isMemberKey(k));
+    for (const k of members) {
+      const [, packId, memberId] = k.split(':');
+      await window.api.packs.removeMember(packId, memberId);
     }
+    const r = mods.length ? await window.api.mods.removeMany(mods) : { errors: [] };
     librarySel.clear();
-    toast(L`Удалено`);
+    if (r.errors?.length) toast(r.errors[0], 'error', 6000);
+    else toast(L`Удалено`);
     reRender();
   });
   $('#bulkCombine')?.addEventListener('click', () => {
@@ -1218,12 +1224,14 @@ export async function handleImportResult(r) {
 }
 
 async function bulkToggle(installed, enabled) {
-  for (const rec of installed) {
-    if (isFontRec(rec)) continue;
-    // cosmetics answer to their own section head: only one look per slot can be live, so
-    // "enable all" over them would just be a race the last one wins
-    if (isCosmeticRec(rec)) continue;
-    if (rec.enabled !== enabled) await window.api.mods.setEnabled(rec.id, enabled);
+  // cosmetics answer to their own section head: only one look per slot can be live, so
+  // "enable all" over them would just be a race the last one wins
+  const ids = installed
+    .filter((rec) => !isFontRec(rec) && !isCosmeticRec(rec) && rec.enabled !== enabled)
+    .map((rec) => rec.id);
+  if (ids.length) {
+    const r = await window.api.mods.setEnabledMany(ids, enabled);
+    if (r.errors?.length) toast(r.errors[0], 'error', 6000);
   }
   renderLibrary();
   refreshInstalledIndex();

@@ -105,6 +105,16 @@ function itemsSection(text) {
  * @returns {{ id: string, start: number, end: number, text: string } | null}
  */
 function findItem(text, id, section) {
+  // The parsed list already knows where every item begins and ends, and callers that hand in
+  // no section are asking about the whole table - which is the one that is usually warm.
+  // Walking all 25 000 children instead cost about 200 ms a call, and dressing one cosmetic
+  // slot makes two of them.
+  if (!section) {
+    const want = String(id);
+    const item = listItems(text).find((i) => i.id === want);
+    if (item) return { id: item.id, start: item.start, end: item.end, text: text.slice(item.start, item.end) };
+  }
+  // A named section, or an id the item list does not carry (it keeps numbered items only).
   const bounds = section || itemsSection(text);
   let hit = null;
   eachChild(text, bounds, (c) => {
@@ -132,10 +142,22 @@ function itemFields(text, item) {
  */
 // Walking 25k item blocks costs ~300 ms, and a rebuild asks for the list several times
 // over the same string, so keep the last result around.
-let itemsCache = { text: null, list: null };
+/* Two tables, not one.
+ *
+ * Every rebuild walks the game's own table and then the merged one, and they alternate:
+ * patches() reads vanilla, validateSchema reads merged and then vanilla again to compare the
+ * counts. With room for a single answer each of those evicted the last, so one rebuild paid
+ * for the walk three times over - about 350 ms each on the real 48.5 MB table, and it is
+ * exactly the wait somebody feels when they remove a mod that carries item blocks.
+ *
+ * Two is the number the work actually alternates between; a third would only hold a table
+ * nothing is going to ask for again. */
+const ITEMS_CACHE_SIZE = 2;
+let itemsCache = [];
 
 function listItems(text) {
-  if (itemsCache.text === text) return itemsCache.list;
+  const hit = itemsCache.find((e) => e.text === text);
+  if (hit) return hit.list;
   const section = itemsSection(text);
   const out = [];
   eachChild(text, section, (c) => {
@@ -159,7 +181,8 @@ function listItems(text) {
       end: c.end,
     });
   });
-  itemsCache = { text, list: out };
+  itemsCache.unshift({ text, list: out });
+  itemsCache.length = Math.min(itemsCache.length, ITEMS_CACHE_SIZE);
   return out;
 }
 
@@ -472,10 +495,14 @@ function buildSchemaVpk(text) {
 /**
  * Build the schema and put it in the mod folder. Always rebuilt from the installed
  * game, so a Dota update is repaired by calling this again - never by shipping a copy.
+ *
+ * `base` is the game's own table, which the caller has usually just read: it is 50 MB out of
+ * a VPK and reading it twice for one deploy was most of what removing a mod cost. Left out,
+ * it is read here as before.
+ * @param {{ text: string, stamp: string }} [base]
  * @returns {{ applied: Array, missing: string[], conflicts: Array, stamp: string, bytes: number }}
  */
-function deploy({ gamePath, folder, patches }) {
-  const base = readGameSchema(gamePath);
+function deploy({ gamePath, folder, patches, base = readGameSchema(gamePath) }) {
   const merged = mergeSchema(base.text, patches);
   const checked = validateSchema(merged.text, base.text);
   const buf = buildSchemaVpk(merged.text);

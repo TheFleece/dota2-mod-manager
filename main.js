@@ -2130,6 +2130,59 @@ function registerIpc() {
     }
   });
 
+  /* Removing a selection is not the same as removing one mod N times.
+   *
+   * Every removal that touches the item table rebuilds the whole schema: the game's own
+   * 50 MB table read out of its pak, twenty-five thousand items spliced, a VPK built and
+   * written. That only has to be right once, at the end, so thirty mods used to pay for it
+   * thirty times - which is what made deleting a Skinchanger import feel like the app had
+   * hung. Deleting the files themselves was never the slow part: that is about two
+   * milliseconds each.
+   */
+  ipcMain.handle('mods:removeMany', (e, ids) => {
+    const errors = [];
+    let removed = 0;
+    let schemaTouched = false;
+    for (const id of Array.isArray(ids) ? ids : []) {
+      const rec = library.find(id);
+      if (!rec) continue;
+      try {
+        if (rec.kind === 'pack') installer.removePackFully(rec);
+        else installer.remove(rec.files, { recId: rec.id, deployed: rec.enabled !== false });
+        library.removeRecord(id);
+        if (touchesSchema(rec)) schemaTouched = true;
+        removed++;
+      } catch (err) {
+        errors.push(`${rec.name}: ${String(err.message || err)}`);
+      }
+    }
+    if (schemaTouched) schemaService.refresh();
+    return { ok: true, removed, errors };
+  });
+
+  // Same bargain for switching a selection on or off: one rebuild for the batch, not one
+  // per mod. Cursors and cosmetics are left out because only one of each can be live and
+  // the screen never offers them here.
+  ipcMain.handle('mods:setEnabledMany', (e, ids, enabled) => {
+    const errors = [];
+    let changed = 0;
+    let schemaTouched = false;
+    for (const id of Array.isArray(ids) ? ids : []) {
+      const rec = library.find(id);
+      if (!rec || rec.enabled === !!enabled) continue;
+      try {
+        installer.setEnabled(rec.files, !!enabled, rec.id);
+        library.setEnabled(id, !!enabled);
+        if (touchesSchema(rec)) schemaTouched = true;
+        changed++;
+      } catch (err) {
+        errors.push(`${rec.name}: ${String(err.message || err)}`);
+      }
+    }
+    if (schemaTouched) schemaService.refresh();
+    return { ok: true, changed, errors };
+  });
+
   ipcMain.handle('mods:remove', (e, id) => {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };

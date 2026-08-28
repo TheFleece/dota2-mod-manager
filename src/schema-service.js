@@ -25,16 +25,18 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
   // The game's table is 50 MB and walking its 25k items costs ~300 ms, while the picker
   // asks about a dozen slots in a row. Hold on to the text until the game itself changes:
   // the stamp is a stat() of the paks, so noticing an update stays cheap.
-  let cache = { stamp: null, text: null };
-  function vanilla() {
+  let cache = { stamp: null, base: null };
+  /** The game's own table, read once per build of the game. */
+  function vanillaBase() {
     const game = gamePath();
     let stamp = null;
     try { stamp = schema.gameSchemaStamp(game); } catch { /* fall through to a fresh read */ }
-    if (stamp && cache.stamp === stamp) return cache.text;
-    const text = schema.readGameSchema(game).text;
-    cache = { stamp, text };
-    return text;
+    if (stamp && cache.stamp === stamp && cache.base) return cache.base;
+    const base = schema.readGameSchema(game);
+    cache = { stamp, base };
+    return base;
   }
+  const vanilla = () => vanillaBase().text;
 
   // Enabled mods' lifted item blocks + the free cosmetics the user picked. A cosmetic pick
   // is a library record like any other (categoryId 'cosmetic', slot + itemId of its own),
@@ -68,10 +70,12 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
         return { ok: true, deployed: false, patches: 0 };
       };
       if (!settings.get('schemaPatch')) return drop();
-      const base = schema.readGameSchema(game);
+      // through the cache, not around it: this runs on every mod removed, enabled or
+      // switched off, and re-extracting 50 MB from the game's pak each time was the wait
+      const base = vanillaBase();
       const list = patches(base.text);
       if (!list.length) return drop();
-      const res = schema.deploy({ gamePath: game, folder: patcher.FOLDER, patches: list });
+      const res = schema.deploy({ gamePath: game, folder: patcher.FOLDER, patches: list, base });
       settings.set('schemaStamp', res.stamp);
       return { ok: true, deployed: true, patches: res.applied.length, missing: res.missing, conflicts: res.conflicts, bytes: res.bytes };
     } catch (err) {

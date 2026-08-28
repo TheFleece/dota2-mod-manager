@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('api', {
     list: () => ipcRenderer.invoke('mods:list'),
     setEnabled: (id, enabled) => ipcRenderer.invoke('mods:setEnabled', id, enabled),
     remove: (id) => ipcRenderer.invoke('mods:remove', id),
+    // a selection at once: one rebuild of the item schema for the batch, not one per mod
+    removeMany: (ids) => ipcRenderer.invoke('mods:removeMany', ids),
+    setEnabledMany: (ids, enabled) => ipcRenderer.invoke('mods:setEnabledMany', ids, enabled),
     move: (id, dir) => ipcRenderer.invoke('mods:move', id, dir),
     reorder: (id, toIndex) => ipcRenderer.invoke('mods:reorder', id, toIndex),
     externalSetEnabled: (fileName, enabled) => ipcRenderer.invoke('mods:externalSetEnabled', fileName, enabled),

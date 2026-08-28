@@ -203,3 +203,34 @@ test('a block that matches the game byte for byte is not a delta', () => {
   const out = schema.extractDeltas(same, ['models/heroes/tinker/tinker_helmet.vmdl_c'], same);
   assert.deepEqual(out, []);
 });
+
+test('the item list stays right when two tables are read in turn', () => {
+  // A rebuild alternates between the game's table and the merged one, and the parsed lists
+  // are cached. With room for a single answer each read evicted the last and every rebuild
+  // paid for the walk three times; with room for two, the danger is the opposite - handing
+  // back the wrong table's list. Both have to survive being asked for in any order.
+  const game = [
+    '"items_game"', '{', '  "items"', '  {',
+    '    "1"', '    {', '      "name"', '"only_in_game"', '    }',
+    '    "2"', '    {', '      "name"', '"in_both"', '    }',
+    '  }', '}',
+  ].join('\n');
+  const merged = game.replace('"only_in_game"', '"renamed_in_merged"');
+
+  const a1 = schema.listItems(game);
+  const b1 = schema.listItems(merged);
+  // asked again in the other order, both must still describe their own text
+  const b2 = schema.listItems(merged);
+  const a2 = schema.listItems(game);
+
+  assert.equal(a1.find((i) => i.id === '1').name, 'only_in_game');
+  assert.equal(b1.find((i) => i.id === '1').name, 'renamed_in_merged');
+  assert.equal(a2.find((i) => i.id === '1').name, 'only_in_game', 'the game table came back as the merged one');
+  assert.equal(b2.find((i) => i.id === '1').name, 'renamed_in_merged');
+  assert.equal(a1, a2, 'the same text should hand back the same cached list');
+
+  // findItem answers off that list now, so it has to be right about which table it read
+  assert.equal(schema.findItem(game, '1').text.includes('only_in_game'), true);
+  assert.equal(schema.findItem(merged, '1').text.includes('renamed_in_merged'), true);
+  assert.equal(schema.findItem(game, '404'), null);
+});
