@@ -2,6 +2,40 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.5.1
+
+### A skin that borrows from another hero comes in whole
+
+The app reads which heroes a mod dresses from the models it carries, and two things fooled it.
+A persona lives in a folder of its own - `models/heroes/antimage_female` is Anti-Mage's Wei,
+`invoker_kid` is Invoker's Acolyte - so a pack that dresses one hero looked like a pack that
+dressed two. And skins hang props from other heroes on themselves: a Clinkz set carries a
+Phoenix immortal on its bow, a Sven one wears Disruptor's back piece. That one model counted as
+a second hero.
+
+An import that reads as two to four heroes cuts itself into a mod each, so both cases arrived as
+two half mods: the bow in one, the hero in the other, each under a name that was half right.
+
+A persona now reads as the hero it belongs to, along with the folder names Dota kept from before
+a rename - bard, lanaya, drow, gyro, tuskarr and the rest - and a hero carrying under a quarter
+of the leading hero's models reads as lent rather than dressed. Naming and cutting ask the same
+question now, so a mod that comes in under the right name also comes in whole. Over 75 mods cut
+out of one Skinchanger pack, the number that split themselves goes from three to none.
+
+### The piece an item points at instead of shipping
+
+A mod can point a default slot at one of Valve's own models and still be the author's work: he
+repaints that item by shipping its textures, and his entry only ever names the model. Tinker's
+Deep Sea Robot back is exactly that, and the import threw the entry away because the mod carries
+nothing of the model it names, so the back never appeared on the hero at all.
+
+Such an entry is now recognised by the item folder the mod's own textures sit in.
+
+### Thanks
+
+hanta made a walkthrough of the manager. His channel has a line in About now, beside the version
+and the licence.
+
 ## 2.5.0
 
 ### The day GitHub is down is no longer your problem
