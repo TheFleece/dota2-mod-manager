@@ -232,3 +232,38 @@ test('folders the game uses for non-hero content are not read as heroes', () => 
   ]);
   assert.deepEqual(analysis.heroes.map((h) => h.id), []);
 });
+
+test('the seeking index answers exactly what the one-file reader does', () => {
+  // The cosmetics picker pulls dozens of item pictures out of the game's own pak01, whose
+  // tree holds 384 001 entries: walking it per picture costs seconds, so the index is built
+  // once and read by seek. It has to agree with readVpkEntryFile down to the byte, or the
+  // pictures come out of the wrong offsets and nobody can tell from the outside.
+  const os = require('node:os');
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vpk-index-'));
+  try {
+    const file = path.join(dir, 'pak_dir.vpk');
+    const bodies = new Map([
+      ['panorama/images/econ/items/abaddon/blade/blade_png.vtex_c', 'a picture'],
+      ['scripts/items/items_game.txt', 'the item table'],
+      ['models/heroes/pudge/pudge.vmdl_c', 'a model'],
+      ['sounds/weapons/hit.vsnd_c', ''],
+    ]);
+    fs.writeFileSync(file, vpk.buildVpk([...bodies].map(([p, body]) => entry(p, body))));
+
+    const ix = vpk.openVpkIndex(file);
+    assert.equal(ix.size, bodies.size);
+    for (const [p, body] of bodies) {
+      assert.ok(ix.has(p), `${p} should be in the index`);
+      assert.equal(ix.read(p).toString(), body, p);
+      assert.equal(Buffer.compare(ix.read(p), vpk.readVpkEntryFile(file, p).data), 0, p);
+    }
+    // asked in the case the caller happens to have, not the case the tree stores
+    assert.equal(ix.read('SCRIPTS/Items/Items_Game.TXT').toString(), 'the item table');
+    assert.equal(ix.has('models/heroes/pudge/nothing.vmdl_c'), false);
+    assert.equal(ix.read('models/heroes/pudge/nothing.vmdl_c'), null);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

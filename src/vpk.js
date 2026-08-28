@@ -184,6 +184,69 @@ function readVpkEntryFile(dirPath, wanted) {
   return null;
 }
 
+/**
+ * The same seek, for callers with a list rather than one name.
+ *
+ * readVpkEntryFile walks the tree on every call, which is right for the one file it was
+ * written for and wrong for sixty: the game's index holds 384 001 entries and re-reading it
+ * per icon costs seconds. This walks it once and hands back a reader that seeks.
+ * @param {string} dirPath path to the *_dir.vpk
+ * @returns {{ size: number, has: (p: string) => boolean, read: (p: string) => Buffer|null }}
+ */
+function openVpkIndex(dirPath) {
+  const buf = readVpkIndexFile(dirPath);
+  const version = buf.readUInt32LE(4);
+  const treeSize = buf.readUInt32LE(8);
+  const headerSize = version === 2 ? 28 : 12;
+  const inlineBase = headerSize + treeSize;
+  const entries = new Map();
+  let pos = headerSize;
+  for (;;) {
+    const ext = readCString(buf, pos); pos = ext.next; if (!ext.str) break;
+    for (;;) {
+      const folder = readCString(buf, pos); pos = folder.next; if (!folder.str) break;
+      for (;;) {
+        const name = readCString(buf, pos); pos = name.next; if (!name.str) break;
+        const preloadBytes = buf.readUInt16LE(pos + 4);
+        const archiveIndex = buf.readUInt16LE(pos + 6);
+        const offset = buf.readUInt32LE(pos + 8);
+        const length = buf.readUInt32LE(pos + 12);
+        const preloadAt = pos + 18;
+        pos = preloadAt + preloadBytes;
+        entries.set(joinPath(folder.str, name.str, ext.str), { preloadAt, preloadBytes, archiveIndex, offset, length });
+      }
+    }
+  }
+  const read = (wanted) => {
+    const e = entries.get(String(wanted).toLowerCase());
+    if (!e) return null;
+    const preload = e.preloadBytes ? Buffer.from(buf.subarray(e.preloadAt, e.preloadAt + e.preloadBytes)) : EMPTY;
+    if (!e.length) return preload;
+    const src = e.archiveIndex === INLINE
+      ? dirPath
+      : dirPath.replace(/_dir\.vpk$/i, `_${String(e.archiveIndex).padStart(3, '0')}.vpk`);
+    const base = e.archiveIndex === INLINE ? inlineBase : 0;
+    const body = Buffer.alloc(e.length);
+    const fd = fs.openSync(src, 'r');
+    try {
+      let got = 0;
+      while (got < e.length) {
+        const n = fs.readSync(fd, body, got, e.length - got, base + e.offset + got);
+        if (!n) break;
+        got += n;
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+    return e.preloadBytes ? Buffer.concat([preload, body]) : body;
+  };
+  return {
+    size: entries.size,
+    has: (p) => entries.has(String(p).toLowerCase()),
+    read,
+  };
+}
+
 // ---------- content analysis (which hero / equip slots a mod touches) ----------
 
 // Dota's internal hero folder names differ from the display name for a chunk of the
@@ -882,7 +945,7 @@ function listVpkEntries(buf) {
 }
 
 module.exports = {
-  listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, listVpkEntries, mergeVpkToSingle, splitVpkByHero,
+  listVpkPaths, listVpkPathsFile, listVpkPathCrcs, listVpkPathCrcsFile, listVpkEntries, openVpkIndex, mergeVpkToSingle, splitVpkByHero,
   readVpkEntries, readVpkIndexFile, readVpkEntryFile, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
   findContentRoot, packFolder, crc32,
   fingerprintVpk, fingerprintEntries, fingerprintFiles,

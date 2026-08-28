@@ -6,9 +6,15 @@
 // every one of them - the item table says where each picture lives (`image_inventory`), and
 // the picture itself sits in the game's own pak01 as a compiled texture.
 //
-// Reading that format needs the Source 2 toolchain (see src/toolchain.js), which is 48 MB and
-// downloaded only if the user asks for it. Without it nothing here is available and the wiki
-// stays the source, so this is an upgrade, never a requirement.
+// Almost all of them need no decoding at all. Panorama's images are authored as PNG and
+// compiled with the format left as PNG, so the .vtex_c is a short header with the PNG file
+// appended (see src/vtex.js): of 3000 item icons in the installed game, 2877 come out whole
+// by slicing the header off. Those cost one seek each and work offline, on a fresh install,
+// with nothing downloaded.
+//
+// The rest are block-compressed, and reading those does need the Source 2 toolchain (see
+// src/toolchain.js), 48 MB and fetched only if the user asks for it. Without it those few
+// fall back to the wiki, as everything used to.
 //
 // Measured on the real game (2026-08-07): 10 299 items carry a picture, every option in every
 // slot the picker offers has one, and their names are unique, so a name is a safe key. One
@@ -20,6 +26,8 @@ const os = require('os');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
 const schema = require('./schema');
+const { openVpkIndex } = require('./vpk');
+const { pngFromVtex } = require('./vtex');
 
 // Enough to fill a screen of tiles in one go; the renderer asks in batches of 24.
 const MAX_PER_CALL = 60;
@@ -40,6 +48,8 @@ function createGameIcons({ userDataDir, toolchain, getGamePath, log = () => {} }
   const root = path.join(userDataDir, 'icons', 'game');
   let index = null;      // name -> image_inventory path, built from the installed game
   let indexStamp = null; // which build of the game it was built from
+  let pak = null;        // the game's own archive, opened once: its tree is 384 001 entries
+  let pakStamp = null;
 
   function pakPath() {
     const game = getGamePath();
@@ -81,10 +91,29 @@ function createGameIcons({ userDataDir, toolchain, getGamePath, log = () => {} }
   }
 
   const cacheFile = (imagePath) => path.join(root, safeName(imagePath));
+  const texturePath = (imagePath) => `panorama/images/${imagePath}_png.vtex_c`;
 
-  /** Is this usable right now? (The toolchain is not downloaded behind anybody's back.) */
+  /** The game's archive, read once per build rather than once per picture. */
+  function pakIndex() {
+    const file = pakPath();
+    if (!file || !fs.existsSync(file)) return null;
+    let stamp = null;
+    try { const st = fs.statSync(file); stamp = `${st.size}:${st.mtimeMs}`; } catch { /* reopen */ }
+    if (pak && stamp && stamp === pakStamp) return pak;
+    try {
+      pak = openVpkIndex(file);
+      pakStamp = stamp;
+      log(`game icons: pak01 index of ${pak.size} entries`);
+    } catch (err) {
+      log(`game icons: pak01 unreadable (${err.message || err})`);
+      pak = null;
+    }
+    return pak;
+  }
+
+  /** Is this usable right now? The game alone is enough for the pictures it stores as PNG. */
   function ready() {
-    return !!(toolchain.pathOf('vrf') && pakPath() && fs.existsSync(pakPath()));
+    return !!(pakPath() && fs.existsSync(pakPath()));
   }
 
   function runCli(exe, args) {
@@ -99,15 +128,19 @@ function createGameIcons({ userDataDir, toolchain, getGamePath, log = () => {} }
    * @param {string[]} imagePaths values of image_inventory, e.g. "econ/items/abaddon/..."
    */
   async function extract(imagePaths) {
+    const left = takeReadyMade(imagePaths);
+    if (!left.length) return;
+    // whatever is stored compressed rather than as a picture: the toolchain or nothing
     const exe = toolchain.pathOf('vrf');
-    const pak = pakPath();
-    if (!exe || !pak) return;
+    const pakFile = pakPath();
+    if (!exe || !pakFile) return;
+    const imagePathsLeft = left;
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-icons-'));
     try {
-      const filter = imagePaths.map((p) => `panorama/images/${p}_png.vtex_c`).join(',');
-      await runCli(exe, ['-i', pak, '-o', tmp, '-d', '-f', filter]);
+      const filter = imagePathsLeft.map(texturePath).join(',');
+      await runCli(exe, ['-i', pakFile, '-o', tmp, '-d', '-f', filter]);
       fs.mkdirSync(root, { recursive: true });
-      for (const imagePath of imagePaths) {
+      for (const imagePath of imagePathsLeft) {
         // the tool keeps the archive's own layout, with the compiled extension resolved
         const from = path.join(tmp, 'panorama', 'images', ...`${imagePath}_png.png`.split('/'));
         if (!fs.existsSync(from)) continue;
@@ -116,6 +149,29 @@ function createGameIcons({ userDataDir, toolchain, getGamePath, log = () => {} }
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
+  }
+
+  /**
+   * Copy out every picture the game already stores as one, and say which are left.
+   * @param {string[]} imagePaths
+   * @returns {string[]} the ones nothing here could read
+   */
+  function takeReadyMade(imagePaths) {
+    const ix = pakIndex();
+    if (!ix) return imagePaths.slice();
+    const left = [];
+    fs.mkdirSync(root, { recursive: true });
+    for (const imagePath of imagePaths) {
+      try {
+        const png = pngFromVtex(ix.read(texturePath(imagePath)));
+        if (png) fs.writeFileSync(cacheFile(imagePath), png);
+        else left.push(imagePath);
+      } catch (err) {
+        log(`game icons: ${imagePath} unreadable (${err.message || err})`);
+        left.push(imagePath);
+      }
+    }
+    return left;
   }
 
   /**
