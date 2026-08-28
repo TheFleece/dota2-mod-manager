@@ -525,6 +525,10 @@ const en: Record<Slug, Doc> = {
             'Open source, "without vpk injection", last touched in February 2015. Of historical interest.',
           ],
           [
+            'Dota2 Minify (github.com/Egezenn/dota2-minify)',
+            'Not an alternative and not a rival: it compiles mods rather than installing them from a catalog, and the two are meant to run side by side. Both put their output in a language folder and Dota mounts exactly one, so they have to agree on which. This app reads the configuration Minify keeps, says which of the two the game is set to read, and leaves the pak slots Minify reserves free so neither writes over the other. Both are clients of the same catalog.',
+          ],
+          [
             'Dota 2 SkinChanger (dota2changer.com)',
             'A website rather than a program: you pick mods in a browser, it generates a VPK pack, and you place that pack in the game folder yourself. Part of its collection is behind a paid tier. Nothing updates itself afterwards, and a pack built last month is the pack you keep.',
           ],
@@ -1061,6 +1065,10 @@ const ru: Record<Slug, Doc> = {
           [
             'd2modmanager (github.com/philface)',
             'Открытый код, «без инъекции vpk», последняя правка - февраль 2015 года. Представляет исторический интерес.',
+          ],
+          [
+            'Dota2 Minify (github.com/Egezenn/dota2-minify)',
+            'Не альтернатива и не конкурент: он компилирует моды, а не ставит их из каталога, и рассчитан на работу рядом. Обе программы кладут результат в языковую папку, а Dota монтирует ровно одну, поэтому им надо сойтись на одной и той же. Приложение читает собственный конфиг Minify, говорит, чьи моды сейчас читает игра, и не занимает слоты pak, которые Minify держит за собой, так что ни одна не пишет поверх другой. Обе программы работают с одним каталогом.',
           ],
           [
             'Dota 2 SkinChanger (dota2changer.com)',

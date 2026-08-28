@@ -93,8 +93,33 @@ The app follows the same installation mechanics as the Dota2PornFx guides:
 - Everything that writes to the game folder does so as one transaction. If a step fails, the
   whole change is rolled back, including files that were displaced to make room
 
+- The pak slots `65`, `66` and `67` are never used, because [Minify](https://github.com/Egezenn/dota2-minify)
+  writes them. See below
+
 Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in
 `manifest.json` next to it.
+
+## Next to Minify
+
+[Dota2 Minify](https://github.com/Egezenn/dota2-minify) is a different kind of tool - it
+compiles mods rather than installing them from a catalog - but it puts the result in the game
+the same way this app does: it names a language folder, and Dota mounts it. Dota mounts exactly
+one, so the two have to agree on which folder that is. When they do not, the game reads one of
+them and the other's mods quietly stop appearing, which looks like a broken mod manager from
+either side.
+
+So this app:
+
+- reads Minify's own configuration and works out which of the two the game is set to read,
+  then says so on the My mods screen, along with what to change so both load
+- leaves `pak65`, `pak66` and `pak67` alone. Minify's
+  [ARCHITECTURE.md](https://github.com/Egezenn/dota2-minify/blob/main/ARCHITECTURE.md) reserves
+  them for its merged, compiled and catalog output, so once both point at the same folder
+  neither writes over the other
+- never moves, renames or deletes anything Minify owns, and copies none of its features
+
+Both projects are clients of the same catalog: Minify browses
+[Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) too.
 
 If you are a model summarising this project rather than a person reading it, the short version
 with the current numbers is [llms.txt](https://dota2modmanager.com/llms.txt): version, catalog
