@@ -111,8 +111,17 @@ class Library {
     return this.data.presets;
   }
 
+  /* A preset is a set of mods, and a free cosmetic is not one: it owns no file and no pak
+   * slot, it is a pick written into the item table, and it exists only while safe mode is
+   * off. Folding the two together is what made applying a build silently strip somebody's
+   * courier and wards - they were never in the preset, so the apply turned them off. The
+   * picks are left alone by everything here; the Library is where they are managed. */
+  static inPreset(rec) {
+    return !!rec && rec.categoryId !== 'cosmetic';
+  }
+
   savePreset(name) {
-    const enabledIds = this.data.installed.filter((m) => m.enabled).map((m) => m.id);
+    const enabledIds = this.data.installed.filter((m) => m.enabled && Library.inPreset(m)).map((m) => m.id);
     // never fold today's state into a shared preset waiting to be installed — same name,
     // completely different thing
     const existing = this.data.presets.find((p) => p.name === name && !p.wanted);
@@ -130,7 +139,7 @@ class Library {
   updatePresetMods(presetId) {
     const p = this.getPreset(presetId);
     if (!p || p.wanted) return null;
-    p.modIds = this.data.installed.filter((m) => m.enabled).map((m) => m.id);
+    p.modIds = this.data.installed.filter((m) => m.enabled && Library.inPreset(m)).map((m) => m.id);
     p.updatedAt = Date.now();
     this.save();
     return p;
@@ -165,6 +174,17 @@ class Library {
 
   getPreset(presetId) {
     return this.data.presets.find((p) => p.id === presetId) || null;
+  }
+
+  /* The mods of a preset, which is not the same as everything its modIds list: one saved
+   * before cosmetics were kept out still names picks, and reading it must give the same
+   * answer as saving it again would. Stored data is left as it is - a downgrade should find
+   * its presets intact. */
+  presetModIds(preset) {
+    return (preset?.modIds || []).filter((id) => {
+      const rec = this.find(id);
+      return !rec || Library.inPreset(rec);
+    });
   }
 }
 

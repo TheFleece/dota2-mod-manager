@@ -13,8 +13,6 @@ import { refreshInstalledIndex } from '../core/installed.js';
 import { esc, fmtMB, plural } from '../ui/format.js';
 import { libThumbHtml } from '../ui/thumb.js';
 import { catName, catIcon } from '../core/categories.js';
-import { isCosmeticRec } from '../core/records.js';
-import { COSMETIC_PREFIX, cosmeticMeta } from '../core/constants.js';
 import { toast } from '../ui/toast.js';
 import { confirmDialog, promptDialog } from '../ui/dialog.js';
 import { paint } from '../ui/transitions.js';
@@ -180,16 +178,13 @@ function flashCopied(btn) {
 const STRIP = 12;
 
 function presetThumbHtml(rec) {
-  if (isCosmeticRec(rec)) {
-    return `<div class="preset-thumb"><span class="ms thumb-glyph">${cosmeticMeta(rec.slot).icon}</span></div>`;
-  }
   return libThumbHtml(rec, 'preset-thumb');
 }
 
 function presetBodyHtml(recs) {
   if (!recs.length) return `<div class="preset-mods">${L`пусто (всё будет выключено)`}</div>`;
 
-  const catOf = (r) => (isCosmeticRec(r) ? COSMETIC_PREFIX + r.slot : r.categoryId);
+  const catOf = (r) => r.categoryId;
   const groups = new Map();
   for (const r of recs) {
     const id = catOf(r) || 'other';
@@ -250,6 +245,7 @@ export async function renderPresets() {
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
+    <div class="view-intro">${L`Пресет хранит моды. Бесплатная косметика в него не входит: она живёт своей жизнью в «Моих модах» и не выключается вместе с пресетом.`}</div>
     <div class="preset-new">
       <input class="input" id="presetName" placeholder="${L`Название пресета (напр. «Анимешный», «Минимал»)`}">
       <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>${L`Сохранить текущее состояние`}</button>

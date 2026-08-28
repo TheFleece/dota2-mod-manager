@@ -371,6 +371,8 @@ const EN = {
   'Включено': 'Enabled', 'Выключено': 'Disabled',
 
   // ---------- presets ----------
+  'Пресет хранит моды. Бесплатная косметика в него не входит: она живёт своей жизнью в «Моих модах» и не выключается вместе с пресетом.':
+    'A preset holds mods. Free cosmetics are not part of one: they live in My mods on their own and are not switched off along with a preset.',
   'Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.':
     'A preset remembers which mods are on. Applying a preset enables its mods and disables the rest. A finished preset can be shared as a file — drop a .d2mm you received here.',
 

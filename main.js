@@ -904,11 +904,6 @@ async function catalogIndex() {
 // the receiver, otherwise as its own bytes. `loadData` is deferred so building the plan
 // (which only needs sizes) doesn't merge tens of MB per mod.
 function shareEntryFor(rec, cat) {
-  // a cosmetic pick is a slot + an id from the receiver's OWN game schema — both players'
-  // games carry the same Valve items, so there is nothing to fetch or embed at all
-  if (rec.categoryId === 'cosmetic') {
-    return { kind: 'cosmetic', name: rec.name, slot: rec.slot, itemId: rec.itemId, size: 0 };
-  }
   const hit = rec.categoryId !== 'imported' && cat.lookup(rec.categoryId, rec.name, rec.styleLabel);
   if (hit) {
     return {
@@ -957,7 +952,7 @@ function packShareEntry(rec, cat) {
 async function presetShareEntries(preset) {
   const cat = await catalogIndex();
   const out = [];
-  for (const id of preset.modIds || []) {
+  for (const id of library.presetModIds(preset)) {
     const rec = library.find(id);
     if (!rec) continue;
     out.push(rec.kind === 'pack' ? packShareEntry(rec, cat) : shareEntryFor(rec, cat));
@@ -1000,13 +995,9 @@ function installedFpIndex() {
 function presetLinkMods(preset, cat) {
   const mods = [];
   const skipped = [];
-  for (const id of preset.modIds || []) {
+  for (const id of library.presetModIds(preset)) {
     const rec = library.find(id);
     if (!rec) continue;
-    if (rec.categoryId === 'cosmetic') {
-      mods.push({ kind: 'cosmetic', slot: rec.slot, itemId: rec.itemId, name: rec.name });
-      continue;
-    }
     for (const it of (rec.kind === 'pack' ? rec.members || [] : [rec])) {
       if (it.categoryId === 'imported' || !cat.lookup(it.categoryId, it.name, it.styleLabel)) {
         skipped.push(it.name);
@@ -1106,9 +1097,11 @@ function importPresetLink(text) {
 
 // enable exactly the preset's mods, disable everything else
 function applyPreset(preset) {
-  const wanted = new Set(preset.modIds);
+  const wanted = new Set(library.presetModIds(preset));
   const errors = [];
-  const recs = library.list();
+  // Free cosmetics are not part of a build (see Library.inPreset): a preset that does not
+  // name somebody's courier is not asking for it to be taken off.
+  const recs = library.list().filter((r) => Library.inPreset(r));
   let schemaTouched = false;
   // off first, then on: two cursor sets cannot be live at once, so the outgoing one has to
   // put the vanilla files back before the incoming one writes over them
@@ -2407,7 +2400,9 @@ function registerIpc() {
       // an own preset says how much of it a link could carry, so the button can explain
       // itself instead of quietly disappearing
       const { mods, skipped } = presetLinkMods(p, cat);
-      return { ...p, link: { count: mods.length, skipped } };
+      // a preset saved before cosmetics were kept out still names picks: the screen shows
+      // what applying it would actually do, not what its stored list says
+      return { ...p, modIds: library.presetModIds(p), link: { count: mods.length, skipped } };
     }));
   });
   ipcMain.handle('presets:save', (e, name) => {
@@ -2583,7 +2578,9 @@ function registerIpc() {
       }
     }
 
-    preset.modIds = [...new Set(ids)];
+    // the picks a sender's file asked for are made, but they do not join the build: from
+    // here this is an ordinary preset, and those hold mods only
+    preset.modIds = [...new Set(ids)].filter((id) => Library.inPreset(library.find(id)));
     delete preset.wanted;                       // resolved: it's an ordinary preset now
     if (preset.source) preset.source.file = null;
     library.save();
