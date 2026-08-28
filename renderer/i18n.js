@@ -535,11 +535,13 @@ const EN = {
   ', которые игра не видит.': ' the game cannot see.',
   // living next to Minify: which of the two the game is reading, and how to get both
   'Рядом установлен Minify': 'Minify is installed alongside',
-  'Оба менеджера кладут моды в языковую папку, а Dota монтирует ровно одну.':
-    'Both managers put mods in a language folder, and Dota mounts exactly one of them.',
+  'Dota монтирует ровно одну языковую папку, по языку озвучки из настроек игры.':
+    'Dota mounts exactly one language folder, the one named by the voice language in the settings of the game itself.',
+  '. Он собирает в dota_{0}, а {1} Папку с таким именем игра не читает — его моды сейчас не грузятся, и на наши это не влияет. В свежих версиях Minify это решено переходом на голландский.':
+    '. It builds into dota_{0}, and {1} No folder by that name is read, so its mods are not loading and ours are unaffected. Newer Minify releases solved this by moving to Dutch.',
   'Сейчас игра читает моды Minify': 'Right now the game is reading the mods Minify built',
-  ', а не наши. {0} Игра настроена на dota_{1}, мы ставим в dota_{2}. Поставь в Minify тот же язык, что и у нас — тогда заработают обе программы разом.':
-    ', not ours. {0} The game is set to dota_{1} and we install into dota_{2}. Point Minify at the same language as us and both work at once.',
+  ', а не наши. {0} Она настроена на dota_{1}, мы ставим в dota_{2}. Поставь в Minify тот же язык, что и у нас — тогда заработают обе программы разом.':
+    ', not ours. {0} It is set to dota_{1} and we install into dota_{2}. Point Minify at the same language as us and both work at once.',
   'Minify рядом, и обе программы работают': 'Minify is here, and both are working',
   ': моды в одной папке dota_{0}, слоты pak65-67 мы за ним не занимаем.':
     ': the mods share dota_{0}, and we leave pak65-67 to it.',

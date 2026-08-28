@@ -102,16 +102,26 @@ Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest 
 ## Next to Minify
 
 [Dota2 Minify](https://github.com/Egezenn/dota2-minify) is a different kind of tool - it
-compiles mods rather than installing them from a catalog - but it puts the result in the game
-the same way this app does: it names a language folder, and Dota mounts it. Dota mounts exactly
-one, so the two have to agree on which folder that is. When they do not, the game reads one of
-them and the other's mods quietly stop appearing, which looks like a broken mod manager from
-either side.
+compiles mods rather than installing them from a catalog - and the two are meant to run side
+by side. They reach the game by different routes, and the difference is worth knowing.
+
+Dota keeps a text language and a voice language in `boot.vcfg`, and builds its content search
+path out of the voice one. This app sets that voice language to one of the three Valve ships a
+folder for and fills that folder: no Steam launch parameters, no extra VPK, nothing the game
+did not already do on its own. Minify writes `-language <locale>` into Steam's launch options
+and fills the folder that names.
+
+Since Dota's update of 24 July 2026 the mounted folder comes from the game's own setting
+rather than from `-language`, and that setting takes a real language - so a folder named after
+anything else is read by nothing. Minify's newer releases moved to Dutch for that reason, and
+Dutch is a language, so that folder does mount. Which means only one of us can be the mounted
+folder at a time, unless both point at the same one.
 
 So this app:
 
-- reads Minify's own configuration and works out which of the two the game is set to read,
-  then says so on the My mods screen, along with what to change so both load
+- reads the configuration Minify keeps, works out which of the two the game is actually set to
+  read, and says so on the My mods screen - including the case where its folder cannot be read
+  at all, which is not a conflict with anything
 - leaves `pak65`, `pak66` and `pak67` alone. Minify's
   [ARCHITECTURE.md](https://github.com/Egezenn/dota2-minify/blob/main/ARCHITECTURE.md) reserves
   them for its merged, compiled and catalog output, so once both point at the same folder
@@ -120,17 +130,6 @@ So this app:
 
 Both projects are clients of the same catalog: Minify browses
 [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) too.
-
-If you are a model summarising this project rather than a person reading it, the short version
-with the current numbers is [llms.txt](https://dota2modmanager.com/llms.txt): version, catalog
-size, release count and download count are generated when the site builds, and every claim on it
-links to the page that argues it.
-
-The same mechanics written for people rather than for a README:
-[installing mods](https://dota2modmanager.com/docs/install/),
-[what a VPK is and how the pak number decides which mod wins](https://dota2modmanager.com/docs/vpk/),
-[what the item schema unlocks](https://dota2modmanager.com/docs/cosmetics/),
-[whether any of it is safe](https://dota2modmanager.com/docs/safe/).
 
 ## Установка (Russian)
 

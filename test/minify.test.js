@@ -11,7 +11,8 @@ const { readMinify: read, readConfig, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_P
 /* Every case below describes a whole machine, so none of them may read the Minify that is
  * installed on the one running the tests: without this the suite passes or fails depending on
  * whether the developer happens to use it. */
-const readMinify = (p) => read({ config: null, ...p });
+const DOTA_LANGUAGES = require('../src/gamelang.js').DOTA_LANGUAGES;
+const readMinify = (p) => read({ config: null, gameLanguages: DOTA_LANGUAGES, ...p });
 
 /** One entry of gamelang.langFolders(). */
 const folder = (suffix, modFiles = 0, official = false) => ({
@@ -43,16 +44,31 @@ test('its own folder is proof enough, even before it holds anything', () => {
   assert.equal(got.live, 'ours', 'an empty Minify folder does not take the game from us');
 });
 
-test('the game follows the setting, so Minify holding it means our mods are dark', () => {
+test('its own locale is not a language, so that folder never mounts and nothing is a conflict', () => {
+  // Since Dota's 2026-07-24 update the mount path comes from the game's language setting
+  // rather than from -language, and the setting takes a language. "minify" is not one, so
+  // dota_minify is read by nothing - which is why Minify itself moved to Dutch. Saying "the
+  // game is reading its mods" here would be wrong in the way that sends somebody digging.
   const got = readMinify({
     folders: [folder('russian', 7, true), folder(MINIFY_FOLDER, 3)],
     audio: MINIFY_FOLDER,
     ourFolder: 'russian',
     ourMods: 7,
   });
-  assert.equal(got.live, 'minify');
-  assert.equal(got.mounted, MINIFY_FOLDER);
-  assert.equal(got.ourFolder, 'russian');
+  assert.equal(got.present, true);
+  assert.equal(got.mounts, false, 'dota_minify cannot be mounted by this game');
+  assert.equal(got.live, 'neither', 'the setting points at a folder the game will not read');
+});
+
+test('the Dutch it moved to is a real language, and that one does mount', () => {
+  const got = readMinify({
+    folders: [folder('russian', 7, true), folder(MINIFY_BORROWED, 3)],
+    audio: MINIFY_BORROWED,
+    ourFolder: 'russian',
+    ourMods: 7,
+  });
+  assert.equal(got.mounts, true);
+  assert.equal(got.live, 'minify', 'this is the version that can actually take the folder');
 });
 
 test("Minify's Dutch trick for English is recognised as its doing", () => {
@@ -66,6 +82,7 @@ test("Minify's Dutch trick for English is recognised as its doing", () => {
   });
   assert.equal(got.present, true);
   assert.equal(got.folder, MINIFY_BORROWED);
+  assert.equal(got.mounts, true, 'Dutch is a language Dota knows, so the folder is read');
   assert.equal(got.live, 'minify');
 });
 
@@ -115,12 +132,12 @@ test('without a language to read, no claim is made about whose mods load', () =>
 
 test('the setting is read whatever case it was written in', () => {
   const got = readMinify({
-    folders: [folder(MINIFY_FOLDER, 3)],
-    audio: 'Minify',
+    folders: [folder(MINIFY_BORROWED, 3)],
+    audio: 'Dutch',
     ourFolder: 'russian',
     ourMods: 1,
   });
-  assert.equal(got.mounted, MINIFY_FOLDER);
+  assert.equal(got.mounted, MINIFY_BORROWED);
   assert.equal(got.live, 'minify');
 });
 

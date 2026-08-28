@@ -1618,6 +1618,7 @@ function registerIpc() {
     const minify = readMinify({
       folders,
       audio: lang.audio,
+      gameLanguages: gamelang.DOTA_LANGUAGES,
       ourFolder: langFolder,
       ourMods: library.list().filter((r) => (r.files || []).some((f) => f.root === 'lang')).length,
     });

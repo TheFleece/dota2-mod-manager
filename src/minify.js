@@ -1,29 +1,34 @@
 /* Living next to Minify.
  *
- * Minify (github.com/egezenn/dota2-minify) loads mods the same way this app does, and that is
- * the whole problem. Dota substitutes the audio language into its Game_Language search path,
- * so it mounts exactly one folder: dota_<AudioLanguage>. Both managers set that setting and
- * fill the folder it names - we set russian and fill dota_russian, Minify sets its own
- * language (dota_minify, or dutch since its v1.14rc6, which is its fix for English) and fills
- * that one.
+ * The two apps get mods into the game by different routes, and the difference is the whole
+ * story - so it is written down here rather than guessed at each time somebody looks.
  *
- * Which means the two cannot both be live unless their mods are in the same folder, and
- * whichever app patched the setting last decides whose mods the game reads. Nothing is
- * corrupted and nothing overwrites anything; the other app's mods simply stop appearing, and
- * from the outside that looks exactly like a broken mod manager. Both sets of users have been
- * told to reinstall over it.
+ * What this app does: Dota keeps a text language and a voice language in game/dota/cfg/
+ * boot.vcfg, and gameinfo.gi builds its Game_Language search path out of the VOICE one
+ * (measured with -condebug, see the vault). Three of Dota's languages have a voice folder of
+ * their own, so the app sets the voice language to one of those three and fills that folder.
+ * No launch parameters, no extra VPK, and nothing the game did not already support.
  *
- * So the job here is not to fight for the folder. It is to work out, from what is on disk,
- * whose mods the game is actually going to read, and to be able to say so in a sentence.
- * Everything below is derived from data the app already collects - gamelang.langFolders() and
- * gamelang.detectLangSuffix() - so this makes no guesses of its own and touches nothing.
+ * What Minify does: it writes `-language <locale>` into Steam's launch options
+ * (Minify/core/steam.py, fix_launch_options) and fills the folder that names. Its own locale
+ * is "minify" -> game/dota_minify, and for English it ships a fix built on Dutch.
+ *
+ * The part that matters, and the part this file used to get wrong: since Dota's 2026-07-24
+ * update the mounted folder comes from the game's own language setting and NOT from
+ * -language, and the setting only takes a real Dota language. So dota_minify does not mount
+ * at all any more - which is presumably why Minify v1.14rc6 moved to Dutch, "to mount the
+ * VPKs properly". Dutch is a real language, so dota_dutch does mount, and that is the version
+ * that can actually collide with us: one folder is mounted and it is either theirs or ours.
+ *
+ * None of which is a fight to win. It is a thing to be able to explain in a sentence, so
+ * whoever is looking at a game with no mods in it knows why.
  */
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-/** Minify's own language layer, and the one it borrows when Workshop Tools are involved. */
+/** Its own locale, which is not a language Dota knows, and the real one it moved to. */
 const MINIFY_FOLDER = 'minify';
 const MINIFY_BORROWED = 'dutch';
 
@@ -31,8 +36,7 @@ const MINIFY_BORROWED = 'dutch';
  * the ones it compiles, 67 for what its d2pfx browser installs. We hand out pak10 to pak99,
  * so without this we would eventually name a file it is going to write over - and the loser
  * is whichever of us wrote first. Three slots out of ninety is the whole price of never
- * having to coordinate, so they are skipped whether or not Minify is installed today:
- * somebody who adds it next week should not find their mods quietly replaced. */
+ * having to coordinate, so they are skipped whether or not Minify is installed today. */
 const RESERVED_PAKS = [65, 66, 67];
 
 /** Where Minify keeps the settings it publishes about itself. */
@@ -42,9 +46,8 @@ function configPath() {
 }
 
 /**
- * What Minify says about itself, or null. Its own config is worth more than anything we could
- * infer from the folders: it names the path it writes to and the locale it sets, which is the
- * whole question between us.
+ * What Minify says about itself, or null. Its own config beats anything we could infer: it
+ * names the locale it sets, which is the whole question between the two apps.
  * @returns {{ outputPath: string|null, locale: string|null }|null}
  */
 function readConfig(file = configPath()) {
@@ -63,38 +66,44 @@ function readConfig(file = configPath()) {
  * @param {object} p
  * @param {Array<{suffix: string, official: boolean, valveContent: boolean, modFiles: number}>} p.folders
  *   every dota_* folder on disk, from gamelang.langFolders()
- * @param {string|null} p.audio  the audio language the game will boot with, raw
+ * @param {string|null} p.audio  the voice language the game is set to, which names the folder
+ *   it mounts
+ * @param {string[]} p.gameLanguages  the languages Dota will accept for that setting
  * @param {string} p.ourFolder   the suffix this app installs into, from gamelang.folderFor()
  * @param {number} [p.ourMods]   how many mods this app has installed
  * @returns {{
- *   present: boolean, folder: string|null, mods: number,
+ *   present: boolean, folder: string|null, mods: number, mounts: boolean,
  *   mounted: string|null, ourFolder: string, sharing: boolean,
- *   live: 'ours'|'minify'|'both'|'neither'|'unknown',
+ *   live: 'ours'|'minify'|'both'|'neither'|'unknown', declared: boolean,
  * }}
  */
-function readMinify({ folders = [], audio = null, ourFolder, ourMods = 0, config = readConfig() }) {
+function readMinify({
+  folders = [], audio = null, gameLanguages = [], ourFolder, ourMods = 0, config = readConfig(),
+}) {
   const at = (suffix) => folders.find((f) => f.suffix === suffix) || null;
-  const named = at(MINIFY_FOLDER);
-  const borrowed = at(MINIFY_BORROWED);
-  // What it told us beats what we guessed from the folder names.
   const declared = config && config.locale ? config.locale : null;
 
   /* Its own folder is proof by name. The borrowed one is proof only when it holds mods:
    * dota_dutch is a folder Valve ships voice for, so an empty one means somebody simply owns
    * the Dutch voice pack, and calling that Minify would be a guess dressed as a finding. */
+  const borrowed = at(MINIFY_BORROWED);
   const folder = declared
-    || (named ? MINIFY_FOLDER : (borrowed && borrowed.modFiles > 0 ? MINIFY_BORROWED : null));
+    || (at(MINIFY_FOLDER) ? MINIFY_FOLDER : (borrowed && borrowed.modFiles > 0 ? MINIFY_BORROWED : null));
   const present = !!folder;
   const mods = folder ? (at(folder)?.modFiles || 0) : 0;
 
-  // The engine builds its mount path out of this setting, whatever it says.
+  /* Whether the folder it fills is one Dota can be pointed at. Its default locale is not a
+   * language, so on today's game that folder is never mounted and its mods do nothing - no
+   * matter what either app does. Worth saying plainly; it is not a conflict with us. */
+  const mounts = present && gameLanguages.includes(folder);
+
   const mounted = audio ? String(audio).toLowerCase() : null;
   const sharing = present && folder === ourFolder;
 
   let live = 'unknown';
   if (mounted) {
     const oursLive = mounted === ourFolder && ourMods > 0;
-    const minifyLive = present && mounted === folder && mods > 0;
+    const minifyLive = mounts && mounted === folder && mods > 0;
     if (sharing && (oursLive || minifyLive)) live = 'both';
     else if (oursLive && minifyLive) live = 'both';
     else if (oursLive) live = 'ours';
@@ -102,7 +111,7 @@ function readMinify({ folders = [], audio = null, ourFolder, ourMods = 0, config
     else live = 'neither';
   }
 
-  return { present, folder, mods, mounted, ourFolder, sharing, live, declared: !!declared };
+  return { present, folder, mods, mounts, mounted, ourFolder, sharing, live, declared: !!declared };
 }
 
 module.exports = { readMinify, readConfig, configPath, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };

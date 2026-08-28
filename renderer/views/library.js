@@ -751,21 +751,36 @@ function patchBannerHtml() {
 
 export /* Minify is not a rival to warn about, it is a neighbour to be exact about.
  *
- * Both apps load mods by naming a language folder, and Dota mounts exactly one, so whichever
- * of us patched that setting last decides whose mods the game reads. Nothing is damaged and
- * nothing is overwritten - the other app's mods just stop appearing, which from the outside
- * is indistinguishable from a broken mod manager. So the banner says which of the two the
- * game is reading right now, and what to change to get both. See src/minify.js.
+ * The two apps take different routes. This one sets Dota's own voice language to one of the
+ * three that have a folder, and fills that folder - no launch parameters, no extra VPK.
+ * Minify writes `-language <locale>` into Steam's launch options and fills the folder that
+ * names. Since Dota's 2026-07-24 update the mount path comes from the game's setting rather
+ * than from -language, and it takes a real language, so Minify's own "minify" locale is read
+ * by nothing at all; newer versions moved to Dutch, which is a language and does mount.
+ *
+ * Which gives three things worth saying, and they are not the same thing: its folder cannot
+ * be read at all, or it holds the folder and ours is the one going unread, or both are in the
+ * one folder and both work. See src/minify.js.
  */
 function minifyBannerHtml(m) {
   if (!m || !m.present) return '';
-  const both = L`Оба менеджера кладут моды в языковую папку, а Dota монтирует ровно одну.`;
+  const one = L`Dota монтирует ровно одну языковую папку, по языку озвучки из настроек игры.`;
+  // installed, but building into a folder this version of the game will never read
+  if (!m.mounts) {
+    return `
+      <div class="banner info">
+        <span class="ms">handshake</span>
+        <div class="banner-body">
+          <b>${L`Рядом установлен Minify`}</b>${L`. Он собирает в dota_${m.folder}, а ${one} Папку с таким именем игра не читает — его моды сейчас не грузятся, и на наши это не влияет. В свежих версиях Minify это решено переходом на голландский.`}
+        </div>
+      </div>`;
+  }
   if (m.live === 'minify') {
     return `
       <div class="banner warn">
         <span class="ms">warning</span>
         <div class="banner-body">
-          <b>${L`Сейчас игра читает моды Minify`}</b>${L`, а не наши. ${both} Игра настроена на dota_${m.mounted}, мы ставим в dota_${m.ourFolder}. Поставь в Minify тот же язык, что и у нас — тогда заработают обе программы разом.`}
+          <b>${L`Сейчас игра читает моды Minify`}</b>${L`, а не наши. ${one} Она настроена на dota_${m.mounted}, мы ставим в dota_${m.ourFolder}. Поставь в Minify тот же язык, что и у нас — тогда заработают обе программы разом.`}
         </div>
       </div>`;
   }
@@ -778,12 +793,11 @@ function minifyBannerHtml(m) {
         </div>
       </div>`;
   }
-  // ours are the ones loading; its mods are the ones sitting dark
   return `
     <div class="banner info">
       <span class="ms">handshake</span>
       <div class="banner-body">
-        <b>${L`Рядом установлен Minify`}</b>${L`. Игра читает нашу папку dota_${m.ourFolder}, а он собирает в dota_${m.folder} — его моды сейчас не грузятся. ${both} Поставь в Minify язык ${m.ourFolder}, и заработают обе.`}
+        <b>${L`Рядом установлен Minify`}</b>${L`. Игра читает нашу папку dota_${m.ourFolder}, а он собирает в dota_${m.folder} — его моды сейчас не грузятся. ${one} Поставь в Minify язык ${m.ourFolder}, и заработают обе.`}
       </div>
     </div>`;
 }

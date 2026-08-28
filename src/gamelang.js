@@ -38,6 +38,22 @@ const MOD_FOLDERS = ['koreana', 'russian', 'schinese'];
 /** Borrowed by English, and by anything unrecognised. */
 const FALLBACK_FOLDER = 'russian';
 
+/* Every language Dota will accept for that setting, which is a longer list than the four it
+ * records voice in - text for all of them ships inside dota/pak01.
+ *
+ * Only used to answer "would the game mount a folder by this name at all". Since the
+ * 2026-07-24 update the setting is where the mount path comes from, and it takes a language
+ * rather than any string, so a folder named after something that is not on this list is never
+ * read - which is the whole reason Minify moved off its own "minify" locale (see
+ * src/minify.js). Cross-checked against Minify's own enumeration of the same set.
+ */
+const DOTA_LANGUAGES = [
+  'brazilian', 'bulgarian', 'czech', 'danish', 'dutch', 'english', 'finnish', 'french',
+  'german', 'greek', 'hungarian', 'italian', 'japanese', 'koreana', 'latam', 'norwegian',
+  'polish', 'portuguese', 'romanian', 'russian', 'schinese', 'spanish', 'swedish', 'tchinese',
+  'thai', 'turkish', 'ukrainian', 'vietnamese',
+];
+
 /**
  * Where mods have to live for a given audio language.
  *
@@ -212,6 +228,7 @@ function ensureLangFolder(gamePath, suffix) {
 
 module.exports = {
   VOICE_LANGUAGES,
+  DOTA_LANGUAGES,
   MOD_FOLDERS,
   FALLBACK_FOLDER,
   folderFor,

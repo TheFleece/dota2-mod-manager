@@ -526,7 +526,7 @@ const en: Record<Slug, Doc> = {
           ],
           [
             'Dota2 Minify (github.com/Egezenn/dota2-minify)',
-            'Not an alternative and not a rival: it compiles mods rather than installing them from a catalog, and the two are meant to run side by side. Both put their output in a language folder and Dota mounts exactly one, so they have to agree on which. This app reads the configuration Minify keeps, says which of the two the game is set to read, and leaves the pak slots Minify reserves free so neither writes over the other. Both are clients of the same catalog.',
+            'Not an alternative and not a rival: it compiles mods where this installs them from a catalog, and the two are meant to run side by side. They reach the game by different routes - this app sets the voice language Dota already keeps in its own settings, while Minify writes a -language launch option into Steam. Dota mounts one language folder and takes the name from its own setting, so the two only collide when both are pointed at the same kind of folder. This app reads the configuration Minify keeps, says which of the two the game is actually set to read, and leaves the pak slots Minify reserves free so neither writes over the other. Both are clients of the same catalog.',
           ],
           [
             'Dota 2 SkinChanger (dota2changer.com)',
@@ -1068,7 +1068,7 @@ const ru: Record<Slug, Doc> = {
           ],
           [
             'Dota2 Minify (github.com/Egezenn/dota2-minify)',
-            'Не альтернатива и не конкурент: он компилирует моды, а не ставит их из каталога, и рассчитан на работу рядом. Обе программы кладут результат в языковую папку, а Dota монтирует ровно одну, поэтому им надо сойтись на одной и той же. Приложение читает собственный конфиг Minify, говорит, чьи моды сейчас читает игра, и не занимает слоты pak, которые Minify держит за собой, так что ни одна не пишет поверх другой. Обе программы работают с одним каталогом.',
+            'Не альтернатива и не конкурент: он компилирует моды, а мы ставим их из каталога, и программы рассчитаны на работу рядом. До игры они добираются по-разному: приложение меняет язык озвучки в собственных настройках Доты, а Minify пишет параметр запуска -language в Steam. Дота монтирует одну языковую папку и берёт её имя из своей настройки, поэтому столкновение возможно, только когда обе программы смотрят в папку одного вида. Приложение читает конфиг Minify, говорит, чью папку игра читает на самом деле, и не занимает слоты pak, которые Minify держит за собой. Обе программы работают с одним каталогом.',
           ],
           [
             'Dota 2 SkinChanger (dota2changer.com)',
