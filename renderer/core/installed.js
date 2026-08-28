@@ -38,7 +38,10 @@ export function applyInstalled(installed) {
   // and a badge on a card. Compared rather than announced every time: opening the Library
   // re-reads the folder on each visit, and an unchanged read must not throw away the catalog
   // the user is about to switch back to.
-  const sig = installed.map((r) => `${r.id}:${r.enabled === false ? 0 : 1}:${r.slot ?? ''}`).join('|');
+  // Sorted, because the folder is read again on every visit to the Library and the order it
+  // comes back in is not promised. Comparing an unsorted join made an identical read look
+  // like a change, and the catalog was thrown away for nothing.
+  const sig = installed.map((r) => `${r.id}:${r.enabled === false ? 0 : 1}:${r.slot ?? ''}`).sort().join('|');
   if (sig !== lastInstalledSig) { lastInstalledSig = sig; invalidateViews(); }
 }
 

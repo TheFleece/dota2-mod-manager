@@ -110,6 +110,10 @@ function createWindow() {
     frame: false,
     // dev: MM_QUIET=1 keeps an automated run off the screen of whoever is using the machine.
     // Undefined anywhere but a measuring run, so the app opens exactly as it always did.
+    //
+    // A window that was never shown produces no frames, and a view transition waits for one:
+    // time-from-click-to-visible reads in seconds here and means nothing. Measure the main
+    // thread (the gap between timer ticks) instead, which is what a frozen window actually is.
     show: !process.env.MM_QUIET,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
