@@ -25,6 +25,7 @@ const { ensureLangFolder } = require('./gamelang');
 const { openZip, safeJoin } = require('./safe-zip');
 const { validateGamePath } = require('./steam');
 const { FileTx } = require('./file-tx');
+const { RESERVED_PAKS } = require('./minify');
 const { downloadFile } = require('./net');
 const { t } = require('./i18n');
 
@@ -309,6 +310,10 @@ class Installer {
       }
     }
     for (let n = 10; n <= 99; n++) {
+      // Minify writes 65, 66 and 67 into whichever language folder it is set to, and if that
+      // is ours, whoever writes second replaces the other's mod. Three slots out of ninety
+      // buys never having to coordinate - see src/minify.js.
+      if (RESERVED_PAKS.includes(n)) continue;
       const name = `pak${n}_dir.vpk`;
       if (!used.has(name)) {
         used.add(name);

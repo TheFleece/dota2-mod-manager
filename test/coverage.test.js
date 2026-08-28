@@ -155,3 +155,25 @@ test('a mod that lives outside a numbered pak has no place in the order', (t) =>
   const terrain = { key: 'terrain', name: 'terrain', files: [{ root: 'lang', relPath: 'maps/dota.vpk' }] };
   assert.equal(installer.coverage([numbered, terrain]).size, 0);
 });
+
+test('the pak slots Minify writes are never handed to one of our mods', () => {
+  // Minify compiles into 65, 66 and 67 of whatever language folder it is set to. If that is
+  // the folder we use as well, the two apps coexist happily right up until we name a file it
+  // is about to write - and then one mod silently replaces the other, with nothing on screen
+  // to say why. Ninety slots minus three is a price worth not thinking about again.
+  const installer = new Installer({
+    userDataDir: fs.mkdtempSync(path.join(os.tmpdir(), 'mm-slots-')),
+    getGamePath: () => null,
+    getLangSuffix: () => 'russian',
+  });
+  const used = new Set();
+  const handed = [];
+  for (let i = 0; i < 87; i++) handed.push(installer.allocatePak(used, false));
+  for (const n of [65, 66, 67]) {
+    assert.equal(handed.includes(`pak${n}_dir.vpk`), false, `pak${n} belongs to Minify`);
+  }
+  // and everything either side of them is still offered, so nothing else was lost
+  for (const n of [64, 68, 10, 99]) {
+    assert.equal(handed.includes(`pak${n}_dir.vpk`), true, `pak${n} should still be available`);
+  }
+});

@@ -533,7 +533,18 @@ const EN = {
     ', while mods are installed into dota_{0}. Close Dota and restart the manager: it switches the game over itself.',
   'В папке dota_{0} лежат {1} {2}': 'The dota_{0} folder holds {1} {2}',
   ', которые игра не видит.': ' the game cannot see.',
+  // living next to Minify: which of the two the game is reading, and how to get both
   'Рядом установлен Minify': 'Minify is installed alongside',
+  'Оба менеджера кладут моды в языковую папку, а Dota монтирует ровно одну.':
+    'Both managers put mods in a language folder, and Dota mounts exactly one of them.',
+  'Сейчас игра читает моды Minify': 'Right now the game is reading the mods Minify built',
+  ', а не наши. {0} Игра настроена на dota_{1}, мы ставим в dota_{2}. Поставь в Minify тот же язык, что и у нас — тогда заработают обе программы разом.':
+    ', not ours. {0} The game is set to dota_{1} and we install into dota_{2}. Point Minify at the same language as us and both work at once.',
+  'Minify рядом, и обе программы работают': 'Minify is here, and both are working',
+  ': моды в одной папке dota_{0}, слоты pak65-67 мы за ним не занимаем.':
+    ': the mods share dota_{0}, and we leave pak65-67 to it.',
+  '. Игра читает нашу папку dota_{0}, а он собирает в dota_{1} — его моды сейчас не грузятся. {2} Поставь в Minify язык {3}, и заработают обе.':
+    '. The game reads our dota_{0} while it builds into dota_{1}, so its mods are not loading. {2} Set Minify to {3} and both will.',
   'Проверка файлов Steam вернула оригиналы игры': 'Steam’s file check put the game’s own files back',
   ': {0}. Архива для установки уже нет — скачать заново?':
     ': {0}. The archive they were installed from is no longer cached — download it again?',

@@ -140,16 +140,23 @@ function langFolders(gamePath) {
  * The folder suffix the game will mount, and where that answer came from.
  * `boot` (the game's own setting) wins over `steam` (what the depot is set to).
  */
+/* `suffix` is the audio language among the four Dota records voice in; `audio` is whatever
+ * the setting actually says, which is not always one of them. Another mod manager can put a
+ * language there that Valve ships no voice for - Minify sets Dutch, so the engine mounts
+ * dota_dutch and reads its mods out of it - and the folder Dota mounts follows that value
+ * whether or not we recognise it. Anything asking "whose mods are live" needs the raw one.
+ */
 function detectLangSuffix(gamePath) {
   const boot = bootLanguages(gamePath);
-  if (boot?.audio && VOICE_LANGUAGES.includes(boot.audio)) {
-    return { suffix: boot.audio, source: 'boot', uiLanguage: boot.ui || null };
-  }
   const steam = steamLanguage(gamePath);
-  if (steam && VOICE_LANGUAGES.includes(steam)) {
-    return { suffix: steam, source: 'steam', uiLanguage: boot?.ui || null };
+  const audio = boot?.audio || steam || null;
+  if (boot?.audio && VOICE_LANGUAGES.includes(boot.audio)) {
+    return { suffix: boot.audio, source: 'boot', uiLanguage: boot.ui || null, audio };
   }
-  return { suffix: null, source: null, uiLanguage: boot?.ui || null };
+  if (steam && VOICE_LANGUAGES.includes(steam)) {
+    return { suffix: steam, source: 'steam', uiLanguage: boot?.ui || null, audio };
+  }
+  return { suffix: null, source: null, uiLanguage: boot?.ui || null, audio };
 }
 
 /**

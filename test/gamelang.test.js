@@ -59,6 +59,7 @@ test("Steam's own language is the fallback before the game has ever run", (t) =>
     suffix: 'russian',
     source: 'steam',
     uiLanguage: null,
+    audio: 'russian',
   });
 });
 
@@ -83,6 +84,10 @@ test('with nothing official to go on the suffix is null, not a default', (t) => 
     suffix: null,
     source: null,
     uiLanguage: 'klingon',
+    // unrecognised, but still reported: this is the value the engine builds its mount path
+    // from, and another mod manager setting it is exactly how mods end up somewhere we do
+    // not look (see src/minify.js)
+    audio: 'klingon',
   });
 });
 

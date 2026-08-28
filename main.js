@@ -40,6 +40,7 @@ const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport, renderSummary, renderDetailed } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
+const { readMinify } = require('./src/minify');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
@@ -1610,9 +1611,16 @@ function registerIpc() {
    */
   const settingsView = ({ consumeMigration = false } = {}) => {
     const game = settings.get('dotaGamePath');
-    let minifyDetected = false;
-    try { minifyDetected = !!game && fs.existsSync(path.join(game, 'dota_minify')); } catch { /* ignore */ }
     const folders = gamelang.langFolders(game);
+    // Whose mods the game is actually going to read. Both managers name a language folder and
+    // Dota mounts exactly one, so this is a question with a definite answer - see src/minify.js.
+    const lang = game ? gamelang.detectLangSuffix(game) : { suffix: null, audio: null };
+    const minify = readMinify({
+      folders,
+      audio: lang.audio,
+      ourFolder: langFolder,
+      ourMods: library.list().filter((r) => (r.files || []).some((f) => f.root === 'lang')).length,
+    });
     // Only the screen asking for settings gets to hear about the migration, and only once.
     // A save must not swallow the news before anybody has read it.
     const migrated = consumeMigration ? langMigration : null;
@@ -1620,16 +1628,21 @@ function registerIpc() {
     return {
       ...settings.all(),
       dotaPathValid: validateGamePath(game),
-      minifyDetected,
+      minify,
       discordConfigured: discordAuth.isConfigured(),
       // What is left of the language question, now that the folder is always dota_russian:
       // whether the game agrees, and whether any mods are stranded outside it. Both are
       // things to tell the user about, not things to ask them.
       gameLang: {
-        mounted: game ? gamelang.detectLangSuffix(game).suffix : null,
+        mounted: lang.suffix,
         folder: langFolder,
-        // mods sitting in a folder the game does not mount
-        stranded: folders.filter((f) => f.suffix !== langFolder && f.modFiles > 0)
+        /* Mods sitting in a folder the game does not mount - ours, left behind by a language
+         * change. Never another tool's: the screen offers to move these into our folder, and
+         * taking Minify's compiled pak out of the folder it just built it in would break its
+         * install to fix nothing. Its files are its business, and where they are is a thing
+         * to explain rather than to correct (see src/minify.js). */
+        stranded: folders
+          .filter((f) => f.suffix !== langFolder && f.modFiles > 0 && f.suffix !== minify.folder)
           .map((f) => ({ suffix: f.suffix, modFiles: f.modFiles })),
       },
       langMigration: migrated,

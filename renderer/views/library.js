@@ -701,11 +701,7 @@ function folderBannersHtml() {
         <div class="banner-body"><b>${L`В папке dota_${f.suffix} лежат ${f.modFiles} ${plural(f.modFiles, 'мод', 'мода', 'модов')}`}</b>${L`, которые игра не видит.`}</div>
         <button class="btn btn-sm btn-primary" data-move-from="${esc(f.suffix)}"><span class="ms">drive_file_move</span>${L`Перенести сюда`}</button>
       </div>`).join('')}
-    ${s.minifyDetected ? `
-      <div class="banner warn">
-        <span class="ms">warning</span>
-        <div class="banner-body"><b>${L`Рядом установлен Minify`}</b>${L`. Если он ставит моды в ту же папку, файлы будут перекрывать друг друга — ставь моды через что-то одно.`}</div>
-      </div>` : ''}
+    ${minifyBannerHtml(s.minify)}
     ${libStuck.length ? `
       <div class="banner warn">
         <span class="ms">warning</span>
@@ -753,7 +749,46 @@ function patchBannerHtml() {
   return '';
 }
 
-export async function renderLibrary() {
+export /* Minify is not a rival to warn about, it is a neighbour to be exact about.
+ *
+ * Both apps load mods by naming a language folder, and Dota mounts exactly one, so whichever
+ * of us patched that setting last decides whose mods the game reads. Nothing is damaged and
+ * nothing is overwritten - the other app's mods just stop appearing, which from the outside
+ * is indistinguishable from a broken mod manager. So the banner says which of the two the
+ * game is reading right now, and what to change to get both. See src/minify.js.
+ */
+function minifyBannerHtml(m) {
+  if (!m || !m.present) return '';
+  const both = L`Оба менеджера кладут моды в языковую папку, а Dota монтирует ровно одну.`;
+  if (m.live === 'minify') {
+    return `
+      <div class="banner warn">
+        <span class="ms">warning</span>
+        <div class="banner-body">
+          <b>${L`Сейчас игра читает моды Minify`}</b>${L`, а не наши. ${both} Игра настроена на dota_${m.mounted}, мы ставим в dota_${m.ourFolder}. Поставь в Minify тот же язык, что и у нас — тогда заработают обе программы разом.`}
+        </div>
+      </div>`;
+  }
+  if (m.live === 'both' || m.sharing) {
+    return `
+      <div class="banner info">
+        <span class="ms">handshake</span>
+        <div class="banner-body">
+          <b>${L`Minify рядом, и обе программы работают`}</b>${L`: моды в одной папке dota_${m.mounted}, слоты pak65-67 мы за ним не занимаем.`}
+        </div>
+      </div>`;
+  }
+  // ours are the ones loading; its mods are the ones sitting dark
+  return `
+    <div class="banner info">
+      <span class="ms">handshake</span>
+      <div class="banner-body">
+        <b>${L`Рядом установлен Minify`}</b>${L`. Игра читает нашу папку dota_${m.ourFolder}, а он собирает в dota_${m.folder} — его моды сейчас не грузятся. ${both} Поставь в Minify язык ${m.ourFolder}, и заработают обе.`}
+      </div>
+    </div>`;
+}
+
+async function renderLibrary() {
   const res = await window.api.mods.list();
   // re-read rather than trust the boot copy: the banners above the list are about the folder
   // on disk right now, and a mod can go missing between two visits to this screen
