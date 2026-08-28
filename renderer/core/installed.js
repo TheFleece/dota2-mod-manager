@@ -6,6 +6,7 @@
  */
 import { state } from './store.js';
 import { $ } from './dom.js';
+import { invalidateViews } from './router.js';
 
 /** How a mod is identified across the catalog and the library: category, name, style. */
 export function keyOf(categoryId, name, styleLabel) {
@@ -31,7 +32,18 @@ export function applyInstalled(installed) {
   // tools live in the index so their card knows it has them, but they are not in the Library
   // and must not be counted on its tab
   $('#libCount').textContent = installed.filter((r) => r.categoryId !== 'tools').length || '';
+
+  // Screens that are not on show keep what they built, so somebody has to tell them the
+  // folder moved under them - a mod installed from the catalog changes a row in the Library
+  // and a badge on a card. Compared rather than announced every time: opening the Library
+  // re-reads the folder on each visit, and an unchanged read must not throw away the catalog
+  // the user is about to switch back to.
+  const sig = installed.map((r) => `${r.id}:${r.enabled === false ? 0 : 1}:${r.slot ?? ''}`).join('|');
+  if (sig !== lastInstalledSig) { lastInstalledSig = sig; invalidateViews(); }
 }
+
+// what applyInstalled() last saw, so it can tell a real change from a re-read
+let lastInstalledSig = null;
 
 // the record that currently dresses a cosmetic slot, if any
 export function pickedIn(slot) {
@@ -45,6 +57,9 @@ export function pickedIn(slot) {
 export async function refreshCosmeticSlots() {
   const { slots } = await window.api.cosmetics.slots();
   state.cosmeticSlots = slots || [];
+  // only called where a cosmetic pick or safe mode could have moved, and both of those
+  // change the catalog's rail as well as the screen asking - so nothing kept is still right
+  invalidateViews();
 }
 
 export async function refreshInstalledIndex() {

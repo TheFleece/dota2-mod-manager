@@ -17,7 +17,7 @@
  */
 import { $ } from '../core/dom.js';
 import { state } from '../core/store.js';
-import { registerView } from '../core/router.js';
+import { registerView, pane } from '../core/router.js';
 import { esc, fmtMB } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
 import { showWhatsNew } from '../ui/dialog.js';
@@ -27,7 +27,7 @@ import { applyLanguage } from '../ui/language.js';
 import { loadCatalog } from './catalog.js';
 import { paint } from '../ui/transitions.js';
 
-const viewRoot = $('#view-root');
+const viewRoot = pane('settings');
 
 registerView('settings', () => renderSettings());
 

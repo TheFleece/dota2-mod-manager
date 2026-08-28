@@ -12,7 +12,7 @@
 import { $ } from '../core/dom.js';
 import { RAW_BASE, COSMETIC_SLOTS, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, TOOLS_HIDDEN, SORTS, freshFilters } from '../core/constants.js';
 import { state } from '../core/store.js';
-import { registerView, render } from '../core/router.js';
+import { registerView, render, pane } from '../core/router.js';
 import { keyOf, pickedIn, refreshInstalledIndex, refreshCosmeticSlots } from '../core/installed.js';
 import { catName, catIcon } from '../core/categories.js';
 import { esc, fmtDate, plural } from '../ui/format.js';
@@ -28,7 +28,7 @@ import { refreshSidebarStatus } from '../ui/statusbar.js';
 import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
 
-const viewRoot = $('#view-root');
+const viewRoot = pane('catalog');
 
 // This screen's own state, off the shared store now that it has somewhere to live.
 let filters = freshFilters();   // sort + tag/group/hero/installed/starred narrowing

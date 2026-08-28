@@ -28,6 +28,9 @@ const EN = {
   'Выбери .vpk файлы модов или .zip с ними': 'Pick mod .vpk files, or a .zip holding them',
   'Моды (.vpk, .zip)': 'Mods (.vpk, .zip)',
   'Выбери папку с модами': 'Pick a folder with mods',
+  // the two counted passes of an import, shown on the progress bar
+  'Копирование модов': 'Copying mods',
+  'Разбор модов': 'Reading mods',
   'Нет _dir.vpk для разбора': 'No _dir.vpk to split',
   'В файле меньше двух героев — разбирать нечего': 'Fewer than two heroes in the file — nothing to split',
   'Совпадение с каталогом не найдено': 'No catalog match found',

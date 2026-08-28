@@ -881,11 +881,11 @@ class Installer {
 
   // Import whatever the user pointed at: .vpk files, a .zip, or a folder to walk.
   // Returns one result per mod: { source, name, files[], merged? } or { source, error }.
-  importVpks(paths) {
+  async importVpks(paths, onStep) {
     const staged = [];
     try {
       const { files, errors } = this.expandImportInputs(paths || [], staged);
-      return [...errors, ...this.importVpkFiles(files)];
+      return [...errors, ...await this.importVpkFiles(files, onStep)];
     } finally {
       for (const dir of staged) { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* noop */ } }
     }
@@ -1017,7 +1017,11 @@ class Installer {
   // "<base>_dir.vpk" (index) + "<base>_000.vpk", "<base>_001.vpk"... (data). Skinchanger
   // and Dota2Changer packs ship as the latter, so the volumes are grouped with their index
   // and folded into a single file per mod on the way in.
-  importVpkFiles(paths) {
+  /**
+   * @param {string[]} paths .vpk files to take in
+   * @param {(done:number,total:number)=>void} [onStep] called after each mod lands
+   */
+  async importVpkFiles(paths, onStep) {
     const lang = this.langFolder();
     this.ensureLangFolder();
     const used = this.usedPakNames();
@@ -1045,6 +1049,13 @@ class Installer {
 
     // One set is one mod, so each gets its own transaction: a multi-volume import that dies
     // on its third file rolls that mod back and the rest of the batch carries on.
+    //
+    // A whole pack of these used to run without ever giving the event loop a turn, and the
+    // main process is what pumps the window's messages - so Windows put "not responding"
+    // on the title bar for the several minutes a Skinchanger pack takes, and the app looked
+    // dead while it was working. Each mod now hands the loop back before the next one.
+    let done = 0;
+    const total = sets.size;
     for (const set of sets.values()) {
       try {
         FileTx.run((tx) => {
@@ -1108,6 +1119,9 @@ class Installer {
       } catch (err) {
         results.push({ source: set.sourceLabel, error: String(err.message || err) });
       }
+      done++;
+      if (onStep) onStep(done, total);
+      await new Promise((r) => setImmediate(r));
     }
     return results;
   }
@@ -1135,7 +1149,7 @@ class Installer {
   // Import dropped .vpk/.zip files given as raw bytes (used when the drop can't resolve a
   // real on-disk path). Bytes are staged in a temp folder so the normal path-based importer
   // handles grouping of multi-part sets, then the temp folder is removed.
-  importVpkBuffers(items) {
+  async importVpkBuffers(items, onStep) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-import-'));
     try {
       const paths = [];
@@ -1145,7 +1159,7 @@ class Installer {
         fs.writeFileSync(p, Buffer.from(it.data));
         paths.push(p);
       }
-      return this.importVpks(paths);
+      return await this.importVpks(paths, onStep);
     } finally {
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* noop */ }
     }

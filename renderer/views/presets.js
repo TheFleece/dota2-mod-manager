@@ -8,7 +8,7 @@
  */
 import { $ } from '../core/dom.js';
 import { state } from '../core/store.js';
-import { registerView, switchView } from '../core/router.js';
+import { registerView, switchView, pane } from '../core/router.js';
 import { refreshInstalledIndex } from '../core/installed.js';
 import { esc, fmtMB, plural } from '../ui/format.js';
 import { libThumbHtml } from '../ui/thumb.js';
@@ -20,7 +20,7 @@ import { confirmDialog, promptDialog } from '../ui/dialog.js';
 import { paint } from '../ui/transitions.js';
 import { bindContextMenu } from '../ui/menu.js';
 
-const viewRoot = $('#view-root');
+const viewRoot = pane('presets');
 
 registerView('presets', () => renderPresets());
 

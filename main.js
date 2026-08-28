@@ -108,6 +108,9 @@ function createWindow() {
     backgroundColor: '#050506',
     autoHideMenuBar: true,
     frame: false,
+    // dev: MM_QUIET=1 keeps an automated run off the screen of whoever is using the machine.
+    // Undefined anywhere but a measuring run, so the app opens exactly as it always did.
+    show: !process.env.MM_QUIET,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -172,8 +175,13 @@ function createWindow() {
       setTimeout(async () => {
         diag('capture start');
         try {
-          win.show();
-          win.focus();
+          // MM_QUIET=1: measure without the window jumping in front of whatever the person
+          // at the keyboard is doing. The window is created hidden in that mode, so a run
+          // after numbers rather than a picture never takes over the screen.
+          if (!process.env.MM_QUIET) {
+            win.show();
+            win.focus();
+          }
           if (process.env.MM_VIEW) {
             await win.webContents.executeJavaScript(
               `document.querySelector('[data-view="${process.env.MM_VIEW}"]')?.click()`);
@@ -714,9 +722,16 @@ function adoptImportedFiles({ files, name, fileRef, identity }) {
   return { records: [library.find(rec.id) || rec], schema, split: false };
 }
 
-function registerImportResults(results) {
+/* Reading what arrived is the slow half, not copying it: every mod gets its item blocks
+ * lifted, its content analysed, and a multi-hero pack rebuilt into one VPK per hero. Seventy
+ * of those in a row is minutes of work, so the loop reports where it is and hands the event
+ * loop back between mods - otherwise the window stops pumping messages and Windows calls the
+ * app dead while it is busy. */
+async function registerImportResults(results, onStep) {
   const imported = [];
   let needSchema = false;
+  let read = 0;
+  const toRead = results.filter((r) => !r.error).length;
   for (const r of results) {
     if (r.error) continue;
     const { records, schema, split } = adoptImportedFiles({ files: r.files, name: r.name, fileRef: r.source });
@@ -729,22 +744,43 @@ function registerImportResults(results) {
         ...(split ? { fromSplit: r.name } : {}),
       });
     }
+    read++;
+    if (onStep) onStep(read, toRead);
+    await new Promise((r) => setImmediate(r));
   }
   if (imported.length && installer.masterIsOff()) { try { installer.setMasterEnabled(false); } catch { /* noop */ } }
   if (needSchema) schemaService.refresh();
   return { imported, errors: results.filter((r) => r.error), schema: needSchema };
 }
 
+// Two counted passes over the same batch: the files land, then each one is read. Both are
+// shown on the one bar, so a long import says which mod it is on instead of nothing at all.
+function importStep(stage) {
+  return (done, total) => sendProgress({ type: 'count', label: stage, done, total });
+}
+
 // copy user .vpk files into the lang folder and register them in the library
-function importVpkPaths(paths) {
-  try { return registerImportResults(installer.importVpks(Array.isArray(paths) ? paths : [])); }
-  catch (err) { return { error: String(err.message || err) }; }
+async function importVpkPaths(paths) {
+  try {
+    const staged = await installer.importVpks(Array.isArray(paths) ? paths : [], importStep(t('Копирование модов')));
+    return await registerImportResults(staged, importStep(t('Разбор модов')));
+  } catch (err) {
+    return { error: String(err.message || err) };
+  } finally {
+    sendProgress({ type: 'done' });
+  }
 }
 
 // same, but from raw bytes — the drag-and-drop fallback when a real path can't be resolved
-function importVpkBuffers(items) {
-  try { return registerImportResults(installer.importVpkBuffers(Array.isArray(items) ? items : [])); }
-  catch (err) { return { error: String(err.message || err) }; }
+async function importVpkBuffers(items) {
+  try {
+    const staged = await installer.importVpkBuffers(Array.isArray(items) ? items : [], importStep(t('Копирование модов')));
+    return await registerImportResults(staged, importStep(t('Разбор модов')));
+  } catch (err) {
+    return { error: String(err.message || err) };
+  } finally {
+    sendProgress({ type: 'done' });
+  }
 }
 
 // ---------- item schema (game/dota_mods) ----------

@@ -17,7 +17,7 @@ import { esc, fmtMB } from './ui/format.js';
 import { showWhatsNew, confirmDialog, safeModeDialog } from './ui/dialog.js';
 import { state } from './core/store.js';
 import { toast } from './ui/toast.js';
-import { render, switchView } from './core/router.js';
+import { render, switchView, invalidateViews } from './core/router.js';
 import { refreshInstalledIndex, refreshCosmeticSlots } from './core/installed.js';
 import { refreshPatchState, paintMasterSwitch, refreshMasterSwitch, refreshSidebarStatus } from './ui/statusbar.js';
 import { applyContentZoom, readPanels, bindPanels } from './ui/chrome.js';
@@ -122,6 +122,8 @@ $('#modsMasterBtn')?.addEventListener('click', async () => {
   state.masterOff = !enable;
   paintMasterSwitch();
   toast(enable ? L`Моды включены` : L`Моды выключены — игра запустится ванильной`);
+  // the Library draws every row from this, and it keeps what it built while you are elsewhere
+  invalidateViews();
   if (state.view === 'library') render();
 });
 
@@ -256,6 +258,13 @@ window.api.onProgress((evt) => {
       $('#progressSize').textContent = `${fmtMB(evt.loaded)} MB`;
       $('#progressFill').style.width = '40%';
     }
+    clearTimeout(progressHideTimer);
+  } else if (evt.type === 'count') {
+    // a batch the app is working through: how many of how many, not a guessed percentage
+    bar.classList.remove('hidden');
+    $('#progressLabel').textContent = evt.label;
+    $('#progressSize').textContent = `${evt.done} / ${evt.total}`;
+    $('#progressFill').style.width = `${evt.total ? (evt.done / evt.total) * 100 : 0}%`;
     clearTimeout(progressHideTimer);
   } else if (evt.type === 'stage') {
     $('#progressLabel').textContent = `${evt.label}: ${evt.stage}`;

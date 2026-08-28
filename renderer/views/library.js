@@ -12,7 +12,7 @@
 import { $ } from '../core/dom.js';
 import { COSMETIC_PREFIX, cosmeticMeta } from '../core/constants.js';
 import { state } from '../core/store.js';
-import { registerView, render } from '../core/router.js';
+import { registerView, render, pane } from '../core/router.js';
 import { matchLabel, applyInstalled, refreshInstalledIndex } from '../core/installed.js';
 import { catName, catIcon } from '../core/categories.js';
 import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec } from '../core/records.js';
@@ -27,7 +27,7 @@ import { paint } from '../ui/transitions.js';
 import { bindContextMenu } from '../ui/menu.js';
 import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
 
-const viewRoot = $('#view-root');
+const viewRoot = pane('library');
 
 // This screen's own state, moved off the shared store now that it has a module to sit in.
 const librarySel = new Set();  // ids of rows ticked for bulk actions ("m:<pack>:<member>" for members)

@@ -119,6 +119,10 @@ img, video { -webkit-user-drag: none; user-select: none; }
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* Each screen keeps its own element and only the open one is shown - see core/router.js.
+   Spelled out rather than left to the browser's default so a later display rule on this
+   class cannot quietly put every screen on the page at once. */
+.view-pane[hidden] { display: block; content-visibility: hidden; }
 
 /* ============ Text roles ============
    A size and a colour together, so a template never has to name either. These replaced 59

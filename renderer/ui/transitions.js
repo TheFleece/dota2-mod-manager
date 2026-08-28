@@ -21,10 +21,18 @@ const stillness = window.matchMedia('(prefers-reduced-motion: reduce)');
 // The router says a screen change is coming; the next paint spends it.
 let running = 0;
 let armed = false;
+// Screens keep their own element now, so somebody has to put the new one on screen. Doing
+// it at switch time would show an empty screen for as long as the fetch takes, so it rides
+// along with the paint instead and lands in the same frame as the markup.
+let swap = null;
 
-/** Called by the router when the user asked for a different screen. */
-export function screenChanging() {
+/**
+ * Called by the router when the user asked for a different screen.
+ * @param {() => void} [showPane] swap the visible screen; runs first, inside the transition
+ */
+export function screenChanging(showPane) {
   armed = true;
+  swap = showPane || null;
 }
 
 /**
@@ -42,14 +50,17 @@ export function screenChanging() {
  */
 export function paint(update) {
   const wanted = armed;
+  const showPane = swap;
   armed = false;
-  if (!wanted || !supported || stillness.matches) { update(); return Promise.resolve(); }
+  swap = null;
+  const run = () => { if (showPane) showPane(); update(); };
+  if (!wanted || !supported || stillness.matches) { run(); return Promise.resolve(); }
   // Counted, not a plain flag: starting a transition abandons any transition still running,
   // and that one's cleanup would otherwise strip the class off the transition replacing it -
   // which is exactly what happens when somebody clicks two tabs in a row.
   running++;
   document.documentElement.classList.add('vt-screen');
-  const vt = document.startViewTransition(update);
+  const vt = document.startViewTransition(run);
   // an abandoned transition rejects; that is a normal end here, not a fault to report
   vt.finished.catch(() => {}).finally(() => {
     if (--running === 0) document.documentElement.classList.remove('vt-screen');
