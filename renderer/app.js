@@ -14,7 +14,7 @@
 import { $ } from './core/dom.js';
 import { COSMETIC_PREFIX } from './core/constants.js';
 import { esc, fmtMB } from './ui/format.js';
-import { showWhatsNew, confirmDialog } from './ui/dialog.js';
+import { showWhatsNew, confirmDialog, safeModeDialog } from './ui/dialog.js';
 import { state } from './core/store.js';
 import { toast } from './ui/toast.js';
 import { render, switchView } from './core/router.js';
@@ -130,18 +130,14 @@ $('#safeModeBtn')?.addEventListener('click', async () => {
   const btn = $('#safeModeBtn');
   const turningUnsafe = !state.settings?.schemaPatch === true; // currently safe -> about to turn it off
   if (turningUnsafe) {
-    const ok = await confirmDialog(
-      L`Приложение впишет свою папку в gameinfo_branchspecific.gi и пересчитает подпись этого файла в dota.signatures — так Dota сможет читать эффекты модов и бесплатную косметику. Оригиналы сохраняются, обратное переключение возвращает их byte-в-byte.`,
-      { okLabel: L`Выключить`, danger: false }
-    );
-    if (!ok) return;
+    if (!await safeModeDialog()) return;
   }
   btn.disabled = true;
   const r = await window.api.patch.setEnabled(turningUnsafe);
   btn.disabled = false;
   if (r.error) { toast(r.error, 'error'); return; }
   state.settings = { ...state.settings, schemaPatch: turningUnsafe };
-  toast(turningUnsafe ? L`Безопасный режим выключен — эффекты и косметика доступны` : L`Безопасный режим включён, файлы игры восстановлены`);
+  toast(turningUnsafe ? L`Безопасный режим выключен — эффекты и косметика доступны` : L`Безопасный режим включён, файлы игры восстановлены. Эффекты и косметика ждут, пока не выключишь его снова.`);
   await Promise.all([refreshCosmeticSlots(), refreshPatchState()]);
   if (state.view === 'catalog') {
     // the cosmetics rail section just appeared or disappeared — bail out of a category

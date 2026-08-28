@@ -85,10 +85,29 @@ const EN = {
   'Безопасно:': 'Safe:',
   'Безопасный режим: моды из патча (эффекты, косметика) скрыты и не работают. Выключи, чтобы их включить — приложение впишет свою папку в файлы игры.':
     'Safe mode: patch-only mods (effects, cosmetics) are hidden and inactive. Turn it off to enable them — the app will register its folder in the game files.',
-  'Приложение впишет свою папку в gameinfo_branchspecific.gi и пересчитает подпись этого файла в dota.signatures — так Dota сможет читать эффекты модов и бесплатную косметику. Оригиналы сохраняются, обратное переключение возвращает их byte-в-byte.':
-    'The app will register its folder in gameinfo_branchspecific.gi and recompute that file\'s signature in dota.signatures — that lets Dota read mod effects and free cosmetics. Originals are backed up; switching back restores them byte for byte.',
+  // the dialog that asks before the app is let into the game's files (renderer/ui/dialog.js)
+  'Выключить безопасный режим': 'Turn safe mode off',
+  'Оставить безопасный режим': 'Keep safe mode',
+  'Сейчас': 'Now',
+  'После': 'After',
+  'Безопасный режим': 'Safe mode',
+  'Приложение кладёт свои .vpk в папку, которую Dota и так читает. Файлы игры оно не открывает и не меняет.':
+    'The app drops its .vpk files into a folder Dota already reads. It leaves the game\'s own files alone.',
+  'Приложение начнёт менять файлы игры': 'The app starts changing game files',
+  'Оно впишет свою папку с модами в два файла Dota:': 'It writes its mods folder into two of Dota\'s files:',
+  '+ строка с папкой модов': '+ a line naming the mods folder',
+  '+ подпись изменённого файла': '+ a signature for the file above',
+  'Оригиналы приложение сохраняет до первой правки. Вернёшь безопасный режим, и они встанут на место байт в байт, без следов.':
+    'The app saves a copy of each before the first edit. Switch safe mode back on and both return byte for byte, with nothing left behind.',
+  'Дота стирает эту правку каждым обновлением. Приложение впишет её заново само, пока безопасный режим выключен.':
+    'Dota wipes the edit with every update. The app writes it back on its own for as long as safe mode is off.',
+  'Взамен заработают моды с эффектами, а в каталоге откроется бесплатная косметика: погода, ландшафт, курьеры, варды и ещё десяток слотов.':
+    'In return, mods with effects start working and free cosmetics open up in the catalog: weather, terrain, couriers, wards and a dozen more slots.',
+  'Правку файлов игры в моддинге Dota считают небезопасной. За 8+ лет мы не знаем ни одного бана за это. Гарантий всё равно не даём.':
+    'Dota modders count editing game files as unsafe. In 8+ years we know of no ban for it. We still give no guarantees.',
   'Безопасный режим выключен — эффекты и косметика доступны': 'Safe mode off — effects and cosmetics are available',
-  'Безопасный режим включён, файлы игры восстановлены': 'Safe mode on, game files restored',
+  'Безопасный режим включён, файлы игры восстановлены. Эффекты и косметика ждут, пока не выключишь его снова.':
+    'Safe mode on, game files restored. Effects and cosmetics wait until you turn it off again.',
 
   // ---------- item schema: catalog cards, library tag, conflict banners ----------
   'Моды спорят за один предмет': 'Mods disagree about the same item',

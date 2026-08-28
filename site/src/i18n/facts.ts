@@ -168,7 +168,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
       {
         k: 'p',
-        t: 'Nobody honest promises anything here. What can be said precisely: Valve has never published a rule that names cosmetic mods; VAC looks for code injected into the running game rather than files sitting in a folder; people have been installing these for ten years. That is every argument there is, and none of them is a guarantee. The app never touches your account, and the risk is yours. <a href="~/docs/safe/#ban">The long answer</a>.',
+        t: 'Nobody honest promises anything here. What can be said precisely: Valve has never published a rule that names cosmetic mods; VAC looks for code injected into the running game rather than files sitting in a folder; people have been installing these for over eight years. That is every argument there is, and none of them is a guarantee. The app never touches your account, and the risk is yours. <a href="~/docs/safe/#ban">The long answer</a>.',
       },
 
       { k: 'h2', t: 'Links', id: 'links' },
@@ -318,7 +318,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Забанят ли', id: 'ban' },
       {
         k: 'p',
-        t: 'Гарантий тут честно не даёт никто. Что можно сказать точно: Valve никогда не публиковала правила, которое называет косметические моды; VAC ищет код, внедрённый в процесс игры, а не файлы, лежащие в папке; такие моды ставят десять лет. Это все доводы, какие есть, и гарантией они не являются. Программа не касается твоего аккаунта, риск твой. <a href="~/docs/safe/#ban">Развёрнутый ответ</a>.',
+        t: 'Гарантий тут честно не даёт никто. Что можно сказать точно: Valve никогда не публиковала правила, которое называет косметические моды; VAC ищет код, внедрённый в процесс игры, а не файлы, лежащие в папке; такие моды ставят больше восьми лет. Это все доводы, какие есть, и гарантией они не являются. Программа не касается твоего аккаунта, риск твой. <a href="~/docs/safe/#ban">Развёрнутый ответ</a>.',
       },
 
       { k: 'h2', t: 'Ссылки', id: 'links' },

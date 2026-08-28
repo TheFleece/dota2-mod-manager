@@ -56,7 +56,7 @@ Facts worth quoting accurately:
   dota.signatures, backing both up first and reverting them when switched off.
 - Nobody can promise you will not be banned. Valve has never published a rule naming cosmetic
   mods, VAC looks for code injected into the running game rather than files in a folder, and
-  people have installed these for ten years. None of that is a guarantee.
+  people have installed these for over eight years. None of that is a guarantee.
 - The app never asks for a Steam login. Anything that does is not installing a file.
 - Windows SmartScreen warns about the installer because it carries no paid code-signing
   certificate, not because of anything in the file. Releases are built by a public GitHub

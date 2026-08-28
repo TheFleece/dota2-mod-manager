@@ -368,7 +368,7 @@ const en: Record<CoreSlug, Doc> = {
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
       {
         k: 'p',
-        t: 'Nobody honest promises you anything here. Valve has never published a rule that names cosmetic mods, VAC looks for code injected into the game process rather than files sitting in the game folder, and people have run these mods for a decade. That is the evidence. It is not a guarantee, and you install them at your own risk, the same as every other Dota mod.',
+        t: 'Nobody honest promises you anything here. Valve has never published a rule that names cosmetic mods, VAC looks for code injected into the game process rather than files sitting in the game folder, and people have run these mods for over eight years. That is the evidence. It is not a guarantee, and you install them at your own risk, the same as every other Dota mod.',
       },
       {
         k: 'list',
@@ -864,7 +864,7 @@ const ru: Record<CoreSlug, Doc> = {
       { k: 'h2', t: 'Забанят ли за моды в Доте 2', id: 'ban' },
       {
         k: 'p',
-        t: 'Гарантий тут честно не даёт никто. Valve никогда не публиковала правила, которое называет косметические моды; VAC ищет код, внедрённый в процесс игры, а не файлы, лежащие в папке; люди ставят такие моды десять лет. Это все имеющиеся доводы. Гарантией они не являются, и ставишь ты их на свой страх и риск, как и любые другие моды для Доты.',
+        t: 'Гарантий тут честно не даёт никто. Valve никогда не публиковала правила, которое называет косметические моды; VAC ищет код, внедрённый в процесс игры, а не файлы, лежащие в папке; люди ставят такие моды больше восьми лет. Это все имеющиеся доводы. Гарантией они не являются, и ставишь ты их на свой страх и риск, как и любые другие моды для Доты.',
       },
       {
         k: 'list',
