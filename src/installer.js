@@ -25,7 +25,7 @@ const { ensureLangFolder } = require('./gamelang');
 const { openZip, safeJoin } = require('./safe-zip');
 const { validateGamePath } = require('./steam');
 const { FileTx } = require('./file-tx');
-const { RESERVED_PAKS, isMinifyFile } = require('./minify');
+const { RESERVED_PAKS, isMinifyFile, isMinifyPak } = require('./minify');
 const { downloadFile } = require('./net');
 const { t } = require('./i18n');
 
@@ -1547,8 +1547,10 @@ class Installer {
         const base = f.toLowerCase().replace(/\.off$/, '');
         if (isOfficialLangFile(base) || knownLang.has(base)) continue;
         // Minify's output, in a folder both apps share: listing it here would offer the user
-        // buttons to adopt, disable and delete another program's files
-        if (isMinifyFile(base)) continue;
+        // buttons to adopt, disable and delete another program's files. By slot for the three
+        // it reserves, and by the marker it packs into everything it builds, which covers a
+        // version that ever uses a different number.
+        if (isMinifyFile(base) || isMinifyPak(full)) continue;
         const part = base.match(/^(.*)_\d{3}\.vpk$/);
         if (part && indexed.has(part[1])) continue;
         out.push(this.vpkItem(full, f, f, true));
@@ -1559,7 +1561,13 @@ class Installer {
         for (const f of fs.readdirSync(mapsDir)) {
           if (!/\.vpk$/i.test(f)) continue;
           const rel = `maps/${f}`;
-          if (!knownLang.has(rel.toLowerCase().replace(/\.off$/, ''))) out.push(this.vpkItem(path.join(mapsDir, f), rel, rel, false));
+          if (knownLang.has(rel.toLowerCase().replace(/\.off$/, ''))) continue;
+          /* A terrain and a Minify map mod are the same file - maps/dota.vpk - so there is no
+           * slot to reserve here and nothing to tell them apart except the marker Minify packs
+           * into what it builds. A hand-installed terrain has no marker and stays listed: the
+           * user should be able to see and remove that one. */
+          if (isMinifyPak(path.join(mapsDir, f))) continue;
+          out.push(this.vpkItem(path.join(mapsDir, f), rel, rel, false));
         }
       }
     }

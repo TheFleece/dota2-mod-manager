@@ -224,3 +224,47 @@ test('reordering never drops a mod into a slot Minify writes', () => {
   }
   assert.equal(installer.freeSlotBelow(70, used), null, 'no free slot beats taking one of theirs');
 });
+
+test('a map mod Minify built is left alone; a hand-installed terrain is not', () => {
+  /* maps/dota.vpk is the one path with no slot to reserve: a terrain and a Minify map mod are
+   * the same file name. The only thing that can tell them apart is the marker Minify packs
+   * into everything it builds, and reading that convention needs no agreement from anybody.
+   *
+   * A terrain somebody installed by hand carries no marker at all, and it has to stay listed -
+   * the whole point of the foreign-file scan is that the user can see and remove it. Absence
+   * of a marker means unknown, never "not ours to touch". */
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-maps-'));
+  const maps = path.join(root, 'game', 'dota_russian', 'maps');
+  fs.mkdirSync(maps, { recursive: true });
+
+  const entry = (p, body) => {
+    const data = Buffer.from(body);
+    const norm = p.toLowerCase();
+    const slash = norm.lastIndexOf('/');
+    const file = slash === -1 ? norm : norm.slice(slash + 1);
+    const dot = file.lastIndexOf('.');
+    return {
+      ext: dot === -1 ? ' ' : file.slice(dot + 1),
+      folder: slash === -1 ? ' ' : norm.slice(0, slash),
+      name: dot === -1 ? file : file.slice(0, dot),
+      data,
+      preload: Buffer.alloc(0),
+      crc: crc32(data) >>> 0,
+    };
+  };
+
+  fs.writeFileSync(path.join(maps, 'dota.vpk'), vpk.buildVpk([
+    entry('minify_version.txt', '1.14'), entry('maps/dota.vmap_c', 'theirs'),
+  ]));
+  fs.writeFileSync(path.join(maps, 'other.vpk'), vpk.buildVpk([entry('maps/dota.vmap_c', 'somebody else')]));
+
+  const installer = new Installer({
+    userDataDir: root,
+    getGamePath: () => path.join(root, 'game'),
+    getLangSuffix: () => 'russian',
+  });
+  const foreign = installer.externalFiles([], { scanExtras: true }).map((f) => f.key);
+  assert.equal(foreign.includes('maps/dota.vpk'), false, 'Minify built this one');
+  assert.equal(foreign.includes('maps/other.vpk'), true, 'no marker means unknown, not untouchable');
+  fs.rmSync(root, { recursive: true, force: true });
+});

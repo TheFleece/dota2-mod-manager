@@ -27,6 +27,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { listVpkPathsFile } = require('./vpk');
 
 /** Its own locale, which is not a language Dota knows, and the real one it moved to. */
 const MINIFY_FOLDER = 'minify';
@@ -55,6 +56,30 @@ const RESERVED_PAKS = [65, 66, 67];
 function isMinifyFile(baseLower) {
   const m = String(baseLower).match(/^pak(\d{2})_(?:dir|\d{3})\.vpk(?:\.off|\.moff)?$/);
   return !!m && RESERVED_PAKS.includes(Number(m[1]));
+}
+
+/* How Minify marks its own work, and how it recognises it again.
+ *
+ * It packs metadata files into every VPK it builds and checks for them before deleting one
+ * (Minify/patch/vpk_utils.py, is_minify_pak). Reading the same marker is better than reasoning
+ * from slot numbers: a slot says where a file sits, the marker says who made it, and it is the
+ * only thing that can identify its maps/dota.vpk - a path with no number to reserve.
+ *
+ * Reading their convention rather than proposing one costs nothing and needs no agreement.
+ */
+const MINIFY_MARKERS = ['minify_mods.json', 'minify_vpk_mods.txt', 'minify_version.txt'];
+
+/**
+ * Was this VPK built by Minify? Reads the archive index only, never the content.
+ * @param {string} file  full path to a *_dir.vpk
+ */
+function isMinifyPak(file) {
+  try {
+    const names = listVpkPathsFile(file).map((n) => String(n).toLowerCase());
+    return MINIFY_MARKERS.some((m) => names.includes(m));
+  } catch {
+    return false; // unreadable, half-written, or not a VPK: not something to claim
+  }
 }
 
 /** Where Minify keeps the settings it publishes about itself. */
@@ -132,4 +157,4 @@ function readMinify({
   return { present, folder, mods, mounts, mounted, ourFolder, sharing, live, declared: !!declared };
 }
 
-module.exports = { readMinify, readConfig, configPath, isMinifyFile, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };
+module.exports = { readMinify, readConfig, configPath, isMinifyFile, isMinifyPak, MINIFY_MARKERS, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };
