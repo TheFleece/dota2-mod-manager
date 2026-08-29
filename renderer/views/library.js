@@ -701,6 +701,7 @@ function folderBannersHtml() {
         <div class="banner-body"><b>${L`В папке dota_${f.suffix} лежат ${f.modFiles} ${plural(f.modFiles, 'мод', 'мода', 'модов')}`}</b>${L`, которые игра не видит.`}</div>
         <button class="btn btn-sm btn-primary" data-move-from="${esc(f.suffix)}"><span class="ms">drive_file_move</span>${L`Перенести сюда`}</button>
       </div>`).join('')}
+    ${launchLangBannerHtml(s.gameLang?.launchLang)}
     ${minifyBannerHtml(s.minify)}
     ${libStuck.length ? `
       <div class="banner warn">
@@ -749,7 +750,28 @@ function patchBannerHtml() {
   return '';
 }
 
-export /* Minify is not a rival to warn about, it is a neighbour to be exact about.
+export /* A -language in Steam's launch options overrules everything this app does.
+ *
+ * While it is there Dota takes both language settings from it and mounts the folder it names,
+ * so the app can set the voice language all it likes and the game will read somewhere else.
+ * Other guides hand this parameter out freely - it is how the older mod installs worked - so
+ * a user arriving from one of them can have it set and no idea it matters.
+ *
+ * Worth saying even when its value happens to match ours: it takes the choice of text
+ * language away from the player, and it breaks the day either side changes.
+ */
+function launchLangBannerHtml(lang) {
+  if (!lang) return '';
+  return `
+    <div class="banner warn">
+      <span class="ms">warning</span>
+      <div class="banner-body">
+        <b>${L`В параметрах запуска Dota стоит -language ${lang}`}</b>${L`. Пока он там, игра берёт язык из него и монтирует папку dota_${lang}, что бы приложение ни настроило. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.`}
+      </div>
+    </div>`;
+}
+
+/* Minify is not a rival to warn about, it is a neighbour to be exact about.
  *
  * The two apps take different routes. This one sets Dota's own voice language to one of the
  * three that have a folder, and fills that folder - no launch parameters, no extra VPK.

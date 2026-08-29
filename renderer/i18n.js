@@ -533,6 +533,10 @@ const EN = {
     ', while mods are installed into dota_{0}. Close Dota and restart the manager: it switches the game over itself.',
   'В папке dota_{0} лежат {1} {2}': 'The dota_{0} folder holds {1} {2}',
   ', которые игра не видит.': ' the game cannot see.',
+  // a launch option that overrules everything the app sets
+  'В параметрах запуска Dota стоит -language {0}': 'Dota has -language {0} in its launch options',
+  '. Пока он там, игра берёт язык из него и монтирует папку dota_{0}, что бы приложение ни настроило. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.':
+    '. While it is there the game takes its language from it and mounts dota_{0}, whatever this app sets. Remove it: Steam → Dota 2 → Properties → Launch Options.',
   // living next to Minify: which of the two the game is reading, and how to get both
   'Рядом установлен Minify': 'Minify is installed alongside',
   'Dota монтирует ровно одну языковую папку, по языку озвучки из настроек игры.':

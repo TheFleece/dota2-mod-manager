@@ -1636,6 +1636,11 @@ function registerIpc() {
       // things to tell the user about, not things to ask them.
       gameLang: {
         mounted: lang.suffix,
+        /* A -language in Steam's launch options locks both language settings and decides the
+         * folder, so it overrules everything this app sets. Reported whatever its value,
+         * because even one that agrees with us today takes the choice of text language away
+         * from the player and breaks the moment either side changes. */
+        launchLang: lang.source === 'launch' ? lang.audio : null,
         folder: langFolder,
         /* Mods sitting in a folder the game does not mount - ours, left behind by a language
          * change. Never another tool's: the screen offers to move these into our folder, and
