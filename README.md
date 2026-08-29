@@ -76,12 +76,12 @@ uploaded from anybody's desktop, and you can read the build log for the file you
 
 The app follows the same installation mechanics as the Dota2PornFx guides:
 
-- Dota mounts the folder named after its **voice** language, so that folder is where mods have
-  to live. The app keeps the voices Russian and puts mods in `game/dota_russian`, which is why
-  it no longer asks you anything about languages. Mods stranded in another folder by an older
-  version are moved over on the first start
-- English voices are a switch in Settings. Turning it on takes Valve's own `pak01_dir.vpk` out
-  of the mounted folder and leaves every mod in place
+- Dota mounts one folder, named after its **voice** language, and that is where mods have to
+  live. The app sets that language in the game's own settings and puts mods in
+  `game/dota_russian`, so it never asks you anything about languages. Mods stranded in another
+  folder by an older version are moved over on the first start
+- **No launch option is involved**, which is the part worth reading twice. See
+  [the method](#the-method-no-launch-option) below
 - VPK mods go into `steamapps/common/dota 2 beta/game/dota_russian/` as `pakNN_dir.vpk`; the
   app assigns slots 10 to 99
 - Categories that have to load first (trees, river, shaders, hero fx, ranged attack, hero
@@ -98,6 +98,48 @@ The app follows the same installation mechanics as the Dota2PornFx guides:
 
 Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest in
 `manifest.json` next to it.
+
+## The method: no launch option
+
+Every guide for installing Dota mods today tells you to put `-language something` in Steam's
+launch options. That is the older way, and after Valve's update of 24 July 2026 it is the
+awkward one. This app does not use it, and here is why it does not have to.
+
+Dota records hero speech in **four** languages: English, Russian, Simplified Chinese, Korean.
+**Three** of them have a folder in the game directory - `dota_russian`, `dota_schinese`,
+`dota_koreana`. English has none, because English speech is what the base game already
+carries. Every other language Dota offers, Dutch and German and the rest, is text only: no
+recorded speech, so no folder.
+
+Two settings decide what happens, and they are not the same setting:
+
+- the language in Dota's **Steam properties** decides which voice pack is downloaded to your
+  disk. Steam keeps exactly one: choose Korean and it deletes the Russian pack and downloads
+  the Korean, gigabytes each way. English downloads nothing, because it is already there
+- the **audio language inside the game** decides which pack it plays. If that pack is not on
+  disk, it falls back to English
+
+Those three folders exist for everybody who has Dota, downloaded pack or not. So the app sets
+the audio language in the game to one of the three and installs there. For anybody whose Steam
+language is English, the pack was never downloaded: the folder mounts carrying nothing but
+mods, and the speech stays English because English is the fallback. Nothing about what you
+hear changes, and your text language stays whatever you set it to.
+
+The launch-option route reaches the same folder mechanism by a worse road. `-language dutch`
+mounts `dota_dutch`, but that folder does not exist until something creates it with a
+`gameinfo.gi` of its own; the argument locks both language settings while it is there, so
+getting English text back needs an archive of the English localization dropped into that
+folder; and a program that sets this up has to write into Steam's own configuration. Valve
+have already stopped mounting folders invented out of nothing - the languages with no speech
+of their own are the closest thing left to that, while the three with speech have to be
+mounted for the speech to play at all.
+
+If you have a `-language` in your launch options from an older guide, the app tells you: while
+it is there Dota takes both language settings from it and mounts the folder it names, whatever
+the app sets.
+
+The long version, with the questions people actually ask:
+[the language folder](https://dota2modmanager.com/docs/language/).
 
 ## Next to Minify
 
@@ -153,11 +195,13 @@ Windows скажет, что издатель неизвестен: устано
 [публичным workflow](https://github.com/TheFleece/dota2-mod-manager/actions), а не заливается
 с чьего-то компьютера, и лог сборки твоего файла можно открыть и прочитать.
 
-Приложение само держит озвучку русской и ставит моды в `game/dota_russian`, потому что игра
-монтирует только папку языка озвучки. Английские голоса включаются тумблером в Настройках, и
-моды при этом остаются на месте. Параметр `-language` после июльского апдейта Dota 2026 ставит
-язык в настройках игры, а не называет папку напрямую, поэтому выдуманное значение вроде
-`-language mods` больше ничего не монтирует.
+Приложение само ставит язык озвучки в настройках игры и кладёт моды в `game/dota_russian`,
+потому что игра монтирует одну папку - названную по языку озвучки. **Параметр запуска при этом
+не нужен вообще.** Голоса у англоязычных остаются английскими: русская озвучка у них не
+скачана, поэтому папка монтируется пустым носителем для модов, а речь берётся из самой игры.
+Четыре языка озвучки, три папки, почему английской папки нет и чем плох путь через
+`-language` - в разделе «The method: no launch option» выше и на странице
+[языковая папка](https://dota2modmanager.com/ru/docs/language/).
 
 Подробнее и по-человечески: [установка модов](https://dota2modmanager.com/ru/docs/install/),
 [что такое VPK и почему побеждает меньший номер pak](https://dota2modmanager.com/ru/docs/vpk/),

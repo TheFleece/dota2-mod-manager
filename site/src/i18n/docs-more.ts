@@ -310,6 +310,58 @@ const en: Record<Slug, Doc> = {
         t: 'The game starts mounting a different folder, and every mod you installed stays behind in the old one. Nothing is lost and nothing is broken; the game is simply looking somewhere else. The app can move your mods across when it notices, and by hand it is a matter of moving the pakNN files into the new folder.',
       },
 
+      { k: 'h2', t: 'Four voice languages, three folders', id: 'four' },
+      {
+        k: 'p',
+        t: 'Dota records hero speech in four languages: English, Russian, Simplified Chinese and Korean. Three of them have a folder in the game directory - <code>dota_russian</code>, <code>dota_schinese</code>, <code>dota_koreana</code> - and English does not, because English speech is what the base game already carries. Every other language Dota offers, Dutch and German and the rest, is text only. There is no recorded speech behind them, so Valve ships no folder for them either.',
+      },
+      {
+        k: 'p',
+        t: 'Those three folders are on the disk of everybody who has Dota installed, whether or not they ever downloaded the speech that goes in them. That is the detail the rest of this page turns on.',
+      },
+
+      { k: 'h2', t: 'The Steam language and the audio language are two settings', id: 'steam' },
+      {
+        k: 'p',
+        t: 'The language in the Steam properties of Dota decides which voice pack is on your disk. The audio language inside the game decides which one it plays. Different places, different jobs, and they do not have to agree.',
+      },
+      {
+        k: 'p',
+        t: 'Steam keeps exactly one pack. Pick Russian in the properties and it downloads Russian speech; pick Korean later and it deletes the Russian and downloads the Korean. Gigabytes each way, every time. English downloads nothing, because it is already in the base game, so switching the properties to English is how you delete whatever pack you had.',
+      },
+      {
+        k: 'p',
+        t: 'And if the game is told to play a pack that is not on disk, it falls back to English. Nothing is broken and nothing is missing: English is the floor everything else sits on.',
+      },
+
+      { k: 'h2', t: 'What this app does with that', id: 'method' },
+      {
+        k: 'p',
+        t: 'It sets the audio language inside the game to one of the three that have a folder, and puts mods in that folder. For anybody whose Steam language is English the pack was never downloaded, so the folder mounts carrying nothing but mods, and the speech stays English because that is the fallback. What you hear does not change. The text language stays whatever you chose.',
+      },
+      {
+        k: 'p',
+        t: 'No launch option, no folder made by hand, no extra archive to undo a side effect. It is the setting the game already has, doing the thing it does.',
+      },
+
+      { k: 'h2', t: 'Why the launch option is the worse route', id: 'why-not' },
+      {
+        k: 'p',
+        t: 'A real language still works as an argument: <code>-language dutch</code> sets the text to Dutch, leaves the speech English, and mounts <code>dota_dutch</code>. That is what the older guides teach and what some tools still do. Three things come with it.',
+      },
+      {
+        k: 'list',
+        items: [
+          'The folder does not exist. It has to be created, with a <code>gameinfo.gi</code> of its own copied from a real language folder.',
+          'Both language settings are locked while the argument is there. The menus inside the game cannot change them back, so getting English text again means putting an archive of the English localization into that folder.',
+          'A program setting this up has to write into the configuration files of Steam itself to put the argument there.',
+        ],
+      },
+      {
+        k: 'p',
+        t: 'There is also what Valve did in July. Folders invented out of nothing stopped mounting. The languages with no speech of their own are the closest thing left to an invented folder, while the three with speech have to be mounted for that speech to play at all. Preferring those three costs nothing and asks nothing of Steam.',
+      },
+
       { k: 'h2', t: 'Questions', id: 'faq' },
       {
         k: 'faq',
@@ -850,6 +902,58 @@ const ru: Record<Slug, Doc> = {
       {
         k: 'p',
         t: 'Игра начинает монтировать другую папку, а все поставленные моды остаются в старой. Ничего не пропало и не сломалось, игра просто смотрит в другое место. Программа умеет перенести моды, когда это замечает; руками это перенос файлов pakNN в новую папку.',
+      },
+
+      { k: 'h2', t: 'Четыре языка озвучки, три папки', id: 'four' },
+      {
+        k: 'p',
+        t: 'Реплики героев Дота записывает на четырёх языках: английский, русский, китайский и корейский. У трёх из них есть папка в каталоге игры - <code>dota_russian</code>, <code>dota_schinese</code>, <code>dota_koreana</code>. У английского её нет, потому что английская речь и так лежит в самой игре. Все остальные языки Доты, нидерландский, немецкий и прочие, это только текст: озвучки за ними нет, поэтому и папки Valve для них не кладёт.',
+      },
+      {
+        k: 'p',
+        t: 'Эти три папки есть на диске у каждого, у кого установлена Дота, независимо от того, качал он когда-нибудь эту озвучку или нет. На этой детали держится всё остальное на странице.',
+      },
+
+      { k: 'h2', t: 'Язык в Steam и язык озвучки в игре - две разные настройки', id: 'steam' },
+      {
+        k: 'p',
+        t: 'Язык в свойствах Доты в Steam решает, какая озвучка лежит у тебя на диске. Язык озвучки внутри игры решает, какую из них играть. Разные места, разные задачи, и совпадать они не обязаны.',
+      },
+      {
+        k: 'p',
+        t: 'Steam держит ровно одну озвучку. Выбрал русский в свойствах - скачалась русская речь; выбрал потом корейский - русская удалилась, скачалась корейская. И так гигабайты туда и обратно каждый раз. Английский не качает ничего, он и так в игре, поэтому переключение свойств на английский это способ удалить ту озвучку, которая у тебя была.',
+      },
+      {
+        k: 'p',
+        t: 'А если игре сказали играть озвучку, которой на диске нет, она откатывается на английскую. Ничего не сломано и ничего не пропало: английский это основа, поверх которой лежит всё остальное.',
+      },
+
+      { k: 'h2', t: 'Что с этим делает приложение', id: 'method' },
+      {
+        k: 'p',
+        t: 'Ставит язык озвучки внутри игры на один из трёх, у которых есть папка, и кладёт моды в эту папку. У того, у кого в Steam стоит английский, эта озвучка никогда не качалась, поэтому папка монтируется, не неся ничего кроме модов, а речь остаётся английской - это откат по умолчанию. На слух ничего не меняется. Язык текста остаётся тот, который ты выбрал.',
+      },
+      {
+        k: 'p',
+        t: 'Ни параметра запуска, ни папки, созданной руками, ни отдельного архива, чтобы отменить побочный эффект. Это собственная настройка игры, использованная по назначению.',
+      },
+
+      { k: 'h2', t: 'Почему параметр запуска - путь хуже', id: 'why-not' },
+      {
+        k: 'p',
+        t: 'Настоящий язык параметром работает: <code>-language dutch</code> ставит текст на нидерландский, речь оставляет английской и монтирует <code>dota_dutch</code>. Так учат старые гайды и так до сих пор делают некоторые инструменты. Вместе с этим приезжает три вещи.',
+      },
+      {
+        k: 'list',
+        items: [
+          'Папки не существует. Её надо создать и положить внутрь свой <code>gameinfo.gi</code>, скопированный из настоящей языковой папки.',
+          'Обе языковые настройки блокируются, пока параметр стоит. Меню внутри игры их обратно не поменяет, поэтому вернуть английский текст можно только положив в эту папку архив с английской локализацией.',
+          'Программе, которая всё это настраивает, приходится писать в конфигурационные файлы самого Steam.',
+        ],
+      },
+      {
+        k: 'p',
+        t: 'И ещё то, что Valve сделали в июле. Папки, выдуманные из ничего, монтироваться перестали. Языки без собственной озвучки - самое близкое к выдуманной папке, что осталось, а три языка с озвучкой игра обязана монтировать, иначе этой озвучке негде звучать. Держаться этих трёх ничего не стоит и ничего не просит у Steam.',
       },
 
       { k: 'h2', t: 'Вопросы', id: 'faq' },
