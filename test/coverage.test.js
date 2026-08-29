@@ -177,3 +177,50 @@ test('the pak slots Minify writes are never handed to one of our mods', () => {
     assert.equal(handed.includes(`pak${n}_dir.vpk`), true, `pak${n} should still be available`);
   }
 });
+
+test('the master switch and the foreign scan leave Minify alone', () => {
+  /* Both apps in one language folder is the arrangement this project recommends, so the two
+   * places that walk that folder rather than asking the library have to know whose files are
+   * whose. Without this, "mods off" renames another program's work out from under it, and its
+   * output shows up in My mods with buttons to adopt, disable and delete it. */
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-share-'));
+  const lang = path.join(root, 'game', 'dota_russian');
+  fs.mkdirSync(lang, { recursive: true });
+  const files = ['pak01_dir.vpk', 'gameinfo.gi', 'pak10_dir.vpk',
+    'pak65_dir.vpk', 'pak66_dir.vpk', 'pak66_000.vpk', 'pak67_dir.vpk'];
+  for (const f of files) fs.writeFileSync(path.join(lang, f), 'x');
+
+  const installer = new Installer({
+    userDataDir: root,
+    getGamePath: () => path.join(root, 'game'),
+    getLangSuffix: () => 'russian',
+  });
+
+  installer.setMasterEnabled(false);
+  const after = fs.readdirSync(lang).sort();
+  assert.ok(after.includes('pak10_dir.vpk.moff'), 'our own mod is what the switch turns off');
+  for (const f of ['pak65_dir.vpk', 'pak66_dir.vpk', 'pak66_000.vpk', 'pak67_dir.vpk']) {
+    assert.ok(after.includes(f), `${f} belongs to Minify and must not be renamed`);
+  }
+  assert.ok(after.includes('pak01_dir.vpk') && after.includes('gameinfo.gi'), 'the game keeps its own');
+
+  const foreign = installer.externalFiles([{ root: 'lang', relPath: 'pak10_dir.vpk' }], { scanExtras: false });
+  assert.deepEqual(foreign.map((f) => f.relPath), [], 'nothing of Minify is offered as a loose file');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('reordering never drops a mod into a slot Minify writes', () => {
+  const installer = new Installer({
+    userDataDir: fs.mkdtempSync(path.join(os.tmpdir(), 'mm-below-')),
+    getGamePath: () => null,
+    getLangSuffix: () => 'russian',
+  });
+  // everything below 70 taken except the three that are Minify's, on a machine where it is
+  // installed but has not patched yet - so the folder cannot tell us they are spoken for
+  const used = new Set();
+  for (let i = 2; i < 70; i++) {
+    if ([65, 66, 67].includes(i)) continue;
+    used.add(`pak${String(i).padStart(2, '0')}_dir.vpk`);
+  }
+  assert.equal(installer.freeSlotBelow(70, used), null, 'no free slot beats taking one of theirs');
+});

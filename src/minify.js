@@ -39,6 +39,24 @@ const MINIFY_BORROWED = 'dutch';
  * having to coordinate, so they are skipped whether or not Minify is installed today. */
 const RESERVED_PAKS = [65, 66, 67];
 
+/**
+ * Is this file in the language folder one of Minify's paks?
+ *
+ * Reserving the slots keeps us from writing over its work, which is only half the bargain.
+ * The other half is not touching what it wrote: the master switch sweeps the folder and
+ * renames every mod file in it, and the foreign-file scan offers the user everything in there
+ * that is not ours to adopt, disable or delete. Sharing one folder is the arrangement we tell
+ * people to make, so in that arrangement both of those would reach into another program.
+ *
+ * Matches the dir file and its data volumes: pak66_dir.vpk, pak66_000.vpk, and the same with
+ * an .off or .moff already on the end.
+ * @param {string} baseLower a file name, lowercased
+ */
+function isMinifyFile(baseLower) {
+  const m = String(baseLower).match(/^pak(\d{2})_(?:dir|\d{3})\.vpk(?:\.off|\.moff)?$/);
+  return !!m && RESERVED_PAKS.includes(Number(m[1]));
+}
+
 /** Where Minify keeps the settings it publishes about itself. */
 function configPath() {
   const local = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
@@ -114,4 +132,4 @@ function readMinify({
   return { present, folder, mods, mounts, mounted, ourFolder, sharing, live, declared: !!declared };
 }
 
-module.exports = { readMinify, readConfig, configPath, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };
+module.exports = { readMinify, readConfig, configPath, isMinifyFile, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };

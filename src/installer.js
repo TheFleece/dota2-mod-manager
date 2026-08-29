@@ -25,7 +25,7 @@ const { ensureLangFolder } = require('./gamelang');
 const { openZip, safeJoin } = require('./safe-zip');
 const { validateGamePath } = require('./steam');
 const { FileTx } = require('./file-tx');
-const { RESERVED_PAKS } = require('./minify');
+const { RESERVED_PAKS, isMinifyFile } = require('./minify');
 const { downloadFile } = require('./net');
 const { t } = require('./i18n');
 
@@ -255,8 +255,15 @@ class Installer {
 
   // Is this base name a mod pak the master switch may toggle? (i.e. not the game's own
   // localization / gameinfo). Accepts a lowercased name without .off/.moff suffix.
+  /* What the master switch is allowed to rename.
+   *
+   * Not the game's own files, and not Minify's: the switch sweeps the folder rather than
+   * asking the library, so in the arrangement we recommend - both apps sharing one language
+   * folder - "mods off" would rename pak65 to pak67 out from under it and Minify would find
+   * its own work missing. Ours are the only mods this switch has any business touching.
+   */
   isTogglableModFile(baseLower) {
-    return !isOfficialLangFile(baseLower);
+    return !isOfficialLangFile(baseLower) && !isMinifyFile(baseLower);
   }
 
   // true when the master switch is currently "off" (any .moff file present in lang root)
@@ -429,6 +436,10 @@ class Installer {
   // low range that the priority categories want
   freeSlotBelow(n, used) {
     for (let i = n - 1; i >= 2; i--) {
+      // `used` is read off the folder, so Minify's paks are already in it once it has run.
+      // Skipped by number as well, for the machine where it is installed but has not patched
+      // yet: taking 66 today means losing that mod the first time it does.
+      if (RESERVED_PAKS.includes(i)) continue;
       const base = `pak${String(i).padStart(2, '0')}`;
       if (!used.has(`${base}_dir.vpk`)) return base;
     }
@@ -1535,6 +1546,9 @@ class Installer {
         if (STAGED_RE.test(f)) continue; // a file a transaction parked; sweepStaged deals with those
         const base = f.toLowerCase().replace(/\.off$/, '');
         if (isOfficialLangFile(base) || knownLang.has(base)) continue;
+        // Minify's output, in a folder both apps share: listing it here would offer the user
+        // buttons to adopt, disable and delete another program's files
+        if (isMinifyFile(base)) continue;
         const part = base.match(/^(.*)_\d{3}\.vpk$/);
         if (part && indexed.has(part[1])) continue;
         out.push(this.vpkItem(full, f, f, true));
