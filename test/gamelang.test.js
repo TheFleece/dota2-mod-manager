@@ -221,3 +221,91 @@ test('creating a mod folder mirrors Valve and never overwrites an existing gamei
 // ---------- English voices with the mods left in place ----------
 // The mods live in dota_russian and stay there; what makes the speech Russian is Valve's own
 // voice pack inside that folder, so the switch moves the pack out of the mount and nothing else.
+
+/* A Steam root beside the fake game: accounts, their launch options, and who is logged in.
+ * `users` is [{ id32, launchOptions, timestamp, mostRecent }]. */
+function fakeSteam(game, users) {
+  const root = path.resolve(game, '..', '..', '..', '..');
+  fs.mkdirSync(path.join(root, 'config'), { recursive: true });
+  const blocks = users.map((u) => {
+    const id64 = (BigInt(u.id32) + 76561197960265728n).toString();
+    const recent = u.mostRecent ? `\n\t\t"MostRecent"\t\t"1"` : '';
+    return `\t"${id64}"\n\t{\n\t\t"Timestamp"\t\t"${u.timestamp || 1}"${recent}\n\t}`;
+  });
+  fs.writeFileSync(path.join(root, 'config', 'loginusers.vdf'), `"users"\n{\n${blocks.join('\n')}\n}\n`);
+  for (const u of users) {
+    const dir = path.join(root, 'userdata', String(u.id32), 'config');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'localconfig.vdf'),
+      `"UserLocalConfigStore"\n{\n\t"Software"\n\t{\n\t\t"Valve"\n\t\t{\n\t\t\t"Steam"\n\t\t\t{\n\t\t\t\t"apps"\n\t\t\t\t{\n\t\t\t\t\t"570"\n\t\t\t\t\t{\n\t\t\t\t\t\t"LaunchOptions"\t\t"${u.launchOptions || ''}"\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n`);
+  }
+  return root;
+}
+
+test('a -language launch option is what decides the folder, over anything the game wrote', (t) => {
+  // This is how Minify gets dota_dutch mounted: the parameter locks both language settings and
+  // the mount follows it, so reading boot.vcfg alone would name the wrong folder with total
+  // confidence - and the user would be told their mods are fine while the game reads elsewhere.
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  fakeSteam(game, [{ id32: 111, launchOptions: '-novid -language dutch', timestamp: 5 }]);
+  const got = gamelang.detectLangSuffix(game);
+  assert.equal(got.audio, 'dutch');
+  assert.equal(got.source, 'launch');
+  assert.equal(got.suffix, null, 'Dutch has no voice pack, so it is not one of the four');
+});
+
+test('the account that is logged in is the one whose launch options count', (t) => {
+  // Several accounts on one machine is normal, and the others are not ours to read: an option
+  // belonging to a sibling account would move mods for somebody who never set it.
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  fakeSteam(game, [
+    { id32: 111, launchOptions: '-novid -console', timestamp: 900 },  // logged in, no language
+    { id32: 222, launchOptions: '-language dutch', timestamp: 100 },
+  ]);
+  assert.equal(gamelang.launchLanguage(game), null);
+  assert.equal(gamelang.detectLangSuffix(game).audio, 'russian');
+});
+
+test('MostRecent wins over the newest timestamp when Steam writes it', (t) => {
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  fakeSteam(game, [
+    { id32: 111, launchOptions: '-language koreana', timestamp: 900 },
+    { id32: 222, launchOptions: '-language schinese', timestamp: 1, mostRecent: true },
+  ]);
+  assert.equal(gamelang.launchLanguage(game), 'schinese');
+});
+
+test('with nobody identifiable, one shared answer is used and a disagreement is not', (t) => {
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  const root = fakeSteam(game, [
+    { id32: 111, launchOptions: '-language dutch', timestamp: 5 },
+    { id32: 222, launchOptions: '-language dutch', timestamp: 6 },
+  ]);
+  fs.rmSync(path.join(root, 'config', 'loginusers.vdf'), { force: true });
+  assert.equal(gamelang.launchLanguage(game), 'dutch');
+
+  const game2 = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  const root2 = fakeSteam(game2, [
+    { id32: 111, launchOptions: '-language dutch', timestamp: 5 },
+    { id32: 222, launchOptions: '-language koreana', timestamp: 6 },
+  ]);
+  fs.rmSync(path.join(root2, 'config', 'loginusers.vdf'), { force: true });
+  assert.equal(gamelang.launchLanguage(game2), null, 'two answers is not an answer');
+});
+
+test('no Steam layout at all is not an override', (t) => {
+  /* A game on a second drive has no userdata beside it, so the reader also looks where Steam
+   * installs by default - which on a developer's machine is a real Steam with real launch
+   * options. Pointed at an empty directory instead, or this passes by luck here and fails on
+   * somebody whose own Dota runs with -language set. */
+  const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-nosteam-'));
+  const saved = [process.env['ProgramFiles(x86)'], process.env.ProgramFiles];
+  process.env['ProgramFiles(x86)'] = empty;
+  process.env.ProgramFiles = empty;
+  t.after(() => {
+    [process.env['ProgramFiles(x86)'], process.env.ProgramFiles] = saved;
+    fs.rmSync(empty, { recursive: true, force: true });
+  });
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  assert.equal(gamelang.launchLanguage(game), null);
+});

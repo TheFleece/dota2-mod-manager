@@ -1,24 +1,24 @@
 /* Living next to Minify.
  *
- * The two apps get mods into the game by different routes, and the difference is the whole
- * story - so it is written down here rather than guessed at each time somebody looks.
+ * The two apps reach the game by different routes, and the routes are not equivalent. The
+ * rules underneath both are in src/gamelang.js, which is the one place they are written down.
  *
- * What this app does: Dota keeps a text language and a voice language in game/dota/cfg/
- * boot.vcfg, and gameinfo.gi builds its Game_Language search path out of the VOICE one
- * (measured with -condebug, see the vault). Three of Dota's languages have a voice folder of
- * their own, so the app sets the voice language to one of those three and fills that folder.
- * No launch parameters, no extra VPK, and nothing the game did not already support.
+ * This app: set the voice language in Dota's own settings to one of the three that have a
+ * folder, and fill that folder. The folders already exist on every install, English voices
+ * keep playing because the chosen voice pack was never downloaded, and the player still picks
+ * whatever text language they want.
  *
- * What Minify does: it writes `-language <locale>` into Steam's launch options
- * (Minify/core/steam.py, fix_launch_options) and fills the folder that names. Its own locale
- * is "minify" -> game/dota_minify, and for English it ships a fix built on Dutch.
+ * Minify: put `-language <locale>` in Steam's launch options (Minify/core/steam.py,
+ * fix_launch_options) and fill the folder that names. The folder does not exist until Minify
+ * creates it with a gameinfo.gi of its own; the parameter locks both language settings, so
+ * getting English text back needs the VPK of English localization it ships; and setting any
+ * of it up means writing into Steam's own config.
  *
- * The part that matters, and the part this file used to get wrong: since Dota's 2026-07-24
- * update the mounted folder comes from the game's own language setting and NOT from
- * -language, and the setting only takes a real Dota language. So dota_minify does not mount
- * at all any more - which is presumably why Minify v1.14rc6 moved to Dutch, "to mount the
- * VPKs properly". Dutch is a real language, so dota_dutch does mount, and that is the version
- * that can actually collide with us: one folder is mounted and it is either theirs or ours.
+ * Its own locale is "minify", which is not a language, and since the 2026-07-24 update the
+ * game mounts nothing by that name - which is why its newer releases moved to Dutch. Dutch is
+ * a language, so dota_dutch does mount, and that is the version that can hold the folder
+ * instead of us. The author knows all of this; the Dutch move and the English-fix VPK are the
+ * answer to it, not an oversight to point out.
  *
  * None of which is a fight to win. It is a thing to be able to explain in a sentence, so
  * whoever is looking at a game with no mods in it knows why.

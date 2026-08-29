@@ -1,6 +1,6 @@
-// Living next to Minify. Both managers mount mods by naming a language folder, and Dota
-// mounts exactly one, so the only question worth answering is whose mods the game is going to
-// read. Getting that answer wrong in either direction is worse than saying nothing: telling
+// Living next to Minify. The two apps name a language folder by different means - Dota's own
+// setting here, a Steam launch option there - and Dota mounts exactly one, so the only
+// question worth answering is whose mods the game is going to read. Getting that answer wrong in either direction is worse than saying nothing: telling
 // somebody their mods are dark when they are fine sends them reinstalling over a working
 // setup, and the opposite leaves them staring at a game with no mods in it.
 const test = require('node:test');
@@ -72,8 +72,9 @@ test('the Dutch it moved to is a real language, and that one does mount', () => 
 });
 
 test("Minify's Dutch trick for English is recognised as its doing", () => {
-  // Since v1.14rc6 it sets Dutch and mounts dota_dutch, which is the same move we make with
-  // Russian: Valve ships no English folder, so both of us borrow one.
+  // Not the same move this app makes. It sets Dutch through a Steam launch option, which
+  // locks both language settings, creates a folder that did not exist, and needs a VPK of
+  // English localization to give the text back. See src/gamelang.js for the rules.
   const got = readMinify({
     folders: [folder('russian', 7, true), folder(MINIFY_BORROWED, 2)],
     audio: MINIFY_BORROWED,

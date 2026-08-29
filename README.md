@@ -102,26 +102,32 @@ Downloads live in `%APPDATA%/dota2-mod-manager/downloads`, the install manifest 
 ## Next to Minify
 
 [Dota2 Minify](https://github.com/Egezenn/dota2-minify) is a different kind of tool - it
-compiles mods rather than installing them from a catalog - and the two are meant to run side
-by side. They reach the game by different routes, and the difference is worth knowing.
+compiles mods where this installs them from a catalog - and the two are meant to run side by
+side. They put their work in front of the game by different routes, and the difference is
+worth writing down.
 
-Dota keeps a text language and a voice language in `boot.vcfg`, and builds its content search
-path out of the voice one. This app sets that voice language to one of the three Valve ships a
-folder for and fills that folder: no Steam launch parameters, no extra VPK, nothing the game
-did not already do on its own. Minify writes `-language <locale>` into Steam's launch options
-and fills the folder that names.
+Dota has four voice languages and three folders that mount: `dota_russian`, `dota_schinese`,
+`dota_koreana`. There is no English folder, because English is what the base game already
+carries - which is also why English is what you hear whenever the chosen voice pack is not on
+disk, and Steam only ever keeps one of those packs at a time.
 
-Since Dota's update of 24 July 2026 the mounted folder comes from the game's own setting
-rather than from `-language`, and that setting takes a real language - so a folder named after
-anything else is read by nothing. Minify's newer releases moved to Dutch for that reason, and
-Dutch is a language, so that folder does mount. Which means only one of us can be the mounted
-folder at a time, unless both point at the same one.
+**This app** sets the voice language in Dota's own settings to one of those three and fills
+that folder. The folders are already there on every install; somebody whose Steam language is
+English has no Russian voice pack, so the folder mounts as an empty carrier, their mods load
+out of it, and they go on hearing English. No launch parameters, no folder created by hand, no
+VPK to undo a side effect, and the text language stays theirs to choose.
 
-So this app:
+**Minify** puts `-language <locale>` in Steam's launch options and fills the folder that names.
+That parameter locks both language settings while it is set, so the English text has to be
+given back by a VPK it ships for the purpose, the folder has to be created with a `gameinfo.gi`
+of its own, and the app has to write into Steam's config to set it up.
 
-- reads the configuration Minify keeps, works out which of the two the game is actually set to
-  read, and says so on the My mods screen - including the case where its folder cannot be read
-  at all, which is not a conflict with anything
+Only one language folder is ever mounted, so the two can be pointed at the same one or at
+different ones. This app:
+
+- reads the configuration Minify keeps and works out which of the two the game is set to read,
+  then says so on the My mods screen - including the case where its folder is not one the game
+  reads at all, which is not a conflict with anything
 - leaves `pak65`, `pak66` and `pak67` alone. Minify's
   [ARCHITECTURE.md](https://github.com/Egezenn/dota2-minify/blob/main/ARCHITECTURE.md) reserves
   them for its merged, compiled and catalog output, so once both point at the same folder
@@ -129,7 +135,7 @@ So this app:
 - never moves, renames or deletes anything Minify owns, and copies none of its features
 
 Both projects are clients of the same catalog: Minify browses
-[Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) too.
+[Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) too, and links to it from its own page.
 
 ## Установка (Russian)
 

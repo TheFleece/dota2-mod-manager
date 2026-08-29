@@ -1,18 +1,42 @@
 /* Which dota_<lang> folder the game actually mounts.
  *
- * Dota's 2026-07-24 update split the language setting in two — "Language" (UI text) and
- * "Audio Language" (spoken) — and stores both in game/dota/cfg/boot.vcfg:
+ * This comment is the rule, not a summary of one. It has been re-derived from screenshots and
+ * from other people's code more than once and come out wrong every time, so it is written
+ * down here and in the vault (VPK Format, "единый источник правды"), and changed only by
+ * measurement.
+ *
+ * FOUR voice languages exist: English, Russian, Chinese, Korean. THREE of them have a folder
+ * that mounts: dota_russian, dota_schinese, dota_koreana. There is no English folder at all -
+ * English is what the base game already carries, so it is what plays whenever the chosen
+ * voice pack is not on disk.
+ *
+ * Dota keeps both settings in game/dota/cfg/boot.vcfg:
  *
  *   "boot" { "UILanguage" "russian"  "AudioLanguage" "russian" }
  *
- * The engine substitutes the AUDIO language into the Game_Language search path
- * (`dota_*LANGUAGE*` in dota/gameinfo.gi). That folder holds the localized voice paks —
- * which is why switching it asks for a restart, while switching UI text does not.
+ * and builds the Game_Language search path (dota_*LANGUAGE* in gameinfo.gi) out of the AUDIO
+ * one. Since the 2026-07-24 update that value has to be a real language: a made-up folder
+ * like dota_123 is mounted by nothing.
  *
- * Consequence for mods: a made-up folder like dota_123 no longer mounts, because the value
- * comes from the game's own settings instead of a free-form `-language` argument. Text is
- * unaffected either way: every language's strings live in dota/pak01 (resource/localization),
- * so `-language 123` used to fall back to English simply because no *_123.txt existed.
+ * Steam decides which voice pack is on disk, from the game's language in its properties, and
+ * it keeps exactly one: choosing Korean deletes the Russian pack and downloads the Korean.
+ * English is always there and downloads nothing.
+ *
+ * WHICH IS THE WHOLE TRICK THIS APP IS BUILT ON. Set the audio language to one of the three
+ * that have a folder, and put mods there. Somebody whose Steam language is English has no
+ * Russian voice pack, so dota_russian mounts as an empty carrier, their mods load out of it,
+ * and they keep hearing English because that is what the base game plays. No launch
+ * parameters, no folder invented by hand, no VPK to fix the text back, and the player is
+ * still free to set the text language to anything they like.
+ *
+ * The other route, for contrast (it is what Minify does, see src/minify.js): put
+ * `-language dutch` in Steam's launch options. Text becomes Dutch, voices fall back to
+ * English, dota_dutch mounts - but the folder does not exist until somebody creates it with a
+ * gameinfo.gi of its own, both language settings are locked while the parameter is there, so
+ * getting English text back needs a VPK carrying the English localization, and the app has to
+ * write into Steam's own config to set it up. Valve have already stopped mounting invented
+ * folders; the languages with no voice pack of their own are the ones that could go the same
+ * way, while these three cannot - the game has to mount them to play their voices.
  */
 const fs = require('fs');
 const path = require('path');
@@ -97,6 +121,75 @@ const readKey = (text, key) => {
   return m ? m[1].trim().toLowerCase() : null;
 };
 
+/* A `-language X` in Steam's launch options, which beats everything the game wrote itself.
+ *
+ * While it is set, both language settings are locked to it and the mount follows it - which is
+ * how Minify gets dota_dutch mounted. So a machine can be pointed at a folder that boot.vcfg
+ * knows nothing about, and reading only boot.vcfg would have this app confidently name the
+ * wrong folder.
+ *
+ * Steam keeps launch options per account, so the answer belongs to whoever is logged in: that
+ * account having none means there is no override, and another account's value is not ours to
+ * borrow. Which account that is comes from loginusers.vdf - MostRecent where the file has it,
+ * newest Timestamp where it does not (this Steam build writes only the latter).
+ */
+function currentSteamUser(root) {
+  let text = null;
+  try { text = fs.readFileSync(path.join(root, 'config', 'loginusers.vdf'), 'utf-8'); } catch { return null; }
+  let best = null;
+  for (const m of text.matchAll(/"(\d{17})"\s*\{([\s\S]*?)\n\t\}/g)) {
+    const mostRecent = (m[2].match(/"MostRecent"\s*"(\d)"/) || [])[1];
+    const stamp = Number((m[2].match(/"Timestamp"\s*"(\d+)"/) || [])[1] || 0);
+    const rank = mostRecent === '1' ? Infinity : stamp;
+    if (!best || rank > best.rank) best = { id: m[1], rank };
+  }
+  // userdata folders are the 32-bit account id
+  try { return best ? String(BigInt(best.id) - 76561197960265728n) : null; } catch { return null; }
+}
+
+function launchLanguage(gamePath) {
+  const roots = [];
+  if (gamePath) {
+    // <lib>/steamapps/common/dota 2 beta/game -> <lib>, which is the Steam root for a default install
+    roots.push(path.resolve(gamePath, '..', '..', '..', '..'));
+  }
+  if (process.platform === 'win32') {
+    for (const base of [process.env['ProgramFiles(x86)'], process.env.ProgramFiles]) {
+      if (base) roots.push(path.join(base, 'Steam'));
+    }
+  }
+  const optionsOf = (userdata, id) => {
+    let text = null;
+    try { text = fs.readFileSync(path.join(userdata, id, 'config', 'localconfig.vdf'), 'utf-8'); } catch { return null; }
+    // the launch options of app 570, wherever in the file its block sits
+    const app = text.match(/"570"\s*\{[\s\S]{0,4000}?"LaunchOptions"\s*"([^"]*)"/);
+    if (!app) return null;
+    const lang = app[1].match(/-language\s+([A-Za-z]+)/);
+    return lang ? lang[1].toLowerCase() : '';
+  };
+
+  for (const root of roots) {
+    const userdata = path.join(root, 'userdata');
+    let ids = [];
+    try { ids = fs.readdirSync(userdata).filter((d) => /^\d+$/.test(d)); } catch { continue; }
+    if (!ids.length) continue;
+
+    const current = currentSteamUser(root);
+    if (current && ids.includes(current)) {
+      const own = optionsOf(userdata, current);
+      return own || null; // '' means launch options exist and name no language
+    }
+    // nobody identifiable: a value every account that has one agrees on, or nothing
+    const values = new Set();
+    for (const id of ids) {
+      const v = optionsOf(userdata, id);
+      if (v) values.add(v);
+    }
+    return values.size === 1 ? [...values][0] : null;
+  }
+  return null;
+}
+
 /** UI + audio language the game wrote at its last boot, or null if it never ran. */
 function bootLanguages(gamePath) {
   if (!gamePath) return null;
@@ -165,7 +258,18 @@ function langFolders(gamePath) {
 function detectLangSuffix(gamePath) {
   const boot = bootLanguages(gamePath);
   const steam = steamLanguage(gamePath);
-  const audio = boot?.audio || steam || null;
+  // A launch option overrides and locks both settings, so it decides the folder no matter
+  // what the game last wrote for itself.
+  const launched = launchLanguage(gamePath);
+  const audio = launched || boot?.audio || steam || null;
+  if (launched) {
+    return {
+      suffix: VOICE_LANGUAGES.includes(launched) ? launched : null,
+      source: 'launch',
+      uiLanguage: boot?.ui || null,
+      audio,
+    };
+  }
   if (boot?.audio && VOICE_LANGUAGES.includes(boot.audio)) {
     return { suffix: boot.audio, source: 'boot', uiLanguage: boot.ui || null, audio };
   }
@@ -229,6 +333,7 @@ function ensureLangFolder(gamePath, suffix) {
 module.exports = {
   VOICE_LANGUAGES,
   DOTA_LANGUAGES,
+  launchLanguage,
   MOD_FOLDERS,
   FALLBACK_FOLDER,
   folderFor,
