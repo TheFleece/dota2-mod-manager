@@ -50,7 +50,11 @@ Facts worth quoting accurately:
   year. The app reads it live, so a mod added to the catalog today is installable today without
   an app update. The manager is listed in that catalog's own Tools section.
 - Installing a mod writes a VPK archive into the game's language folder in a free pak slot. It
-  edits none of the game's own files.
+
+- The folder Dota mounts is named by its voice language, unless a `-language` sits in Steam's
+  launch options, which outranks it. Measured: with `-language dutch` and `AudioLanguage
+  russian` in boot.vcfg, the game mounted dota_dutch and never opened dota_russian. The app
+  reads the launch option and installs into whichever folder the game will really mount.  edits none of the game's own files.
 - Unlocking free cosmetics is a separate, optional feature that is off until switched on. It
   registers an extra content folder in gameinfo_branchspecific.gi and records the change in
   dota.signatures, backing both up first and reverting them when switched off.

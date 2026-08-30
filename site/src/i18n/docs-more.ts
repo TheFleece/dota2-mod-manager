@@ -279,11 +279,25 @@ const en: Record<Slug, Doc> = {
       { k: 'h2', t: 'Why -language mods stopped working', id: 'dead' },
       {
         k: 'p',
-        t: 'The old trick relied on the argument being free-form. You passed <code>-language mods</code> or <code>-language tempcontent</code>, the engine put that word into the search path, and a folder appeared for you to hide mods in, away from the real language folders. Now the value comes from boot.vcfg instead, and a word Dota does not recognise as a voice language produces nothing. The folder is not created, not mounted, and the mods in it never load.',
+        t: 'The old trick relied on the argument being free-form. You passed <code>-language mods</code> or <code>-language tempcontent</code>, the engine put that word into the search path, and a folder appeared for you to hide mods in, away from the real language folders. Now a word Dota does not recognise as a language produces nothing. The folder is not created, not mounted, and the mods in it never load.',
       },
       {
         k: 'p',
         t: 'The argument still works and still sets the language. It just cannot invent a folder any more. Every guide still teaching that step is sending people to a directory the game will never open, which is the single most common reason a mod installed correctly does nothing.',
+      },
+
+      { k: 'h2', t: 'What a launch option does to all of this', id: 'launch' },
+      {
+        k: 'p',
+        t: 'A <code>-language</code> in Steam\'s launch options outranks the setting in boot.vcfg. Measured, not assumed: on a machine with <code>-language dutch</code> set and <code>AudioLanguage russian</code> written in boot.vcfg, the game mounted <code>dota_dutch</code> and never opened <code>dota_russian</code> at all. The console log lists what was mounted, and Russian did not appear in it.',
+      },
+      {
+        k: 'p',
+        t: 'So the order is: a <code>-language</code> naming a real Dota language wins outright; failing that, AudioLanguage from boot.vcfg decides; and a <code>-language</code> naming something Dota does not know decides nothing at all, because the engine mounts no folder for it. The parameter also locks both language settings while it is there, which is why the text language stops being changeable in game.',
+      },
+      {
+        k: 'note',
+        t: 'This is what other mod tools use: set a language nobody plays in, fill the folder it names, and hand back the English text as an archive. It works, and it is why a mod installed into the folder your voice language names can still do nothing. The app reads the launch option and installs into whatever folder the game is really going to mount.',
       },
 
       { k: 'h2', t: 'Finding your folder', id: 'find' },
@@ -291,8 +305,8 @@ const en: Record<Slug, Doc> = {
         k: 'steps',
         items: [
           ['Open the game folder', 'Steam, right-click Dota 2, Manage, Browse local files, then into <code>game</code>.'],
-          ['Look for the dota_ folders', 'You will see <code>dota</code> and one or more <code>dota_&lt;language&gt;</code>. The one being mounted matches AudioLanguage in boot.vcfg.'],
-          ['Check boot.vcfg if in doubt', 'It is a text file in <code>game/dota/cfg/</code>. Read AudioLanguage and that is your answer.'],
+          ['Check the launch options first', 'Steam, right-click Dota 2, Properties. A <code>-language something</code> there decides everything, and the folder is <code>dota_something</code>.'],
+          ['No launch option? Read boot.vcfg', 'A text file in <code>game/dota/cfg/</code>. AudioLanguage is your answer, and the folder is the one that matches it.'],
         ],
       },
       {
@@ -873,11 +887,25 @@ const ru: Record<Slug, Doc> = {
       { k: 'h2', t: 'Почему -language mods перестал работать', id: 'dead' },
       {
         k: 'p',
-        t: 'Старый трюк держался на том, что аргумент принимал что угодно. Ты писал <code>-language mods</code> или <code>-language tempcontent</code>, движок подставлял это слово в путь поиска, и появлялась папка, куда можно было спрятать моды подальше от настоящих языковых. Теперь значение берётся из boot.vcfg, а слово, которого Дота не знает как язык озвучки, не даёт ничего. Папка не создаётся, не монтируется, и моды в ней не грузятся.',
+        t: 'Старый трюк держался на том, что аргумент принимал что угодно. Ты писал <code>-language mods</code> или <code>-language tempcontent</code>, движок подставлял это слово в путь поиска, и появлялась папка, куда можно было спрятать моды подальше от настоящих языковых. Теперь слово, которого Дота не знает как язык, не даёт ничего. Папка не создаётся, не монтируется, и моды в ней не грузятся.',
       },
       {
         k: 'p',
         t: 'Аргумент работает и язык по-прежнему ставит. Он просто больше не выдумывает папку. Каждый гайд, который до сих пор учит этому шагу, отправляет людей в каталог, который игра никогда не откроет, и это самая частая причина, по которой правильно поставленный мод ничего не делает.',
+      },
+
+      { k: 'h2', t: 'Что со всем этим делает параметр запуска', id: 'launch' },
+      {
+        k: 'p',
+        t: '<code>-language</code> в параметрах запуска Steam стоит <b>выше</b> настройки в boot.vcfg. Это измерено, а не предположено: на машине с <code>-language dutch</code> и записанным в boot.vcfg <code>AudioLanguage russian</code> игра смонтировала <code>dota_dutch</code> и <code>dota_russian</code> не открыла вовсе. В консольном логе перечислено смонтированное, и русской папки там нет.',
+      },
+      {
+        k: 'p',
+        t: 'Порядок такой: <code>-language</code> с настоящим языком Доты побеждает всё; если его нет, решает AudioLanguage из boot.vcfg; а <code>-language</code> с выдуманным словом не решает ничего, потому что папку по нему движок не смонтирует. Ещё параметр блокирует обе языковые настройки, пока стоит, поэтому язык текста перестаёт меняться в самой игре.',
+      },
+      {
+        k: 'note',
+        t: 'Именно этим пользуются другие инструменты для модов: ставят язык, на котором никто не играет, наполняют названную им папку и возвращают английский текст отдельным архивом. Это работает, и поэтому мод, положенный в папку по языку твоей озвучки, всё равно может ничего не делать. Приложение читает параметр запуска и ставит моды в ту папку, которую игра действительно смонтирует.',
       },
 
       { k: 'h2', t: 'Как найти свою папку', id: 'find' },
@@ -885,8 +913,8 @@ const ru: Record<Slug, Doc> = {
         k: 'steps',
         items: [
           ['Открой папку игры', 'Steam, правой кнопкой по Dota 2, «Управление», «Просмотреть локальные файлы», дальше в <code>game</code>.'],
-          ['Посмотри на папки dota_', 'Там будет <code>dota</code> и одна или несколько <code>dota_&lt;язык&gt;</code>. Монтируется та, что совпадает с AudioLanguage в boot.vcfg.'],
-          ['Сомневаешься - открой boot.vcfg', 'Это текстовый файл в <code>game/dota/cfg/</code>. Читаешь AudioLanguage, и вот ответ.'],
+          ['Сначала посмотри параметры запуска', 'Steam, правой кнопкой по Dota 2, «Свойства». Если там есть <code>-language что-то</code>, решает он, и папка это <code>dota_что-то</code>.'],
+          ['Параметра нет - читай boot.vcfg', 'Текстовый файл в <code>game/dota/cfg/</code>. Ответ это AudioLanguage, и папка та, что совпадает с ним.'],
         ],
       },
       {

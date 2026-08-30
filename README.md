@@ -82,8 +82,12 @@ The app follows the same installation mechanics as the Dota2PornFx guides:
   folder by an older version are moved over on the first start
 - **No launch option is involved**, which is the part worth reading twice. See
   [the method](#the-method-no-launch-option) below
-- VPK mods go into `steamapps/common/dota 2 beta/game/dota_russian/` as `pakNN_dir.vpk`; the
-  app assigns slots 10 to 99
+- If something else has put a `-language` in Steam's launch options, that outranks the setting
+  in the game and the folder is the one it names. Measured: with `-language dutch` set and
+  `AudioLanguage russian` in boot.vcfg, Dota mounted `dota_dutch` and never opened
+  `dota_russian`. The app follows it rather than fighting it, which is also how it shares a
+  game with [Minify](#next-to-minify)
+- VPK mods go into the mounted folder as `pakNN_dir.vpk`; the app assigns slots 10 to 99
 - Categories that have to load first (trees, river, shaders, hero fx, ranged attack, hero
   items, optimization) get low slots `pak02` to `pak09`
 - Terrains ship a `maps/` folder, placed next to the paks

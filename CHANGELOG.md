@@ -2,6 +2,48 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.1
+
+### Mods now go where the game is actually looking
+
+A `-language` in Steam's launch options outranks the language setting inside Dota. The app did
+not know that, so on a machine with one set it did the worst possible thing: it wrote the voice
+language back on every start, lost every time, and left your mods in a folder the game never
+opens - while telling you everything was fine. Nothing was broken and nothing was lost; the
+mods were simply somewhere nothing reads.
+
+It follows the launch option now. If it names a language Dota knows, that folder is where mods
+go, and mods already installed move themselves there on the next start. Remove the option later
+and they move back on their own. Nothing changes for anyone without one.
+
+This is also what makes running alongside Minify work rather than merely be described: Minify
+is what puts the option there, so following it means both sets of mods end up in the one folder
+the game reads.
+
+### Everything the app said about Minify, corrected
+
+A machine running the current Minify showed three notices at once that contradicted each other
+and the game. All of it was wrong, and all of it is fixed.
+
+Minify records the language you asked it for and the folder it writes to separately - ask for
+English and it notes "english" while building into `dota_dutch` - and the app was reading the
+wrong one, so it named a folder that exists nowhere and concluded that neither program's mods
+were loading while Minify's plainly were. It also offered a button to move Minify's mods into
+its own folder, had no wording at all for "the game is reading neither of us", and suggested
+setting Minify to Russian, which for anyone whose game is not in Russian would have hardcoded
+it there.
+
+`pak99` joins `pak65` to `pak67` as slots the app will not use: that is where Minify writes its
+English fix, and 99 was the last slot this app hands out, so a large library would have reached
+it first.
+
+### Smaller things
+
+The Library no longer lists `dota_mods` - the app's own folder for free cosmetics - as if it
+were a language. A language folder that already exists is left as it is instead of being given
+a `gameinfo.gi` it never needed. And moving mods between folders skips anything another program
+owns, whichever folder it is pointed at.
+
 ## 2.6.0
 
 ### Turning safe mode off now explains itself
