@@ -140,6 +140,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
           '<b>It adopts what is already there.</b> Mods installed by hand or by another tool are recognised rather than trampled.',
           '<b>No account, no telemetry, no ads.</b> Signing in with Discord is optional and only puts your name on a setup you share.',
           '<b>It does not ask for your Steam login.</b> Nothing that installs a file into a folder needs your account. Anything that asks for it is doing something else.',
+          '<b>It runs next to Minify.</b> Not an alternative to it: Minify compiles mods where this installs them from a catalog, and the app is built to share a game with it - it stays out of the pak slots Minify writes, never touches its files, and says which of the two the game is reading. <a href="~/docs/compare/">The detail</a>.',
         ],
       },
 
@@ -290,6 +291,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
           '<b>Подхватывает то, что уже стоит.</b> Моды, поставленные руками или другой программой, узнаются, а не затираются.',
           '<b>Без аккаунта, без телеметрии, без рекламы.</b> Вход через Discord нужен только чтобы подписать своим ником сборку, которой делишься.',
           '<b>Не просит логин Steam.</b> Установке файла в папку твой аккаунт не нужен. Всё, что его просит, занимается чем-то другим.',
+          '<b>Работает рядом с Minify.</b> Это не альтернатива ему: Minify компилирует моды, а мы ставим их из каталога, и приложение сделано так, чтобы делить игру с ним - не занимает слоты паков, в которые он пишет, его файлы не трогает и говорит, чью папку читает игра. <a href="~/ru/docs/compare/">Подробности</a>.',
         ],
       },
 
