@@ -1919,6 +1919,11 @@ function registerIpc() {
 
     let slots = 0;
     try { slots = installer.usedModSlots(); } catch { /* no game path */ }
+    /* Leave a note on disk saying which files here are ours. This handler already reconciles
+     * the library against the folder and the renderer re-lists after every install, toggle,
+     * preset and bulk action, so it is the one place that keeps the note honest without
+     * hooking a dozen handlers - the same reason refreshPresence() sits here. */
+    try { installer.writeOwnership(library.knownLangRelPaths()); } catch (err) { diag(`ownership note skipped: ${err.message}`); }
     // the renderer re-lists after every install, toggle, preset and bulk action, so this is
     // the one place that keeps the Discord status honest without hooking a dozen handlers
     refreshPresence();

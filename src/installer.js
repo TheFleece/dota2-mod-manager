@@ -51,6 +51,23 @@ const CURSOR_SUBDIR = ['dota', 'resource', 'cursor'];
 // the two never clobber each other. Official localization (pak01_*) / gameinfo.gi are
 // never touched — turning mods off must not strip the game's own language files.
 const MASTER_OFF = '.moff';
+
+/* Which files in the language folder are ours, written where another program can read it.
+ *
+ * Minify marks its work by packing metadata into the VPKs it builds, and checks for that
+ * before deleting one. The same courtesy in the other direction cannot be done the same way:
+ * mods from the catalog are copied byte for byte and identified by a hash of their contents,
+ * and the project is building integrity guarantees on the file being exactly what the catalog
+ * published - sha256 on download, a signed catalog after that. Repacking every install to
+ * insert a marker is cheap enough (35ms against 15ms for a plain copy of a 46 MB mod, and the
+ * hash survives if marker names are left out of it), but it would end byte-identity, which is
+ * worth more than the convenience.
+ *
+ * So the marker is one file beside the mods instead of a marker inside each one. Anything
+ * reading it learns which files in the folder belong to this app, which is the question a
+ * second mod manager actually needs answered before it deletes anything.
+ */
+const OWNERSHIP_FILE = 'dota2modmanager.json';
 function isOfficialLangFile(baseLower) {
   return /^pak01_/.test(baseLower) || baseLower === 'gameinfo.gi';
 }
@@ -263,7 +280,7 @@ class Installer {
    * its own work missing. Ours are the only mods this switch has any business touching.
    */
   isTogglableModFile(baseLower) {
-    return !isOfficialLangFile(baseLower) && !isMinifyFile(baseLower);
+    return !isOfficialLangFile(baseLower) && !isMinifyFile(baseLower) && baseLower !== OWNERSHIP_FILE;
   }
 
   // true when the master switch is currently "off" (any .moff file present in lang root)
@@ -1154,6 +1171,43 @@ class Installer {
     return [{ root: 'lang', relPath: pakName }];
   }
 
+  /**
+   * Say on disk which files in the language folder are this app's.
+   *
+   * Rewritten from the library rather than appended to, so a mod removed outside the app
+   * drops out on the next write instead of lingering as a claim on a file we do not have.
+   * Never fails an operation: an unwritable game folder is a problem for installing, not for
+   * a note about installing.
+   * @param {string[]} relPaths every lang-root relPath the library holds
+   */
+  writeOwnership(relPaths) {
+    try {
+      const lang = this.langFolder();
+      if (!fs.existsSync(lang)) return;
+      const files = [...new Set((relPaths || []).map((r) => String(r).replace(/\\/g, '/')))].sort();
+      const body = {
+        app: 'Dota 2 Mod Manager',
+        url: 'https://dota2modmanager.com',
+        note: 'Files listed here were installed by this app. Anything else in this folder is not ours.',
+        updated: new Date().toISOString(),
+        files,
+      };
+      fs.writeFileSync(path.join(lang, OWNERSHIP_FILE), JSON.stringify(body, null, 2));
+    } catch { /* a note nobody can write is not worth failing an install over */ }
+  }
+
+  /** Whether this app installed the file at `relPath`, according to what is on disk. */
+  ownsFile(relPath) {
+    try {
+      const lang = this.langFolder();
+      const raw = JSON.parse(fs.readFileSync(path.join(lang, OWNERSHIP_FILE), 'utf-8'));
+      const want = String(relPath).replace(/\\/g, '/').toLowerCase();
+      return (raw.files || []).some((f) => String(f).toLowerCase() === want);
+    } catch {
+      return false;
+    }
+  }
+
   // A content-derived display name for a lang VPK (hero / set / kind), or null if the
   // content isn't recognisable — used to name imported files instead of a bare "pakNN".
   displayNameForFile(relPath) {
@@ -1546,6 +1600,7 @@ class Installer {
         if (STAGED_RE.test(f)) continue; // a file a transaction parked; sweepStaged deals with those
         const base = f.toLowerCase().replace(/\.off$/, '');
         if (isOfficialLangFile(base) || knownLang.has(base)) continue;
+        if (base === OWNERSHIP_FILE) continue; // our own note about which files are ours
         // Minify's output, in a folder both apps share: listing it here would offer the user
         // buttons to adopt, disable and delete another program's files. By slot for the three
         // it reserves, and by the marker it packs into everything it builds, which covers a
