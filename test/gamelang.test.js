@@ -10,6 +10,20 @@ const path = require('node:path');
 
 const gamelang = require('../src/gamelang.js');
 
+/* A game on a second drive keeps no userdata beside it, so launchLanguage() also looks where
+ * Steam installs by default - which on a developer's machine is a real Steam with real launch
+ * options. Every test here describes a whole machine, so for the length of this file that
+ * lookup is pointed at an empty directory. Without it the suite passes or fails depending on
+ * whether whoever is running it happens to have -language set in their own Dota. */
+const NO_STEAM = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-nosteam-'));
+const REAL_PF = [process.env['ProgramFiles(x86)'], process.env.ProgramFiles];
+process.env['ProgramFiles(x86)'] = NO_STEAM;
+process.env.ProgramFiles = NO_STEAM;
+process.on('exit', () => {
+  [process.env['ProgramFiles(x86)'], process.env.ProgramFiles] = REAL_PF;
+  try { fs.rmSync(NO_STEAM, { recursive: true, force: true }); } catch { /* going away anyway */ }
+});
+
 /** A throwaway ...\dota 2 beta\game tree. Returns the game path. */
 function fakeGame(t, { boot, steamLang, folders = {} } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-lang-'));
@@ -294,18 +308,6 @@ test('with nobody identifiable, one shared answer is used and a disagreement is 
 });
 
 test('no Steam layout at all is not an override', (t) => {
-  /* A game on a second drive has no userdata beside it, so the reader also looks where Steam
-   * installs by default - which on a developer's machine is a real Steam with real launch
-   * options. Pointed at an empty directory instead, or this passes by luck here and fails on
-   * somebody whose own Dota runs with -language set. */
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-nosteam-'));
-  const saved = [process.env['ProgramFiles(x86)'], process.env.ProgramFiles];
-  process.env['ProgramFiles(x86)'] = empty;
-  process.env.ProgramFiles = empty;
-  t.after(() => {
-    [process.env['ProgramFiles(x86)'], process.env.ProgramFiles] = saved;
-    fs.rmSync(empty, { recursive: true, force: true });
-  });
   const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
   assert.equal(gamelang.launchLanguage(game), null);
 });

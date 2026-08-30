@@ -99,10 +99,24 @@ function readConfig(file = configPath()) {
     const outputPath = typeof raw.output_path === 'string' ? raw.output_path : null;
     const locale = typeof raw.output_locale === 'string' ? raw.output_locale.toLowerCase() : null;
     if (!outputPath && !locale) return null;
-    return { outputPath, locale };
+    return { outputPath, locale, folder: folderOfPath(outputPath) };
   } catch {
     return null; // not installed, or a version that keeps its settings somewhere else
   }
+}
+
+/* The suffix of the folder a path ends in: ...\\game\\dota_dutch -> "dutch".
+ *
+ * This is the field that matters, and it is not output_locale. Asked for English, Minify
+ * records output_locale "english" - the language the player chose - while writing into
+ * dota_dutch, because Dutch is the folder it borrows to make English work. Reading the locale
+ * had this app announce a folder called dota_english, which exists nowhere.
+ */
+function folderOfPath(outputPath) {
+  if (!outputPath) return null;
+  const last = String(outputPath).replace(/[\\/]+$/, '').split(/[\\/]/).pop() || '';
+  const m = last.match(/^dota_(.+)$/i);
+  return m ? m[1].toLowerCase() : null;
 }
 
 /**
@@ -124,7 +138,8 @@ function readMinify({
   folders = [], audio = null, gameLanguages = [], ourFolder, ourMods = 0, config = readConfig(),
 }) {
   const at = (suffix) => folders.find((f) => f.suffix === suffix) || null;
-  const declared = config && config.locale ? config.locale : null;
+  // where it writes, which is the question - not the language the player asked it for
+  const declared = config ? (config.folder || folderOfPath(config.outputPath)) : null;
 
   /* Its own folder is proof by name. The borrowed one is proof only when it holds mods:
    * dota_dutch is a folder Valve ships voice for, so an empty one means somebody simply owns
@@ -157,4 +172,4 @@ function readMinify({
   return { present, folder, mods, mounts, mounted, ourFolder, sharing, live, declared: !!declared };
 }
 
-module.exports = { readMinify, readConfig, configPath, isMinifyFile, isMinifyPak, MINIFY_MARKERS, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };
+module.exports = { readMinify, readConfig, configPath, folderOfPath, isMinifyFile, isMinifyPak, MINIFY_MARKERS, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };

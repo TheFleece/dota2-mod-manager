@@ -167,3 +167,24 @@ test('the pak slots Minify writes are named, so ours can stay out of them', () =
 test('a config that is not there is not an answer', () => {
   assert.equal(readConfig('C:/no/such/minify_config.json'), null);
 });
+
+test('the folder it writes to is not the language the player asked it for', () => {
+  /* Asked for English, Minify records output_locale "english" - the player's choice - while
+   * writing into dota_dutch, which is the folder it borrows to make English work. Reading the
+   * locale had this app announce a folder called dota_english, which exists nowhere, and then
+   * conclude that neither program's mods were loading while Minify's plainly were. */
+  const got = read({
+    folders: [folder('russian', 13, true), folder(MINIFY_BORROWED, 2)],
+    audio: MINIFY_BORROWED,
+    gameLanguages: DOTA_LANGUAGES,
+    ourFolder: 'russian',
+    ourMods: 13,
+    config: {
+      outputPath: 'C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta\game\dota_dutch',
+      locale: 'english',
+    },
+  });
+  assert.equal(got.folder, MINIFY_BORROWED, 'the path says dutch; the locale says english');
+  assert.equal(got.mods, 2, 'and the mods are counted in the folder it really uses');
+  assert.equal(got.live, 'minify', 'that folder is the mounted one, so its mods are the live ones');
+});

@@ -40,7 +40,7 @@ const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport, renderSummary, renderDetailed } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
-const { readMinify, isMinifyPak } = require('./src/minify');
+const { readMinify, isMinifyPak, isMinifyFile } = require('./src/minify');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
@@ -1394,6 +1394,8 @@ function moveLangFolder(game, fromSuffix, toSuffix) {
     const newDir = gamelang.ensureLangFolder(game, toSuffix);
     for (const f of fs.readdirSync(oldDir)) {
       if (/^pak01_/i.test(f) || f.toLowerCase() === 'gameinfo.gi') continue;
+      // another program's work is not ours to relocate, whatever folder it is sitting in
+      if (isMinifyFile(f.toLowerCase()) || isMinifyPak(path.join(oldDir, f))) continue;
       const dst = path.join(newDir, f);
       if (fs.existsSync(dst)) continue;
       fs.renameSync(path.join(oldDir, f), dst);

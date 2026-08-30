@@ -231,7 +231,7 @@ function langFolders(gamePath) {
     const m = name.match(/^dota_(.+)$/i);
     if (!m) continue;
     const suffix = m[1].toLowerCase();
-    if (suffix === 'addons' || suffix === 'lv' || suffix === 'core') continue; // not language layers
+    if (['addons', 'lv', 'core', 'mods'].includes(suffix)) continue; // not language layers; dota_mods is ours
     let files = [];
     try { files = fs.readdirSync(path.join(gamePath, name)); } catch { /* unreadable */ }
     out.push({
