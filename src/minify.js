@@ -136,6 +136,7 @@ function folderOfPath(outputPath) {
  */
 function readMinify({
   folders = [], audio = null, gameLanguages = [], ourFolder, ourMods = 0, config = readConfig(),
+  countMods = null,
 }) {
   const at = (suffix) => folders.find((f) => f.suffix === suffix) || null;
   // where it writes, which is the question - not the language the player asked it for
@@ -148,7 +149,10 @@ function readMinify({
   const folder = declared
     || (at(MINIFY_FOLDER) ? MINIFY_FOLDER : (borrowed && borrowed.modFiles > 0 ? MINIFY_BORROWED : null));
   const present = !!folder;
-  const mods = folder ? (at(folder)?.modFiles || 0) : 0;
+  /* Its own files, not everything in the folder: once the two share one, the folder's total
+   * is both of ours. A caller that can look at the files passes a counter; without one the
+   * total is the only figure available, which is right while the folders are separate. */
+  const mods = folder ? (countMods ? countMods(folder) : (at(folder)?.modFiles || 0)) : 0;
 
   /* Whether the folder it fills is one Dota can be pointed at. Its default locale is not a
    * language, so on today's game that folder is never mounted and its mods do nothing - no

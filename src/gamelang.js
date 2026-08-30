@@ -79,6 +79,29 @@ const DOTA_LANGUAGES = [
 ];
 
 /**
+ * The folder the game is going to mount, which is where mods have to go.
+ *
+ * A `-language X` in Steam's launch options wins outright: it locks both language settings and
+ * the engine builds its content path from it, so a mod anywhere else is invisible no matter
+ * what this app writes into boot.vcfg. Fighting that was a fight this app lost every launch -
+ * it set the voice language back to Russian on every start while the parameter kept the game
+ * reading dota_dutch, and the user got a folder nobody reads.
+ *
+ * So it follows instead. The parameter has to name a language Dota knows, because that is the
+ * only kind of folder the engine mounts; anything else falls back to the voice language, which
+ * is the ordinary path and the one this app sets itself.
+ *
+ * @param {string|null} launched  a `-language` value, if one is set
+ * @param {string|null} audio     the voice language from the game's own settings
+ * @returns {{ suffix: string, followed: boolean }} the folder, and whether a parameter chose it
+ */
+function modFolderFor(launched, audio) {
+  const forced = launched ? String(launched).toLowerCase() : null;
+  if (forced && DOTA_LANGUAGES.includes(forced)) return { suffix: forced, followed: true };
+  return { suffix: folderFor(audio), followed: false };
+}
+
+/**
  * Where mods have to live for a given audio language.
  *
  * English has no folder of its own, so it borrows the Russian one. The folder mounts whether
@@ -324,15 +347,20 @@ function voiceInstalled(gamePath, suffix) {
  */
 function ensureLangFolder(gamePath, suffix) {
   const dir = path.join(gamePath, `dota_${suffix}`);
+  const existed = fs.existsSync(dir);
   fs.mkdirSync(dir, { recursive: true });
   const gi = path.join(dir, 'gameinfo.gi');
-  if (!fs.existsSync(gi)) fs.writeFileSync(gi, gameinfoStub(suffix));
+  /* Only into a folder we are creating. A folder that was already here belongs to whoever
+   * made it - another mod manager, or Valve - and it plainly works without anything from us,
+   * so adding a file to it would be littering in somebody else's room. */
+  if (!existed && !fs.existsSync(gi)) fs.writeFileSync(gi, gameinfoStub(suffix));
   return dir;
 }
 
 module.exports = {
   VOICE_LANGUAGES,
   DOTA_LANGUAGES,
+  modFolderFor,
   launchLanguage,
   MOD_FOLDERS,
   FALLBACK_FOLDER,

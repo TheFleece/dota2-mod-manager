@@ -541,6 +541,10 @@ const EN = {
   'Заменить': 'Replace',
   // a launch option that overrules everything the app sets
   'В параметрах запуска Dota стоит -language {0}': 'Dota has -language {0} in its launch options',
+  ', поэтому игра читает папку dota_{0} — туда приложение моды и ставит. Уберёшь параметр, и они переедут обратно сами.':
+    ', so the game reads dota_{0} and that is where the app installs. Remove the option and they move back on their own.',
+  '. Такого языка у Доты нет, папку по нему она не смонтирует, а язык текста он всё равно заберёт. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.':
+    '. Dota has no such language, so it will mount no folder for it, and it takes the text language anyway. Remove it: Steam → Dota 2 → Properties → Launch options.',
   '. Пока он там, игра берёт язык из него и монтирует папку dota_{0}, что бы приложение ни настроило. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.':
     '. While it is there the game takes its language from it and mounts dota_{0}, whatever this app sets. Remove it: Steam → Dota 2 → Properties → Launch Options.',
   // living next to Minify: which of the two the game is reading, and how to get both

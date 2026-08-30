@@ -1430,21 +1430,31 @@ function moveLangFolder(game, fromSuffix, toSuffix) {
 async function keepModFolder() {
   const game = settings.get('dotaGamePath');
   if (!game) return;
-  const mounted = gamelang.detectLangSuffix(game).suffix;
-  langFolder = gamelang.folderFor(mounted);
-  if (mounted !== langFolder) {
+  const lang = gamelang.detectLangSuffix(game);
+  const launched = gamelang.launchLanguage(game);
+  const chosen = gamelang.modFolderFor(launched, lang.suffix);
+  langFolder = chosen.suffix;
+
+  /* A launch option is not ours to overrule. While `-language X` is set the engine reads
+   * dota_X whatever boot.vcfg says, so the app follows it instead of setting the voice
+   * language back on every start and leaving mods in a folder nobody mounts. That is also the
+   * arrangement that lets this run alongside Minify: it puts the parameter there, and both
+   * sets of mods end up in the one folder the game reads. */
+  if (chosen.followed) {
+    diag(`launch option -language ${langFolder}: following it instead of setting the voice language`);
+  } else if (lang.suffix !== langFolder) {
     if (await dotaIsRunning()) {
-      diag(`audio language is ${mounted}, Dota is running - leaving boot.vcfg alone`);
+      diag(`audio language is ${lang.suffix}, Dota is running - leaving boot.vcfg alone`);
       return;
     }
     gamelang.writeBootLanguages(game, { audio: langFolder });
-    diag(`audio language ${mounted} -> ${langFolder}`);
+    diag(`audio language ${lang.suffix} -> ${langFolder}`);
   }
   gamelang.ensureLangFolder(game, langFolder);
   // whatever the mods were following before: our own last setting, and the folder the game
   // was mounting until a moment ago
   let moved = 0;
-  const from = new Set([settings.get('langSuffix'), mounted].filter((s) => s && s !== langFolder));
+  const from = new Set([settings.get('langSuffix'), lang.suffix].filter((s) => s && s !== langFolder));
   for (const old of from) moved += moveLangFolder(game, old, langFolder);
   if (moved) {
     langMigration = { from: [...from][0], to: langFolder, moved };
@@ -1617,10 +1627,27 @@ function registerIpc() {
     // Whose mods the game is actually going to read. Both managers name a language folder and
     // Dota mounts exactly one, so this is a question with a definite answer - see src/minify.js.
     const lang = game ? gamelang.detectLangSuffix(game) : { suffix: null, audio: null };
+    /* How many of the files in its folder are its own. Once both apps share one folder,
+     * counting everything there would report our mods as Minify's - and the answer has to be
+     * a fact about who wrote what, which is what the marker is for. */
+    const minifyModsIn = (suffix) => {
+      if (!suffix || !game) return 0;
+      try {
+        const dir = path.join(game, `dota_${suffix}`);
+        return fs.readdirSync(dir).filter((f) => {
+          const low = f.toLowerCase();
+          if (!/_dir\.vpk(\.off|\.moff)?$/.test(low)) return false;
+          return isMinifyFile(low) || isMinifyPak(path.join(dir, f));
+        }).length;
+      } catch {
+        return 0;
+      }
+    };
     const minify = readMinify({
       folders,
       audio: lang.audio,
       gameLanguages: gamelang.DOTA_LANGUAGES,
+      countMods: minifyModsIn,
       ourFolder: langFolder,
       ourMods: library.list().filter((r) => (r.files || []).some((f) => f.root === 'lang')).length,
     });

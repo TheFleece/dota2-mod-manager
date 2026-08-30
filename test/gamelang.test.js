@@ -311,3 +311,39 @@ test('no Steam layout at all is not an override', (t) => {
   const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
   assert.equal(gamelang.launchLanguage(game), null);
 });
+
+test('a launch option naming a real language decides the folder, and the app follows it', () => {
+  /* `-language X` locks both language settings and the engine builds its content path from it,
+   * so a mod anywhere else is invisible however the app sets boot.vcfg. The app used to set the
+   * voice language back on every start and lose every time: the user got a folder nobody
+   * mounts. Following it is also what lets this share a game with Minify, which is what puts
+   * the parameter there. */
+  assert.deepEqual(gamelang.modFolderFor('dutch', 'russian'), { suffix: 'dutch', followed: true });
+  assert.deepEqual(gamelang.modFolderFor('German', 'russian'), { suffix: 'german', followed: true });
+});
+
+test('without a launch option the voice language decides, as before', () => {
+  assert.deepEqual(gamelang.modFolderFor(null, 'russian'), { suffix: 'russian', followed: false });
+  assert.deepEqual(gamelang.modFolderFor(null, 'koreana'), { suffix: 'koreana', followed: false });
+  // English has no folder of its own and borrows the Russian one
+  assert.deepEqual(gamelang.modFolderFor(null, 'english'), { suffix: 'russian', followed: false });
+});
+
+test('a launch option Dota would not accept is not followed anywhere', () => {
+  // the engine mounts a folder only for a language it knows, so following "klingon" would put
+  // mods somewhere nothing reads - exactly the failure this is meant to end
+  assert.deepEqual(gamelang.modFolderFor('klingon', 'russian'), { suffix: 'russian', followed: false });
+  assert.deepEqual(gamelang.modFolderFor('minify', 'russian'), { suffix: 'russian', followed: false });
+});
+
+test('a language folder that already exists is not written into', (t) => {
+  // dota_dutch is Minify's doing and mounts perfectly well without anything from us; adding a
+  // gameinfo.gi to it would be littering in another program's room
+  const game = fakeGame(t, { folders: { dota_dutch: ['pak66_dir.vpk'] } });
+  gamelang.ensureLangFolder(game, 'dutch');
+  assert.equal(fs.existsSync(path.join(game, 'dota_dutch', 'gameinfo.gi')), false);
+
+  // one we create ourselves still gets the stub Valve's own folders carry
+  gamelang.ensureLangFolder(game, 'koreana');
+  assert.equal(fs.existsSync(path.join(game, 'dota_koreana', 'gameinfo.gi')), true);
+});

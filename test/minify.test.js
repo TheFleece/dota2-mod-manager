@@ -188,3 +188,20 @@ test('the folder it writes to is not the language the player asked it for', () =
   assert.equal(got.mods, 2, 'and the mods are counted in the folder it really uses');
   assert.equal(got.live, 'minify', 'that folder is the mounted one, so its mods are the live ones');
 });
+
+test('in a shared folder its mods are counted by who wrote them, not by what is there', () => {
+  // Once both apps use one folder, the folder's total is both of ours. Reporting that as
+  // Minify's would tell somebody their own fourteen mods belong to another program.
+  const got = read({
+    folders: [folder(MINIFY_BORROWED, 16)],   // 14 ours + 2 its own, all in one folder
+    audio: MINIFY_BORROWED,
+    gameLanguages: DOTA_LANGUAGES,
+    ourFolder: MINIFY_BORROWED,
+    ourMods: 14,
+    config: { outputPath: 'C:/x/game/dota_dutch', locale: 'english' },
+    countMods: () => 2,
+  });
+  assert.equal(got.mods, 2, 'only what Minify wrote');
+  assert.equal(got.sharing, true);
+  assert.equal(got.live, 'both');
+});

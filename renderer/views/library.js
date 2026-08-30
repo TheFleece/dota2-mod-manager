@@ -702,7 +702,7 @@ function folderBannersHtml(ourMods = 0) {
         <div class="banner-body"><b>${L`В папке dota_${f.suffix} лежат ${f.modFiles} ${plural(f.modFiles, 'мод', 'мода', 'модов')}`}</b>${L`, которые игра не видит.`}</div>
         <button class="btn btn-sm btn-primary" data-move-from="${esc(f.suffix)}"><span class="ms">drive_file_move</span>${L`Перенести сюда`}</button>
       </div>`).join('')}
-    ${launchLangBannerHtml(s.gameLang?.launchLang)}
+    ${launchLangBannerHtml(s.gameLang?.launchLang, s.gameLang?.folder)}
     ${minifyBannerHtml(s.minify, ourMods)}
     ${libStuck.length ? `
       <div class="banner warn">
@@ -761,13 +761,24 @@ export /* A -language in Steam's launch options overrules everything this app do
  * Worth saying even when its value happens to match ours: it takes the choice of text
  * language away from the player, and it breaks the day either side changes.
  */
-function launchLangBannerHtml(lang) {
+function launchLangBannerHtml(lang, ourFolder) {
   if (!lang) return '';
+  // followed: mods are already going where the game reads, so this is news rather than trouble
+  if (ourFolder && String(lang).toLowerCase() === String(ourFolder).toLowerCase()) {
+    return `
+      <div class="banner info">
+        <span class="ms">info</span>
+        <div class="banner-body">
+          <b>${L`В параметрах запуска Dota стоит -language ${lang}`}</b>${L`, поэтому игра читает папку dota_${lang} — туда приложение моды и ставит. Уберёшь параметр, и они переедут обратно сами.`}
+        </div>
+      </div>`;
+  }
+  // set to a language the engine will not mount a folder for, so it decides nothing
   return `
     <div class="banner warn">
       <span class="ms">warning</span>
       <div class="banner-body">
-        <b>${L`В параметрах запуска Dota стоит -language ${lang}`}</b>${L`. Пока он там, игра берёт язык из него и монтирует папку dota_${lang}, что бы приложение ни настроило. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.`}
+        <b>${L`В параметрах запуска Dota стоит -language ${lang}`}</b>${L`. Такого языка у Доты нет, папку по нему она не смонтирует, а язык текста он всё равно заберёт. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.`}
       </div>
     </div>`;
 }
