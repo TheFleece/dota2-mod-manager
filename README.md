@@ -170,10 +170,10 @@ different ones. This app:
 - reads the configuration Minify keeps and works out which of the two the game is set to read,
   then says so on the My mods screen - including the case where its folder is not one the game
   reads at all, which is not a conflict with anything
-- leaves `pak65`, `pak66` and `pak67` alone. Minify's
-  [ARCHITECTURE.md](https://github.com/Egezenn/dota2-minify/blob/main/ARCHITECTURE.md) reserves
-  them for its merged, compiled and catalog output, so mods from both can sit in one folder
-  without either writing over the other
+- leaves `pak65`, `pak66`, `pak67` and `pak99` alone. The first three are reserved in Minify's
+  [ARCHITECTURE.md](https://github.com/Egezenn/dota2-minify/blob/main/ARCHITECTURE.md) for its
+  merged, compiled and catalog output; the fourth is where its English fix is written. Mods
+  from both can sit in one folder without either writing over the other
 - never moves, renames or deletes anything Minify owns, and copies none of its features. Its
   files are recognised by the marker it packs into what it builds, and this app leaves a
   `dota2modmanager.json` naming its own, so either side can tell whose a file is

@@ -561,8 +561,8 @@ const EN = {
   '. Он собирает в dota_{0}, а {1} Папку с таким именем игра не читает — его моды сейчас не грузятся, и на наши это не влияет. В свежих версиях Minify это решено переходом на голландский.':
     '. It builds into dota_{0}, and {1} No folder by that name is read, so its mods are not loading and ours are unaffected. Newer Minify releases solved this by moving to Dutch.',
   'Minify рядом, и обе программы работают': 'Minify is here, and both are working',
-  ': моды в одной папке dota_{0}, слоты pak65-67 мы за ним не занимаем.':
-    ': the mods share dota_{0}, and we leave pak65-67 to it.',
+  ': моды в одной папке dota_{0}, а слоты pak65-67 и pak99, куда пишет он, мы не занимаем.':
+    ': the mods share dota_{0}, and the slots it writes - pak65-67 and pak99 - are left to it.',
   'Проверка файлов Steam вернула оригиналы игры': 'Steam’s file check put the game’s own files back',
   ': {0}. Архива для установки уже нет — скачать заново?':
     ': {0}. The archive they were installed from is no longer cached — download it again?',

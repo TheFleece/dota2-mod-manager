@@ -33,12 +33,19 @@ const { listVpkPathsFile } = require('./vpk');
 const MINIFY_FOLDER = 'minify';
 const MINIFY_BORROWED = 'dutch';
 
-/* The pak slots Minify writes, from its own ARCHITECTURE.md: 65 for merged VPK mods, 66 for
- * the ones it compiles, 67 for what its d2pfx browser installs. We hand out pak10 to pak99,
- * so without this we would eventually name a file it is going to write over - and the loser
- * is whichever of us wrote first. Three slots out of ninety is the whole price of never
- * having to coordinate, so they are skipped whether or not Minify is installed today. */
-const RESERVED_PAKS = [65, 66, 67];
+/* The pak slots Minify writes.
+ *
+ * 65 for merged VPK mods, 66 for the ones it compiles and 67 for what its d2pfx browser
+ * installs, all three from its own ARCHITECTURE.md. And 99 for the English fix, which its
+ * released source hardcodes: mods/#English Fix/script_after_patch.py writes pak99_dir.vpk.
+ * That one is not in the architecture document, and it is the pak sitting on the machine of
+ * anybody who asked Minify for English - which is most of the people who use it.
+ *
+ * We hand out pak10 to pak99, so without this we would eventually name a file it is going to
+ * write over, and the loser is whichever of us wrote first. Four slots out of ninety is the
+ * whole price of never having to coordinate, so they are skipped whether or not Minify is
+ * installed today: somebody who adds it next week should not find a mod quietly replaced. */
+const RESERVED_PAKS = [65, 66, 67, 99];
 
 /**
  * Is this file in the language folder one of Minify's paks?

@@ -160,8 +160,11 @@ test("Minify's own config beats anything guessed from folder names", (t) => {
 });
 
 test('the pak slots Minify writes are named, so ours can stay out of them', () => {
-  // From its own ARCHITECTURE.md: 65 merged, 66 compiled, 67 from its d2pfx browser.
-  assert.deepEqual(RESERVED_PAKS, [65, 66, 67]);
+  /* 65 merged, 66 compiled and 67 from its d2pfx browser, all from its ARCHITECTURE.md - plus
+   * 99, which that document does not mention and its released source hardcodes for the English
+   * fix (mods/#English Fix/script_after_patch.py). 99 is also the last slot this app hands out,
+   * so it is the one a heavy library reaches last and loses first. */
+  assert.deepEqual(RESERVED_PAKS, [65, 66, 67, 99]);
 });
 
 test('a config that is not there is not an answer', () => {

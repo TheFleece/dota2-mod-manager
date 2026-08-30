@@ -824,7 +824,7 @@ function minifyBannerHtml(m, ourMods = 0) {
       <div class="banner info">
         <span class="ms">handshake</span>
         <div class="banner-body">
-          <b>${L`Minify рядом, и обе программы работают`}</b>${L`: моды в одной папке dota_${m.mounted}, слоты pak65-67 мы за ним не занимаем.`}
+          <b>${L`Minify рядом, и обе программы работают`}</b>${L`: моды в одной папке dota_${m.mounted}, а слоты pak65-67 и pak99, куда пишет он, мы не занимаем.`}
         </div>
       </div>`;
   }

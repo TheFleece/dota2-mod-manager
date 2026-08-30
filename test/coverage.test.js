@@ -168,12 +168,12 @@ test('the pak slots Minify writes are never handed to one of our mods', () => {
   });
   const used = new Set();
   const handed = [];
-  for (let i = 0; i < 87; i++) handed.push(installer.allocatePak(used, false));
-  for (const n of [65, 66, 67]) {
+  for (let i = 0; i < 86; i++) handed.push(installer.allocatePak(used, false));
+  for (const n of [65, 66, 67, 99]) {
     assert.equal(handed.includes(`pak${n}_dir.vpk`), false, `pak${n} belongs to Minify`);
   }
   // and everything either side of them is still offered, so nothing else was lost
-  for (const n of [64, 68, 10, 99]) {
+  for (const n of [64, 68, 10, 98]) {
     assert.equal(handed.includes(`pak${n}_dir.vpk`), true, `pak${n} should still be available`);
   }
 });
@@ -219,7 +219,7 @@ test('reordering never drops a mod into a slot Minify writes', () => {
   // installed but has not patched yet - so the folder cannot tell us they are spoken for
   const used = new Set();
   for (let i = 2; i < 70; i++) {
-    if ([65, 66, 67].includes(i)) continue;
+    if ([65, 66, 67, 99].includes(i)) continue;
     used.add(`pak${String(i).padStart(2, '0')}_dir.vpk`);
   }
   assert.equal(installer.freeSlotBelow(70, used), null, 'no free slot beats taking one of theirs');
