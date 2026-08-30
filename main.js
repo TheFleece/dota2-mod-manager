@@ -40,7 +40,7 @@ const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const { buildReport, renderSummary, renderDetailed } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
-const { readMinify } = require('./src/minify');
+const { readMinify, isMinifyPak } = require('./src/minify');
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
@@ -2205,6 +2205,34 @@ function registerIpc() {
     }
     if (schemaTouched) schemaService.refresh();
     return { ok: true, changed, errors };
+  });
+
+  /* Who owns the map archive already sitting in the language folder.
+   *
+   * A terrain and a Minify map mod are the same file - maps/dota.vpk - because that is the
+   * name Dota reads. There is no slot to reserve and no way to keep both: installing one
+   * replaces the other. So the app asks this before it writes, and says whose work is about
+   * to go, rather than replacing it and letting the user find out in a match.
+   *
+   * Ours by the library, Minify's by the marker it packs into what it builds, and everything
+   * else unknown - a terrain installed by hand is somebody's too.
+   */
+  ipcMain.handle('mods:mapsOwner', () => {
+    try {
+      const dir = path.join(installer.langFolder(), 'maps');
+      if (!fs.existsSync(dir)) return { present: false };
+      const known = new Set(library.knownLangRelPaths().map((r) => String(r).replace(/\\/g, '/').toLowerCase()));
+      let unknown = null;
+      for (const f of fs.readdirSync(dir)) {
+        if (!/\.vpk$/i.test(f)) continue;
+        if (known.has(`maps/${f}`.toLowerCase())) continue;   // ours: replacing it is ordinary
+        if (isMinifyPak(path.join(dir, f))) return { present: true, owner: 'minify', file: f };
+        unknown = unknown || f;
+      }
+      return unknown ? { present: true, owner: 'unknown', file: unknown } : { present: false };
+    } catch {
+      return { present: false };
+    }
   });
 
   ipcMain.handle('mods:remove', (e, id) => {

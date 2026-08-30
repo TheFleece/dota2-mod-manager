@@ -1384,6 +1384,21 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview, { batch 
     if (!go) return { cancelled: true };
     dropFromQueue(k);
   }
+  /* Dota reads one map archive, so a terrain replaces whatever is there. Ours is ordinary
+   * housekeeping and passes without a word; another program's is not, and Minify puts its map
+   * mods in exactly that file. Asked before the download rather than reported after it. */
+  if (!batch && categoryId === 'terrains') {
+    const maps = await window.api.mods.mapsOwner().catch(() => ({ present: false }));
+    if (maps.present) {
+      const go = await confirmDialog(
+        maps.owner === 'minify'
+          ? L`В папке карт лежит мод Minify. Ландшафт займёт тот же файл и заменит его — Dota читает только один. Продолжить?`
+          : L`В папке карт уже лежит ландшафт, поставленный не через приложение. Он будет заменён — Dota читает только один файл карт. Продолжить?`,
+        { okLabel: L`Заменить`, danger: false },
+      );
+      if (!go) return { cancelled: true };
+    }
+  }
   installing.add(k);
   if (modalState) drawModal();
   const r = await window.api.mods.install({ categoryId, name: mod.name, styleLabel, fileRef, preview });

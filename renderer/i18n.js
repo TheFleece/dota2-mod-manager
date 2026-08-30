@@ -533,6 +533,12 @@ const EN = {
     ', while mods are installed into dota_{0}. Close Dota and restart the manager: it switches the game over itself.',
   'В папке dota_{0} лежат {1} {2}': 'The dota_{0} folder holds {1} {2}',
   ', которые игра не видит.': ' the game cannot see.',
+  // one map archive, so a terrain replaces whatever is already there
+  'В папке карт лежит мод Minify. Ландшафт займёт тот же файл и заменит его — Dota читает только один. Продолжить?':
+    'There is a Minify map mod in the maps folder. A terrain takes the same file and replaces it, because Dota reads only one. Continue?',
+  'В папке карт уже лежит ландшафт, поставленный не через приложение. Он будет заменён — Dota читает только один файл карт. Продолжить?':
+    'A terrain installed outside this app is already in the maps folder. It will be replaced, because Dota reads only one map archive. Continue?',
+  'Заменить': 'Replace',
   // a launch option that overrules everything the app sets
   'В параметрах запуска Dota стоит -language {0}': 'Dota has -language {0} in its launch options',
   '. Пока он там, игра берёт язык из него и монтирует папку dota_{0}, что бы приложение ни настроило. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.':
