@@ -2,6 +2,80 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.0
+
+### Turning safe mode off now explains itself
+
+It used to be one line of file names, and nobody read it. It is a proper window now: what the
+app does today - drops its .vpk into a folder Dota already reads, touching nothing of the game -
+and what it will do instead, with both files it edits named and what lands in each. Copies of
+both are kept before the first write, so switching back puts them back byte for byte with
+nothing left behind. Dota wipes that edit with every update and the app writes it back on its
+own, which the window now says too. And the sentence that actually decides it: editing game
+files counts as unsafe in Dota modding, no ban for it in 8+ years, no guarantees from us.
+
+### Switching tabs, and importing a pile of mods
+
+Opening a tab rebuilt the whole screen from nothing. Coming back to Heroes meant 513 cards
+built again and about 90ms of frozen window, every time. Screens are kept now: around 30ms, and
+it no longer grows with the size of the category. Each screen also remembers where it was
+scrolled to, instead of inheriting the last one's position.
+
+Importing a batch never let go of the app while it worked, so Windows put "not responding" on
+the title bar for the several minutes a big pack takes. It hands control back between mods now,
+and the bar counts them: "Reading mods 31 / 60" instead of one width until it is over.
+
+### Removing mods
+
+Deleting the file was never the slow part - it takes about two milliseconds. The wait was the
+item table being rebuilt afterwards, and a selection paid for it once per mod. It is rebuilt
+once for the whole batch now, and the rebuild itself went from 2.6 seconds to under half a
+second. Twenty mods removed in about six tenths of a second, where the same twenty were close
+to a minute.
+
+### Presets keep what you saved
+
+A preset used to hold the mods it named only as long as they stayed installed: delete one and
+it was cut out of every preset, and reinstalling did not bring it back. Presets now remember
+what a mod is rather than which copy of it was on the machine, so deleting one leaves the build
+alone and installing it again anywhere fills the gap on its own. The card says how many of its
+mods are not installed right now.
+
+Free cosmetics are no longer part of a preset. A pick is not a mod - it owns no file and only
+exists while safe mode is off - and folding the two together is why applying a build used to
+strip whatever courier or weather you had chosen.
+
+### Item pictures come from your own game
+
+The cosmetics picker used to match items against a wiki: rate limited, wrong when two items are
+named alike, and nothing at all offline. Almost every picture is already in the game in a form
+that needs no decoding, so it now comes from there - correct for your build, instantly, with
+nothing downloaded. The few that are stored compressed still fall back as before.
+
+### Alongside Minify
+
+[Minify](https://github.com/Egezenn/dota2-minify) loads mods the way this app does: by naming a
+language folder, of which Dota mounts exactly one. So the app now reads Minify's own
+configuration, works out which of the two the game is actually set to read, and says so -
+including the case where its folder is not one the game reads at all, which is nothing to do
+with us.
+
+It also stays out of its way: the pak slots Minify writes are never used, the "disable all
+mods" switch no longer renames its files, and its output is not offered in My mods as something
+to adopt or delete. Its files are recognised by the marker it packs into what it builds, and
+this app leaves a `dota2modmanager.json` naming its own, so either side can tell whose a file
+is. Nothing of Minify is moved, renamed or deleted.
+
+Where the two genuinely cannot both win, the app asks: Dota reads one map archive, so a terrain
+and a Minify map mod are the same file. Installing one replaces the other, and you now hear
+about it first.
+
+### A launch option that overrules everything
+
+Older guides hand out `-language something` freely. While it is there Dota takes both language
+settings from it and mounts the folder it names, whatever this app does. The Library says so
+now, and where to remove it.
+
 ## 2.5.1
 
 ### A skin that borrows from another hero comes in whole

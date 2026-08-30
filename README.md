@@ -172,9 +172,14 @@ different ones. This app:
   reads at all, which is not a conflict with anything
 - leaves `pak65`, `pak66` and `pak67` alone. Minify's
   [ARCHITECTURE.md](https://github.com/Egezenn/dota2-minify/blob/main/ARCHITECTURE.md) reserves
-  them for its merged, compiled and catalog output, so once both point at the same folder
-  neither writes over the other
-- never moves, renames or deletes anything Minify owns, and copies none of its features
+  them for its merged, compiled and catalog output, so mods from both can sit in one folder
+  without either writing over the other
+- never moves, renames or deletes anything Minify owns, and copies none of its features. Its
+  files are recognised by the marker it packs into what it builds, and this app leaves a
+  `dota2modmanager.json` naming its own, so either side can tell whose a file is
+- asks first where the two genuinely cannot both win: Dota reads one map archive, and a
+  terrain and a Minify map mod are the same `maps/dota.vpk`. Installing one replaces the
+  other, so the app says whose work is about to go instead of doing it quietly
 
 Both projects are clients of the same catalog: Minify browses
 [Dota2PornFx](https://github.com/h6rd/Dota2PornFxWeb) too, and links to it from its own page.
