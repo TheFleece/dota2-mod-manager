@@ -60,7 +60,14 @@ const { t } = i18n;
 const IS_PORTABLE = !!process.env.PORTABLE_EXECUTABLE_DIR;
 // The uninstaller runs the app once with this flag to ask what should go along with it, and
 // reads the exit code for the answer. See the uninstall block below and build/installer.nsh.
-const IS_UNINSTALL = process.argv.includes('--uninstall');
+/* Asked to put up the removal window - unless this is an update wearing the same clothes.
+ *
+ * An update runs the old uninstaller with --updated and /KEEP_APP_DATA, and the NSIS side
+ * already stops there. This is the second lock on the same door: it went wrong once, in front
+ * of everybody, and the failure mode is a person being asked whether to delete their mods
+ * while they are merely updating. Two cheap checks are worth more than one clever one. */
+const UNINSTALL_IS_UPDATE = process.argv.some((a) => /^(--updated|\/KEEP_APP_DATA|\/S)$/i.test(a));
+const IS_UNINSTALL = process.argv.includes('--uninstall') && !UNINSTALL_IS_UPDATE;
 if (IS_PORTABLE) {
   try {
     const beside = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'Dota 2 Mod Manager Data');

@@ -2,6 +2,25 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.2
+
+### Updating no longer asks whether to delete your mods
+
+2.6.1 shipped an uninstaller that asks what to take along with the app - the mods in the game
+folder, the app's own data. It was supposed to appear when somebody removes the program. It
+appeared during updates as well, with the boxes already ticked, because an update replaces a
+version by running the old uninstaller and nothing checked for that.
+
+Nothing was deleted unless the window was confirmed, and cancelling it left everything alone.
+But being asked to delete your mods while merely updating is not something anybody should have
+to read carefully, and I am sorry for the fright.
+
+Updates are silent again. The questions appear only when the program is being removed from
+Windows, and nothing destructive is ticked in advance any more: deleting mods and app data are
+now yours to choose, not the app's to assume. Putting the game's own files back stays on by
+default, because a game left carrying an edit with the app that undoes it gone is the one
+outcome that cannot be fixed afterwards.
+
 ## 2.6.1
 
 ### Mods now go where the game is actually looking

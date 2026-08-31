@@ -55,9 +55,13 @@ async function main() {
       note: L`Безопасный режим сейчас выключен. gameinfo и подписи вернутся байт в байт, без следов.`,
     });
   }
+  /* Off by default, both of them. Ticking "delete 276 MB of mods" for somebody is the app
+   * making a decision that is theirs, and it is the decision that cannot be undone. Putting
+   * the game back is different and stays on: a game left carrying our edit with the one
+   * program that can undo it now gone is the outcome nobody can fix afterwards. */
   opts.push({
     id: 'optMods',
-    checked: true,
+    checked: false,
     title: L`Удалить установленные моды`,
     note: plan.mods
       ? L`${plan.mods} шт., ${MB(plan.modBytes)} МБ в папке игры. Иначе останутся лежать там, и управлять ими будет нечем.`
@@ -65,7 +69,7 @@ async function main() {
   });
   opts.push({
     id: 'optData',
-    checked: true,
+    checked: false,
     title: L`Удалить данные приложения`,
     note: L`Настройки, библиотека, кэш картинок и скачанные инструменты — ${MB(plan.dataBytes)} МБ.`,
   });

@@ -32,6 +32,42 @@
 
 !macro customUnInit
   StrCpy $d2mmWipeData "0"
+
+  ; An update is an uninstall too, and it must ask nothing and remove nothing.
+  ;
+  ; electron-builder replaces a version by running the OLD uninstaller first:
+  ;
+  ;   old-uninstaller.exe /S /KEEP_APP_DATA --updated _?=<dir>
+  ;
+  ; (app-builder-lib/templates/nsis/include/installUtil.nsh, uninstallOldVersion). This macro
+  ; runs in un.onInit for every uninstall, update included, and without this guard a routine
+  ; update put the removal window on screen mid-install - with the boxes ticked. People
+  ; updating were being asked whether to delete their mods.
+  ;
+  ; ${Silent} cannot be the test: the one-click uninstaller turns silent mode on itself right
+  ; after the person confirms, so by the time this runs it is on either way. The flags above
+  ; are what tell the two apart, and --updated is the one that means it.
+  ; /S is in the list on its own account: it means "no interface", and a window asking
+  ; questions is an interface. It also arrives with every update. Windows' own uninstall entry
+  ; passes no arguments at all, which is exactly when the questions should be asked.
+  ClearErrors
+  ${GetParameters} $R8
+  ${GetOptions} $R8 "--updated" $R9
+  ${IfNot} ${Errors}
+    Goto d2mmNothingToAsk
+  ${EndIf}
+  ClearErrors
+  ${GetOptions} $R8 "/KEEP_APP_DATA" $R9
+  ${IfNot} ${Errors}
+    Goto d2mmNothingToAsk
+  ${EndIf}
+  ClearErrors
+  ${GetOptions} $R8 "/S" $R9
+  ${IfNot} ${Errors}
+    Goto d2mmNothingToAsk
+  ${EndIf}
+  ClearErrors
+
   IfFileExists "$INSTDIR\${APP_EXECUTABLE_FILENAME}" 0 d2mmNothingToAsk
     ExecWait '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" --uninstall' $0
     ${If} $0 == 3
