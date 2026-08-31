@@ -69,3 +69,24 @@ https://github.com/SteamDatabase/ValveResourceFormat
 
 The npm packages the build depends on carry their own licenses, listed in their
 own folders under node_modules and inside the installer.
+
+
+Fonts
+
+Three typefaces ship inside the app, under renderer/fonts. They used to be
+fetched from Google at every launch, which meant the interface arrived without
+them whenever that was slow, blocked or not reachable yet. They are copied
+unmodified from Google Fonts and remain under their own licenses:
+
+  Exo 2, by Natanael Gama - SIL Open Font License 1.1
+  https://fonts.google.com/specimen/Exo+2
+
+  Inter, by Rasmus Andersson - SIL Open Font License 1.1
+  https://fonts.google.com/specimen/Inter
+
+  Material Symbols Rounded, by Google - Apache License 2.0
+  https://fonts.google.com/icons
+
+Refresh them with tools/fonts.js, which reads the same stylesheets Google
+serves so the weights and character ranges stay the ones the app was built
+against.

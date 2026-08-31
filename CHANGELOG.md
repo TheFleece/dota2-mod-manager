@@ -2,6 +2,18 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.3
+
+### The interface no longer needs the internet to draw itself
+
+Every icon in the app is a glyph in a font, and that font was fetched from Google at startup
+along with the two typefaces. When it did not arrive - no connection yet, a slow or blocked
+network, a cache emptied by an update - each icon fell back to the word behind it, and the
+window filled up with `campaign`, `shield` and `play_arrow` where the pictures should be.
+
+The fonts now sit inside the app and are read from disk. Nothing about drawing the window
+touches the network any more, and the window's content policy no longer permits it to.
+
 ## 2.6.2
 
 ### Updating no longer asks whether to delete your mods
