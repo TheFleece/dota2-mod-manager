@@ -2,6 +2,48 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.4
+
+### Mods reach the folder the game reads again, if you run the new Minify
+
+Minify v1.14rc7 puts a command of its own in front of Dota in Steam's launch options, so that
+pressing Play patches first. Storing that escapes the quotes around its path, and this app read
+launch options up to the first quote and stopped there. It lost the `-language` sitting behind
+it, concluded nothing was set, and went back to installing into the folder named by the voice
+setting - which Dota does not mount while that option is there. Your mods were on disk, switched
+on, in a folder nothing reads.
+
+Launch options now parse the way Steam writes them. If your mods went quiet after Minify
+updated, they come back on the next start of this app, and nothing has to be installed again.
+
+### When Dota will not start, the Library says why
+
+That same Minify setting is "Run patches upon launch if required", and it is on by default. It
+can swallow a launch: if its patch decides your launch options need fixing, it closes Steam and
+waits for it, and your launch goes down with Steam. This app is nowhere in that sequence, since
+Play here opens the same `steam://` link the Play button in Steam does. It is the window you
+have open when nothing happens, though, so it now tells you the wrapper is set, whose setting it
+is, and where to switch it off.
+
+### pak99 is back in circulation
+
+Minify merged its English localization into pak66, so it will not write pak99 again and this app
+can hand that slot out. A pak99 already sitting in your folder is still read as Minify's and
+left alone.
+
+### Colours changed once, then never again
+
+Turn animations off in Windows and the mascot in the title bar worked on the first click of a
+session and ignored every click after it. The spin now ends on a clock rather than on an
+animation that never runs.
+
+### Deleting mods no longer looks like deleting your presets
+
+Clear out the Mods tab and every preset read "0 mods" above the words "empty (everything will be
+switched off)". Nothing had gone: a preset remembers mods rather than installations, which is
+what lets a build outlive a reinstall, and the card counted only the ones it could find on disk.
+A preset now shows everything in it, with the mods you do not have drawn as outlines.
+
 ## 2.6.3
 
 ### The interface no longer needs the internet to draw itself
