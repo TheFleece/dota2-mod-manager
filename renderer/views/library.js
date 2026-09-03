@@ -704,6 +704,7 @@ function folderBannersHtml(ourMods = 0) {
       </div>`).join('')}
     ${launchLangBannerHtml(s.gameLang?.launchLang, s.gameLang?.folder)}
     ${minifyBannerHtml(s.minify, ourMods)}
+    ${prelaunchBannerHtml(s.minify)}
     ${libStuck.length ? `
       <div class="banner warn">
         <span class="ms">warning</span>
@@ -779,6 +780,28 @@ function launchLangBannerHtml(lang, ourFolder) {
       <span class="ms">warning</span>
       <div class="banner-body">
         <b>${L`В параметрах запуска Dota стоит -language ${lang}`}</b>${L`. Такого языка у Доты нет, папку по нему она не смонтирует, а язык текста он всё равно заберёт. Убери его: Steam → Dota 2 → Свойства → Параметры запуска.`}
+      </div>
+    </div>`;
+}
+
+/* Somebody whose game will not start is looking at this window, so this window should be able
+ * to say why.
+ *
+ * Minify v1.14rc7 puts a command of its own in front of the game in Steam's launch options, so
+ * that pressing Play patches first and starts Dota after. This app is nowhere in that path - it
+ * opens the same steam:// link the Play button does - but it is the app people have open when
+ * nothing happens, and "your mod manager broke my game" is where that lands otherwise.
+ *
+ * Description, not a complaint: what is set, whose setting it is, and the switch that turns it
+ * off. See src/minify.js for how the wrapper is recognised.
+ */
+function prelaunchBannerHtml(m) {
+  if (!m || !m.prelaunch) return '';
+  return `
+    <div class="banner info">
+      <span class="ms">info</span>
+      <div class="banner-body">
+        <b>${L`Steam запускает Minify перед Dota`}</b>${L`: в параметрах запуска стоит его команда prelaunch. Это его настройка «Run patches upon launch», включённая по умолчанию с версии 1.14rc7 — игра стартует после того, как патч отработает. Если Dota перестала запускаться, выключи эту галочку в настройках Minify.`}
       </div>
     </div>`;
 }

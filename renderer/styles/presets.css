@@ -159,3 +159,15 @@
   border-radius: var(--radius-full);
   padding: 0 var(--space-2);
 }
+
+/* The same member in the strip and in the list. There is no cover to draw - it is not
+   installed, so there is no record and no picture - so it keeps the shape of a tile and says
+   so by being an outline instead of a solid. Present enough to count as part of the build,
+   quiet enough that the installed ones still read first. */
+.preset-thumb-absent {
+  background: none;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-faint);
+}
+.preset-thumb-absent .ms { font-size: var(--icon-md); }
+.preset-name-absent { color: var(--text-faint); text-decoration: line-through; }

@@ -181,24 +181,49 @@ function presetThumbHtml(rec) {
   return libThumbHtml(rec, 'preset-thumb');
 }
 
-function presetBodyHtml(recs) {
-  if (!recs.length) return `<div class="preset-mods">${L`пусто (всё будет выключено)`}</div>`;
+/* A member that is named by the build but not installed right now.
+ *
+ * There is no record to draw, because there is no installation - only the identity the preset
+ * stored. It still belongs on the card: it is part of what the build is.
+ */
+function absentThumbHtml(identity) {
+  return `
+    <div class="preset-thumb preset-thumb-absent" title="${esc(identity.name)} — ${esc(L`не установлен`)}">
+      <span class="ms">${catIcon(identity.categoryId || 'other')}</span>
+    </div>`;
+}
 
-  const catOf = (r) => r.categoryId;
+/* The card describes the build, not the part of it that happens to be installed today.
+ *
+ * Deleting mods used to empty every preset on screen: the card counted only the records it
+ * could resolve, so a cleared Mods tab left every build reading "0 mods" over the words "empty
+ * (everything will be switched off)". Nothing had been lost - the presets held their members
+ * the whole time - but there is no way to read that card except as wiped, and people reported
+ * it as exactly that. A build outliving its installations is the entire point of storing
+ * identities instead of ids, so the card has to show the members it cannot find.
+ */
+function presetBodyHtml(recs, absent = []) {
+  if (!recs.length && !absent.length) return `<div class="preset-mods">${L`пусто (всё будет выключено)`}</div>`;
+
   const groups = new Map();
-  for (const r of recs) {
-    const id = catOf(r) || 'other';
-    if (!groups.has(id)) groups.set(id, []);
-    groups.get(id).push(r);
-  }
+  const add = (id, entry) => {
+    const key = id || 'other';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(entry);
+  };
+  for (const r of recs) add(r.categoryId, { name: r.name, rec: r });
+  for (const a of absent) add(a.categoryId, { name: a.name, rec: null });
+
   // biggest group first: it is what the preset is mostly made of
   const ordered = [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
-  const shown = recs.slice(0, STRIP);
-  const rest = recs.length - shown.length;
+  // installed first in the strip, so the pictures still lead
+  const all = [...recs.map((r) => ({ rec: r })), ...absent.map((a) => ({ identity: a }))];
+  const shown = all.slice(0, STRIP);
+  const rest = all.length - shown.length;
 
   return `
     <div class="preset-strip">
-      ${shown.map(presetThumbHtml).join('')}
+      ${shown.map((e) => (e.rec ? presetThumbHtml(e.rec) : absentThumbHtml(e.identity))).join('')}
       ${rest > 0 ? `<div class="preset-more">+${rest}</div>` : ''}
     </div>
     <div class="preset-cats">
@@ -210,7 +235,9 @@ function presetBodyHtml(recs) {
       ${ordered.map(([id, list]) => `
         <div class="preset-group">
           <div class="preset-group-head"><span class="ms">${catIcon(id)}</span>${esc(catName(id))}<span class="preset-group-n">${list.length}</span></div>
-          <div class="preset-group-names">${list.map((r) => esc(r.name)).join(' · ')}</div>
+          <div class="preset-group-names">${list.map((e) => (e.rec
+    ? esc(e.name)
+    : `<span class="preset-name-absent">${esc(e.name)}</span>`)).join(' · ')}</div>
         </div>`).join('')}
     </details>`;
 }
@@ -282,12 +309,12 @@ export async function renderPresets() {
       card.innerHTML = `
         <div class="preset-head">
           <div class="preset-name">${esc(p.name)}</div>
-          <span class="text-meta">${recs.length} ${plural(recs.length, 'мод', 'мода', 'модов')}</span>
+          <span class="text-meta">${recs.length + absent.length} ${plural(recs.length + absent.length, 'мод', 'мода', 'модов')}</span>
           ${absent.length ? `<span class="text-meta preset-absent" title="${esc(absent.map((a) => a.name).join(', '))}">${L`${absent.length} не установлено`}</span>` : ''}
           <button class="btn btn-sm btn-primary" data-apply="${p.id}">${L`Применить`}</button>
           <button class="btn btn-sm" data-share="${p.id}" title="${esc(linkTitle)}"><span class="ms">ios_share</span>${L`Поделиться`}</button>
         </div>
-        ${presetBodyHtml(recs)}`;
+        ${presetBodyHtml(recs, absent)}`;
     }
     list.appendChild(card);
   });

@@ -33,19 +33,26 @@ const { listVpkPathsFile } = require('./vpk');
 const MINIFY_FOLDER = 'minify';
 const MINIFY_BORROWED = 'dutch';
 
-/* The pak slots Minify writes.
+/* The pak slots Minify writes, and the smaller set we refuse to hand out.
  *
- * 65 for merged VPK mods, 66 for the ones it compiles and 67 for what its d2pfx browser
- * installs, all three from its own ARCHITECTURE.md. And 99 for the English fix, which its
- * released source hardcodes: mods/#English Fix/script_after_patch.py writes pak99_dir.vpk.
- * That one is not in the architecture document, and it is the pak sitting on the machine of
- * anybody who asked Minify for English - which is most of the people who use it.
+ * MINIFY_PAKS is recognition: a pak sitting in one of these slots is its work, so the master
+ * switch does not rename it and the foreign-file scan does not offer it up. 65 is its merged
+ * VPK mods, 66 what it compiles and 67 what its d2pfx browser installs, all three from its
+ * ARCHITECTURE.md; 99 is where releases up to v1.14rc6 wrote the English fix.
  *
- * We hand out pak10 to pak99, so without this we would eventually name a file it is going to
- * write over, and the loser is whichever of us wrote first. Four slots out of ninety is the
- * whole price of never having to coordinate, so they are skipped whether or not Minify is
- * installed today: somebody who adds it next week should not find a mod quietly replaced. */
-const RESERVED_PAKS = [65, 66, 67, 99];
+ * RESERVED is smaller, and the difference is the point. We hand out pak10 to pak99, and a
+ * slot only has to be kept empty when Minify might write it LATER - reading the folder today
+ * cannot see a program that gets installed next week. That is why 65 to 67 stay blocked
+ * whether or not it is on the machine.
+ *
+ * 99 no longer belongs in that set. Minify merged the English localization into pak66 in
+ * v1.14rc7 (commit 9ffc8e4, "Include the swap into main vpk"; #English Fix/manifest.json is
+ * gone with it), so nothing will write there in future and the slot is ours to use. Anybody
+ * still on an older release has a pak99 on disk already, which the allocator reads off the
+ * folder like any other occupied slot - and MINIFY_PAKS still knows whose it is. The author
+ * asked for exactly this: detect the file rather than blindly reserve the number. */
+const MINIFY_PAKS = [65, 66, 67, 99];
+const RESERVED_PAKS = [65, 66, 67];
 
 /**
  * Is this file in the language folder one of Minify's paks?
@@ -62,7 +69,7 @@ const RESERVED_PAKS = [65, 66, 67, 99];
  */
 function isMinifyFile(baseLower) {
   const m = String(baseLower).match(/^pak(\d{2})_(?:dir|\d{3})\.vpk(?:\.off|\.moff)?$/);
-  return !!m && RESERVED_PAKS.includes(Number(m[1]));
+  return !!m && MINIFY_PAKS.includes(Number(m[1]));
 }
 
 /* How Minify marks its own work, and how it recognises it again.
@@ -126,6 +133,30 @@ function folderOfPath(outputPath) {
   return m ? m[1].toLowerCase() : null;
 }
 
+/* Has Minify put itself in front of the game's own launch?
+ *
+ * v1.14rc7 added "Run patches upon launch if required", on by default, and it works by writing
+ * a wrapper into Steam's launch options for Dota:
+ *
+ *   cmd /c "<...>\Dota2-Minify.exe" prelaunch && %command%        (bash -c "... prelaunch" && on Linux)
+ *
+ * so pressing Play runs Minify first and starts the game only once it returns. This app is not
+ * in that path at all - it opens steam://rungameid/570, exactly what the Play button does - but
+ * it is the one people have open when the game does not start, so it is the one that should be
+ * able to say what is going on. Worth naming because the wrapper can swallow a launch: when
+ * that patch decides the launch options need fixing it shuts Steam down (`-exitsteam`) and
+ * waits for it, and Steam going away takes the launch with it.
+ *
+ * Matched on what the wrapper is rather than on one release's exact spelling: the word
+ * `prelaunch` as a token, Minify named in the same line, and the `&&` that hands over to the
+ * game. Nobody's own launch options are all three by accident.
+ * @param {string|null} options  Steam's launch options for Dota, unescaped
+ */
+function prelaunchHook(options) {
+  const s = String(options || '');
+  return /(?:^|[\s"])prelaunch(?:[\s"]|$)/i.test(s) && /minify/i.test(s) && s.includes('&&');
+}
+
 /**
  * @param {object} p
  * @param {Array<{suffix: string, official: boolean, valveContent: boolean, modFiles: number}>} p.folders
@@ -135,15 +166,16 @@ function folderOfPath(outputPath) {
  * @param {string[]} p.gameLanguages  the languages Dota will accept for that setting
  * @param {string} p.ourFolder   the suffix this app installs into, from gamelang.folderFor()
  * @param {number} [p.ourMods]   how many mods this app has installed
+ * @param {string|null} [p.launchOptions]  Steam's launch options for Dota, unescaped
  * @returns {{
  *   present: boolean, folder: string|null, mods: number, mounts: boolean,
  *   mounted: string|null, ourFolder: string, sharing: boolean,
- *   live: 'ours'|'minify'|'both'|'neither'|'unknown', declared: boolean,
+ *   live: 'ours'|'minify'|'both'|'neither'|'unknown', declared: boolean, prelaunch: boolean,
  * }}
  */
 function readMinify({
   folders = [], audio = null, gameLanguages = [], ourFolder, ourMods = 0, config = readConfig(),
-  countMods = null,
+  countMods = null, launchOptions = null,
 }) {
   const at = (suffix) => folders.find((f) => f.suffix === suffix) || null;
   // where it writes, which is the question - not the language the player asked it for
@@ -180,7 +212,12 @@ function readMinify({
     else live = 'neither';
   }
 
-  return { present, folder, mods, mounts, mounted, ourFolder, sharing, live, declared: !!declared };
+  return {
+    present, folder, mods, mounts, mounted, ourFolder, sharing, live, declared: !!declared,
+    // true even when nothing else here says it is installed: the wrapper is in Steam's config,
+    // and it stays there after somebody deletes the program without uninstalling it
+    prelaunch: prelaunchHook(launchOptions),
+  };
 }
 
-module.exports = { readMinify, readConfig, configPath, folderOfPath, isMinifyFile, isMinifyPak, MINIFY_MARKERS, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS };
+module.exports = { readMinify, readConfig, configPath, folderOfPath, isMinifyFile, isMinifyPak, MINIFY_MARKERS, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS, MINIFY_PAKS, prelaunchHook };

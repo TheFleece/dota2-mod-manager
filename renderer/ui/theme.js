@@ -41,6 +41,7 @@ export function initTheme() {
     // of the spin where the face is smallest, so the two look like one event rather than a
     // recolour with a spin thrown over it. Same trick the catalog's own site uses.
     mascot.classList.add('spinning');
+
     let swapped = false;
     const swap = () => {
       if (swapped) return;
@@ -48,11 +49,29 @@ export function initTheme() {
       applyTheme(next);
       window.api.settings.set('theme', next);
     };
-    setTimeout(swap, spinMs() / 2);
-    mascot.addEventListener('animationend', () => {
+
+    /* The spin has to end on a clock, not only on its own event.
+     *
+     * `spinning` is what stops a second click landing mid-turn, and it used to come off in
+     * animationend alone. Turn animations off in Windows and the stylesheet answers with
+     * `animation: none !important` for everything, so the animation never runs, the event
+     * never fires, and the class stays on the button forever: the colour changed once and the
+     * mascot was dead for the rest of the session. Reported by somebody who had exactly that
+     * setting, and it would have been every such person.
+     *
+     * So the timer is the guarantee and the event is only the early finish. Both call the same
+     * idempotent pair, so whichever arrives first is the one that counts.
+     */
+    const end = () => {
+      clearTimeout(timer);
+      mascot.removeEventListener('animationend', end);
       mascot.classList.remove('spinning');
       swap();
-    }, { once: true });
+    };
+    const ms = spinMs();
+    setTimeout(swap, ms / 2);
+    const timer = setTimeout(end, ms + 50);
+    mascot.addEventListener('animationend', end);
   });
 }
 

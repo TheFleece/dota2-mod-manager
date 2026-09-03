@@ -170,7 +170,42 @@ function currentSteamUser(root) {
   try { return best ? String(BigInt(best.id) - 76561197960265728n) : null; } catch { return null; }
 }
 
-function launchLanguage(gamePath) {
+/* Dota's launch options as Steam stores them, with the escapes of the format undone.
+ *
+ * `[^"]*` was good enough while launch options were a handful of flags, and stopped being good
+ * enough the moment another program put a quoted path in one. Minify v1.14rc7 prepends
+ *
+ *   cmd /c "<...>\Dota2-Minify.exe" prelaunch && %command%
+ *
+ * so it can patch before the game starts, and writes the file back with python-vdf, which
+ * escapes the quotes it just introduced. Reading up to the first quote character then captured
+ * `cmd /c \` and discarded everything after it - including the `-language` that decides which
+ * folder this app installs into. The app concluded there was no launch option at all, went back
+ * to the folder named by the voice setting, and put mods where the game does not look. That is
+ * the whole 2.6.1 failure walking back in, for everybody running the new Minify.
+ *
+ * A backslash escapes whatever follows it, so a quote ends the value only when it is not itself
+ * escaped.
+ * @returns {string|null} the value, or null when the file or the key is not there
+ */
+function readLaunchOptions(file) {
+  let text = null;
+  try { text = fs.readFileSync(file, 'utf-8'); } catch { return null; }
+  const app = text.match(/"570"\s*\{[\s\S]{0,4000}?"LaunchOptions"\s*"((?:\\.|[^"\\])*)"/);
+  if (!app) return null;
+  const escapes = { n: '\n', t: '\t', v: '\v', b: '\b', r: '\r', f: '\f' };
+  return app[1].replace(/\\(.)/g, (_, c) => (c in escapes ? escapes[c] : c));
+}
+
+/* Ask the launch options one question, on behalf of whoever is logged in.
+ *
+ * Steam keeps them per account, so the answer belongs to that account: having none means there
+ * is no override, and another account's value is not ours to borrow. Where nobody can be
+ * identified, an answer every account with one agrees on is safe to use and a disagreement is
+ * not an answer.
+ * @param {(raw: string|null) => string|null} pick what to take out of one account's options
+ */
+function fromLaunchOptions(gamePath, pick) {
   const roots = [];
   if (gamePath) {
     // <lib>/steamapps/common/dota 2 beta/game -> <lib>, which is the Steam root for a default install
@@ -181,36 +216,40 @@ function launchLanguage(gamePath) {
       if (base) roots.push(path.join(base, 'Steam'));
     }
   }
-  const optionsOf = (userdata, id) => {
-    let text = null;
-    try { text = fs.readFileSync(path.join(userdata, id, 'config', 'localconfig.vdf'), 'utf-8'); } catch { return null; }
-    // the launch options of app 570, wherever in the file its block sits
-    const app = text.match(/"570"\s*\{[\s\S]{0,4000}?"LaunchOptions"\s*"([^"]*)"/);
-    if (!app) return null;
-    const lang = app[1].match(/-language\s+([A-Za-z]+)/);
-    return lang ? lang[1].toLowerCase() : '';
-  };
-
   for (const root of roots) {
     const userdata = path.join(root, 'userdata');
     let ids = [];
     try { ids = fs.readdirSync(userdata).filter((d) => /^\d+$/.test(d)); } catch { continue; }
     if (!ids.length) continue;
 
+    const valueOf = (id) => pick(readLaunchOptions(path.join(userdata, id, 'config', 'localconfig.vdf')));
     const current = currentSteamUser(root);
     if (current && ids.includes(current)) {
-      const own = optionsOf(userdata, current);
-      return own || null; // '' means launch options exist and name no language
+      const own = valueOf(current);
+      return own || null; // '' means launch options exist and say nothing about this question
     }
-    // nobody identifiable: a value every account that has one agrees on, or nothing
     const values = new Set();
     for (const id of ids) {
-      const v = optionsOf(userdata, id);
+      const v = valueOf(id);
       if (v) values.add(v);
     }
     return values.size === 1 ? [...values][0] : null;
   }
   return null;
+}
+
+/** The `-language X` Steam will start the game with, lowercased, or null. */
+function launchLanguage(gamePath) {
+  return fromLaunchOptions(gamePath, (raw) => {
+    if (raw === null) return null;
+    const lang = raw.match(/-language\s+([A-Za-z]+)/);
+    return lang ? lang[1].toLowerCase() : '';
+  });
+}
+
+/** Everything Steam will start the game with, verbatim, or null. */
+function launchOptions(gamePath) {
+  return fromLaunchOptions(gamePath, (raw) => raw);
 }
 
 /** UI + audio language the game wrote at its last boot, or null if it never ran. */
@@ -362,6 +401,7 @@ module.exports = {
   DOTA_LANGUAGES,
   modFolderFor,
   launchLanguage,
+  launchOptions,
   MOD_FOLDERS,
   FALLBACK_FOLDER,
   folderFor,

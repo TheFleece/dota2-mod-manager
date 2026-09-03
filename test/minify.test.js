@@ -6,7 +6,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { readMinify: read, readConfig, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS } = require('../src/minify.js');
+const { readMinify: read, readConfig, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS, isMinifyFile, prelaunchHook } = require('../src/minify.js');
 
 /* Every case below describes a whole machine, so none of them may read the Minify that is
  * installed on the one running the tests: without this the suite passes or fails depending on
@@ -159,12 +159,60 @@ test("Minify's own config beats anything guessed from folder names", (t) => {
   assert.equal(got.live, 'ours', 'ours are mounted; its folder is not the one the game reads');
 });
 
-test('the pak slots Minify writes are named, so ours can stay out of them', () => {
-  /* 65 merged, 66 compiled and 67 from its d2pfx browser, all from its ARCHITECTURE.md - plus
-   * 99, which that document does not mention and its released source hardcodes for the English
-   * fix (mods/#English Fix/script_after_patch.py). 99 is also the last slot this app hands out,
-   * so it is the one a heavy library reaches last and loses first. */
-  assert.deepEqual(RESERVED_PAKS, [65, 66, 67, 99]);
+test('a slot is kept empty only where Minify may still write it', () => {
+  /* Two different questions that used to share one list. 65 merged, 66 compiled and 67 from
+   * its d2pfx browser are the slots it writes on a future patch, so they stay empty whether or
+   * not it is installed today - reading the folder cannot see a program somebody adds next
+   * week. 99 is not one of them any more: the English fix moved into pak66 in v1.14rc7, so
+   * nothing will write there again and the slot goes back into circulation. */
+  assert.deepEqual(RESERVED_PAKS, [65, 66, 67]);
+  assert.ok(!RESERVED_PAKS.includes(99), '99 is free to hand out');
+});
+
+test('a pak Minify already wrote is still recognised as its own', () => {
+  /* Releasing the slot must not turn its file into a stranger. Anybody on v1.14rc6 or older
+   * has a pak99 on disk, and letting go of the number there would put it in reach of the
+   * master switch and the foreign-file scan - the two things that rename and offer to delete.
+   * The allocator does not need the number: an existing file is an occupied slot. */
+  for (const n of [65, 66, 67, 99]) {
+    assert.equal(isMinifyFile(`pak${n}_dir.vpk`), true, `pak${n} is Minify's`);
+    assert.equal(isMinifyFile(`pak${n}_000.vpk`), true, 'and so are its volumes');
+    assert.equal(isMinifyFile(`pak${n}_dir.vpk.moff`), true, 'even switched off by us');
+  }
+  assert.equal(isMinifyFile('pak64_dir.vpk'), false);
+  assert.equal(isMinifyFile('pak98_dir.vpk'), false, 'the slot below 99 was always ours');
+});
+
+test('Minify putting itself in front of the game launch is recognised', () => {
+  /* v1.14rc7's "Run patches upon launch", on by default, wraps the game in Steam's launch
+   * options so that pressing Play patches first. This app is not in that path - it opens the
+   * same steam:// link the Play button does - but it is the window somebody is looking at when
+   * the game does not start, so it has to be able to name what is set. */
+  assert.equal(prelaunchHook(String.raw`cmd /c "C:\Users\me\Dota2-Minify\Dota2-Minify.exe" prelaunch && %command% -novid`), true);
+  assert.equal(prelaunchHook('bash -c "/home/me/Dota2-Minify/Dota2-Minify prelaunch" && %command%'), true, 'and on Linux');
+
+  // matched on what the wrapper is, so ordinary options never trip it
+  assert.equal(prelaunchHook('-novid -console -language dutch'), false);
+  assert.equal(prelaunchHook(''), false);
+  assert.equal(prelaunchHook(null), false);
+  assert.equal(prelaunchHook('cmd /c other.exe prelaunch && %command%'), false, 'somebody else\'s hook is not Minify\'s');
+  assert.equal(prelaunchHook('cmd /c "Dota2-Minify.exe" patch'), false, 'and patching by hand is not a launch wrapper');
+});
+
+test('the launch wrapper is reported even when nothing else says Minify is here', () => {
+  /* The wrapper lives in Steam's config, not in the game folder, so it outlives a Minify that
+   * was deleted rather than uninstalled - and that is exactly the machine where the game stops
+   * starting and nobody can see why. */
+  const got = read({
+    folders: [folder('russian', 4, true)],
+    audio: 'russian',
+    gameLanguages: ['russian', 'dutch'],
+    ourFolder: 'russian',
+    config: null,
+    launchOptions: String.raw`cmd /c "C:\Dota2-Minify\Dota2-Minify.exe" prelaunch && %command%`,
+  });
+  assert.equal(got.present, false, 'no folder of its own on disk');
+  assert.equal(got.prelaunch, true, 'but Steam is still told to run it first');
 });
 
 test('a config that is not there is not an answer', () => {

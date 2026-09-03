@@ -1657,6 +1657,9 @@ function registerIpc() {
       countMods: minifyModsIn,
       ourFolder: langFolder,
       ourMods: library.list().filter((r) => (r.files || []).some((f) => f.root === 'lang')).length,
+      // the whole launch line, not just its language: Minify's newer releases put a command of
+      // their own in front of the game there, and that is worth being able to name
+      launchOptions: game ? gamelang.launchOptions(game) : null,
     });
     // Only the screen asking for settings gets to hear about the migration, and only once.
     // A save must not swallow the news before anybody has read it.

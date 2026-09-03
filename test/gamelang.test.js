@@ -268,6 +268,38 @@ test('a -language launch option is what decides the folder, over anything the ga
   assert.equal(got.suffix, null, 'Dutch has no voice pack, so it is not one of the four');
 });
 
+/* Exactly what Minify v1.14rc7 leaves behind, escapes and all.
+ *
+ * It prepends `cmd /c "<its exe>" prelaunch &&` so it can patch before the game starts, and
+ * writes the file back with python-vdf, whose writer escapes both the quotes and the
+ * backslashes of the path. Reading the value up to the first quote character captured `cmd /c \`
+ * and lost the `-language` behind it, so the app decided no parameter was set and installed into
+ * the folder named by the voice setting - which the game does not mount while the parameter is
+ * there. Every mod invisible, and the app reporting that all was well. */
+const RC7_OPTIONS = String.raw`cmd /c \"C:\\Users\\me\\Desktop\\Dota2-Minify\\Dota2-Minify.exe\" prelaunch && %command% -novid -language dutch`;
+
+test('a launch option survives another program putting a quoted path in front of it', (t) => {
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  fakeSteam(game, [{ id32: 111, launchOptions: RC7_OPTIONS, timestamp: 5 }]);
+  assert.equal(gamelang.launchLanguage(game), 'dutch');
+  assert.equal(gamelang.detectLangSuffix(game).source, 'launch');
+});
+
+test('the whole launch line comes back unescaped, so it can be recognised', (t) => {
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  fakeSteam(game, [{ id32: 111, launchOptions: RC7_OPTIONS, timestamp: 5 }]);
+  const raw = gamelang.launchOptions(game);
+  assert.match(raw, /^cmd \/c "C:\\Users\\me\\Desktop\\Dota2-Minify\\Dota2-Minify\.exe" prelaunch &&/);
+  assert.ok(raw.endsWith('-novid -language dutch'), 'and nothing after the quotes is lost');
+});
+
+test('plain options still read the way they always did', (t) => {
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  fakeSteam(game, [{ id32: 111, launchOptions: '-novid -console -language schinese', timestamp: 5 }]);
+  assert.equal(gamelang.launchOptions(game), '-novid -console -language schinese');
+  assert.equal(gamelang.launchLanguage(game), 'schinese');
+});
+
 test('the account that is logged in is the one whose launch options count', (t) => {
   // Several accounts on one machine is normal, and the others are not ours to read: an option
   // belonging to a sibling account would move mods for somebody who never set it.

@@ -336,7 +336,8 @@ class Installer {
     for (let n = 10; n <= 99; n++) {
       // Minify writes 65, 66 and 67 into whichever language folder it is set to, and if that
       // is ours, whoever writes second replaces the other's mod. Three slots out of ninety
-      // buys never having to coordinate - see src/minify.js.
+      // buys never having to coordinate - see src/minify.js. A pak it has already written
+      // needs no reserving: it is in `used`, read off the folder.
       if (RESERVED_PAKS.includes(n)) continue;
       const name = `pak${n}_dir.vpk`;
       if (!used.has(name)) {

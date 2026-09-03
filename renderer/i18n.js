@@ -372,6 +372,7 @@ const EN = {
 
   // ---------- presets ----------
   '{0} не установлено': '{0} not installed',
+  'не установлен': 'not installed',
   'Пресет хранит моды. Бесплатная косметика в него не входит: она живёт своей жизнью в «Моих модах» и не выключается вместе с пресетом.':
     'A preset holds mods. Free cosmetics are not part of one: they live in My mods on their own and are not switched off along with a preset.',
   'Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.':
@@ -540,6 +541,9 @@ const EN = {
     'A terrain installed outside this app is already in the maps folder. It will be replaced, because Dota reads only one map archive. Continue?',
   'Заменить': 'Replace',
   // a launch option that overrules everything the app sets
+  'Steam запускает Minify перед Dota': 'Steam runs Minify before Dota',
+  ': в параметрах запуска стоит его команда prelaunch. Это его настройка «Run patches upon launch», включённая по умолчанию с версии 1.14rc7 — игра стартует после того, как патч отработает. Если Dota перестала запускаться, выключи эту галочку в настройках Minify.':
+    ': its prelaunch command is in the launch options. That is Minify\'s own "Run patches upon launch", on by default since v1.14rc7 — the game starts once the patch has finished. If Dota has stopped starting, turn that checkbox off in Minify\'s settings.',
   'В параметрах запуска Dota стоит -language {0}': 'Dota has -language {0} in its launch options',
   ', поэтому игра читает папку dota_{0} — туда приложение моды и ставит. Уберёшь параметр, и они переедут обратно сами.':
     ', so the game reads dota_{0} and that is where the app installs. Remove the option and they move back on their own.',
