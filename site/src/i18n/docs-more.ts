@@ -23,7 +23,7 @@
  */
 import type { Doc } from './docs.ts';
 
-type Slug = 'uninstall' | 'terrain' | 'announcer' | 'language' | 'own-mods' | 'catalog' | 'compare';
+type Slug = 'uninstall' | 'terrain' | 'announcer' | 'language' | 'own-mods' | 'catalog' | 'minify' | 'compare';
 
 // ---------------------------------------------------------------------------
 // English
@@ -536,6 +536,150 @@ const en: Record<Slug, Doc> = {
     ],
   },
 
+  minify: {
+    slug: 'minify',
+    title: 'Dota2 Minify: what it is, and using it with this app',
+    h1: 'Dota2 Minify',
+    description:
+      'Dota2 Minify is a separate open-source Dota 2 mod patcher by Egezenn: what it does, the mods it ships, its community depot, and how it runs alongside this manager.',
+    lead: 'If you want to customise Dota further than a catalog of skins can take you, install Minify as well. It is a different kind of tool by a different author, it does things this app does not do, and the two run in the same game folder without fighting.',
+    card: 'A separate mod patcher by Egezenn, what it changes, and how to run it alongside this app.',
+    blocks: [
+      {
+        k: 'note',
+        t: 'Minify is not mine. It is written and maintained by <a href="https://github.com/Egezenn">Egezenn</a>, I have never worked on it, and neither project is affiliated with the other. This page is here because a lot of people use both, and because everything below can be checked in Minify\'s own repository.',
+      },
+
+      { k: 'h2', t: 'What it is', id: 'what' },
+      {
+        k: 'p',
+        t: '<a href="https://github.com/Egezenn/dota2-minify">Dota2 Minify</a> describes itself as a "Dota2 Mod Patcher &amp; Toolkit for everyone to use mods easily". It is open source under GPL-3.0, written in Python with a DearPyGui interface and a command line of its own, and it ships for Windows and Linux, with an <a href="https://aur.archlinux.org/packages/dota2-minify-bin">AUR package</a> and partial macOS support from source. Its Windows builds are code-signed through the SignPath Foundation, and its interface is translated by volunteers on Weblate.',
+      },
+      {
+        k: 'p',
+        t: 'Where this app downloads finished mod files and drops them into the game folder, Minify <b>builds</b> them on your machine. It pulls the assets it needs out of Dota\'s own archives, decompiles them with Source 2 Viewer, edits them (regex passes run through ripgrep), compiles them back with Valve\'s resource compiler and packs the result into a VPK. Because of that a patch takes a while, and some of its mods need the Dota 2 Workshop Tools installed from Steam.',
+      },
+
+      { k: 'h2', t: 'What it can change', id: 'mods' },
+      { k: 'p', t: 'The 31 mods it ships, named as it names them, grouped by what they are for.' },
+      {
+        k: 'cards',
+        items: [
+          [
+            'Performance',
+            'Misc Optimization, Minify Base Attacks, Minify Spells &amp; Items, Remove Foilage, Remove River, Remove Weather Effects, Remove Hero Renders, Remove Showcases, Remove Sprays, Tree Mod, Dark Terrain.',
+          ],
+          [
+            'Sound',
+            'Mute Ambient Sounds, Mute Default Announcer, Mute Default Kill Spree Sounds, Mute Taunt Sounds, Mute Voice Line Sounds, Revert Ping Sounds, Remove Pings.',
+          ],
+          [
+            'Interface',
+            'Transparent HUD, Reposition &amp; Rescale HUD, Repopulate Unit Query HUD, Revamp Hero Grid Layout, Custom Hero Grids, Custom Fonts, Custom Backgrounds, Remove Main Menu Background, User Styles.',
+          ],
+          [
+            'While you play',
+            'Auto Accept Match, Show NetWorth, Stat Site Buttons, OpenDotaGuides Guides.',
+          ],
+        ],
+      },
+      {
+        k: 'p',
+        t: 'They come from more than one person. Egezenn wrote many of them; <a href="https://github.com/robbyz512">robbyz512</a> wrote most of the performance and sound ones, <a href="https://github.com/MeGaNeKoS">MeGaNeKoS</a> the match and net worth ones, and Transparent HUD comes from ZerdacK of the Dota Modding Community. The full table with every author is in <a href="https://github.com/Egezenn/dota2-minify#special-thanks-to">its readme</a>.',
+      },
+
+      { k: 'h2', t: 'The community depot', id: 'community' },
+      {
+        k: 'p',
+        t: 'Minify can read mod depots outside its own build. The one it ships with is <a href="https://github.com/Egezenn/dota2-minify-community">dota2-minify-community</a>, which holds four ready-made packs and four separate mods:',
+      },
+      {
+        k: 'list',
+        items: [
+          '<b>#&nbsp;Optimizations</b> - "all the optimizations Minify has to offer", in one pack.',
+          '<b>#&nbsp;Shut It</b> - mutes the annoying sounds and more.',
+          '<b>#&nbsp;Flavor</b> - UI improvements and third-party integrations. Some of it needs the Workshop Tools.',
+          '<b>#&nbsp;Old Timer</b> - for people who want the legacy version of features back.',
+          '<b>As-Is FoW</b> by Egezenn - fog of war with no wobble and sharp edges.',
+          '<b>Default Skins</b> by Lupin - puts every skin back to its default, and can be taken in parts: particles, skins, couriers or wards alone.',
+          '<b>Simple Dark Terrain</b> by Robby - a dark grid terrain.',
+          '<b>Settings Copier</b> by prosto saneyk - copies hotkeys, video, audio and guides between Steam accounts, and can follow you as you switch.',
+        ],
+      },
+      {
+        k: 'p',
+        t: 'The other depot it lists is <a href="~/docs/catalog/">D2PFX</a>, the same catalog this app installs from. Both tools read it.',
+      },
+
+      { k: 'h2', t: 'Why you might want both', id: 'both' },
+      {
+        k: 'p',
+        t: 'They overlap almost nowhere. This app installs finished cosmetic mods from an open catalog: hero sets, terrains, couriers, wards, effects, announcers, cursors. Minify rebuilds parts of the game itself: it strips foliage and weather to gain frames, mutes sound categories, moves the HUD, puts guides and stat buttons where the game has none. A skin catalog cannot do the second thing and a patcher is not where you go browsing for hero sets.',
+      },
+      {
+        k: 'p',
+        t: 'So the honest answer to "which one" is often neither on its own. Take the catalog from here and the game changes from there.',
+      },
+
+      { k: 'h2', t: 'Running both', id: 'together' },
+      {
+        k: 'p',
+        t: 'This app works with Minify installed. Not "should work" - it is built for it, and the parts below are in the code:',
+      },
+      {
+        k: 'list',
+        items: [
+          '<b>One folder, both sets of mods.</b> Dota mounts a single language folder. Minify picks one and points Steam at it; this app reads which folder the game will really mount and installs there, so your mods from both land where the game looks. Mods already installed move themselves across on the next start.',
+          '<b>Its slots stay free.</b> pak65, pak66 and pak67 are never handed out here, whether or not Minify is on the machine, so somebody who installs it next month does not find a mod quietly replaced.',
+          '<b>Its files are left alone.</b> The master mods switch skips them, and the scan for unmanaged files does not offer them up for adopting or deleting. They are recognised by the metadata Minify packs into what it builds, which is the same check Minify uses itself.',
+          '<b>The map archive is asked about.</b> Dota reads one <code>maps/dota.vpk</code>, so a terrain from either tool is the same file. This app checks who wrote the one that is there and asks before replacing it.',
+          '<b>It says what it sees.</b> If Minify is set to run a patch before the game starts, or the launch options point somewhere unexpected, the Library page names it in plain words instead of leaving you with a game that does nothing.',
+        ],
+      },
+      {
+        k: 'p',
+        t: 'It goes the other way too. This app leaves a <code>dota2modmanager.json</code> in the language folder listing what it installed, and Minify from v1.14rc7 checks ownership before clearing the map folder during its uninstall, so a terrain installed here survives one.',
+      },
+
+      { k: 'h2', t: 'Where to get it', id: 'get' },
+      {
+        k: 'list',
+        items: [
+          'Site and downloads: <a href="https://egezenn.github.io/dota2-minify">egezenn.github.io/dota2-minify</a>',
+          'Wiki, including how to write a mod for it: <a href="https://egezenn.github.io/dota2-minify/wiki">the wiki</a>',
+          'Source: <a href="https://github.com/Egezenn/dota2-minify">GitHub</a>, mirrored on <a href="https://codeberg.org/egezenn/dota2-minify">Codeberg</a>',
+          'Support and its community: <a href="https://discord.com/invite/9867CPv7cy">Discord</a>, <a href="https://t.me/dota2minify">Telegram</a>',
+        ],
+      },
+
+      { k: 'h2', t: 'Questions', id: 'faq' },
+      {
+        k: 'faq',
+        items: [
+          [
+            'Do you make Minify, or get paid for sending people to it?',
+            'No to both. It is Egezenn\'s project, I have no part in it, no money moves in either direction, and this app is free as well. The two of us have talked about staying out of each other\'s way, and that is the whole relationship.',
+          ],
+          [
+            'Which do I install first?',
+            'Either. If Minify is already there, this app finds the folder it chose and joins it. If you add Minify afterwards, the slots it needs were never taken.',
+          ],
+          [
+            'Will installing both break my game?',
+            'Two mods that change the same file still cannot both apply, exactly as two mods from one catalog cannot. That is a collision between mods, not between the tools, and this app names collisions on screen. <a href="~/docs/vpk/#order">How load order works</a>.',
+          ],
+          [
+            'Can Minify install mods from the catalog too?',
+            'It lists D2PFX among its depots, yes. What this app adds is browsing the catalog with previews, one-click install, load order, presets and adopting files you already have.',
+          ],
+          [
+            'It needs the Workshop Tools. Is that normal?',
+            'For some of its mods, yes: they compile game assets, and the compiler comes with the Dota 2 Workshop Tools from Steam. Mods installed from here never need them, because they arrive already built.',
+          ],
+        ],
+      },
+    ],
+  },
   compare: {
     slug: 'compare',
     title: 'Choosing a Dota 2 mod manager: what to check',
@@ -592,7 +736,7 @@ const en: Record<Slug, Doc> = {
           ],
           [
             'Dota2 Minify (github.com/Egezenn/dota2-minify)',
-            'Not an alternative and not a rival: it compiles mods where this installs them from a catalog, and the two are meant to run side by side. They reach the game differently. Dota mounts three language folders, and this app sets the voice language in the settings of the game itself to one of them - the folder is already there, the English voices keep playing because that pack was never downloaded, and the text language stays yours. Minify puts a -language option into Steam instead, which locks both language settings and needs a VPK of its own to give the English text back. Only one folder is ever mounted, so this app reads the configuration Minify keeps, installs into whichever folder the game is actually set to read - including the one Minify names - says so plainly, and leaves the pak slots Minify writes free - 65 to 67 and 99. Both are clients of the same catalog.',
+            'Not an alternative and not a rival. It builds mods by patching the game where this installs finished ones from a catalog, and the two are made to run together: this app installs into whichever folder the game will really mount, including the one Minify picked, keeps pak65 to pak67 free for it, and leaves its files alone. Install both and you get the catalog from here and the game changes from there. <a href="~/docs/minify/">What Minify is, and running the two together</a>.',
           ],
           [
             'Dota 2 SkinChanger (dota2changer.com)',
@@ -624,7 +768,7 @@ const en: Record<Slug, Doc> = {
       {
         k: 'faq',
         items: [
-          ['Can I run two managers at once?', 'Badly. Both write into the same folder and neither knows what the other did. This one at least notices foreign files and says so instead of overwriting them.'],
+          ['Can I run two managers at once?', 'With Minify, yes, and it is set up for that: <a href="~/docs/minify/#together">how the two share a game</a>. With anything else, badly - both write into the same folder and neither knows what the other did. This one at least notices foreign files and says so instead of overwriting them.'],
           ['I already installed mods with something else. Do I start over?', 'No. Point this at your game folder and it identifies what is there and takes it over. <a href="~/docs/own-mods/#adopt">How that works</a>.'],
           ['Which is safest?', 'The one whose code you can read and whose build you can check. That is a property of the tool, not a promise from its author.'],
         ],
@@ -1144,6 +1288,150 @@ const ru: Record<Slug, Doc> = {
     ],
   },
 
+  minify: {
+    slug: 'minify',
+    title: 'Dota2 Minify: что это и как работает с этим приложением',
+    h1: 'Dota2 Minify',
+    description:
+      'Dota2 Minify - отдельный патчер модов для Доты 2 с открытым кодом, автор Egezenn: что он умеет, какие моды в нём есть, комьюнити-репозиторий и как он уживается с этим менеджером.',
+    lead: 'Если хочешь настроить Доту дальше, чем позволяет каталог скинов, поставь ещё и Minify. Это инструмент другого рода и другого автора, он делает то, чего не делает это приложение, и обе программы живут в одной папке игры без драки.',
+    card: 'Отдельный патчер модов от Egezenn: что он меняет и как держать его вместе с этим приложением.',
+    blocks: [
+      {
+        k: 'note',
+        t: 'Minify не мой. Его пишет и поддерживает <a href="https://github.com/Egezenn">Egezenn</a>, я над ним никогда не работал, и проекты друг с другом никак не связаны. Страница есть потому, что многие пользуются обоими, и потому, что всё написанное ниже можно проверить в его собственном репозитории.',
+      },
+
+      { k: 'h2', t: 'Что это', id: 'what' },
+      {
+        k: 'p',
+        t: '<a href="https://github.com/Egezenn/dota2-minify">Dota2 Minify</a> сам себя описывает как «Dota2 Mod Patcher &amp; Toolkit for everyone to use mods easily» - патчер и набор инструментов, чтобы модами было просто пользоваться. Открытый код под GPL-3.0, написан на Python с интерфейсом на DearPyGui и собственной командной строкой, собирается под Windows и Linux, есть <a href="https://aur.archlinux.org/packages/dota2-minify-bin">пакет в AUR</a> и частичная поддержка macOS из исходников. Сборки под Windows подписаны через SignPath Foundation, интерфейс переводят добровольцы на Weblate.',
+      },
+      {
+        k: 'p',
+        t: 'Это приложение скачивает готовые файлы модов и кладёт их в папку игры. Minify моды <b>собирает</b> у тебя на машине: достаёт нужные ресурсы из архивов самой Доты, декомпилирует их через Source 2 Viewer, правит (regex-проходы идут через ripgrep), компилирует обратно валвовским компилятором и пакует в VPK. Поэтому патч идёт не мгновенно, а части его модов нужны Dota 2 Workshop Tools, которые ставятся из Steam.',
+      },
+
+      { k: 'h2', t: 'Что он умеет менять', id: 'mods' },
+      { k: 'p', t: '31 мод, который в нём есть, названия как у него, сгруппированы по назначению.' },
+      {
+        k: 'cards',
+        items: [
+          [
+            'Производительность',
+            'Misc Optimization, Minify Base Attacks, Minify Spells &amp; Items, Remove Foilage, Remove River, Remove Weather Effects, Remove Hero Renders, Remove Showcases, Remove Sprays, Tree Mod, Dark Terrain.',
+          ],
+          [
+            'Звук',
+            'Mute Ambient Sounds, Mute Default Announcer, Mute Default Kill Spree Sounds, Mute Taunt Sounds, Mute Voice Line Sounds, Revert Ping Sounds, Remove Pings.',
+          ],
+          [
+            'Интерфейс',
+            'Transparent HUD, Reposition &amp; Rescale HUD, Repopulate Unit Query HUD, Revamp Hero Grid Layout, Custom Hero Grids, Custom Fonts, Custom Backgrounds, Remove Main Menu Background, User Styles.',
+          ],
+          [
+            'Прямо в игре',
+            'Auto Accept Match, Show NetWorth, Stat Site Buttons, OpenDotaGuides Guides.',
+          ],
+        ],
+      },
+      {
+        k: 'p',
+        t: 'Писал их не один человек. Многие сделал сам Egezenn; <a href="https://github.com/robbyz512">robbyz512</a> - большую часть про производительность и звук, <a href="https://github.com/MeGaNeKoS">MeGaNeKoS</a> - принятие матча и нетворс, а Transparent HUD пришёл от ZerdacK из Dota Modding Community. Полная таблица с каждым автором лежит <a href="https://github.com/Egezenn/dota2-minify#special-thanks-to">в его readme</a>.',
+      },
+
+      { k: 'h2', t: 'Комьюнити-репозиторий', id: 'community' },
+      {
+        k: 'p',
+        t: 'Minify умеет подключать репозитории модов помимо своего. Тот, что идёт с ним, - <a href="https://github.com/Egezenn/dota2-minify-community">dota2-minify-community</a>, в нём четыре готовых сборки и четыре отдельных мода:',
+      },
+      {
+        k: 'list',
+        items: [
+          '<b>#&nbsp;Optimizations</b> - все оптимизации Minify одной сборкой.',
+          '<b>#&nbsp;Shut It</b> - выключает раздражающие звуки и не только их.',
+          '<b>#&nbsp;Flavor</b> - улучшения интерфейса и сторонние интеграции. Части нужны Workshop Tools.',
+          '<b>#&nbsp;Old Timer</b> - для тех, кто хочет обратно старые версии некоторых вещей.',
+          '<b>As-Is FoW</b> от Egezenn - туман войны без дрожания и с резкими краями.',
+          '<b>Default Skins</b> от Lupin - возвращает всем скинам их стандартный вид, можно взять по частям: только партиклы, только скины, только курьеров или только варды.',
+          '<b>Simple Dark Terrain</b> от Robby - тёмный ландшафт в сетку.',
+          '<b>Settings Copier</b> от prosto saneyk - переносит хоткеи, видео, звук и гайды между аккаунтами Steam и умеет делать это на лету при смене аккаунта.',
+        ],
+      },
+      {
+        k: 'p',
+        t: 'Второй репозиторий в его списке - <a href="~/docs/catalog/">D2PFX</a>, тот самый каталог, из которого ставит это приложение. Его читают обе программы.',
+      },
+
+      { k: 'h2', t: 'Зачем держать обе', id: 'both' },
+      {
+        k: 'p',
+        t: 'Они почти не пересекаются. Это приложение ставит готовую косметику из открытого каталога: сеты героев, ландшафты, курьеров, варды, эффекты, аннонсеров, курсоры. Minify пересобирает куски самой игры: срезает листву и погоду ради кадров, глушит целые категории звуков, двигает HUD, добавляет гайды и кнопки статистики туда, где игра их не даёт. Каталог скинов второго не умеет, а за сетами героев в патчер не ходят.',
+      },
+      {
+        k: 'p',
+        t: 'Поэтому честный ответ на «что выбрать» часто такой: не выбирать. Каталог взять отсюда, изменения игры - оттуда.',
+      },
+
+      { k: 'h2', t: 'Как они уживаются', id: 'together' },
+      {
+        k: 'p',
+        t: 'Это приложение работает с установленным Minify. Не «должно работать» - оно под это сделано, и всё перечисленное лежит в коде:',
+      },
+      {
+        k: 'list',
+        items: [
+          '<b>Одна папка, моды обеих программ.</b> Дота монтирует ровно одну языковую папку. Minify выбирает свою и направляет туда Steam; это приложение читает, какую папку игра смонтирует на самом деле, и ставит моды в неё. Уже установленные переезжают сами при следующем запуске.',
+          '<b>Его слоты не занимаются.</b> pak65, pak66 и pak67 здесь не раздаются никогда, есть Minify на машине или нет, - чтобы у того, кто поставит его через месяц, не пропал мод.',
+          '<b>Его файлы не трогаются.</b> Общий выключатель модов их обходит, а проверка чужих файлов не предлагает их ни забрать, ни удалить. Узнаются они по метаданным, которые Minify кладёт внутрь того, что собирает: это та же проверка, что он делает сам.',
+          '<b>Про архив карт спрашивают.</b> Дота читает один <code>maps/dota.vpk</code>, поэтому ландшафт любой из программ - это один и тот же файл. Приложение смотрит, чей файл лежит сейчас, и спрашивает, прежде чем заменить.',
+          '<b>Оно говорит, что видит.</b> Если Minify настроен гонять патч перед стартом игры или параметры запуска указывают не туда, «Мои моды» скажут об этом словами, а не оставят тебя с игрой, которая ничего не делает.',
+        ],
+      },
+      {
+        k: 'p',
+        t: 'В обратную сторону тоже. Приложение оставляет в языковой папке <code>dota2modmanager.json</code> со списком того, что поставило, а Minify с версии v1.14rc7 проверяет принадлежность файла, прежде чем чистить папку карт при удалении, - поэтому поставленный здесь ландшафт это переживает.',
+      },
+
+      { k: 'h2', t: 'Где взять', id: 'get' },
+      {
+        k: 'list',
+        items: [
+          'Сайт и загрузки: <a href="https://egezenn.github.io/dota2-minify">egezenn.github.io/dota2-minify</a>',
+          'Вики, в том числе о том, как написать для него мод: <a href="https://egezenn.github.io/dota2-minify/wiki">вики</a>',
+          'Исходники: <a href="https://github.com/Egezenn/dota2-minify">GitHub</a>, зеркало на <a href="https://codeberg.org/egezenn/dota2-minify">Codeberg</a>',
+          'Поддержка и комьюнити: <a href="https://discord.com/invite/9867CPv7cy">Discord</a>, <a href="https://t.me/dota2minify">Telegram</a>',
+        ],
+      },
+
+      { k: 'h2', t: 'Вопросы', id: 'faq' },
+      {
+        k: 'faq',
+        items: [
+          [
+            'Ты делаешь Minify или получаешь деньги за то, что отправляешь к нему людей?',
+            'Ни то, ни другое. Это проект Egezenn, я к нему не причастен, деньги не ходят ни в одну сторону, и это приложение тоже бесплатное. Мы с ним договорились не мешать друг другу - вот и все отношения.',
+          ],
+          [
+            'Что ставить первым?',
+            'Что угодно. Если Minify уже стоит, приложение найдёт выбранную им папку и присоединится. Поставишь Minify потом - нужные ему слоты никто не занял.',
+          ],
+          [
+            'Обе сразу не сломают игру?',
+            'Два мода, меняющие один и тот же файл, по-прежнему не могут примениться вместе - ровно как два мода из одного каталога. Это конфликт модов, а не программ, и приложение показывает такие конфликты на экране. <a href="~/docs/vpk/#order">Как работает порядок загрузки</a>.',
+          ],
+          [
+            'Minify тоже умеет ставить моды из каталога?',
+            'Да, D2PFX есть в списке его репозиториев. Это приложение добавляет к каталогу просмотр с превью, установку в один клик, порядок загрузки, пресеты и подхват уже лежащих у тебя файлов.',
+          ],
+          [
+            'Ему нужны Workshop Tools. Так и должно быть?',
+            'Части его модов - да: они компилируют ресурсы игры, а компилятор приезжает вместе с Dota 2 Workshop Tools из Steam. Модам отсюда они не нужны никогда, потому что приезжают уже собранными.',
+          ],
+        ],
+      },
+    ],
+  },
   compare: {
     slug: 'compare',
     title: 'Какой мод-менеджер для Доты 2 выбрать в 2026',
@@ -1200,7 +1488,7 @@ const ru: Record<Slug, Doc> = {
           ],
           [
             'Dota2 Minify (github.com/Egezenn/dota2-minify)',
-            'Не альтернатива и не конкурент: он компилирует моды, а мы ставим их из каталога, и программы рассчитаны на работу рядом. До игры они добираются по-разному. Дота монтирует три языковые папки, и приложение просто ставит язык озвучки в настройках самой игры на одну из них: папка уже есть на диске, английские голоса остаются, потому что эта озвучка не скачана, а язык текста человек выбирает любой. Minify вместо этого прописывает параметр -language в Steam, который блокирует обе языковые настройки, из-за чего английский текст приходится возвращать отдельным VPK. Смонтирована всегда одна папка, поэтому приложение читает конфиг Minify, говорит, чью папку читает игра, и не занимает слоты pak, в которые пишет Minify (65-67 и 99). Обе программы работают с одним каталогом.',
+            'Не альтернатива и не конкурент. Он собирает моды, патча саму игру, а это приложение ставит готовые из каталога, и вместе они работать умеют: приложение ставит моды в ту папку, которую игра смонтирует на самом деле, включая выбранную Minify, держит для него свободными pak65-pak67 и не трогает его файлы. Поставишь обе - каталог берёшь отсюда, изменения игры оттуда. <a href="~/docs/minify/">Что такое Minify и как держать обе</a>.',
           ],
           [
             'Dota 2 SkinChanger (dota2changer.com)',
@@ -1232,7 +1520,7 @@ const ru: Record<Slug, Doc> = {
       {
         k: 'faq',
         items: [
-          ['Можно держать два менеджера сразу?', 'Плохо получится. Оба пишут в одну папку, и ни один не знает, что сделал другой. Этот хотя бы замечает чужие файлы и говорит о них, а не затирает.'],
+          ['Можно держать два менеджера сразу?', 'С Minify - да, под это всё и сделано: <a href="~/docs/minify/#together">как они делят игру</a>. С остальными плохо: оба пишут в одну папку, и ни один не знает, что сделал другой. Этот хотя бы замечает чужие файлы и говорит о них, а не затирает.'],
           ['Я уже ставил моды другой программой. Начинать заново?', 'Нет. Укажи эту на папку игры, и она опознает, что там лежит, и возьмёт под управление. <a href="~/docs/own-mods/#adopt">Как это работает</a>.'],
           ['Какой безопаснее?', 'Тот, чей код можно прочитать и чью сборку можно проверить. Это свойство инструмента, а не обещание его автора.'],
         ],

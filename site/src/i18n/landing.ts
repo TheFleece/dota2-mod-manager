@@ -153,7 +153,7 @@ export const landing: Record<'en' | 'ru', Landing> = {
       ['It tells you when mods collide', 'Two mods that carry the same file cannot both win. The app says which one the game is loading and lets you swap the order.'],
       ['Setups by link', 'Save the mods you run as a preset and send it in one message. The other side opens it and gets the same look.'],
       ['It survives Dota patches', 'After a game update the app puts back what the patch wiped, and it writes to the game folder as one transaction - if anything fails, everything goes back.'],
-      ['It works next to Minify', 'Both tools can run on the same game. The app recognises Minify, stays out of the pak slots it writes, never touches its files, and tells you which of the two the game is reading.'],
+      ['It works with Dota2 Minify', 'Run both on the same game. This app installs into whichever folder Minify pointed the game at, keeps the pak slots Minify writes free, and never touches its files. <a href="/docs/minify/">What Minify is, and running the two together</a>.'],
     ],
 
     trustTitle: 'Why you can check this one',
@@ -252,7 +252,7 @@ export const landing: Record<'en' | 'ru', Landing> = {
       ['Говорит, когда моды спорят', 'Два мода с одним и тем же файлом не могут выиграть оба. Приложение показывает, чей файл грузит игра, и даёт поменять порядок.'],
       ['Сборки ссылкой', 'Сохрани набор включённых модов пресетом и отправь одним сообщением. На той стороне откроется то же самое.'],
       ['Переживает патчи Доты', 'После обновления игры приложение возвращает на место то, что патч стёр, а в папку игры пишет одной транзакцией: если что-то сорвётся, всё вернётся как было.'],
-      ['Работает рядом с Minify', 'Обе программы могут стоять на одной игре. Приложение узнаёт Minify, не занимает слоты паков, в которые он пишет, его файлы не трогает и говорит, чью папку сейчас читает игра.'],
+      ['Работает с Dota2 Minify', 'Держи обе на одной игре. Приложение ставит моды в ту папку, на которую Minify направил игру, его слоты паков не занимает, его файлы не трогает. <a href="/ru/docs/minify/">Что такое Minify и как держать обе</a>.'],
     ],
 
     trustTitle: 'Почему это можно проверить',

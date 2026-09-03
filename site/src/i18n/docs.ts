@@ -72,6 +72,7 @@ export const docSlugs = [
   'own-mods',
   'safe',
   'catalog',
+  'minify',
   'compare',
 ] as const;
 export type DocSlug = (typeof docSlugs)[number];

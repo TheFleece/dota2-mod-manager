@@ -162,10 +162,12 @@ const shots = shotNames.map((name, i) => ({
   <div class="wrap">
     <h2 class="reveal">{c.whatTitle}</h2>
     <div class="cards lit-group">
+      {/* set:html so a card can send you somewhere. The strings are ours, in src/i18n/landing.ts,
+          and the only markup any of them carries is a link. */}
       {c.cards.map(([title, body]) => (
         <article class="card lit reveal">
           <h3>{title}</h3>
-          <p>{body}</p>
+          <p set:html={body} />
         </article>
       ))}
     </div>
