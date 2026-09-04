@@ -6,7 +6,7 @@
  * warranty whatsoever. LICENSE holds the terms; NOTICE holds the additional terms this
  * repository adds under section 7 of that License, about credit and the program's name.
  */
-const { app, BrowserWindow, ipcMain, shell, dialog, net } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, net, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -110,12 +110,41 @@ function clampZoom(v) {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 }
 
+/* The window has to fit the screen it opens on.
+ *
+ * 1360x860 is the size this is designed at, and on a 1366x768 laptop - still one of the most
+ * common screens there is - a window 860 tall does not fit a work area about 730 tall. Windows
+ * places it anyway and the bottom of it sits under the taskbar or past the edge of the screen,
+ * where the launch bar and the last rows of a list are. Nothing is broken and nothing scrolls
+ * wrong; the part of the window holding them is simply not on the screen, which reads exactly
+ * like a page that stops scrolling partway. A restart does not help, because the size is not
+ * remembered from the last run - it is asked for again every time.
+ *
+ * Display scaling makes it worse rather than better: at 150% a 1080p screen reports a work area
+ * around 1280x680, so a machine whose specification looks roomy has less room than the laptop.
+ *
+ * The minimums are clamped too. A minimum taller than the screen is not a floor, it is a
+ * guarantee of the same overflow, and it takes away the one thing the person can do about it.
+ */
+function windowFit() {
+  const fallback = { width: 1360, height: 860, minWidth: 1020, minHeight: 640 };
+  try {
+    const { width: aw, height: ah } = screen.getPrimaryDisplay().workAreaSize;
+    if (!(aw > 0 && ah > 0)) return fallback;
+    return {
+      width: Math.min(fallback.width, aw),
+      height: Math.min(fallback.height, ah),
+      minWidth: Math.min(fallback.minWidth, aw),
+      minHeight: Math.min(fallback.minHeight, ah),
+    };
+  } catch {
+    return fallback; // no display info: better the designed size than no window at all
+  }
+}
+
 function createWindow() {
   win = new BrowserWindow({
-    width: 1360,
-    height: 860,
-    minWidth: 1020,
-    minHeight: 640,
+    ...windowFit(),
     backgroundColor: '#050506',
     autoHideMenuBar: true,
     frame: false,
@@ -3014,6 +3043,22 @@ function registerIpc() {
               crashed: w.webContents.isCrashed(),
             };
           }),
+          /* The screen, because "it stops scrolling partway" is often a window taller than
+           * the room there is for it. Without this the report shows a window 860 tall and no
+           * way to tell whether 860 was ever on the screen. Scale factor included: at 150% a
+           * 1080p display has less usable height than a 1366x768 laptop. */
+          displays: (() => {
+            try {
+              return screen.getAllDisplays().map((d) => ({
+                id: d.id,
+                primary: d.id === screen.getPrimaryDisplay().id,
+                size: d.size,
+                workArea: d.workArea,
+                scaleFactor: d.scaleFactor,
+              }));
+            } catch (err) { return { error: String(err.message || err) }; }
+          })(),
+          uiScale: settings.get('uiScale'),
           updater: { available: !!autoUpdater, lastError: lastUpdateError },
           remoteConfig: (() => {
             try {
