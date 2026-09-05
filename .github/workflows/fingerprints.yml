@@ -47,8 +47,26 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
+      # The per-mod checkpoint that makes this job incremental. It belongs to the job and to
+      # nothing else, so it is cached rather than committed - see .gitignore. The key moves
+      # every run and the restore-key takes the newest match, which is how a cache is used as
+      # a rolling state file.
+      - name: Restore the fingerprint checkpoint
+        uses: actions/cache/restore@v4
+        with:
+          path: fingerprints.state.json
+          key: fingerprint-state-${{ github.run_id }}
+          restore-keys: fingerprint-state-
+
       - name: Regenerate fingerprints (incremental)
         run: node tools/gen-fingerprints.js --conc 8
+
+      - name: Save the fingerprint checkpoint
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: fingerprints.state.json
+          key: fingerprint-state-${{ github.run_id }}
 
       # sharp, for reading each preview's size and for refusing the two catalog entries that
       # are mp4 files wearing a .webp name
@@ -60,7 +78,7 @@ jobs:
 
       - name: Commit if changed
         run: |
-          paths="fingerprints.json fingerprints.state.json hero-index.json site/src/data/heroes.json site/src/data/categories.json site/public/mods"
+          paths="fingerprints.json hero-index.json site/src/data/heroes.json site/src/data/categories.json site/public/mods"
           if git diff --quiet -- $paths && [ -z "$(git ls-files --others --exclude-standard -- $paths)" ]; then
             echo "catalog unchanged"
           else

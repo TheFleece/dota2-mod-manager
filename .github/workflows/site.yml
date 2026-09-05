@@ -73,6 +73,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler pages deploy dist --project-name dota2modmanager --branch main
 
+      - name: Restore the IndexNow ledger
+        uses: actions/cache/restore@v4
+        with:
+          path: indexnow.state.json
+          key: indexnow-ledger-${{ github.run_id }}
+          restore-keys: indexnow-ledger-
+
       # Bing and Yandex are told the pages changed. Google does not take part and finds them
       # its own way, so a failure here is a slower crawl and nothing more.
       - name: Tell IndexNow
@@ -81,17 +88,12 @@ jobs:
         run: npm run indexnow
 
       # Which addresses went out, so the next deploy announces what changed rather than all
-      # 358 again. Kept at the repository root on purpose: a commit under site/ would match
-      # this workflow's own path filter.
+      # 358 again. Cached rather than committed: it is this job's own ledger, nothing else
+      # reads it, and a commit per deploy is how the log filled up with bot noise. Losing the
+      # cache costs one over-announcement, which search engines are happy to receive.
       - name: Remember what was announced
-        continue-on-error: true
-        run: |
-          if ! git diff --quiet -- indexnow.state.json || [ -n "$(git ls-files --others --exclude-standard -- indexnow.state.json)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add indexnow.state.json
-            # [skip ci] because a push made with a real token starts workflows and the
-            # default one never did. Nothing here is worth a run of anything.
-            git commit -m "Update the IndexNow ledger [skip ci]"
-            git push
-          fi
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: indexnow.state.json
+          key: indexnow-ledger-${{ github.run_id }}

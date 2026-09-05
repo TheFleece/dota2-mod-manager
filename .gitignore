@@ -10,3 +10,14 @@ sandbox/
 
 # The weekly search report is a build product: it is posted as an issue comment, not kept.
 seo-report.md
+
+# Bookkeeping the scheduled jobs keep for themselves, and nothing else reads.
+#
+# These were committed back to main after every run, which is how a source repository ends up
+# 57 MB: fingerprints.state.json alone is 434 KB and had been rewritten 66 times, 23.6 MB of
+# history for a file whose only reader is the job that wrote it. They live in the Actions cache
+# now. Every one of the three tools already treats a missing state file as "first run", so a
+# cache that expires costs one slower run and nothing else.
+fingerprints.state.json
+indexnow.state.json
+seo-state.json

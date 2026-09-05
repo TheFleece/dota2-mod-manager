@@ -1,0 +1,49 @@
+# Dependency updates, proposed as pull requests rather than found later.
+#
+# Three ecosystems, because the repository holds three sets of dependencies: the app, the site
+# that documents it, and the actions the workflows call. The last one matters most for a
+# project whose whole trust argument is "the installer is built by a public job": an action
+# pinned to a moving tag is code running in that job, and it should be updated deliberately.
+#
+# Weekly, grouped, and capped. A dependency bot that opens fifteen pull requests a week is a
+# bot whose pull requests nobody reads.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      app-dependencies:
+        patterns: ['*']
+        update-types: [minor, patch]
+    commit-message:
+      prefix: 'deps'
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      site-dependencies:
+        patterns: ['*']
+        update-types: [minor, patch]
+    commit-message:
+      prefix: 'deps(site)'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: 'ci'

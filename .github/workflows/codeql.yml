@@ -1,0 +1,50 @@
+name: CodeQL
+
+# Static analysis of everything in the repository, by GitHub, on a schedule and on every push
+# to main.
+#
+# This exists to be checked rather than to be passed. The app writes into a game folder,
+# unpacks archives somebody else built, and patches two of Dota's own files; "read the source"
+# is the answer offered to anybody who asks whether that is safe, and an analyser anybody can
+# see the results of is a second answer that costs the reader nothing. The findings are public
+# under Security -> Code scanning.
+#
+# JavaScript and TypeScript in one language pass: the app is plain JS, the site is Astro and
+# TypeScript, and CodeQL reads both from the same setup.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Mondays. A weekly pass catches a rule that was added after the code was written, which
+    # is most of what scheduled scanning is actually for.
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyse JavaScript and TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # security-and-quality over the default set: the default reports what can be
+          # exploited, this also reports what is dead, unreachable or contradictory, which is
+          # the half that keeps a codebase honest.
+          queries: security-and-quality
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

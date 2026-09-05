@@ -94,16 +94,12 @@ jobs:
           gh issue comment "$number" --body-file seo-report.md
           echo "posted to issue #$number"
 
-      # Next week's report compares against this one.
+      # Next week's report compares against this one. Cached, not committed: a weekly commit
+      # of nine kilobytes nobody reads is nine kilobytes of noise in the log. Without it the
+      # next report simply has nothing to compare against and says so.
       - name: Remember this week's numbers
         if: inputs.raw == ''
-        run: |
-          if ! git diff --quiet -- seo-state.json || [ -n "$(git ls-files --others --exclude-standard -- seo-state.json)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add seo-state.json
-            # [skip ci] because a push made with a real token starts workflows and the
-            # default one never did. Nothing here is worth a run of anything.
-            git commit -m "Update the search snapshot [skip ci]"
-            git push
-          fi
+        uses: actions/cache/save@v4
+        with:
+          path: seo-state.json
+          key: seo-snapshot-${{ github.run_id }}
