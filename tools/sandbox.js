@@ -23,7 +23,6 @@ const { crc32 } = require('zlib');
 
 const { readVpkEntryFile, buildVpk } = require('../src/vpk.js');
 const { Catalog, RAW_BASE } = require('../src/catalog.js');
-const { findDotaGamePath } = require('../src/steam.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const SANDBOX = path.join(ROOT, 'sandbox');

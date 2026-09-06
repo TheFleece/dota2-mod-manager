@@ -8,7 +8,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { app, ipcMain } = require('electron');
+const { ipcMain } = require('electron');
 
 const { t } = require('./i18n');
 const { isMinifyPak } = require('./minify');
@@ -221,7 +221,6 @@ function registerLibraryIpc({
   ipcMain.handle('mods:externalSetEnabled', (e, fileName, enabled) => {
     try {
       const lang = installer.langFolder();
-      const abs = path.join(lang, fileName);
       const base = fileName.replace(/\.off$/i, '');
       const on = path.join(lang, base);
       const off = on + '.off';

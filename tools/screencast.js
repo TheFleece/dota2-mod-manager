@@ -27,7 +27,6 @@
  */
 const { BrowserWindow } = require('electron');
 const path = require('path');
-const fs = require('fs');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

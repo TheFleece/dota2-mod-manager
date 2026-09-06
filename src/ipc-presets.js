@@ -9,7 +9,6 @@
  * The bodies are unchanged from where they were.
  */
 const fs = require('fs');
-const path = require('path');
 const { app, dialog, ipcMain } = require('electron');
 
 const { Library } = require('./library');

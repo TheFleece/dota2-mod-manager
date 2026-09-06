@@ -81,7 +81,7 @@ test('a manifest that is not JSON leaves a .bak and starts empty rather than thr
 
 test('a preset holds what is switched on, and only that', (t) => {
   const { store } = lib(t);
-  const on = store.add(modFields('On'));
+  store.add(modFields('On'));
   const off = store.add(modFields('Off'));
   store.setEnabled(off.id, false);
 

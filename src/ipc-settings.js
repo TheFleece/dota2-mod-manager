@@ -4,7 +4,6 @@
  * renderer caches whatever it is handed - see src/settings-view.js for what that cost once.
  * Bodies unchanged from main.js.
  */
-const fs = require('fs');
 const path = require('path');
 const { dialog, ipcMain } = require('electron');
 

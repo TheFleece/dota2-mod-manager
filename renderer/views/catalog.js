@@ -10,7 +10,7 @@
  * which is why the mod index is built here: it is a reading of the same data.
  */
 import { $ } from '../core/dom.js';
-import { RAW_BASE, COSMETIC_SLOTS, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, TOOLS_HIDDEN, SORTS, freshFilters } from '../core/constants.js';
+import { RAW_BASE, COSMETIC_PREFIX, cosmeticMeta, RAIL_SECTIONS, CATALOG_EXCLUDE, TOOLS_HIDDEN, SORTS, freshFilters } from '../core/constants.js';
 import { state } from '../core/store.js';
 import { registerView, render, pane } from '../core/router.js';
 import { keyOf, pickedIn, refreshInstalledIndex, refreshCosmeticSlots } from '../core/installed.js';
@@ -807,20 +807,11 @@ function queueEntry(cat, mod) {
 function cardHtml(m, i, { cat: withCat = false } = {}) {
   const cat = m._cat;
   const style = shownStyle(cat, m);
-  const prev = previewUrl(cat, style?.preview || m.preview);
   // the badge answers for the look on show, not for "one of these is installed somewhere"
   const installed = style
     ? state.installedIndex.has(keyOf(cat, m.name, style.label))
     : isInstalled(cat, m);
   const isPack = m.type === 'pack';
-  const external = !installTarget(m) && !m.styles && !isPack;
-  // What the mod changes, on the card rather than only in the modal: scrolling a category is
-  // how people read the catalog, and turning a filter on to find out whether something has
-  // effects is not reading. Effects and icons come before the slot the item sits in - three
-  // fit, and what a mod does is what the eye is after while scrolling.
-  const tags = [...new Set(Object.entries(m.tags || {}).filter(([, v]) => v).map(([k]) => canonTag(k)))]
-    .sort((a, b) => (SLOT_TAGS.has(a) ? 1 : 0) - (SLOT_TAGS.has(b) ? 1 : 0))
-    .slice(0, 3);
   const author = m.author || m.sender;
   // built up rather than left as an empty row: a grid that shows none of these would
   // otherwise hold a line of nothing open under every name
@@ -828,7 +819,6 @@ function cardHtml(m, i, { cat: withCat = false } = {}) {
     withCat ? `<span>${esc(catName(cat))}</span>` : '',
     author ? `<span class="author-chip"><span class="ms">person</span>${esc(author)}</span>` : '',
   ].join('');
-  const playable = modPreviewMedia(cat, m);
   return `
     <div class="card ${installed ? 'installed' : ''}" data-key="${esc(keyOf(cat, m.name, null))}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">${cardMediaHtml(cat, m)}</div>

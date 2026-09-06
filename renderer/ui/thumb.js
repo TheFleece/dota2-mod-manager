@@ -8,7 +8,7 @@
 import { state } from '../core/store.js';
 import { isCursorRec } from '../core/records.js';
 import { esc } from './format.js';
-import { previewUrl, isVideo, isMedia, mediaHtml } from './media.js';
+import { previewUrl, isVideo } from './media.js';
 import { cosmeticIcon, cosmeticIconKnown } from './cosmetic-icons.js';
 
 // The catalog's own picture for a mod, by the name it is filed under. Styles have one each,

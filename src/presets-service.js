@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { app, dialog } = require('electron');
+const { app } = require('electron');
 
 const { Library } = require('./library');
 const { readPresetFile } = require('./preset-share');

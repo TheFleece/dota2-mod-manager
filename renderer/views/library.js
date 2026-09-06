@@ -89,7 +89,6 @@ function packRowHtml(rec, i, masterOff) {
   const open = packsOpen.has(rec.id);
   const members = rec.members || [];
   const onCount = members.filter((m) => m.enabled).length;
-  const langDir = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
   return `
     <div class="lib-row pack-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" ${rec.slotIndex != null ? `data-order="${rec.slotIndex}"` : ''} style="--i:${Math.min(i, 20)}">
       ${gripHtml(rec)}

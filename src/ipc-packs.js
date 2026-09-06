@@ -4,7 +4,6 @@
  * change to it means rebuilding and redeploying that archive. Bodies unchanged from main.js.
  */
 const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 const { ipcMain } = require('electron');
 

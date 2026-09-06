@@ -5,7 +5,7 @@ const os = require('os');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
-const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles,
+const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles,
   findContentRoot, packFolder } = require('./vpk');
 const { extractDeltas, deltaTable, crc32 } = require('./schema');
 // Whole-game tables and tool branding that packaging tools bake into EVERY export.
@@ -1005,7 +1005,6 @@ class Installer {
    * @returns {{ files: number, bytes: number }}
    */
   unpackToFolder(rec, dest) {
-    const lang = this.langFolder();
     const dirRec = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
     if (!dirRec) throw new Error(t('У этого мода нет _dir.vpk — распаковывать нечего'));
     const dirAbs = this.langFileOnDisk(dirRec.relPath);
@@ -1496,7 +1495,8 @@ class Installer {
     const onDisk = (relPath) => ['', '.off', MASTER_OFF]
       .map((suf) => path.join(lang, relPath) + suf).find((p) => fs.existsSync(p));
 
-    let changed = false;
+    // No `changed` flag and no save at the end: library.update() below persists each record
+    // as it is folded, which is what the sibling above needs a flag for and this does not.
     for (const rec of library.list()) {
       if (rec.kind === 'pack') continue;
       const dirRec = (rec.files || []).find((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
@@ -1516,7 +1516,6 @@ class Installer {
           for (const suf of ['', '.off', MASTER_OFF]) fs.rmSync(path.join(lang, f.relPath) + suf, { force: true });
         }
         library.update(rec.id, { files: rec.files.filter((f) => !parts.includes(f)) });
-        changed = true;
       } catch { /* missing or unreadable volume — leave the set as it is */ }
     }
   }
