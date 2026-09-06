@@ -811,7 +811,6 @@ function cardHtml(m, i, { cat: withCat = false } = {}) {
   const installed = style
     ? state.installedIndex.has(keyOf(cat, m.name, style.label))
     : isInstalled(cat, m);
-  const isPack = m.type === 'pack';
   const author = m.author || m.sender;
   // built up rather than left as an empty row: a grid that shows none of these would
   // otherwise hold a line of nothing open under every name

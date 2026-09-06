@@ -12,9 +12,15 @@
 const TRAILING_LINK = /\s*<a\b[^>]*>.*?<\/a>\s*[.!?]?\s*$/i;
 
 export function plainText(html: string): string {
-  return html
-    .replace(TRAILING_LINK, '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Stripping tags once is enough for the copy this runs on, which is our own, and not enough
+  // in general: "<<a>a>" survives a single pass and comes out as a tag again. Nothing here is
+  // load-bearing for security - the output goes into JSON-LD, which Astro escapes - but a
+  // function whose whole job is removing markup should not leave any behind, so it repeats
+  // until the string stops changing.
+  let out = html.replace(TRAILING_LINK, '');
+  for (let before = ''; before !== out;) {
+    before = out;
+    out = out.replace(/<[^>]*>/g, '');
+  }
+  return out.replace(/\s+/g, ' ').trim();
 }
