@@ -19,7 +19,7 @@ const { t } = require('./i18n');
 
 /**
  * @param {object} ctx  the app's services and the few main-process callbacks these need
- * @param {Electron.BrowserWindow} ctx.win
+ * @param {() => Electron.BrowserWindow} ctx.win  read late; see the note below
  * @param {object} ctx.settings
  * @param {object} ctx.catalog
  * @param {object} ctx.installer
@@ -35,6 +35,9 @@ function registerPresetsIpc({
   win, settings, catalog, installer, library, schemaService, presets,
   adoptImportedFiles, afterDeployMaster, disableOtherCursors, sendProgress,
 }) {
+  // `win` arrives as a getter, not as the window. These are registered before the window
+  // is created, so a value captured here would be undefined forever - which is exactly
+  // what win:isMaximized did on the first run after this file was split out.
   ipcMain.handle('presets:list', async () => {
     const cat = await presets.catalogIndex();
     return Promise.all(library.listPresets().map(async (p) => {
@@ -102,7 +105,7 @@ function registerPresetsIpc({
     const preset = library.getPreset(id);
     if (!preset) return { error: t('Пресет не найден') };
     const safe = preset.name.replace(/[<>:"/\\|?*]/g, '_') || 'preset';
-    const res = await dialog.showSaveDialog(win, {
+    const res = await dialog.showSaveDialog(win(), {
       title: t('Сохранить пресет для друга'),
       defaultPath: `${safe}.d2mm`,
       filters: [{ name: t('Пресет Mod Manager'), extensions: ['d2mm'] }],
@@ -150,7 +153,7 @@ function registerPresetsIpc({
   });
 
   ipcMain.handle('presets:importDialog', async () => {
-    const res = await dialog.showOpenDialog(win, {
+    const res = await dialog.showOpenDialog(win(), {
       title: t('Выбери файл пресета (.d2mm)'),
       properties: ['openFile'],
       filters: [{ name: t('Пресет Mod Manager'), extensions: ['d2mm'] }],
