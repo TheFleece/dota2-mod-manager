@@ -172,6 +172,23 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         t: 'Nobody honest promises anything here. What can be said precisely: Valve has never published a rule that names cosmetic mods; VAC looks for code injected into the running game rather than files sitting in a folder; people have been installing these for over eight years. That is every argument there is, and none of them is a guarantee. The app never touches your account, and the risk is yours. <a href="~/docs/safe/#ban">The long answer</a>.',
       },
 
+      { k: 'h2', t: 'How to check any of this', id: 'verify' },
+      {
+        k: 'p',
+        t: 'Nothing on this page needs taking on trust. Each line below is a link to the thing itself rather than a description of it.',
+      },
+      {
+        k: 'list',
+        items: [
+          '<b>The installer is built in public.</b> Every release is produced by <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> on a GitHub-hosted runner, from the commit the version tag points at. Nothing is uploaded from a desktop. <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml">Every run, with its log</a>.',
+          '<b>The tag and the code match.</b> A release page names its tag; the tag names a commit; the run log for that tag shows the checkout. Three clicks, no account.',
+          '<b>Tests run on every push.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>, with a coverage floor that fails the run rather than warning about it.',
+          '<b>The code is scanned.</b> CodeQL on every push and weekly, with the security-and-quality rules; findings are public under the Security tab of the repository.',
+          '<b>Dependencies are watched.</b> Dependabot covers the app, this site, and the actions the workflows themselves call.',
+          '<b>What it fetches while running</b> is two public files: the mods.json the catalog publishes, and the fingerprint map this repository publishes. Both are readable in a browser.',
+        ],
+      },
+
       { k: 'h2', t: 'Links', id: 'links' },
       {
         k: 'list',
@@ -321,6 +338,23 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       {
         k: 'p',
         t: 'Гарантий тут честно не даёт никто. Что можно сказать точно: Valve никогда не публиковала правила, которое называет косметические моды; VAC ищет код, внедрённый в процесс игры, а не файлы, лежащие в папке; такие моды ставят больше восьми лет. Это все доводы, какие есть, и гарантией они не являются. Программа не касается твоего аккаунта, риск твой. <a href="~/docs/safe/#ban">Развёрнутый ответ</a>.',
+      },
+
+      { k: 'h2', t: 'Как всё это проверить', id: 'verify' },
+      {
+        k: 'p',
+        t: 'Ничего на этой странице не нужно принимать на веру. Каждая строчка ниже - ссылка на саму вещь, а не на её описание.',
+      },
+      {
+        k: 'list',
+        items: [
+          '<b>Установщик собирается публично.</b> Каждый релиз делает <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> на раннере GitHub из того коммита, на который указывает тег версии. Ничего не заливается с чьего-то компьютера. <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml">Все прогоны с логами</a>.',
+          '<b>Тег и код сходятся.</b> Страница релиза называет тег, тег называет коммит, лог прогона по этому тегу показывает checkout. Три клика, без аккаунта.',
+          '<b>Тесты гоняются на каждый пуш.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>, с порогом покрытия, который роняет прогон, а не предупреждает.',
+          '<b>Код сканируется.</b> CodeQL на каждый пуш и раз в неделю, набор правил security-and-quality; находки публичны во вкладке Security.',
+          '<b>За зависимостями следят.</b> Dependabot покрывает приложение, этот сайт и сами actions, которые вызывают воркфлоу.',
+          '<b>Что программа тянет во время работы</b> - два публичных файла: mods.json самого каталога и карта отпечатков, которую публикует этот репозиторий. Оба открываются в браузере.',
+        ],
       },
 
       { k: 'h2', t: 'Ссылки', id: 'links' },
