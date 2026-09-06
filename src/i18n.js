@@ -50,7 +50,6 @@ const EN = {
   'Выбери файл пресета (.d2mm)': 'Pick a preset file (.d2mm)',
   'сборка пресета': 'building preset',
   'В пресете нет модов': 'The preset has no mods',
-  'Пресет не найден': 'Preset not found',
   'Введи название пресета': 'Enter a preset name',
   'В пресете только свои моды — ссылка их не донесёт, отправь файлом':
     'The preset holds only your own mods — a link cannot carry them, send the file',

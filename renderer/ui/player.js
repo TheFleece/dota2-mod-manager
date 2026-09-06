@@ -24,7 +24,7 @@ export function openPlayer(url, title) {
         <button class="pl-btn" data-act="play" aria-label="${L`Пауза`}"><span class="ms">pause</span></button>
         <div class="pl-progress"><div class="pl-fill"></div><div class="pl-knob"></div></div>
         <span class="pl-time">0:00 / 0:00</span>
-        <button class="pl-btn" data-act="mute" aria-label="${L`Звук`}"><span class="ms">volume_up</span></button>
+        <button class="pl-btn" data-act="mute" aria-label="${L`Громкость`}"><span class="ms">volume_up</span></button>
         ${audio ? '' : `<button class="pl-btn" data-act="fs" aria-label="${L`На весь экран`}"><span class="ms">fullscreen</span></button>`}
       </div>
     </div>`;

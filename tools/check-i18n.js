@@ -201,8 +201,37 @@ const SIDES = [
   { name: 'main', dict: 'src/i18n.js', calls: ['t'], files: ['main.js', ...jsFiles('src', ['src/i18n.js'])] },
 ];
 
+/* A key written twice in one dictionary.
+ *
+ * The table is a plain object literal, so the later entry wins and the earlier one is dead -
+ * silently, because both halves look right when you read them. Found by CodeQL first:
+ * 'Звук' meant the Audio category filter in one place and the player's sound control in
+ * another, and English users got "Sound" on the category because it came second.
+ *
+ * Repeats where both sides say the same thing are only clutter, but they are how the harmful
+ * kind hides, so they fail too. One Russian word that has to mean two English things needs two
+ * source strings, not two rows.
+ */
+function duplicateKeys(file) {
+  const lines = fs.readFileSync(path.join(ROOT, file), 'utf8').split('\n');
+  const at = new Map();
+  lines.forEach((line, i) => {
+    for (const m of line.matchAll(/'((?:[^'\\]|\\.)*)'\s*:/g)) {
+      if (!at.has(m[1])) at.set(m[1], []);
+      at.get(m[1]).push(i + 1);
+    }
+  });
+  return [...at].filter(([, seen]) => seen.length > 1);
+}
+
 let missing = 0;
 for (const side of SIDES) {
+  const dupes = duplicateKeys(side.dict);
+  if (dupes.length) {
+    missing += dupes.length;
+    console.log(`\n${dupes.length} key(s) written more than once in ${side.dict}:`);
+    for (const [key, seen] of dupes) console.log(`  ${JSON.stringify(key)}  lines ${seen.join(', ')}`);
+  }
   const dict = readDict(side.dict);
   const used = new Set();
   const gaps = [];

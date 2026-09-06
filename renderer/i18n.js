@@ -145,10 +145,10 @@ const EN = {
   // cosmetic slot labels
   'Погода': 'Weather', 'Ландшафт': 'Terrain', 'Интерфейс игры': 'Game HUD',
   'Экран загрузки': 'Loading screen', 'Экран противостояния': 'Versus screen',
-  'Курьер': 'Courier', 'Варды': 'Wards', 'Крипы Света': 'Radiant creeps',
+  'Курьер': 'Courier', 'Крипы Света': 'Radiant creeps',
   'Крипы Тьмы': 'Dire creeps', 'Осадные Света': 'Radiant siege creeps',
   'Осадные Тьмы': 'Dire siege creeps', 'Башни Света': 'Radiant towers',
-  'Башни Тьмы': 'Dire towers', 'Музыка': 'Music', 'Комментатор': 'Announcer',
+  'Башни Тьмы': 'Dire towers', 'Комментатор': 'Announcer',
   'Серия убийств': 'Kill streak',
   'Поиск модов…': 'Search mods…', 'Очистить': 'Clear', 'Свернуть': 'Minimize',
   'Развернуть': 'Maximize', 'Закрыть': 'Close', 'Поиск Dota 2…': 'Looking for Dota 2…',
@@ -186,7 +186,7 @@ const EN = {
 
   // ---------- dialogs / common ----------
   'Удалить': 'Delete', 'Отмена': 'Cancel', 'ОК': 'OK', 'Готово': 'Done',
-  'Пауза': 'Pause', 'Звук': 'Sound', 'На весь экран': 'Fullscreen',
+  'Пауза': 'Pause', 'Громкость': 'Sound', 'На весь экран': 'Fullscreen',
   'мод': 'mod',
 
   // ---------- launch + master switch (app.js) ----------
@@ -204,7 +204,6 @@ const EN = {
   'Категории': 'Categories',
   'Поиск:': 'Search:',
   'Ничего не найдено': 'Nothing found',
-  'Ничего не найдено — сбрось фильтры': 'Nothing found — reset the filters',
   'Установленные': 'Installed',
   'Смотреть превью': 'Watch preview',
   'Установлен': 'Installed',
@@ -295,7 +294,6 @@ const EN = {
     ' of {0} slots. The game won’t load more than ~99 separate paks — combine mods into one to fit more.',
   'Поиск в библиотеке…': 'Search the library…',
   'Импорт VPK': 'Import VPK',
-  'Папка модов': 'Mods folder',
   'Выбрать всё': 'Select all',
   'Отметь моды галочками — объединить в пак или массово управлять':
     'Tick mods to combine them into a pack or manage in bulk',
@@ -394,7 +392,6 @@ const EN = {
   'Пресет сохранён · {0} МБ': 'Preset saved · {0} MB',
   'В пресете нет модов': 'The preset has no mods',
   'получен': 'received',
-  'Установить': 'Install',
   '{0} уже стоят': '{0} already installed',
   '{0} скачать из каталога': '{0} to download from the catalog',
   '{0} внутри файла': '{0} inside the file',
@@ -459,7 +456,6 @@ const EN = {
   '48 МБ, качается один раз в папку приложения. Удалить можно когда угодно в настройках, ничего сломано не будет.':
     '48 MB, downloaded once into the app\'s own folder. Remove it whenever you like in Settings; nothing breaks.',
   'Не сейчас': 'Not now',
-  'Скачать': 'Download',
   'Source 2 Viewer установлен — превью модов заработают': 'Source 2 Viewer installed — mod pictures will work now',
   'Не удалось скачать: {0}. Попробовать снова можно в настройках.':
     'Could not download it: {0}. Settings has the retry.',
@@ -609,21 +605,16 @@ const EN = {
   'не найден': 'not found',
   'Найти автоматически': 'Auto-detect',
   'Указать вручную': 'Set manually',
-  'Интерфейс': 'Interface',
   'Язык': 'Language',
   'Масштаб': 'Scale',
   'Мельче': 'Smaller',
   'Крупнее': 'Bigger',
   'Сбросить': 'Reset',
-  'Применить': 'Apply',
   'Перенести сюда': 'Move here',
   'Кэш загрузок': 'Download cache',
   'Размер': 'Size',
-  'Очистить': 'Clear',
-  'Каталог': 'Catalog',
   'Обновлён': 'Updated',
   'Обновить сейчас': 'Refresh now',
-  'Источник': 'Source',
   'О программе': 'About',
   'Версия': 'Version',
   'Dota 2 найдена: {0}': 'Dota 2 found: {0}',
@@ -645,7 +636,6 @@ const EN = {
   'Что нового': 'What\'s new',
   'свободная программа без каких-либо гарантий': 'free software with no warranty of any kind',
   'версия {0}': 'version {0}',
-  'Понятно': 'Got it',
   'Для этой версии заметок нет': 'No notes for this version',
 
   // ---------- progress + updates ----------
