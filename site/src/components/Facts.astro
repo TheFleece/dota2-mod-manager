@@ -37,8 +37,19 @@ const nouns: Record<'en' | 'ru', { mods: [string, string, string]; cats: [string
   ru: { mods: ['мод', 'мода', 'модов'], cats: ['категории', 'категориях', 'категориях'] },
 };
 
+/* Platform names, in the language of the page. The list itself is read off the newest
+   release's assets (src/lib/stats.ts) so nobody has to remember to update it. */
+const platformNames: Record<'en' | 'ru', Record<string, string>> = {
+  en: { windows: 'Windows 10 and 11', linux: 'Linux', macos: 'macOS' },
+  ru: { windows: 'Windows 10 и 11', linux: 'Linux', macos: 'macOS' },
+};
+// comma-joined rather than "and"-joined: the Windows label already carries an "and 11",
+// and two of them in one line reads like a mistake
+const platforms = stats.platforms.map((p) => platformNames[lang][p] ?? p).join(', ');
+
 const numbers: Record<string, string> = {
   '{version}': appVersion(),
+  '{platforms}': platforms,
   '{mods}': nf.format(stats.mods),
   '{modsWord}': agree(stats.mods, nouns[lang].mods),
   '{categories}': nf.format(stats.categories),

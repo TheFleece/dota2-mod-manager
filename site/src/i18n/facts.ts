@@ -54,7 +54,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         k: 'rows',
         items: [
           ['Version', '{version}'],
-          ['Platform', 'Windows 10 and 11'],
+          ['Platform', '{platforms}'],
           ['Price', 'Free, with nothing paid inside it'],
           ['License', 'GPL-3.0'],
           ['Mods in the catalog', '{mods}'],
@@ -205,7 +205,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         k: 'rows',
         items: [
           ['Версия', '{version}'],
-          ['Платформа', 'Windows 10 и 11'],
+          ['Платформа', '{platforms}'],
           ['Цена', 'Бесплатно, платного внутри нет'],
           ['Лицензия', 'GPL-3.0'],
           ['Модов в каталоге', '{mods}'],

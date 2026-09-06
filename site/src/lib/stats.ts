@@ -31,9 +31,13 @@ export interface SiteStats {
   downloads: number;
   /** Category id -> how many mods are in it. */
   byCategory: Record<string, number>;
+  /** Which platforms the newest release actually shipped a build for. */
+  platforms: Platform[];
   /** False when the build could not reach one of the sources and fell back. */
   live: boolean;
 }
+
+export type Platform = 'windows' | 'linux' | 'macos';
 
 /** Counted on 2026-08-10. Only reached when a build has no network. */
 const FALLBACK: SiteStats = {
@@ -47,8 +51,26 @@ const FALLBACK: SiteStats = {
     river: 20, trees: 18, emblems: 16, music: 15, sounds: 12, roshan: 10, fonts: 10,
     announcers: 7, wards: 5,
   },
+  platforms: ['windows', 'linux'],
   live: false,
 };
+
+/* Which platforms ship, read off the newest release rather than typed onto a page.
+ *
+ * The facts page said "Windows 10 and 11" while every release since 1.9 has also carried an
+ * AppImage, so the page understated the product for weeks and nobody noticed - which is what
+ * happens to any fact a human has to remember to update. An installer is Windows, an AppImage
+ * is Linux, a .dmg is macOS. If a release ever stops carrying one, the page stops claiming it
+ * without anybody editing anything.
+ */
+function platformsOf(assets: any[]): Platform[] {
+  const names = assets.map((a: any) => String(a?.name ?? '').toLowerCase());
+  const out: Platform[] = [];
+  if (names.some((n) => n.endsWith('.exe'))) out.push('windows');
+  if (names.some((n) => n.endsWith('.appimage'))) out.push('linux');
+  if (names.some((n) => n.endsWith('.dmg'))) out.push('macos');
+  return out;
+}
 
 async function catalogCounts() {
   const res = await fetch(CATALOG, { headers: UA });
@@ -77,7 +99,10 @@ async function releaseCounts() {
     .flatMap((r: any) => r.assets ?? [])
     .filter((a: any) => a.name?.toLowerCase().endsWith('.exe'))
     .reduce((n: number, a: any) => n + (a.download_count ?? 0), 0);
-  return { releases: list.length, downloads };
+  // the newest release is the one whose assets describe what people get today
+  const platforms = platformsOf(list[0]?.assets ?? []);
+  if (!platforms.length) throw new Error('releases: newest carries no recognised build');
+  return { releases: list.length, downloads, platforms };
 }
 
 let pending: Promise<SiteStats> | null = null;
