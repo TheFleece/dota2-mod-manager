@@ -1,0 +1,101 @@
+/* Settings, the Discord account, and asking the catalog for a refresh.
+ *
+ * Both settings handlers answer with the whole view rather than the bare store, because the
+ * renderer caches whatever it is handed - see src/settings-view.js for what that cost once.
+ * Bodies unchanged from main.js.
+ */
+const fs = require('fs');
+const path = require('path');
+const { dialog, ipcMain } = require('electron');
+
+const i18n = require('./i18n');
+const { t } = i18n;
+
+/** @param {object} ctx  the services and main-process callbacks these channels use */
+function registerSettingsIpc({
+  // The four read late are main-process state that changes while the app runs; setPresenceView
+  // writes one back. Passing values here would freeze them at registration time.
+  applyPresenceSetting, catalog, discordAuth, findDotaGamePath, library, moveLangFolder,
+  presence, refreshPresence, settings, settingsView, validateGamePath,
+  langFolder, patchWatcher, setPresenceView, win,
+}) {
+  ipcMain.handle('settings:get', () => settingsView({ consumeMigration: true }));
+
+  ipcMain.handle('settings:set', (e, key, value) => {
+    // keep main-process strings (dialogs, errors) in sync with the UI language
+    if (key === 'uiLang') i18n.setLang(value);
+    settings.set(key, value);
+    // the status text is localized, so a language change has to redraw it too
+    if (key === 'discordPresence' || key === 'uiLang') applyPresenceSetting();
+    return settingsView();
+  });
+
+  // ----- Discord presence -----
+  // the renderer tells us which tab is open; everything else comes from the library
+  ipcMain.handle('presence:view', (e, view) => {
+    setPresenceView(typeof view === 'string' ? view : 'catalog');
+    refreshPresence();
+  });
+
+  // ----- account (Discord) -----
+  ipcMain.handle('account:signIn', async () => {
+    try {
+      const account = await discordAuth.signIn();
+      settings.set('account', account);
+      if (win() && !win().isDestroyed()) { win().show(); win().focus(); }
+      return { ok: true, account };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  ipcMain.handle('account:signOut', () => {
+    settings.set('account', null);
+    return { ok: true };
+  });
+
+  // rescue mods sitting in a folder the game does not mount (our old dota_123, another
+  // tool's dota_minify, or whatever the audio language used to be)
+  ipcMain.handle('settings:moveLangFiles', (e, fromSuffix) => {
+    const game = settings.get('dotaGamePath');
+    if (!game) return { error: t('Путь к Dota 2 не задан') };
+    const moved = moveLangFolder(game, String(fromSuffix || ''), langFolder());
+    return { moved, to: langFolder() };
+  });
+
+  ipcMain.handle('settings:detectDota', async () => {
+    const found = await findDotaGamePath();
+    if (found) {
+      settings.set('dotaGamePath', found);
+      // the watcher is holding handles on the folder that was current a moment ago
+      patchWatcher()?.rearm();
+    }
+    return found;
+  });
+
+  ipcMain.handle('settings:browseDota', async () => {
+    const res = await dialog.showOpenDialog(win(), {
+      title: t('Выбери папку game внутри dota 2 beta'),
+      properties: ['openDirectory'],
+    });
+    if (res.canceled || !res.filePaths[0]) return null;
+    let p = res.filePaths[0];
+    // allow picking "dota 2 beta" root as well
+    if (!validateGamePath(p) && validateGamePath(path.join(p, 'game'))) p = path.join(p, 'game');
+    if (!validateGamePath(p)) return { error: t('В этой папке нет файлов Dota 2 — нужна папка game внутри dota 2 beta') };
+    settings.set('dotaGamePath', p);
+    patchWatcher()?.rearm();
+    return { path: p };
+  });
+
+  // ----- catalog -----
+  ipcMain.handle('catalog:load', async (e, force) => {
+    try {
+      return await catalog.load({ forceRefresh: !!force });
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+}
+
+module.exports = { registerSettingsIpc };

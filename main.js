@@ -49,6 +49,8 @@ const { registerLibraryIpc } = require('./src/ipc-library');
 const { registerPacksIpc } = require('./src/ipc-packs');
 const { registerWindowIpc } = require('./src/ipc-window');
 const { registerMiscIpc } = require('./src/ipc-misc');
+const { settingsViewFor } = require('./src/settings-view');
+const { registerSettingsIpc } = require('./src/ipc-settings');
 
 /* Presets and sharing, wired once the services they use exist. Assigned in whenReady
  * below; every call site reads it late, which is the same lifetime the bare functions had
@@ -1185,160 +1187,25 @@ function registerIpc() {
     releaseNotes, sendProgress, settings, win: () => win,
   });
 
-  // ----- settings -----
-  /**
-   * What the renderer means by "settings": the stored values plus the few facts about this
-   * machine that only the main process can answer.
-   *
-   * Both handlers return this, and that is the point. `settings:set` used to answer with the
-   * bare store, and the renderer caches whatever it is handed - so saving any single setting
-   * quietly dropped `dotaPathValid` from the screen's copy. Favouriting a mod was enough:
-   * from the next repaint the catalog claimed Dota was not installed and every install
-   * refused with "set the path first", until the app was restarted. The values were all
-   * correct; only the screen's idea of them was not.
-   */
-  const settingsView = ({ consumeMigration = false } = {}) => {
-    const game = settings.get('dotaGamePath');
-    const folders = gamelang.langFolders(game);
-    // Whose mods the game is actually going to read. Both managers name a language folder and
-    // Dota mounts exactly one, so this is a question with a definite answer - see src/minify.js.
-    const lang = game ? gamelang.detectLangSuffix(game) : { suffix: null, audio: null };
-    /* How many of the files in its folder are its own. Once both apps share one folder,
-     * counting everything there would report our mods as Minify's - and the answer has to be
-     * a fact about who wrote what, which is what the marker is for. */
-    const minifyModsIn = (suffix) => {
-      if (!suffix || !game) return 0;
-      try {
-        const dir = path.join(game, `dota_${suffix}`);
-        return fs.readdirSync(dir).filter((f) => {
-          const low = f.toLowerCase();
-          if (!/_dir\.vpk(\.off|\.moff)?$/.test(low)) return false;
-          return isMinifyFile(low) || isMinifyPak(path.join(dir, f));
-        }).length;
-      } catch {
-        return 0;
-      }
-    };
-    const minify = readMinify({
-      folders,
-      audio: lang.audio,
-      gameLanguages: gamelang.DOTA_LANGUAGES,
-      countMods: minifyModsIn,
-      ourFolder: langFolder,
-      ourMods: library.list().filter((r) => (r.files || []).some((f) => f.root === 'lang')).length,
-      // the whole launch line, not just its language: Minify's newer releases put a command of
-      // their own in front of the game there, and that is worth being able to name
-      launchOptions: game ? gamelang.launchOptions(game) : null,
-    });
-    // Only the screen asking for settings gets to hear about the migration, and only once.
-    // A save must not swallow the news before anybody has read it.
-    const migrated = consumeMigration ? langMigration : null;
-    if (consumeMigration) langMigration = null;
-    return {
-      ...settings.all(),
-      dotaPathValid: validateGamePath(game),
-      minify,
-      discordConfigured: discordAuth.isConfigured(),
-      // What is left of the language question, now that the folder is always dota_russian:
-      // whether the game agrees, and whether any mods are stranded outside it. Both are
-      // things to tell the user about, not things to ask them.
-      gameLang: {
-        mounted: lang.suffix,
-        /* A -language in Steam's launch options locks both language settings and decides the
-         * folder, so it overrules everything this app sets. Reported whatever its value,
-         * because even one that agrees with us today takes the choice of text language away
-         * from the player and breaks the moment either side changes. */
-        launchLang: lang.source === 'launch' ? lang.audio : null,
-        folder: langFolder,
-        /* Mods sitting in a folder the game does not mount - ours, left behind by a language
-         * change. Never another tool's: the screen offers to move these into our folder, and
-         * taking Minify's compiled pak out of the folder it just built it in would break its
-         * install to fix nothing. Its files are its business, and where they are is a thing
-         * to explain rather than to correct (see src/minify.js). */
-        stranded: folders
-          .filter((f) => f.suffix !== langFolder && f.modFiles > 0 && f.suffix !== minify.folder)
-          .map((f) => ({ suffix: f.suffix, modFiles: f.modFiles })),
-      },
-      langMigration: migrated,
-    };
-  };
-
-  ipcMain.handle('settings:get', () => settingsView({ consumeMigration: true }));
-
-  ipcMain.handle('settings:set', (e, key, value) => {
-    // keep main-process strings (dialogs, errors) in sync with the UI language
-    if (key === 'uiLang') i18n.setLang(value);
-    settings.set(key, value);
-    // the status text is localized, so a language change has to redraw it too
-    if (key === 'discordPresence' || key === 'uiLang') applyPresenceSetting();
-    return settingsView();
+  // What the Settings screen is told, computed in src/settings-view.js. The two pieces of
+  // state it reads are handed over as functions, because both change while the app runs.
+  const settingsView = settingsViewFor({
+    settings,
+    library,
+    discordAuth,
+    validateGamePath,
+    langFolder: () => langFolder,
+    takeMigration: () => { const m = langMigration; langMigration = null; return m; },
   });
 
-  // ----- Discord presence -----
-  // the renderer tells us which tab is open; everything else comes from the library
-  ipcMain.handle('presence:view', (e, view) => {
-    presenceView = typeof view === 'string' ? view : 'catalog';
-    refreshPresence();
-  });
-
-  // ----- account (Discord) -----
-  ipcMain.handle('account:signIn', async () => {
-    try {
-      const account = await discordAuth.signIn();
-      settings.set('account', account);
-      if (win && !win.isDestroyed()) { win.show(); win.focus(); }
-      return { ok: true, account };
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
-  });
-
-  ipcMain.handle('account:signOut', () => {
-    settings.set('account', null);
-    return { ok: true };
-  });
-
-  // rescue mods sitting in a folder the game does not mount (our old dota_123, another
-  // tool's dota_minify, or whatever the audio language used to be)
-  ipcMain.handle('settings:moveLangFiles', (e, fromSuffix) => {
-    const game = settings.get('dotaGamePath');
-    if (!game) return { error: t('Путь к Dota 2 не задан') };
-    const moved = moveLangFolder(game, String(fromSuffix || ''), langFolder);
-    return { moved, to: langFolder };
-  });
-
-  ipcMain.handle('settings:detectDota', async () => {
-    const found = await findDotaGamePath();
-    if (found) {
-      settings.set('dotaGamePath', found);
-      // the watcher is holding handles on the folder that was current a moment ago
-      if (patchWatcher) patchWatcher.rearm();
-    }
-    return found;
-  });
-
-  ipcMain.handle('settings:browseDota', async () => {
-    const res = await dialog.showOpenDialog(win, {
-      title: t('Выбери папку game внутри dota 2 beta'),
-      properties: ['openDirectory'],
-    });
-    if (res.canceled || !res.filePaths[0]) return null;
-    let p = res.filePaths[0];
-    // allow picking "dota 2 beta" root as well
-    if (!validateGamePath(p) && validateGamePath(path.join(p, 'game'))) p = path.join(p, 'game');
-    if (!validateGamePath(p)) return { error: t('В этой папке нет файлов Dota 2 — нужна папка game внутри dota 2 beta') };
-    settings.set('dotaGamePath', p);
-    if (patchWatcher) patchWatcher.rearm();
-    return { path: p };
-  });
-
-  // ----- catalog -----
-  ipcMain.handle('catalog:load', async (e, force) => {
-    try {
-      return await catalog.load({ forceRefresh: !!force });
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
+  // ----- settings ----- (src/ipc-settings.js)
+  registerSettingsIpc({
+    applyPresenceSetting, catalog, discordAuth, findDotaGamePath, library, moveLangFolder,
+    presence, refreshPresence, settings, settingsView, validateGamePath,
+    langFolder: () => langFolder,
+    patchWatcher: () => patchWatcher,
+    setPresenceView: (v) => { presenceView = v; },
+    win: () => win,
   });
 
   // ----- install/manage ----- (src/ipc-mods.js)
