@@ -142,7 +142,7 @@ function uninstallFlow({ settings, library, installer, schemaService, diag, appR
     return w;
   };
 
-  const registerIpc = (w) => {
+  const registerIpc = () => {
     ipcMain.handle('uninstall:plan', () => plan());
     ipcMain.handle('uninstall:run', async (e, choices) => {
       answered = true;
@@ -156,14 +156,13 @@ function uninstallFlow({ settings, library, installer, schemaService, diag, appR
       app.exit(wipeData ? UNINSTALL_WIPE_DATA : 0);
     });
     ipcMain.handle('uninstall:cancel', () => { answered = true; app.exit(UNINSTALL_CANCELLED); });
-    ipcMain.handle('uninstall:close', () => { if (w && !w.isDestroyed()) w.close(); });
   };
 
   return {
     /** Put the window up and wire its channels. */
     open() {
       const w = createWindow();
-      registerIpc(w);
+      registerIpc();
       return w;
     },
   };

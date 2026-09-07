@@ -135,6 +135,7 @@ installed here survives its uninstall.
 | [After a Dota patch](https://dota2modmanager.com/docs/troubleshooting/) | What breaks, and what the app puts back |
 | [Every fact, checkable](https://dota2modmanager.com/facts/) | Version, platforms, counts, and how to verify each one |
 | [ARCHITECTURE.md](ARCHITECTURE.md) · [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) | For anyone reading the code |
+| [PRIVACY.md](PRIVACY.md) | What is collected (nothing), and every address the app can contact |
 | [CHANGELOG.md](CHANGELOG.md) · [CHANGELOG.ru.md](CHANGELOG.ru.md) | What changed in each release |
 
 ## Report a problem
