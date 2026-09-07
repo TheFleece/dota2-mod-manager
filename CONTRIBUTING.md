@@ -142,7 +142,10 @@ user's report made the obvious version fail. Match the surrounding code and the 
 comment density.
 
 `.editorconfig` covers indentation and `.gitattributes` covers line endings. There is no linter
-on purpose.
+on purpose: it would be the first development dependency beyond Electron and its builder, its
+first run over thirty thousand lines would produce a reformatting commit nobody can review, and
+a CI gate that fails on spacing rather than on behaviour teaches people to stop reading CI. The
+checks here are aimed at correctness instead, and there are enough of them to fail a bad change.
 
 **Anything that needs the network fails quietly.** The catalog, the fingerprint index, the
 update check, the icon toolchain: every one of them has to leave a working app behind when it
