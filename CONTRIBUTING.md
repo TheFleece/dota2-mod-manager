@@ -141,7 +141,15 @@ especially when it looks wrong: most of them exist because a game update, a VPK 
 user's report made the obvious version fail. Match the surrounding code and the surrounding
 comment density.
 
-`.editorconfig` covers indentation and line endings. There is no linter on purpose.
+`.editorconfig` covers indentation and `.gitattributes` covers line endings. There is no linter
+on purpose.
+
+**Anything that needs the network fails quietly.** The catalog, the fingerprint index, the
+update check, the icon toolchain: every one of them has to leave a working app behind when it
+cannot reach anything. A user with no connection still has the mods already on disk, and a
+feature that throws because GitHub is unreachable is a bug rather than an outage. Cache what
+came back, use the cache when nothing comes back, and say so in the interface rather than in a
+dialog nobody can act on.
 
 ## Reporting a bug
 

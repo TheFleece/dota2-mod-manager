@@ -233,6 +233,12 @@ section 7 of the GPL.
 | [Inter](https://github.com/rsms/inter), [Exo 2](https://github.com/NDISCOVER/Exo-2.0), [Material Symbols](https://github.com/google/material-design-icons) | The typefaces and icons, shipped inside the app rather than fetched | OFL-1.1, Apache-2.0 |
 | [Astro](https://github.com/withastro/astro) | The documentation site, not the app | MIT |
 
+`package.json` lists exactly four: `adm-zip` and `electron-updater` ship inside the app,
+`electron` and `electron-builder` only build it. The tests and everything under `tools/` use no
+dependencies at all. The VPK reader and writer, the KeyValues parser, the zip guards and the
+update logic are written here, because every dependency is a stranger with write access to a
+game folder on tens of thousands of machines.
+
 Valve's own `vpk.exe` is deliberately **not** here and must not be added: it is proprietary, and
 a project that bundles it is not open source in the sense SignPath's terms mean. Reading and
 writing VPK archives is done by this repository's own code, which is why `src/vpk.js` exists.

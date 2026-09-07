@@ -216,6 +216,32 @@ Node 24, Electron 43, без сборщика: рендерер — обычны
 
 <br>
 
+## На чём построено
+
+Всё стороннее, что приложение везёт с собой или качает, с лицензией. Полные тексты и две добавки
+по седьмой секции GPL — в [NOTICE](NOTICE).
+
+| | Зачем | Лицензия |
+|---|---|---|
+| [Electron](https://github.com/electron/electron) | Окно и процесс за ним | MIT |
+| [electron-updater](https://github.com/electron-userland/electron-builder) | Проверка обновлений и их установка | MIT |
+| [adm-zip](https://github.com/cthackers/adm-zip) | Чтение архивов модов, за нашими проверками размера и путей | MIT |
+| [Source 2 Viewer](https://github.com/ValveResourceFormat/ValveResourceFormat) | Расшифровка текстур игры для иконок предметов. Качается по требованию, в сборку не входит | MIT |
+| [Inter](https://github.com/rsms/inter), [Exo 2](https://github.com/NDISCOVER/Exo-2.0), [Material Symbols](https://github.com/google/material-design-icons) | Шрифты и иконки, лежат внутри приложения, а не тянутся из сети | OFL-1.1, Apache-2.0 |
+| [Astro](https://github.com/withastro/astro) | Сайт документации, не приложение | MIT |
+
+В `package.json` их ровно четыре: `adm-zip` и `electron-updater` едут внутри приложения,
+`electron` и `electron-builder` только собирают его. Тесты и всё в `tools/` не зависят ни от
+чего. Чтение и запись VPK, разбор KeyValues, защита от zip-бомб и логика обновления написаны
+здесь, потому что каждая зависимость — это чужак с правом записи в папку игры на десятках тысяч
+машин.
+
+Валвовский `vpk.exe` сюда сознательно **не** добавлен и добавлен не будет: он проприетарный, а
+проект, который его везёт, уже не открытый в том смысле, в каком это понимает SignPath. Поэтому
+и существует `src/vpk.js`.
+
+<br>
+
 ## Благодарности
 
 Все моды, превью, гайды и данные каталога приходят из открытого репозитория
