@@ -446,7 +446,7 @@ const EN = {
   // ---------- tools ----------
   // the one-time offer on first run (renderer/ui/dialog.js, toolchainDialog)
   'Скачать Source 2 Viewer?': 'Download Source 2 Viewer?',
-  'Открытая программа (MIT) от SteamDatabase, не наша': 'An open-source program (MIT) by SteamDatabase, not ours',
+  'Открытая программа (MIT) от ValveResourceFormat, не наша': 'An open-source program (MIT) by ValveResourceFormat, not ours',
   'Дота хранит почти всё в сжатых форматах Source 2. Простую половину приложение читает само, а остальное разбирает эта программа.':
     'Dota keeps almost everything it draws in compiled Source 2 formats. The app reads the easy half itself; this program reads the rest.',
   'Превью твоих модов': 'Pictures of your own mods',

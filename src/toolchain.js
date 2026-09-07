@@ -26,31 +26,47 @@ const PINS_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/
 
 // What the app was built knowing. Checked against the live pins on first use; these are what
 // it falls back to offline, and what it uses if the remote file is missing or malformed.
-// Measured 2026-08-07: the digests come from GitHub's own release API and were confirmed
-// against the downloaded file.
+// Measured again 2026-09-07 for 20.0: the digest comes from GitHub's own release API and was
+// confirmed by downloading the file and hashing it, and the archive was opened to check the
+// executable is at its root under the name below.
 const BUILT_IN_PINS = {
   vrf: {
-    version: '19.2',
-    url: 'https://github.com/SteamDatabase/ValveResourceFormat/releases/download/19.2/cli-windows-x64.zip',
-    sha256: '53e7e8dac1ddd876078346de709c8dbe613a967e94cd0c969aa34c61ec07680d',
-    bytes: 50837364,
+    version: '20.0',
+    url: 'https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/20.0/cli-windows-x64.zip',
+    sha256: 'd32ab327b8bbb42a2528866afb03bb582bdb779d0005488da32b90292afd3ff5',
+    bytes: 52735867,
     exe: 'Source2Viewer-CLI.exe',
     license: 'MIT',
-    project: 'https://github.com/SteamDatabase/ValveResourceFormat',
+    project: 'https://github.com/ValveResourceFormat/ValveResourceFormat',
   },
 };
 
 const TOOL_NAMES = Object.keys(BUILT_IN_PINS);
 
-// Whose releases a pin may point at. "Some GitHub release with a matching digest" is not a
-// pin: the digest travels in the same file as the URL, so a rewritten config could name any
-// repository on GitHub and hand over its own hash to check it against. The owner is what
-// makes the pin mean anything, and it is decided here rather than in a file off the network.
-const PIN_REPOS = { vrf: 'SteamDatabase/ValveResourceFormat' };
+/* Whose releases a pin may point at.
+ *
+ * "Some GitHub release with a matching digest" is not a pin: the digest travels in the same
+ * file as the URL, so a rewritten config could name any repository on GitHub and hand over its
+ * own hash to check it against. The owner is what makes the pin mean anything, and it is
+ * decided here rather than in a file off the network.
+ *
+ * Two owners, because the project moved: Source 2 Viewer used to live under SteamDatabase and
+ * now has an organisation of its own. GitHub 301s the old release URLs, so downloading still
+ * works - but this check reads the URL as written in the pin rather than where it ends up, and
+ * a pin naming the new owner would have been refused by a rule that only knew the old one. A
+ * stale tool nobody can update, failing closed and quietly.
+ *
+ * Both are listed rather than the redirect being trusted. A redirect is a promise GitHub makes
+ * today; the point of this list is that the owner is decided here.
+ */
+const PIN_REPOS = {
+  vrf: ['ValveResourceFormat/ValveResourceFormat', 'SteamDatabase/ValveResourceFormat'],
+};
 
 function validPin(pin, name) {
-  const repo = PIN_REPOS[name];
-  const from = repo && new RegExp(`^https://github\\.com/${repo}/releases/download/`, 'i');
+  const repos = PIN_REPOS[name] || [];
+  const from = repos.length
+    && new RegExp(`^https://github\\.com/(?:${repos.join('|')})/releases/download/`, 'i');
   return !!(pin && typeof pin === 'object' && from
     && typeof pin.version === 'string' && pin.version
     && typeof pin.exe === 'string' && pin.exe && !pin.exe.includes('/') && !pin.exe.includes('\\')

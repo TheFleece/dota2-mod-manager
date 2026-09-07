@@ -242,7 +242,7 @@ export function toolchainDialog() {
           <span class="ms">extension</span>
           <div>
             <div class="tool-title" id="toolDlgTitle">${L`Скачать Source 2 Viewer?`}</div>
-            <div class="tool-sub">${L`Открытая программа (MIT) от SteamDatabase, не наша`}</div>
+            <div class="tool-sub">${L`Открытая программа (MIT) от ValveResourceFormat, не наша`}</div>
           </div>
         </div>
         <p class="tool-lede">${L`Дота хранит почти всё в сжатых форматах Source 2. Простую половину приложение читает само, а остальное разбирает эта программа.`}</p>

@@ -52,6 +52,27 @@ test('the built-in pins are the shape the code demands of a remote one', () => {
   }
 });
 
+test('both homes of the tool are accepted, and nothing that merely looks like them', () => {
+  /* Source 2 Viewer moved from SteamDatabase to an organisation of its own. GitHub redirects
+   * the old release URLs, but this check reads the URL as written rather than where it lands,
+   * so a pin naming the new owner was refused by a rule that only knew the old one - a stale
+   * tool nobody could update, failing closed and quietly.
+   *
+   * Widening an allowlist is where a check stops meaning anything, so the near-misses are here
+   * too: an owner whose name merely ends with the right one must still be refused. */
+  const good = BUILT_IN_PINS.vrf;
+  const at = (url) => validPin({ ...good, url }, 'vrf');
+  const rel = '/releases/download/20.0/cli-windows-x64.zip';
+
+  assert.equal(at(`https://github.com/ValveResourceFormat/ValveResourceFormat${rel}`), true, 'where it lives now');
+  assert.equal(at(`https://github.com/SteamDatabase/ValveResourceFormat${rel}`), true, 'where it used to');
+
+  assert.equal(at(`https://github.com/notValveResourceFormat/ValveResourceFormat${rel}`), false);
+  assert.equal(at(`https://github.com/ValveResourceFormat/ValveResourceFormat-evil${rel}`), false);
+  assert.equal(at(`https://github.com/evil/ValveResourceFormat${rel}`), false);
+  assert.equal(at(`https://github.com.evil.net/ValveResourceFormat/ValveResourceFormat${rel}`), false);
+});
+
 test('a pin is refused unless it points at a project release with a real hash', () => {
   const good = BUILT_IN_PINS.vrf;
   assert.equal(validPin({ ...good, url: 'https://example.com/tool.zip' }, 'vrf'), false, 'any host will not do');
