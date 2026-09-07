@@ -1,0 +1,31 @@
+# Line endings, decided once here instead of per machine.
+#
+# This is developed on Windows and built on Linux runners, and every text file is stored with
+# LF in the repository. Without this file that only holds while each contributor happens to have
+# core.autocrlf set the way the last one did; with it, a checkout on any machine produces the
+# same bytes and nobody opens a pull request that changes every line of a file they edited two
+# characters of.
+* text=auto
+
+# Read verbatim by tools that are not git. makepkg is a shell script and the AUR takes these
+# files as they are, so a CR at the end of a line is a syntax error somebody has to debug.
+packaging/aur/PKGBUILD text eol=lf
+packaging/aur/.SRCINFO text eol=lf
+*.sh text eol=lf
+
+# Anything below is bytes, not lines. Git guesses this correctly most of the time; the guess is
+# wrong exactly once, and the cost of it being wrong is a corrupted icon in a release.
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.mp4 binary
+*.webm binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.vpk binary
+*.zip binary
+*.exe binary
+*.AppImage binary
