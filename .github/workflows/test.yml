@@ -31,11 +31,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Coverage is a floor, not a target. The numbers below sit just under what the suite
-      # reaches today (76.2 lines, 82.2 branches, 74.6 functions), so the gate does not fail on
-      # the state it was written in and does fail the moment somebody adds code nothing
-      # exercises. Raise them when the real figure moves up; never lower them to make a run
-      # green.
+      # Coverage is a floor, not a target. The numbers sit just under what the suite reaches,
+      # so the gate does not fail on the state it was written in and does fail the moment
+      # somebody adds code nothing exercises. Raise them when the real figure moves up; never
+      # lower them to make a run green.
+      #
+      # The figure differs by platform and the floor has to clear the lower one. src/steam.js
+      # asks which operating system it is on and takes a different half of itself on each, so
+      # this runner reports 76.7 lines / 81.8 branches / 75.3 functions where a Windows machine
+      # reports 76.2 / 82.2 / 74.6. A floor calibrated on one of them fails on the other, which
+      # is how this comment came to be written.
       #
       # Node only reports files a test loaded, so a module with no test at all is invisible
       # here rather than counted as zero. Several modules are still in that position - the gate
