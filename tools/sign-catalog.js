@@ -22,12 +22,21 @@ const path = require('path');
 const KEY_FILE = process.env.CATALOG_KEY || 'catalog-key.pem';
 
 function keygen() {
-  if (fs.existsSync(KEY_FILE)) {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
+  /* wx, not a check followed by a write.
+   *
+   * Asking whether the file exists and then writing it leaves a gap, and what is on the other
+   * side of that gap is somebody's only copy of the catalog signing key - the line below this
+   * one calls it the whole secret. wx makes "create it, or fail because it is already there"
+   * a single operation the filesystem decides, so the gap does not exist to lose a key in.
+   */
+  try {
+    fs.writeFileSync(KEY_FILE, privateKey.export({ type: 'pkcs8', format: 'pem' }), { flag: 'wx', mode: 0o600 });
+  } catch (err) {
+    if (err.code !== 'EEXIST') throw err;
     console.error(`${KEY_FILE} already exists. Delete it first if you really mean to replace the key.`);
     process.exit(1);
   }
-  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
-  fs.writeFileSync(KEY_FILE, privateKey.export({ type: 'pkcs8', format: 'pem' }), { mode: 0o600 });
   const spki = publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
   console.log(`private key written to ${KEY_FILE} - keep this file, it is the whole secret`);
   console.log('\npublic key (give this line to the client authors):\n');
