@@ -1,0 +1,19 @@
+pkgbase = dota2-mod-manager-appimage
+	pkgdesc = Mods for Dota 2 without the file juggling: browse, install, toggle and share cosmetic mods from the open D2PFX catalog
+	pkgver = 2.6.4
+	pkgrel = 1
+	url = https://dota2modmanager.com
+	arch = x86_64
+	license = GPL-3.0-or-later
+	depends = gtk3
+	depends = nss
+	depends = alsa-lib
+	depends = libxtst
+	depends = libsecret
+	depends = hicolor-icon-theme
+	options = !strip
+	noextract = dota2-mod-manager-2.6.4.AppImage
+	source = dota2-mod-manager-2.6.4.AppImage::https://github.com/TheFleece/dota2-mod-manager/releases/download/v2.6.4/Dota-2-Mod-Manager.AppImage
+	sha512sums = a5b2c6ae91abd75f31e713f500a256ffa8db9e6377900c4f04d968c5e7d29f916fce47e5a240bc8cb293ba44e19ca7b1a4b4c7bd4ffcd3a461d0975de1d8538d
+
+pkgname = dota2-mod-manager-appimage

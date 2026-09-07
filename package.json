@@ -15,14 +15,15 @@
     "sandbox:status": "node tools/sandbox.js status",
     "start:sandbox": "electron . --user-data-dir=sandbox/userdata",
     "docs": "node tools/gen-api-docs.js",
-    "docs:check": "node tools/gen-api-docs.js --check"
+    "docs:check": "node tools/gen-api-docs.js --check",
+    "aur": "node tools/gen-aur.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/TheFleece/dota2-mod-manager.git"
   },
   "author": "Mykhailo Lynnyk",
-  "license": "GPL-3.0",
+  "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/TheFleece/dota2-mod-manager",
   "devDependencies": {
     "electron": "^43.4.0",
