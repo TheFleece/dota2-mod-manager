@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="Dota 2 Mod Manager - mods for Dota 2, without the file juggling">
+  <title>Dota 2 Mod Manager</title>
+
+  <!--
+    The banner is the app's own palette (themes.css, the ursa theme it opens on) and its own
+    mechanic: the column on the right is a real load order. Slots 02 to 09 go to categories that
+    have to load first, 10 to 99 to everything else, 65 to 67 are never handed out because
+    another program writes them. A stranger who reads only this picture has already learned the
+    one thing that decides which of two mods the game shows.
+  -->
+
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#141218"/>
+      <stop offset="0.55" stop-color="#1b1822"/>
+      <stop offset="1" stop-color="#241f33"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.32" r="0.62">
+      <stop offset="0" stop-color="#8b6ff0" stop-opacity="0.34"/>
+      <stop offset="0.6" stop-color="#6d5bd0" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#6d5bd0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d0bcff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#d0bcff" stop-opacity="0"/>
+    </linearGradient>
+    <style>
+      .t { font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+      .m { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .breathe { animation: breathe 7s ease-in-out infinite; }
+      @keyframes breathe { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+    </style>
+  </defs>
+
+  <rect width="1280" height="320" fill="url(#ground)"/>
+  <rect width="1280" height="320" fill="url(#glow)" class="breathe"/>
+
+  <!-- left: what it is -->
+  <g class="t">
+    <text x="72" y="86" fill="#9a8fb8" font-size="14" font-weight="600" letter-spacing="3.6">OPEN SOURCE DESKTOP APP</text>
+    <text x="70" y="152" fill="#efe9ff" font-size="52" font-weight="700" letter-spacing="-1">Dota 2 Mod Manager</text>
+    <rect x="72" y="172" width="220" height="2" fill="url(#rule)"/>
+    <text x="72" y="212" fill="#c3b8dc" font-size="21">Mods for Dota 2, without the file juggling.</text>
+    <text x="72" y="248" fill="#8d84a6" font-size="16">1000+ mods from one catalog. Switch them off before a match. Send a setup as a link.</text>
+  </g>
+
+  <!-- left foot: the claims a stranger checks first -->
+  <g class="t" font-size="13" font-weight="600" letter-spacing="1.8" fill="#7d7496">
+    <text x="72" y="284">GPL-3.0<tspan fill="#4e4763">  /  </tspan>WINDOWS AND LINUX<tspan fill="#4e4763">  /  </tspan>NO ACCOUNT<tspan fill="#4e4763">  /  </tspan>NO TELEMETRY</text>
+  </g>
+
+  <!-- right: the load order, which is the thing the app actually decides -->
+  <g class="m" font-size="13">
+    <text x="930" y="60" fill="#7d7496" font-size="12" letter-spacing="2.4" class="t" font-weight="600">LOAD ORDER</text>
+
+    <g>
+      <rect x="930" y="76" width="278" height="26" rx="7" fill="#4f378b" fill-opacity="0.55" stroke="#d0bcff" stroke-opacity="0.45"/>
+      <text x="944" y="94" fill="#d0bcff">pak02</text>
+      <text x="1010" y="94" fill="#cfc6e4">terrain</text>
+      <text x="1194" y="94" fill="#2bffa3" text-anchor="end">on</text>
+    </g>
+    <g>
+      <rect x="930" y="110" width="278" height="26" rx="7" fill="#4f378b" fill-opacity="0.55" stroke="#d0bcff" stroke-opacity="0.45"/>
+      <text x="944" y="128" fill="#d0bcff">pak10</text>
+      <text x="1010" y="128" fill="#cfc6e4">hero skin</text>
+      <text x="1194" y="128" fill="#2bffa3" text-anchor="end">on</text>
+    </g>
+    <g>
+      <rect x="930" y="144" width="278" height="26" rx="7" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.12"/>
+      <text x="944" y="162" fill="#8d84a6">pak11</text>
+      <text x="1010" y="162" fill="#8d84a6">announcer</text>
+      <text x="1194" y="162" fill="#7d7496" text-anchor="end">off</text>
+    </g>
+    <g>
+      <rect x="930" y="178" width="278" height="26" rx="7" fill="#ffffff" fill-opacity="0.02" stroke="#ffffff" stroke-opacity="0.07" stroke-dasharray="4 4"/>
+      <text x="944" y="196" fill="#6b6383">pak65</text>
+      <text x="1010" y="196" fill="#6b6383">reserved for Minify</text>
+    </g>
+    <g>
+      <rect x="930" y="212" width="278" height="26" rx="7" fill="#4f378b" fill-opacity="0.55" stroke="#d0bcff" stroke-opacity="0.45"/>
+      <text x="944" y="230" fill="#d0bcff">pak80</text>
+      <text x="1010" y="230" fill="#cfc6e4">music</text>
+      <text x="1194" y="230" fill="#2bffa3" text-anchor="end">on</text>
+    </g>
+    <g>
+      <rect x="930" y="246" width="278" height="26" rx="7" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.12"/>
+      <text x="944" y="264" fill="#8d84a6">pak81</text>
+      <text x="1010" y="264" fill="#8d84a6">loading screen</text>
+      <text x="1194" y="264" fill="#7d7496" text-anchor="end">off</text>
+    </g>
+
+    <text x="1208" y="292" fill="#6b6383" font-size="12" class="t" text-anchor="end">Lower slot wins. The app allocates them.</text>
+  </g>
+</svg>

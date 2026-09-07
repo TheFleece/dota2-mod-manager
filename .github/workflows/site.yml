@@ -48,6 +48,10 @@ jobs:
           # commit made here is refused. The owner is on the bypass list. With no secret set
           # this is the default token and the behaviour it had before.
           token: ${{ secrets.BOT_PUSH_TOKEN || github.token }}
+          # /activity.svg is drawn from git log and the release tags, so the shallow checkout a
+          # site build would otherwise get has nothing to draw. Without this the card renders
+          # its "no history here" state instead of the chart.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:

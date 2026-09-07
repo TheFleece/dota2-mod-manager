@@ -90,6 +90,19 @@ node tools/check-i18n.js
 New languages are welcome. Say so in an issue first, so two people do not translate the same file
 in the same week.
 
+## Open an issue before you build
+
+For a fix, go straight to a pull request. For anything larger, say what you intend to do first.
+
+It costs one message and it saves the two expensive cases: two people building the same thing in
+two different shapes, and a change that gets turned down for a reason that was never written
+down anywhere ("the language folder is chosen that way on purpose, and here is the measurement").
+An issue also gets you the part of the domain nobody has documented yet, which in this project is
+usually the part that matters.
+
+If you are working with a coding assistant, [AGENTS.md](AGENTS.md) is the same ground stated for
+it: what the project is, what it refuses, and how work gets signed.
+
 ## What a good pull request looks like
 
 - One change. A fix and a refactor in the same branch take three times as long to review.
