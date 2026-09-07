@@ -29,7 +29,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Pushed back with the owner's token where there is one. main's ruleset asks for a
           # green test run before any push, and the workflow's own token is not an admin, so a
@@ -37,7 +37,7 @@ jobs:
           # this is the default token and the behaviour it had before.
           token: ${{ secrets.BOT_PUSH_TOKEN || github.token }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -52,7 +52,7 @@ jobs:
       # every run and the restore-key takes the newest match, which is how a cache is used as
       # a rolling state file.
       - name: Restore the fingerprint checkpoint
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: fingerprints.state.json
           key: fingerprint-state-${{ github.run_id }}
@@ -62,7 +62,7 @@ jobs:
         run: node tools/gen-fingerprints.js --conc 8
 
       - name: Save the fingerprint checkpoint
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: fingerprints.state.json

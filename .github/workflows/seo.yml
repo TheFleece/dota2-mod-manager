@@ -32,7 +32,7 @@ jobs:
   report:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Pushed back with the owner's token where there is one. main's ruleset asks for a
           # green test run before any push, and the workflow's own token is not an admin, so a
@@ -40,7 +40,7 @@ jobs:
           # this is the default token and the behaviour it had before.
           token: ${{ secrets.BOT_PUSH_TOKEN || github.token }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -99,7 +99,7 @@ jobs:
       # next report simply has nothing to compare against and says so.
       - name: Remember this week's numbers
         if: inputs.raw == ''
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: seo-state.json
           key: seo-snapshot-${{ github.run_id }}

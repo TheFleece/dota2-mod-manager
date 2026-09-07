@@ -15,12 +15,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Node 24 for the test runner, not the 20 Electron bundles: the tests use zlib.crc32
       # (Node 22+). Nothing under test/ or tools/ is packaged into the app - the build's file
       # list is main.js, preload.js, src/, renderer/ - so this cannot drift into runtime code.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
