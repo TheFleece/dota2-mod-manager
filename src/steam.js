@@ -151,4 +151,8 @@ function validateGamePath(p) {
   }
 }
 
-module.exports = { findDotaGamePath, validateGamePath };
+/* parseLibraryFolders and steamappsDir are exported for the tests and used nowhere else.
+ * Both read files Valve writes, in formats Valve changes without telling anybody, and a wrong
+ * answer from either sends the app looking for the game on the wrong drive - which is the kind
+ * of thing that is hard to notice and easy to pin down with a fixture. */
+module.exports = { findDotaGamePath, validateGamePath, parseLibraryFolders, steamappsDir };

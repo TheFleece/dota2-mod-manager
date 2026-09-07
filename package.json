@@ -9,7 +9,7 @@
     "dist": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
     "test": "node --test \"test/**/*.test.js\"",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=74 --test-coverage-branches=80 --test-coverage-functions=71 \"test/**/*.test.js\"",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=76 --test-coverage-branches=82 --test-coverage-functions=74 \"test/**/*.test.js\"",
     "sandbox:seed": "node tools/sandbox.js seed",
     "sandbox:reset": "node tools/sandbox.js reset",
     "sandbox:status": "node tools/sandbox.js status",

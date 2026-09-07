@@ -32,13 +32,13 @@ jobs:
         run: npm ci
 
       # Coverage is a floor, not a target. The numbers below sit just under what the suite
-      # reaches today (75.4 lines, 81.8 branches, 73.4 functions), so the gate does not fail on
+      # reaches today (76.2 lines, 82.2 branches, 74.6 functions), so the gate does not fail on
       # the state it was written in and does fail the moment somebody adds code nothing
       # exercises. Raise them when the real figure moves up; never lower them to make a run
       # green.
       #
       # Node only reports files a test loaded, so a module with no test at all is invisible
-      # here rather than counted as zero. Ten of thirty-one modules are in that position - the
-      # gate holds the line, it does not claim the line is where it should be.
+      # here rather than counted as zero. Several modules are still in that position - the gate
+      # holds the line, it does not claim the line is where it should be.
       - name: Run tests with a coverage floor
         run: npm run test:coverage
