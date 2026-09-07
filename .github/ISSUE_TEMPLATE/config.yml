@@ -1,3 +1,12 @@
+# The "New issue" chooser.
+#
+# GitHub adds its own "Report a security vulnerability" row whenever private reporting is on,
+# so a contact link for the same thing appeared twice and read like two different routes. The
+# built-in row is the better one: it opens the private advisory form rather than a policy page
+# somebody then has to read and act on.
+#
+# What is left here is what GitHub cannot know: that the mods are somebody else's, and that
+# most "it does not work" questions have a written answer already.
 blank_issues_enabled: true
 contact_links:
   - name: How do I install this, and what happens after a Dota patch
@@ -6,9 +15,5 @@ contact_links:
   - name: A mod itself is broken, missing, or you made one
     url: https://discord.gg/PBvG8D9MxT
     about: >-
-      Mods come from the Dota2PornFx catalog and their own authors, who are in that Discord.
-      This repository is the app that installs them. The #mod-manager channel there is for
-      the app.
-  - name: Security problem
-    url: https://github.com/TheFleece/dota2-mod-manager/security/policy
-    about: Report it privately instead of opening an issue.
+      Mods come from the D2PFX catalog and their own authors, who are in that Discord. This
+      repository is the app that installs them; the #mod-manager channel there is for the app.

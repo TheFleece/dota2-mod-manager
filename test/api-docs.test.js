@@ -1,0 +1,53 @@
+// docs/API.md is generated from the source, and this is what makes that mean something:
+// if somebody changes a comment or an export and does not regenerate, CI says so.
+//
+// The project has shipped stale documentation before - a README naming one platform weeks
+// after the second build started going out, a comment claiming a folder was six megabytes
+// when it was forty-five. Generated-and-checked is the only kind that stays true, so the
+// reference is not a file somebody maintains; it is a file the tests maintain.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.resolve(__dirname, '..');
+const OUT = path.join(ROOT, 'docs', 'API.md');
+const { build } = require('../tools/gen-api-docs.js');
+
+/* Windows checks the file out with CRLF, CI reads it with LF, and the generator emits LF.
+ * Comparing the raw bytes would fail on one platform and pass on the other, which is a test
+ * that reports the checkout rather than the code. */
+const read = (f) => fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n');
+
+test('the committed reference is what the source says today', () => {
+  assert.ok(fs.existsSync(OUT), 'docs/API.md exists');
+  assert.equal(read(OUT), build(), 'docs/API.md is out of date. Run: npm run docs');
+});
+
+test('every module that ships is in the reference', () => {
+  const text = read(OUT);
+  const skipped = (f) => f.startsWith('ipc-') || f === 'settings-view.js' || f === 'uninstall-window.js';
+  const files = fs.readdirSync(path.join(ROOT, 'src')).filter((f) => f.endsWith('.js'));
+  assert.ok(files.length > 20, 'src/ was found');
+  for (const f of files.filter((f) => !skipped(f))) {
+    assert.ok(text.includes(`## src/${f}`), `${f} has a section`);
+  }
+  for (const f of files.filter(skipped)) {
+    assert.ok(!text.includes(`## src/${f}`), `${f} is wiring, not API`);
+  }
+});
+
+/* A ratchet, not a target. Every export with no comment above it is a gap in the source, and
+ * this number is only ever allowed to go down: lower it when you document something, never
+ * raise it to make a new undocumented export fit. */
+const UNDOCUMENTED_CEILING = 57;
+
+test('the number of exports nobody has explained does not grow', () => {
+  const text = read(OUT);
+  const bare = (text.match(/^_No description in the source\._$/gm) || []).length;
+  assert.ok(
+    bare <= UNDOCUMENTED_CEILING,
+    `${bare} exports have no comment in the source, and the ceiling is ${UNDOCUMENTED_CEILING}. `
+    + 'Write the comment rather than raising the number.',
+  );
+});

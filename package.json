@@ -13,7 +13,9 @@
     "sandbox:seed": "node tools/sandbox.js seed",
     "sandbox:reset": "node tools/sandbox.js reset",
     "sandbox:status": "node tools/sandbox.js status",
-    "start:sandbox": "electron . --user-data-dir=sandbox/userdata"
+    "start:sandbox": "electron . --user-data-dir=sandbox/userdata",
+    "docs": "node tools/gen-api-docs.js",
+    "docs:check": "node tools/gen-api-docs.js --check"
   },
   "repository": {
     "type": "git",
