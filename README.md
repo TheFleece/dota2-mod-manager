@@ -165,6 +165,25 @@ Node 24, Electron 43, no bundler — the renderer is plain HTML, CSS and JavaScr
 is produced by [`release.yml`](.github/workflows/release.yml) from the commit its tag names.
 [CONTRIBUTING.md](CONTRIBUTING.md) has the rest.
 
+## What it is built on
+
+Everything third-party the app ships or fetches, with the licence it comes under. The
+[NOTICE](NOTICE) file has the full text and the two additional terms this project adds under
+section 7 of the GPL.
+
+| | What for | Licence |
+|---|---|---|
+| [Electron](https://github.com/electron/electron) | The window and the process behind it | MIT |
+| [electron-updater](https://github.com/electron-userland/electron-builder) | Update checks and installing them | MIT |
+| [adm-zip](https://github.com/cthackers/adm-zip) | Reading mod archives, behind our own size and path guards | MIT |
+| [Source 2 Viewer](https://github.com/ValveResourceFormat/ValveResourceFormat) | Decoding Dota's own textures for item icons. Downloaded on demand, never bundled | MIT |
+| [Inter](https://github.com/rsms/inter), [Exo 2](https://github.com/NDISCOVER/Exo-2.0), [Material Symbols](https://github.com/google/material-design-icons) | The typefaces and icons, shipped inside the app rather than fetched | OFL-1.1, Apache-2.0 |
+| [Astro](https://github.com/withastro/astro) | The documentation site, not the app | MIT |
+
+Valve's own `vpk.exe` is deliberately **not** here and must not be added: it is proprietary, and
+a project that bundles it is not open source in the sense SignPath's terms mean. Reading and
+writing VPK archives is done by this repository's own code, which is why `src/vpk.js` exists.
+
 ## Credits
 
 - **All mods, previews, guides and catalog data** come from the open-source

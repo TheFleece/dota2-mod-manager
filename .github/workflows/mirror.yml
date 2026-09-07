@@ -1,0 +1,49 @@
+name: Mirror to Codeberg
+
+# A second home for the source, so "read the code" survives this repository going away.
+#
+# This is a Dota modding tool. The realistic ways it disappears are a takedown, a suspended
+# account, or GitHub deciding something about the catalog it installs from - none of which give
+# notice, and all of which take the build logs, the release history and the issue trail with
+# them. A mirror is twenty lines and removes that as a single point of failure.
+#
+# Force-push on purpose: this is a copy, not a fork with a life of its own. Codeberg is where
+# the code can be read if GitHub cannot be, and nothing is developed there.
+#
+# It needs a CODEBERG_TOKEN secret. Without one the job fails and nothing else is affected,
+# which is why it does not gate anything.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    if: github.repository == 'TheFleece/dota2-mod-manager'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the whole history, or the mirror is a repository with one commit in it
+          fetch-depth: 0
+
+      - name: Push to Codeberg
+        env:
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+        run: |
+          if [ -z "$CODEBERG_TOKEN" ]; then
+            echo "::warning::CODEBERG_TOKEN is not set, so there is no mirror to push to yet"
+            exit 0
+          fi
+          git remote add codeberg "https://TheFleece:${CODEBERG_TOKEN}@codeberg.org/TheFleece/dota2-mod-manager.git"
+          git push --force codeberg main:main
+          git push --force codeberg --tags
