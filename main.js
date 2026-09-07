@@ -11,7 +11,6 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { execFile } = require('child_process');
-const AdmZip = require('adm-zip');
 
 let autoUpdater = null;
 try {
@@ -36,7 +35,6 @@ const { createModIdentity } = require('./src/mod-id');
 const portableUpdater = require('./src/portable-update');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
-const { buildReport, renderSummary, renderDetailed } = require('./src/diagnostics');
 const gamelang = require('./src/gamelang');
 const { isMinifyPak, isMinifyFile } = require('./src/minify');
 const { uninstallFlow } = require('./src/uninstall-window');
@@ -49,6 +47,8 @@ const { registerWindowIpc } = require('./src/ipc-window');
 const { registerMiscIpc } = require('./src/ipc-misc');
 const { settingsViewFor } = require('./src/settings-view');
 const { registerSettingsIpc } = require('./src/ipc-settings');
+const { registerGameIpc } = require('./src/ipc-game');
+const { registerDiagnosticsIpc } = require('./src/ipc-diagnostics');
 
 /* Presets and sharing, wired once the services they use exist. Assigned in whenReady
  * below; every call site reads it late, which is the same lifetime the bare functions had
@@ -1229,172 +1229,12 @@ function registerIpc() {
 
   // ---------- item schema / search-path patch ----------
 
-  // ----- what the app was told from the network -----
-
-  // A switch is honoured here rather than in the renderer: this is the boundary an old
-  // window, a stale screen or a replayed click all have to come through.
-  const uiLang = () => (settings.get('uiLang') === 'ru' ? 'ru' : 'en');
-  const blocked = (name) => {
-    const f = remoteConfig.feature(name, uiLang());
-    return f.off ? { error: f.note || t('Эта возможность временно отключена') } : null;
-  };
-
-  ipcMain.handle('config:state', () => ({
-    features: Object.fromEntries(remoteConfig.SWITCHABLE.map((n) => [n, remoteConfig.feature(n, uiLang())])),
-    notices: remoteConfig.notices(uiLang()),
-    seen: settings.get('seenNotices') || [],
-  }));
-
-  ipcMain.handle('config:noticeSeen', (e, id) => {
-    const seen = new Set(settings.get('seenNotices') || []);
-    seen.add(String(id));
-    // an id list that only grows is a settings file that only grows
-    settings.set('seenNotices', [...seen].slice(-50));
-    return [...seen];
-  });
-
-  ipcMain.handle('patch:state', () => schemaService.state());
-
-  // what the app did about the last Dota patch (the banner in My mods asks on every visit;
-  // while the app is open it is pushed instead, see setPatchRepair)
-  ipcMain.handle('patch:repairState', () => patchRepair);
-  // "I closed the game, do it now" — the same path the retry timer takes
-  ipcMain.handle('patch:repairNow', async () => {
-    await repairAfterPatch('manual');
-    return patchRepair;
-  });
-  // the banner is news, not a state of the game: once it has been read it goes away
-  ipcMain.handle('patch:repairSeen', () => {
-    if (patchRepair.state === 'done' || patchRepair.state === 'failed') patchRepair = { state: 'idle' };
-    return patchRepair;
-  });
-
-  // The one moment the app touches files of the game install: gated on an explicit yes,
-  // reversible from the same switch, and every original is backed up in userData first.
-  ipcMain.handle('patch:setEnabled', async (e, enabled) => {
-    // turning it OFF is always allowed: a switch that traps people in the state it broke is
-    // worse than the problem it was flipped for
-    if (enabled) { const stop = blocked('cosmetics'); if (stop) return stop; }
-    if (!settings.get('dotaGamePath')) return { error: t('Путь к Dota 2 не задан') };
-    // the game holds gameinfo open while it runs, so writing it would fail half-way
-    if (await dotaIsRunning()) return { error: t('Закрой Dota 2 перед изменением файлов игры') };
-    try {
-      return schemaService.setEnabled(!!enabled);
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
-  });
-
-  ipcMain.handle('schema:refresh', () => schemaService.refresh());
-
-  // Free cosmetics are generated from the installed game's own schema, so a weather or
-  // courier Valve ships later appears in the list without an app update.
-  ipcMain.handle('cosmetics:slots', () => schemaService.cosmeticSlots());
-
-  // One picture per tile, so opening a slot with 2000 items costs only what is on screen.
-  //
-  // A tile asks with a chain of sources, best first ("modart:pak54_dir.vpk|hero:Brewmaster"),
-  // and gets back the first one that has a picture. That is how "the mod's own art beats the
-  // wiki's portrait of the vanilla hero, but a raw model texture does not" stays written down
-  // in one place - renderer/ui/thumb.js, which composes the chain - instead of being spread
-  // across three. A plain name is simply a chain of one, which is what the picker sends.
-  //
-  // Sources: the mod's own files and the game's own pictures when the toolchain is here
-  // (exact, offline, no rate limit), the wiki for whatever is left.
-  ipcMain.handle('cosmetics:icons', async (e, names) => {
-    const wanted = (Array.isArray(names) ? names : []).slice(0, 60);
-    const chains = new Map(wanted.map((n) => [n, String(n).split('|').filter(Boolean)]));
-    const sources = [...new Set([...chains.values()].flat())];
-
-    const isMod = (s) => s.startsWith(modPreviews.VID) || s.startsWith(modPreviews.ART) || s.startsWith(modPreviews.TEX);
-    const found = {};
-    try {
-      Object.assign(found, await modPreviews.getMany(sources.filter(isMod)));
-    } catch (err) {
-      diag('mod previews failed, falling back to the usual pictures: ' + err.message);
-    }
-    const forIcons = sources.filter((s) => !isMod(s) && !found[s]);
-    if (forIcons.length) {
-      let fromGame = {};
-      try {
-        fromGame = await gameIcons.getMany(forIcons);
-      } catch (err) {
-        diag('game icons failed, falling back to the wiki: ' + err.message);
-      }
-      const left = forIcons.filter((n) => !fromGame[n]);
-      Object.assign(found, left.length ? await icons.getMany(left) : {}, fromGame);
-    }
-
-    const pictures = {};
-    for (const [key, chain] of chains) {
-      const hit = chain.find((s) => found[s]);
-      if (hit) pictures[key] = found[hit];
-    }
-    // A clip beats everything else a mod can be pictured by, but only the window can open
-    // one. So the answer also says where a frame is still worth taking: the tile shows
-    // whatever was found meanwhile, and swaps it for the frame when that arrives.
-    const decode = new Set();
-    for (const [, chain] of chains) {
-      const clip = chain.find((s) => s.startsWith(modPreviews.VID));
-      if (clip && !found[clip] && modPreviews.hasVideo(clip)) decode.add(clip);
-    }
-    return { pictures, decode: [...decode] };
-  });
-
-  // A mod that replaces a hero's animated portrait carries its own showcase, and a still out
-  // of it is the best picture of that mod there is. Decoding video is the window's job - the
-  // app is a browser and already has the decoder - so the bytes go there and the frame comes
-  // back to be judged and kept. That is why no ffmpeg is downloaded for this.
-  ipcMain.handle('preview:video', (e, key) => {
-    try {
-      const got = modPreviews.videoBytes(String(key || ''));
-      return got ? got.bytes : null;
-    } catch (err) {
-      diag('mod preview video failed: ' + err.message);
-      return null;
-    }
-  });
-
-  ipcMain.handle('preview:frame', (e, key, png) => {
-    try {
-      return modPreviews.saveFrame(String(key || ''), Buffer.from(png || []));
-    } catch (err) {
-      diag('mod preview frame failed: ' + err.message);
-      return null;
-    }
-  });
-
-  // ----- the Source 2 toolchain (Settings shows this) -----
-  ipcMain.handle('tools:state', () => ({ tools: toolchain.state(), iconCacheBytes: gameIcons.size() + modPreviews.size() }));
-
-  ipcMain.handle('tools:install', async (e, name) => {
-    try {
-      await toolchain.ensure(String(name || 'vrf'));
-      return { ok: true, tools: toolchain.state() };
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
-  });
-
-  ipcMain.handle('tools:remove', (e, name) => {
-    toolchain.remove(String(name || 'vrf'));
-    // the pictures it produced are only reachable through it
-    gameIcons.clear();
-    modPreviews.clear();
-    return { ok: true, tools: toolchain.state() };
-  });
-
-  // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
-  // handle it (see touchesSchema above), this is only for the initial choice.
-  ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName) => {
-    const stop = blocked('cosmetics');
-    if (stop) return stop;
-    try {
-      const rec = schemaService.pickCosmetic(slot, itemId, itemName);
-      return { ok: true, record: rec };
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
+  // ----- what the app was told from the network ----- (src/ipc-game.js)
+  registerGameIpc({
+    diag, dotaIsRunning, gameIcons, icons, library, modPreviews, remoteConfig, repairAfterPatch,
+    schemaService, settings, toolchain,
+    patchRepair: () => patchRepair,
+    setPatchRepair,
   });
 
   // ----- managing what is installed ----- (src/ipc-library.js)
@@ -1415,109 +1255,12 @@ function registerIpc() {
   // ----- misc ----- (src/ipc-misc.js)
   registerMiscIpc({ installer, library });
 
-  // ----- diagnostics -----
-  // fire-and-forget: a renderer crash it can't recover from still lands in the log a support
-  // report is built from, instead of vanishing with the window
-  ipcMain.on('diag:rendererError', (e, msg) => {
-    const text = String(msg || '').slice(0, 2000);
-    diag(`renderer: ${text}`);
-    // Kept apart from the log as well, because in the log they are twenty lines among two
-    // thousand. A report that lists them on their own is the difference between "the app
-    // does nothing when I click" and a stack trace.
-    rendererErrors.push({ at: new Date().toISOString(), text });
-    if (rendererErrors.length > 50) rendererErrors.shift();
-  });
-
-  /* One button, and inside the archive two reports written for two different readers.
-   *
-   * SUMMARY.txt is a screen of plain sentences that opens with whether anything is wrong at
-   * all, because whoever answers a support message first should not have to read JSON to find
-   * out that the game is not where the app thinks it is.
-   *
-   * REPORT.md is the same data with nothing left out, laid out to be read: every section, the
-   * full mod list in load order, the errors the interface reported. That is the one to hand
-   * to somebody who is going to work out what actually happened.
-   *
-   * report.json stays exactly as it was, for anything that wants the raw shape. Nothing about
-   * this changes for the user: the same button, the same zip, the same place to send it. */
-  ipcMain.handle('diag:export', async () => {
-    try {
-      const { report, files } = buildReport({
-        settings, library, installer, schemaService, catalog, icons,
-        app: {
-          version: app.getVersion(),
-          logFile: logFile(),
-          userDataDir: app.getPath('userData'),
-          updateError: lastUpdateError,
-        },
-        extra: {
-          dotaRunning: await dotaIsRunning(),
-          rendererErrors,
-          windows: BrowserWindow.getAllWindows().map((w) => {
-            const [width, height] = w.getSize();
-            return {
-              id: w.id, width, height,
-              visible: w.isVisible(), focused: w.isFocused(),
-              maximized: w.isMaximized(), minimized: w.isMinimized(),
-              url: w.webContents.getURL(),
-              zoom: w.webContents.getZoomFactor(),
-              crashed: w.webContents.isCrashed(),
-            };
-          }),
-          /* The screen, because "it stops scrolling partway" is often a window taller than
-           * the room there is for it. Without this the report shows a window 860 tall and no
-           * way to tell whether 860 was ever on the screen. Scale factor included: at 150% a
-           * 1080p display has less usable height than a 1366x768 laptop. */
-          displays: (() => {
-            try {
-              return screen.getAllDisplays().map((d) => ({
-                id: d.id,
-                primary: d.id === screen.getPrimaryDisplay().id,
-                size: d.size,
-                workArea: d.workArea,
-                scaleFactor: d.scaleFactor,
-              }));
-            } catch (err) { return { error: String(err.message || err) }; }
-          })(),
-          uiScale: settings.get('uiScale'),
-          updater: { available: !!autoUpdater, lastError: lastUpdateError },
-          remoteConfig: (() => {
-            try {
-              return {
-                url: remoteConfig.url,
-                switches: Object.fromEntries(remoteConfig.SWITCHABLE.map((k) => [k, remoteConfig.feature(k)])),
-                notices: remoteConfig.notices(settings.get('uiLang') || 'en').length,
-              };
-            } catch (err) { return { error: String(err.message || err) }; }
-          })(),
-          toolchain: (() => {
-            try { return toolchain.installed(); } catch (err) { return { error: String(err.message || err) }; }
-          })(),
-        },
-      });
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      // dev: MM_DIAG_OUT=<path> writes the archive straight there instead of asking. A report
-      // that can only be produced by a human clicking through a save dialog is a report nobody
-      // checks after changing it.
-      const res = process.env.MM_DIAG_OUT
-        ? { canceled: false, filePath: process.env.MM_DIAG_OUT }
-        : await dialog.showSaveDialog(win, {
-          title: t('Сохранить отчёт для поддержки'),
-          defaultPath: `dota2-mod-manager-diag-${stamp}.zip`,
-          filters: [{ name: t('Отчёт диагностики'), extensions: ['zip'] }],
-        });
-      if (res.canceled || !res.filePath) return { cancelled: true };
-      const zip = new AdmZip();
-      zip.addFile('SUMMARY.txt', Buffer.from(renderSummary(report), 'utf-8'));
-      zip.addFile('REPORT.md', Buffer.from(renderDetailed(report, files), 'utf-8'));
-      zip.addFile('report.json', Buffer.from(JSON.stringify(report, null, 2)));
-      for (const [name, text] of Object.entries(files)) zip.addFile(name, Buffer.from(text, 'utf-8'));
-      try { zip.addFile('manifest.json', fs.readFileSync(library.file)); } catch { /* nothing installed yet */ }
-      fs.writeFileSync(res.filePath, zip.toBuffer());
-      if (!process.env.MM_DIAG_OUT) shell.showItemInFolder(res.filePath);
-      return { ok: true, path: res.filePath };
-    } catch (err) {
-      return { error: String(err.message || err) };
-    }
+  // ----- diagnostics ----- (src/ipc-diagnostics.js)
+  registerDiagnosticsIpc({
+    autoUpdater, catalog, diag, dotaIsRunning, icons, installer, library, logFile, remoteConfig,
+    schemaService, settings, toolchain,
+    win: () => win,
+    rendererErrors: () => rendererErrors,
+    lastUpdateError: () => lastUpdateError,
   });
 }
