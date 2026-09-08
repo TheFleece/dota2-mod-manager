@@ -168,14 +168,15 @@ which is worth knowing before depending on it.
 
 *Check:* `git shortlog -sne HEAD`, and the contributors list on GitHub.
 
-### The unit tests run on Linux only
+### The coverage floor is measured on one platform only
 
-Most users are on Windows, the code that finds a Steam install branches on the operating system,
-and CI runs `ubuntu-latest`. A Windows job would exercise the half the runner currently skips.
-Open as issue [#5](https://github.com/TheFleece/dota2-mod-manager/issues/5) and cut for a first
-contribution.
+The suite runs on both since 2026-09-08, which closed issue #5: `ubuntu-latest` carries the
+coverage gate and `windows-latest` runs the same tests for correctness. What is still one-sided
+is the floor itself. `src/steam.js` takes a different half of itself on each operating system, so
+the two platforms report different figures, and the gate is calibrated against the Linux one.
+Windows-only code can therefore lose its last test without the number moving.
 
-*Check:* `.github/workflows/test.yml`.
+*Check:* `.github/workflows/test.yml`, and the `test:coverage` script in `package.json`.
 
 ### The catalog is read without verifying who wrote it
 
@@ -247,7 +248,13 @@ this one says in `AGENTS.md` that it is. Looking for a different second home rat
 that slips through. A mirror carries no collaboration, so this is about durability and nothing
 else.
 
-*Check:* `.github/workflows/mirror.yml`.
+The workflow no longer names a host, because deciding where to keep a copy should not be a code
+change. It pushes wherever `MIRROR_PUSH_URL` points and exits green saying nothing is configured
+when it points nowhere, which is the state today. **So there is no second copy of this source at
+the moment.**
+
+*Check:* `.github/workflows/mirror.yml`, and the last run of it under Actions, which says either
+the host it mirrored to or that no mirror is configured.
 
 ### Applying to SignPath again
 
@@ -274,7 +281,7 @@ Each of these has arrived in a review. Each is answered by one command.
 | "The state files in the root are why the repository is 61 MB" | All four generated JSON files together are 1.55 MB of the pack. The preview images are 46.7 MB | the command under the open question above |
 | "It is a Windows-only app" | Every release since 2.4.0 also carries a Linux AppImage | `gh release view --json assets` |
 | "`main` is unprotected" | It is guarded by a ruleset, which the branch-protection endpoint does not report | `gh api repos/TheFleece/dota2-mod-manager/rulesets` |
-| "There are 25 test files" | 36 of them, run on every push | `ls test/*.test.js \| wc -l` then `npm test` |
+| "There are 25 test files" | 36 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
 | "An open issue asks for tests that already exist" | Issue #4 was closed on 2026-09-08 when that was pointed out. `#5`, `#6` and `#7` are open and really are open | `gh issue list --state open` |
 
 ---

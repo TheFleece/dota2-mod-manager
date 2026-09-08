@@ -36,7 +36,9 @@ test('the line count it gives for main.js is the line count main.js has', () => 
 
 test('the number of test files it gives is the number of test files there are', () => {
   const real = fs.readdirSync(path.join(root, 'test')).filter((f) => f.endsWith('.test.js')).length;
-  const claimed = doc.match(/\|\s*(\d+) of them, run on every push/);
+  // Anchored on the count and the words around it, not on the whole sentence: the row is allowed
+  // to say more about where they run without this needing a rewrite.
+  const claimed = doc.match(/\|\s*(\d+) of them, run on/);
   assert.ok(claimed, 'the corrections table no longer carries a test file count');
   assert.equal(Number(claimed[1]), real, `DECISIONS.md says ${claimed[1]} test files, test/ holds ${real}`);
 });

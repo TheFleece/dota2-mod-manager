@@ -1,4 +1,4 @@
-name: Mirror to Codeberg
+name: Mirror
 
 # A second home for the source, so "read the code" survives this repository going away.
 #
@@ -7,11 +7,15 @@ name: Mirror to Codeberg
 # notice, and all of which take the build logs, the release history and the issue trail with
 # them. A mirror is twenty lines and removes that as a single point of failure.
 #
-# Force-push on purpose: this is a copy, not a fork with a life of its own. Codeberg is where
-# the code can be read if GitHub cannot be, and nothing is developed there.
+# Force-push on purpose: this is a copy, not a fork with a life of its own. It is where the code
+# can be read if GitHub cannot be, and nothing is developed there.
 #
-# It needs a CODEBERG_TOKEN secret. Without one the job fails and nothing else is affected,
-# which is why it does not gate anything.
+# It used to name Codeberg, which was set up on 2026-09-08 and stood down the same day: their
+# terms of use ask projects written with heavy use of language models not to host there, and
+# AGENTS.md says this one is. Naming the host in the workflow meant a decision about where to
+# keep a copy turned into a code change, so it does not name one any more. Point MIRROR_PUSH_URL
+# at whatever the second home turns out to be and this starts working; leave it unset and the
+# job says so and exits green, gating nothing.
 
 on:
   push:
@@ -36,14 +40,20 @@ jobs:
           # the whole history, or the mirror is a repository with one commit in it
           fetch-depth: 0
 
-      - name: Push to Codeberg
+      - name: Push to the mirror
         env:
-          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          # The whole push URL, credentials and all: https://user:token@host/owner/repo.git
+          MIRROR_PUSH_URL: ${{ secrets.MIRROR_PUSH_URL }}
         run: |
-          if [ -z "$CODEBERG_TOKEN" ]; then
-            echo "::warning::CODEBERG_TOKEN is not set, so there is no mirror to push to yet"
+          if [ -z "$MIRROR_PUSH_URL" ]; then
+            echo "::notice::No mirror configured - set the MIRROR_PUSH_URL secret to have one"
             exit 0
           fi
-          git remote add codeberg "https://TheFleece:${CODEBERG_TOKEN}@codeberg.org/TheFleece/dota2-mod-manager.git"
-          git push --force codeberg main:main
-          git push --force codeberg --tags
+          # Say where it went without printing what got it there. The secret itself is masked in
+          # the log; the host is not the secret, so it prints, and a run that pushed somewhere
+          # unexpected is visible rather than silent.
+          host="$(printf '%s' "$MIRROR_PUSH_URL" | sed -E 's#^[a-z]+://[^@]*@##; s#/.*$##')"
+          echo "Mirroring main and every tag to $host"
+          git remote add mirror "$MIRROR_PUSH_URL"
+          git push --force mirror main:main
+          git push --force mirror --tags

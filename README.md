@@ -190,7 +190,7 @@ is loading a tracker, and nothing has to be committed for the picture to move.
 | [CodeQL](.github/workflows/codeql.yml) | Security and quality analysis, plus a weekly scheduled run |
 | [Release](.github/workflows/release.yml) | On a tag only: builds the Windows installer, the portable build and the Linux AppImage from that commit, and publishes them with the changelog section for that version |
 | [Site](.github/workflows/site.yml) | Rebuilds the documentation site so its counts, its version and this card stay true |
-| [Mirror](.github/workflows/mirror.yml) | Pushes the same history to Codeberg, so the code outlives this repository |
+| [Mirror](.github/workflows/mirror.yml) | Pushes the same history to a second host, when one is configured, so the code outlives this repository |
 
 Nothing here commits back to `main`. Workflows that need to remember something between runs
 keep it in the Actions cache, because a bot commit per run is how a log stops being readable.
