@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1307,
+  "mods": 1311,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -158,6 +158,7 @@
         {"name":"Aghanim Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Bare Brewmaster","categoryId":"heroes","styleLabel":null,"slots":[]},
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Brewmaster Aghanim","categoryId":"heroes","styleLabel":null,"slots":["back","misc","arms","shoulder","weapon"]},
         {"name":"Brewmaster Jousting Panda","categoryId":"heroes","styleLabel":null,"slots":["back","misc","arms","shoulder","weapon","head"]},
         {"name":"Brewmaster Military Saint","categoryId":"heroes","styleLabel":null,"slots":["back","misc","arms","shoulder","weapon","head"]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -618,6 +619,7 @@
         {"name":"Invoker Fate Meridian","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder"]},
         {"name":"Invoker Magus Accord","categoryId":"hero-items","styleLabel":null,"slots":["arms"]},
         {"name":"Invoker Magus Apex","categoryId":"hero-items","styleLabel":null,"slots":["head"]},
+        {"name":"Invoker Magus Mimicry","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder"]},
         {"name":"Invoker MaryDay","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder"]},
         {"name":"Invoker Patchouli","categoryId":"heroes","styleLabel":null,"slots":["arms","back","misc","head","shoulder","shield","belt","legs"]},
         {"name":"Sakura Pink Invoker","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder"]},
@@ -679,6 +681,7 @@
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Camel Keeper of the Light","categoryId":"heroes","styleLabel":null,"slots":["head","mount","legs","weapon"]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Keeper of the Light Darklord","categoryId":"heroes","styleLabel":null,"slots":["head","mount","legs","weapon","belt","arms","misc"]},
         {"name":"Keeper of the Light Frostbloom","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Keeper of the Light Northlight Illuminance","categoryId":"herofx","styleLabel":null,"slots":[]},
         {"name":"Keeper of the Light Prominence","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
@@ -1043,6 +1046,7 @@
     "nerubian_assassin": {
       "name": "Nyx Assassin",
       "mods": [
+        {"name":"Nyx Assassin Dalbaeb","categoryId":"heroes","styleLabel":null,"slots":["arms","head","weapon"]},
         {"name":"Nyx Assassin Latticean Hierarchy","categoryId":"hero-items","styleLabel":"Crimson","slots":["arms"]},
         {"name":"Nyx Assassin Latticean Hierarchy","categoryId":"hero-items","styleLabel":null,"slots":["arms"]},
         {"name":"Nyx Assassin Latticean Hierarchy","categoryId":"hero-items","styleLabel":"Tyrian","slots":["arms"]}
