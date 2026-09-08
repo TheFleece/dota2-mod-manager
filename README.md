@@ -152,6 +152,7 @@ installed here survives its uninstall.
 | [ARCHITECTURE.md](ARCHITECTURE.md) · [docs/API.md](docs/API.md) | Which file owns which decision, and every module's exports |
 | [CONTRIBUTING.md](CONTRIBUTING.md) · [AGENTS.md](AGENTS.md) · [SECURITY.md](SECURITY.md) | How to work on it, with or without an assistant, and how to report a hole |
 | [PRIVACY.md](PRIVACY.md) | What is collected (nothing), and every address the app can contact |
+| [DECISIONS.md](DECISIONS.md) | What was decided on purpose, what is genuinely missing, and the command that checks each one |
 | [CHANGELOG.md](CHANGELOG.md) · [CHANGELOG.ru.md](CHANGELOG.ru.md) | What changed in each release |
 
 <br>

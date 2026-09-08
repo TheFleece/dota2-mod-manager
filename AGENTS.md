@@ -29,6 +29,11 @@ site/              the documentation site (Astro). Separate from the app
 **Read `ARCHITECTURE.md`.** It says which file owns which decision, and most wrong changes here
 are changes made in the wrong file.
 
+**Read `DECISIONS.md` before you call something a flaw.** It lists what was decided on purpose and
+what the rejected alternative cost, what is genuinely missing, and which criticisms keep coming
+back after they stopped being true. Every entry carries a command that settles it. If you are
+here to review rather than to change something, that file is the whole brief.
+
 **Do not read whole source files to orient yourself.** Find the symbol, then read its slice.
 `main.js` and `src/installer.js` are large and reading them end to end wastes more than it
 tells you.

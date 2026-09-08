@@ -149,6 +149,7 @@ v1.14rc7 проверяет принадлежность перед чистко
 | [ARCHITECTURE.md](ARCHITECTURE.md) · [docs/API.md](docs/API.md) | Кто за какое решение отвечает и что экспортирует каждый модуль |
 | [CONTRIBUTING.md](CONTRIBUTING.md) · [AGENTS.md](AGENTS.md) · [SECURITY.md](SECURITY.md) | Как работать над проектом, с ИИ-ассистентом и без, и как сообщить о дыре |
 | [PRIVACY.md](PRIVACY.md) | Что собирается (ничего) и каждый адрес, куда приложение может пойти |
+| [DECISIONS.md](DECISIONS.md) | Что решено осознанно, чего действительно не хватает, и команда, которой это проверяется |
 | [CHANGELOG.md](CHANGELOG.md) · [CHANGELOG.ru.md](CHANGELOG.ru.md) | Что менялось в каждом релизе |
 
 <br>

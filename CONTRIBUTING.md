@@ -157,8 +157,13 @@ dialog nobody can act on.
 ## Reporting a bug
 
 The app writes a diagnostic archive: Help, then Diagnostics. It holds the app log, the manifest,
-the load order and what the app thinks about your installation, with no personal paths beyond the
-game folder. Attaching it turns most reports into a five minute fix.
+the load order and what the app thinks about your installation. Attaching it turns most reports
+into a five minute fix.
+
+Read it before you send it. It names your game folder and the app's own folder, and on Windows
+the second one contains your account name. Nothing else about you is in there, and you are the
+one attaching the file, but a path is still a path. Masking those two is listed in
+[DECISIONS.md](DECISIONS.md#the-diagnostic-report-carries-two-real-paths).
 
 Security problems go to [SECURITY.md](SECURITY.md) instead of a public issue.
 
