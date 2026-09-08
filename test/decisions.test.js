@@ -66,13 +66,19 @@ test('the fingerprint index is still fetched from the path the entry says it can
 test('the eleven co-authored commits it describes are the eleven that are there', () => {
   // Counted from the history rather than remembered. If somebody does rewrite it one day, the
   // entry explaining why nobody did should fail rather than sit there being wrong.
+  //
+  // Only where the history is all there. CI checks out with depth 1, so this asked a repository
+  // holding a single commit how many commits from August it had, got nought, and failed the build
+  // on the first push after it was written. A shallow clone cannot answer the question, and a
+  // test that reads "cannot answer" as "the answer is zero" is worse than no test at all.
   const { execFileSync } = require('child_process');
+  const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf-8' }).trim();
   let count;
   try {
-    const out = execFileSync('git', ['log', '--grep=Co-Authored-By', '--format=%h'], { cwd: root, encoding: 'utf-8' });
-    count = out.split('\n').filter(Boolean).length;
+    if (git(['rev-parse', '--is-shallow-repository']) === 'true') return;
+    count = git(['log', '--grep=Co-Authored-By', '--format=%h']).split('\n').filter(Boolean).length;
   } catch {
-    return; // no git here (a tarball, or a shallow checkout): nothing to compare against
+    return; // no git at all: a tarball, or an export with the history stripped
   }
   assert.equal(count, 11, `DECISIONS.md says eleven such commits, git finds ${count}`);
 });
