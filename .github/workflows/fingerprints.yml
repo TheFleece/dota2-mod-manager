@@ -85,8 +85,14 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add $paths
+            # Say what moved. Every commit this job has ever made was called "Update mod
+            # fingerprints and hero pages", which is a quarter of the history saying nothing;
+            # tools/index-delta.js counts the mods between the two versions and names them.
+            # The old index comes from HEAD because $paths is already staged.
+            git show HEAD:fingerprints.json > /tmp/fp-before.json 2>/dev/null || true
+            subject="$(node tools/index-delta.js /tmp/fp-before.json fingerprints.json)"
             # [skip ci] because a push made with a real token starts workflows and the
             # default one never did. Nothing here is worth a run of anything.
-            git commit -m "Update mod fingerprints and hero pages [skip ci]"
+            git commit -m "$subject [skip ci]"
             git push
           fi

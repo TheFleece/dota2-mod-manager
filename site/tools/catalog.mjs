@@ -24,6 +24,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { uniqueSlug } from '../src/lib/slug.ts';
+// One record per line, so the scheduled run that commits these two tables shows which mods
+// changed instead of one line the width of the file. Shared with tools/gen-fingerprints.js,
+// which writes the other two files that same workflow pushes.
+import { jsonLinesFile } from '../../tools/json-lines.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const siteRoot = path.resolve(here, '..');
@@ -364,13 +368,13 @@ for (const [categoryId, data] of Object.entries(mods.modsData)) {
 categories.sort((a, b) => b.mods.length - a.mods.length || a.id.localeCompare(b.id));
 fs.writeFileSync(
   path.join(siteRoot, 'src', 'data', 'categories.json'),
-  JSON.stringify({ categories }, null, 0),
+  jsonLinesFile({ categories }),
 );
 console.log(`\n${categories.length} categories, ${categories.reduce((n, c) => n + c.mods.length, 0)} mod entries`);
 
 // No timestamp: this file is committed, and one that changes on every run is a commit that
 // says nothing. Same rule the fingerprints and the hero index follow.
-fs.writeFileSync(DATA_OUT, JSON.stringify({ heroes }, null, 0));
+fs.writeFileSync(DATA_OUT, jsonLinesFile({ heroes }));
 
 const totalMods = heroes.reduce((n, h) => n + h.mods.length, 0);
 const withImage = heroes.reduce((n, h) => n + h.mods.filter((m) => m.image).length, 0);
