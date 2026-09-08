@@ -47,9 +47,21 @@ const platformNames: Record<'en' | 'ru', Record<string, string>> = {
 // and two of them in one line reads like a mistake
 const platforms = stats.platforms.map((p) => platformNames[lang][p] ?? p).join(', ');
 
+/* The same list again, without the version numbers, for a sentence rather than a table row.
+   The opening paragraph called this a Windows app for weeks after the AppImage shipped,
+   which is the failure the platform row was already built to avoid; now the paragraph reads
+   off the same release the row does. */
+const shortNames: Record<string, string> = { windows: 'Windows', linux: 'Linux', macos: 'macOS' };
+const shortList = stats.platforms.map((p) => shortNames[p] ?? p);
+const platformsShort =
+  shortList.length < 2
+    ? shortList.join('')
+    : `${shortList.slice(0, -1).join(', ')} ${lang === 'ru' ? 'и' : 'and'} ${shortList[shortList.length - 1]}`;
+
 const numbers: Record<string, string> = {
   '{version}': appVersion(),
   '{platforms}': platforms,
+  '{platformsShort}': platformsShort,
   '{mods}': nf.format(stats.mods),
   '{modsWord}': agree(stats.mods, nouns[lang].mods),
   '{categories}': nf.format(stats.categories),

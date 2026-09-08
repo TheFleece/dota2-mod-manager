@@ -46,7 +46,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'In one paragraph', id: 'short' },
       {
         k: 'p',
-        t: 'Dota 2 Mod Manager is a free Windows app that installs cosmetic mods for Dota 2 in one click. The mods come from the open D2PFX catalog: {mods} of them across {categories} {categoriesWord}, added to by the community. The source is GPL-3.0 and public, releases are built by GitHub Actions, no account is needed and nothing is collected. Version {version}, {releases} releases, {downloads} installer downloads.',
+        t: 'Dota 2 Mod Manager is a free app for {platformsShort} that installs cosmetic mods for Dota 2 in one click. The mods come from the open D2PFX catalog: {mods} of them across {categories} {categoriesWord}, added to by the community. The source is GPL-3.0 and public, releases are built by GitHub Actions, no account is needed and nothing is collected. Version {version}, {releases} releases, {downloads} installer downloads.',
       },
 
       { k: 'h2', t: 'Numbers', id: 'numbers' },
@@ -194,7 +194,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         k: 'list',
         items: [
           '<a href="https://github.com/TheFleece/dota2-mod-manager">Source code on GitHub</a>, GPL-3.0',
-          '<a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Latest release</a>, the installer for Windows',
+          '<a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Latest release</a>, the builds for {platformsShort}',
           '<a href="https://github.com/TheFleece/dota2-mod-manager/actions">Build logs</a>, every release and how it was made',
           '<a href="~/docs/">Guides</a>: installing, VPK and load order, free cosmetics, what to do after a patch',
           '<a href="https://discord.gg/PBvG8D9MxT">Discord</a>, the catalog community',
@@ -214,7 +214,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Коротко, одним абзацем', id: 'short' },
       {
         k: 'p',
-        t: 'Dota 2 Mod Manager - бесплатная программа для Windows, которая ставит косметические моды на Доту 2 в один клик. Моды берутся из открытого каталога D2PFX: {mods} {modsWord} в {categories} {categoriesWord}, каталог пополняет сообщество. Исходный код открыт под GPL-3.0, релизы собирает GitHub Actions, аккаунт не нужен, ничего не собирается. Версия {version}, релизов {releases}, скачиваний установщика {downloads}.',
+        t: 'Dota 2 Mod Manager - бесплатная программа для {platformsShort}, которая ставит косметические моды на Доту 2 в один клик. Моды берутся из открытого каталога D2PFX: {mods} {modsWord} в {categories} {categoriesWord}, каталог пополняет сообщество. Исходный код открыт под GPL-3.0, релизы собирает GitHub Actions, аккаунт не нужен, ничего не собирается. Версия {version}, релизов {releases}, скачиваний установщика {downloads}.',
       },
 
       { k: 'h2', t: 'Цифры', id: 'numbers' },
@@ -362,7 +362,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         k: 'list',
         items: [
           '<a href="https://github.com/TheFleece/dota2-mod-manager">Исходники на GitHub</a>, GPL-3.0',
-          '<a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Последний релиз</a>, установщик для Windows',
+          '<a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Последний релиз</a>, сборки для {platformsShort}',
           '<a href="https://github.com/TheFleece/dota2-mod-manager/actions">Логи сборок</a>, каждый релиз и как он собран',
           '<a href="~/docs/">Гайды</a>: установка, VPK и порядок загрузки, бесплатная косметика, что делать после патча',
           '<a href="https://discord.gg/PBvG8D9MxT">Discord</a>, сообщество каталога',
