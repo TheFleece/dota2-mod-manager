@@ -28,10 +28,12 @@ on:
     paths: ['site/**', '.github/workflows/site.yml']
   workflow_dispatch:
 
-# The deploy itself needs nothing from the repository, but the IndexNow ledger is committed
-# back at the end so the next run knows what has already been announced.
+# Read only. This job used to commit the IndexNow ledger back, which is why it once needed write
+# and the owner's token; the ledger moved to the Actions cache and nothing here writes to the
+# repository any more. A workflow that keeps a permission it stopped needing is a workflow that
+# hands its token to whatever gets added to it next.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: site-deploy
@@ -43,11 +45,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # Pushed back with the owner's token where there is one. main's ruleset asks for a
-          # green test run before any push, and the workflow's own token is not an admin, so a
-          # commit made here is refused. The owner is on the bypass list. With no secret set
-          # this is the default token and the behaviour it had before.
-          token: ${{ secrets.BOT_PUSH_TOKEN || github.token }}
           # /activity.svg is drawn from git log and the release tags, so the shallow checkout a
           # site build would otherwise get has nothing to draw. Without this the card renders
           # its "no history here" state instead of the chart.
