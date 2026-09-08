@@ -9,7 +9,15 @@ is genuinely missing, and which claims keep coming back with the command that se
 
 **Every entry ends with a check you can run.** Nothing here asks to be believed. If a check
 disagrees with what is written above it, the check is right and the text is stale, and an issue
-saying so is welcome. Gone over on 2026-09-08, at version 2.6.4.
+saying so is welcome.
+
+The countable claims are held to the code by `test/decisions.test.js`, which fails when this
+file and the repository disagree about how long `main.js` is, how many test files there are, what
+the app depends on, or where the fingerprint index is fetched from. The date below is left out
+of that on purpose: it records when a person last read the whole file, and a test that kept it
+current would be forging a review nobody did.
+
+Last gone over on 2026-09-08, at version 2.6.4.
 
 ---
 
@@ -248,6 +256,10 @@ The picture has changed since: 39 releases, tens of thousands of installs, a com
 catalog, and a comparable tool in the same ecosystem already signed by the same programme. Not
 resubmitted yet.
 
+*Check:* download the installer from the latest release and ask Windows who signed it:
+`Get-AuthenticodeSignature .\Dota-2-Mod-Manager-Setup.exe`. It answers `NotSigned` today, and
+the day it stops, this entry is out of date.
+
 ---
 
 ## Claims that keep coming back
@@ -262,7 +274,7 @@ Each of these has arrived in a review. Each is answered by one command.
 | "The state files in the root are why the repository is 61 MB" | All four generated JSON files together are 1.55 MB of the pack. The preview images are 46.7 MB | the command under the open question above |
 | "It is a Windows-only app" | Every release since 2.4.0 also carries a Linux AppImage | `gh release view --json assets` |
 | "`main` is unprotected" | It is guarded by a ruleset, which the branch-protection endpoint does not report | `gh api repos/TheFleece/dota2-mod-manager/rulesets` |
-| "There are 25 test files" | 35 files and 363 tests, run on every push | `ls test/*.test.js \| wc -l` then `npm test` |
+| "There are 25 test files" | 36 of them, run on every push | `ls test/*.test.js \| wc -l` then `npm test` |
 | "An open issue asks for tests that already exist" | Issue #4 was closed on 2026-09-08 when that was pointed out. `#5`, `#6` and `#7` are open and really are open | `gh issue list --state open` |
 
 ---
