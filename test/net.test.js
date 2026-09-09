@@ -194,3 +194,39 @@ test('a finished download reports the hash it should be remembered by', async (t
   assert.equal(res.sha256, crypto.createHash('sha256').update(data).digest('hex'));
   assert.equal(res.bytes, data.length);
 });
+
+/*
+ * The site mirror is a promise made in two places at once.
+ *
+ * src/net.js says "ask dota2modmanager.com for this file", and site/tools/mirror.mjs is what
+ * puts the file there. They live in different packages and nothing connected them, so the
+ * signatures were added to one side and not the other: the app would have asked our own site
+ * for mods.json.sig on the one day it matters, and Cloudflare would have answered 200 with the
+ * site's 404 page, 43 KB of HTML where 88 characters of base64 belong.
+ *
+ * A missing file is not the failure mode to guard against here. A present, wrong one is.
+ */
+test('every file the app expects from our own mirror is a file the site actually copies there', () => {
+  const netSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'net.js'), 'utf-8');
+  const mirrorTool = fs.readFileSync(path.join(__dirname, '..', 'site', 'tools', 'mirror.mjs'), 'utf-8');
+
+  // the MIRRORED map: 'owner/repo/branch/path': 'name-on-our-site'
+  const promised = [...netSource.matchAll(/^\s*'([\w.\-\/]+)':\s*'([\w.\-]+)',$/gm)];
+  assert.ok(promised.length >= 4, 'the MIRRORED map got away from this test');
+
+  for (const [, remotePath, name] of promised) {
+    // the mapping is live, not just written down: net.js really offers our site for this URL
+    // { small: true }, the way fetchText asks for these: our site is a smallOnly mirror,
+    // because it carries the four startup files and never a 300 MB archive.
+    const urls = net.mirrorsFor(RAW_HOST + remotePath, { small: true });
+    assert.ok(
+      urls.some((u) => u.includes(`dota2modmanager.com/mirror/${name}`)),
+      `net.js does not actually route ${remotePath} to our mirror`,
+    );
+    // and the site puts it there
+    assert.ok(
+      new RegExp(`'${name.replace(/\./g, '\.')}'`).test(mirrorTool),
+      `site/tools/mirror.mjs never copies ${name}, so our mirror would answer with the 404 page`,
+    );
+  }
+});

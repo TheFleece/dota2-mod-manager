@@ -52,6 +52,11 @@ const MIRRORED = {
   'h6rd/Dota2PornFxWeb/main/assets/data/constants.json': 'constants.json',
   'h6rd/Dota2PornFxWeb/main/assets/data/guides.json': 'guides.json',
   'TheFleece/dota2-mod-manager/main/fingerprints.json': 'fingerprints.json',
+  // and the signatures, or this mirror stops being one the day the catalog's key is pinned:
+  // a data file whose signature cannot be fetched is a data file the app refuses.
+  'h6rd/Dota2PornFxWeb/main/assets/data/mods.json.sig': 'mods.json.sig',
+  'h6rd/Dota2PornFxWeb/main/assets/data/constants.json.sig': 'constants.json.sig',
+  'h6rd/Dota2PornFxWeb/main/assets/data/guides.json.sig': 'guides.json.sig',
 };
 const ourSite = (url) => {
   const name = url.startsWith(RAW_HOST) && MIRRORED[url.slice(RAW_HOST.length)];

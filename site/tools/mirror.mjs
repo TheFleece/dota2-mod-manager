@@ -20,11 +20,25 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const OUT = path.join(process.cwd(), 'dist', 'mirror');
+const SIG = '.sig';
 
+const CATALOG = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main/assets/data/';
+
+/* The signatures travel with the files they sign.
+ *
+ * Once the catalog's key is pinned in the client, a file without its signature is a file the
+ * app refuses. Mirroring the data and not the .sig would leave this copy useless on exactly
+ * the day it is needed: the outage this whole file exists for is one where GitHub is
+ * unreachable, every proxy is GitHub wearing another hostname, and this site is the only
+ * source left. The data would arrive and the signature would have nowhere to come from.
+ */
 const SOURCES = [
-  ['mods.json', 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main/assets/data/mods.json'],
-  ['constants.json', 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main/assets/data/constants.json'],
-  ['guides.json', 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main/assets/data/guides.json'],
+  ['mods.json', `${CATALOG}mods.json`],
+  ['constants.json', `${CATALOG}constants.json`],
+  ['guides.json', `${CATALOG}guides.json`],
+  ['mods.json.sig', `${CATALOG}mods.json.sig`],
+  ['constants.json.sig', `${CATALOG}constants.json.sig`],
+  ['guides.json.sig', `${CATALOG}guides.json.sig`],
   ['fingerprints.json', 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/fingerprints.json'],
 ];
 
@@ -32,7 +46,17 @@ async function one(name, url) {
   const res = await fetch(url, { headers: { 'User-Agent': 'dota2modmanager-site-mirror' } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
-  JSON.parse(text); // a truncated download must not be published as if it were the catalog
+  // A truncated download must not be published as if it were the real thing. For the data
+  // that means it has to parse; for a signature it means the exact shape ed25519 produces,
+  // 88 base64 characters, because a 404 page served with a 200 is also 'text' and would sail
+  // through anything looser.
+  if (name.endsWith(SIG)) {
+    if (!/^[A-Za-z0-9+/]{86}==$|^[A-Za-z0-9+/]{87}=$|^[A-Za-z0-9+/]{88}$/.test(text.trim())) {
+      throw new Error('not an ed25519 signature');
+    }
+  } else {
+    JSON.parse(text);
+  }
   fs.writeFileSync(path.join(OUT, name), text);
   return text.length;
 }
