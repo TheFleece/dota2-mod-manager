@@ -40,6 +40,8 @@ const SOURCES = [
   ['mods.json.sig', `${SIGNATURES}mods.json.sig`],
   ['constants.json.sig', `${SIGNATURES}constants.json.sig`],
   ['guides.json.sig', `${SIGNATURES}guides.json.sig`],
+  ['mod-hashes.json', `${CATALOG}mod-hashes.json`],
+  ['mod-hashes.json.sig', `${SIGNATURES}mod-hashes.json.sig`],
   ['fingerprints.json', 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/fingerprints.json'],
 ];
 

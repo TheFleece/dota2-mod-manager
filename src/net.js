@@ -57,6 +57,8 @@ const MIRRORED = {
   'h6rd/Dota2PornFxWeb/main/assets/signatures/mods.json.sig': 'mods.json.sig',
   'h6rd/Dota2PornFxWeb/main/assets/signatures/constants.json.sig': 'constants.json.sig',
   'h6rd/Dota2PornFxWeb/main/assets/signatures/guides.json.sig': 'guides.json.sig',
+  'h6rd/Dota2PornFxWeb/main/assets/data/mod-hashes.json': 'mod-hashes.json',
+  'h6rd/Dota2PornFxWeb/main/assets/signatures/mod-hashes.json.sig': 'mod-hashes.json.sig',
 };
 const ourSite = (url) => {
   const name = url.startsWith(RAW_HOST) && MIRRORED[url.slice(RAW_HOST.length)];

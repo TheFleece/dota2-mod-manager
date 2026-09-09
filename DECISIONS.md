@@ -207,13 +207,19 @@ gap covers `config/app.json`, which carries the remote notices and the feature s
 
 *Check:* `src/catalog.js`, `src/net.js`, `src/remote-config.js`.
 
-### Mod archive hashes are trust on first use
+### The newest mods are still trusted on first sight
 
-The app remembers the SHA-256 of an archive the first time it downloads it and refuses different
-bytes under the same name afterwards. That catches a later substitution and not the first one. A
-hash list published with the catalog would close it.
+Since 2026-09-09 the catalog publishes a signed sha256 for every archive, and a download that
+does not match it is refused rather than installed. What is left is the lag: the list is rebuilt
+by a bot after the mods are added, so the freshest archives are not in it yet - 21 of 992 on the
+day it arrived - and those fall back to the old behaviour, remembered on first download and
+checked against that copy afterwards.
 
-*Check:* `src/installer.js`, the download index.
+Refusing them instead would mean the newest mods break for everyone until somebody else's bot
+catches up, which is a worse trade than the one this leaves open.
+
+*Check:* `src/catalog.js`, `publishedHash`, and `test/mod-hashes.test.js` for what each answer
+does to a download.
 
 ### The diagnostic report carries two real paths
 
