@@ -123,7 +123,7 @@ class Installer {
    * @param {() => string} opts.getLangSuffix      e.g. "123"
    * @param {(evt: object) => void} opts.onProgress
    */
-  constructor({ userDataDir, getGamePath, getLangSuffix, onProgress, identify = null }) {
+  constructor({ userDataDir, getGamePath, getLangSuffix, onProgress, identify = null, publishedHash = null }) {
     this.downloadsDir = path.join(userDataDir, 'downloads');
     this.toolsDir = path.join(userDataDir, 'tools');
     this.backupsDir = path.join(userDataDir, 'backups');
@@ -140,6 +140,9 @@ class Installer {
     // asks the game which of its own items a path list replaces (src/mod-id.js); optional,
     // because without a game path there is nothing to ask and the path guess still answers
     this.identify = identify || (() => null);
+    // what the catalog says an archive should hash to (src/catalog.js); optional and often
+    // null, which means the download is checked the way it always was
+    this.publishedHash = publishedHash || (() => null);
   }
 
   /**
@@ -231,20 +234,29 @@ class Installer {
     const dest = path.join(destDir, safeName);
     const key = `${categoryId}/${safeName}`;
     const known = this.downloadIndex()[key] || null;
+    // The catalog's own answer, keyed by the name upstream uses rather than the one this
+    // machine is allowed to write: safeFileName can rewrite a character that a filesystem
+    // dislikes, and the published list knows nothing about that.
+    const published = this.publishedHash(categoryId, decoded);
 
     if (fs.existsSync(dest) && fs.statSync(dest).size > 0) {
       // A cached file is reused on its name alone, so a copy that was cut short by a crash
       // or a full disk would be installed forever after. Its size is checked against what
       // was recorded when it arrived; hashing 300 MB on every install is not worth it, and
       // a truncated file is what actually happens.
-      if (!known || known.size === fs.statSync(dest).size) return dest;
+      // A cached copy that the catalog now disagrees with is not a cached copy worth having.
+      // This costs no hashing: what it arrived as was written down when it arrived.
+      const disowned = published && known && known.sha256 && known.sha256 !== published;
+      if (!disowned && (!known || known.size === fs.statSync(dest).size)) return dest;
       this.onProgress({ type: 'stage', label: label || safeName, stage: t('перекачиваю повреждённый файл') });
       fs.rmSync(dest, { force: true });
     }
 
     try {
       const res = await downloadFile(url, dest, {
-        expectSha256: known ? known.sha256 : null,
+        // the catalog's published hash when it has one, and otherwise what this file was the
+        // first time it arrived here
+        expectSha256: published || (known ? known.sha256 : null),
         onProgress: (loaded, total) => this.onProgress({ type: 'download', label: label || safeName, loaded, total }),
       });
       this.rememberDownload(key, { size: res.bytes, sha256: res.sha256, at: Date.now() });

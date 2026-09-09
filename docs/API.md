@@ -133,6 +133,20 @@ const RAW_BASE = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main'
 
 _No description in the source._
 
+### `HASH_FILE`
+
+```js
+const HASH_FILE = 'mod-hashes.json'
+```
+
+The published sha256 of every archive in the catalog, signed like the data.
+
+Deliberately not one of DATA_FILES. Those are the files the app cannot start without, and
+this one it has never had: until 2026-09-09 an archive was trusted on first sight and
+checked against that first copy afterwards, which catches a substitution on every download
+except the one that matters. So it is fetched beside them and a failure costs the old
+behaviour rather than the catalog.
+
 ### `normalizeCatalog`
 
 ```js

@@ -7,6 +7,16 @@ const signature = require('./catalog-signature');
 const RAW_BASE = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main';
 const DATA_FILES = ['mods.json', 'constants.json', 'guides.json'];
 
+/* The published sha256 of every archive in the catalog, signed like the data.
+ *
+ * Deliberately not one of DATA_FILES. Those are the files the app cannot start without, and
+ * this one it has never had: until 2026-09-09 an archive was trusted on first sight and
+ * checked against that first copy afterwards, which catches a substitution on every download
+ * except the one that matters. So it is fetched beside them and a failure costs the old
+ * behaviour rather than the catalog.
+ */
+const HASH_FILE = 'mod-hashes.json';
+
 // Walk every mod in a mods.json, whatever shape its category is in: a plain array, or a
 // group list for the categories that are sorted by hero.
 function eachMod(modsData, fn) {
@@ -64,29 +74,38 @@ class Catalog {
     return DATA_FILES.every((f) => fs.existsSync(this.cachePath(f)));
   }
 
+  /** Fetches one published file and, when a key is pinned, refuses bytes it did not sign. */
+  async fetchSigned(name) {
+    const text = await fetchText(`${RAW_BASE}/assets/data/${name}`);
+    // A mirror can rewrite anything it carries, so what decides whether these bytes are the
+    // author's is his signature over them.
+    //
+    // The signatures sit in a folder of their own rather than beside the data. They were
+    // published as assets/data/<name>.sig on 2026-09-09 and moved to assets/signatures/ the
+    // same day, which is why this is built from a path and not from a suffix glued onto the
+    // data URL: a layout that has already moved once can move again.
+    if (signature.configured()) {
+      const sig = await fetchText(`${RAW_BASE}/${signature.SIG_DIR}/${name}${signature.SIG_SUFFIX}`);
+      if (!signature.verify(text, sig)) throw new Error(`${name}: signature does not match the catalog's key`);
+    }
+    JSON.parse(text); // validate before persisting
+    return text;
+  }
+
   async refresh() {
     for (const name of DATA_FILES) {
       // through the mirrors: this is the one fetch that has to work before the app can show
       // anything at all, and raw.githubusercontent is not reachable everywhere
-      const url = `${RAW_BASE}/assets/data/${name}`;
-      const text = await fetchText(url);
-      // A mirror can rewrite anything it carries, so what decides whether these bytes are the
-      // author's is his signature over them - and a file that fails leaves the last good cache
-      // in place (see load()).
-      //
-      // The signatures sit in a folder of their own rather than beside the data. They were
-      // published as assets/data/<name>.sig on 2026-09-09 and moved to assets/signatures/ the
-      // same day, which is why this is built from a path and not from a suffix: a layout that
-      // has already moved once can move again, and a suffix glued onto the data URL cannot
-      // follow it.
-      if (signature.configured()) {
-        const sig = await fetchText(`${RAW_BASE}/${signature.SIG_DIR}/${name}${signature.SIG_SUFFIX}`);
-        if (!signature.verify(text, sig)) {
-          throw new Error(`${name}: signature does not match the catalog's key`);
-        }
-      }
-      JSON.parse(text); // validate before persisting
-      fs.writeFileSync(this.cachePath(name), text);
+      // through the mirrors: this is the one fetch that has to work before the app can show
+      // anything at all, and raw.githubusercontent is not reachable everywhere
+      fs.writeFileSync(this.cachePath(name), await this.fetchSigned(name));
+    }
+
+    // and the hashes, which the app is allowed to do without
+    try {
+      fs.writeFileSync(this.cachePath(HASH_FILE), await this.fetchSigned(HASH_FILE));
+    } catch (e) {
+      this.hashes = undefined; // re-read whatever is on disk next time it is asked
     }
     fs.writeFileSync(this.cachePath('meta.json'), JSON.stringify({ fetchedAt: Date.now() }));
   }
@@ -113,6 +132,25 @@ class Catalog {
     normalizeCatalog(out.mods);
     return out;
   }
+  /**
+   * What the catalog says this archive should hash to, or null when it does not say.
+   *
+   * Null is the common case for a mod added since the list was last rebuilt - 21 of 992 on the
+   * day this was written - and it means the old behaviour, not a refusal. A list that has not
+   * caught up must never be a reason a mod cannot be installed.
+   *
+   * @param {string} categoryId  e.g. "heroes"
+   * @param {string} file        the archive's name in the catalog, e.g. "Bare Brewmaster.zip"
+   * @returns {string|null} sha256 in lower-case hex
+   */
+  publishedHash(categoryId, file) {
+    if (this.hashes === undefined) {
+      try { this.hashes = JSON.parse(fs.readFileSync(this.cachePath(HASH_FILE), 'utf-8')); } catch { this.hashes = null; }
+    }
+    if (!this.hashes || !categoryId || !file) return null;
+    const value = this.hashes[`${categoryId}/${file}`];
+    return typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
+  }
 }
 
-module.exports = { Catalog, RAW_BASE, normalizeCatalog };
+module.exports = { Catalog, RAW_BASE, HASH_FILE, normalizeCatalog };
