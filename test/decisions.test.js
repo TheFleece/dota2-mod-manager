@@ -85,6 +85,19 @@ test('the eleven co-authored commits it describes are the eleven that are there'
   assert.equal(count, 11, `DECISIONS.md says eleven such commits, git finds ${count}`);
 });
 
+test('the mirror named in the decisions is the mirror the READMEs point at', () => {
+  // The Codeberg failure in one line: the decision to leave was made in the morning and both
+  // READMEs went on advertising the mirror all day, so a reviewer that evening praised the
+  // project for a second home it had already abandoned. The address now lives in three files,
+  // and three copies of a fact drift the moment one of them is edited alone.
+  const url = doc.match(/https:\/\/gitlab\.com\/[\w.-]+\/[\w.-]+/);
+  assert.ok(url, 'DECISIONS.md no longer names a mirror; if the project moved, update all three');
+  for (const file of ['README.md', 'README.ru.md']) {
+    const text = fs.readFileSync(path.join(root, file), 'utf-8');
+    assert.ok(text.includes(url[0]), `${file} does not point at ${url[0]}`);
+  }
+});
+
 test('every entry offers a way to check it', () => {
   // The file's promise is one check per entry. A new entry added without one is the failure this
   // catches, because that entry is then just an assertion in a document full of evidence.

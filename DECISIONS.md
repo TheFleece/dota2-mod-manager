@@ -86,6 +86,22 @@ subject naming what arrived or left, so the commits can be read like any other.
 *Check:* `git log --oneline` for the subjects, `tools/json-lines.js` and `tools/index-delta.js`
 for how they are produced, and `test/json-lines.test.js` for what the formatter guarantees.
 
+### The source is mirrored, and the workflow does not name where
+
+A copy of `main` and every tag goes to <https://gitlab.com/TheFleece/dota2-mod-manager>. This is
+a Dota modding tool: the realistic ways it disappears are a takedown, a suspended account, or a
+decision about the catalog it installs from, and none of those give notice. The mirror carries no
+issues and no merge requests, because it is a copy rather than a second place to work.
+
+The workflow does not name the host. A mirror was set up on Codeberg on 2026-09-08 and stood down
+the same day, when their terms of use turned out to ask projects written with heavy use of
+language models not to host there, and moving cost a code change it should not have cost. It now
+pushes wherever the `MIRROR_PUSH_URL` secret points and exits green saying nothing is configured
+when it points nowhere, so the next move is a secret and not a commit.
+
+*Check:* `git ls-remote https://gitlab.com/TheFleece/dota2-mod-manager.git`, which needs no
+account and should answer with the same commit on `main` and the same tags as this repository.
+
 ### Eleven commits from August carry a co-author trailer, and the history was not rewritten
 
 They were made with an assistant and the trailer was left in the body. Cleaning them means
@@ -243,22 +259,6 @@ For what it is worth, the four generated JSON files that reviews usually blame f
 ```
 git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize:disk) %(rest)' | awk '$1=="blob"&&$4~/^site\/public\/mods\//{n+=$3} END{print n/1048576" MB"}'
 ```
-
-### Where a second copy of the source should live
-
-A mirror was set up on Codeberg on 2026-09-08 and stood down the same day: their terms of use,
-changed on 23 July, ask projects written with heavy use of language models not to host there, and
-this one says in `AGENTS.md` that it is. Looking for a different second home rather than a wording
-that slips through. A mirror carries no collaboration, so this is about durability and nothing
-else.
-
-The workflow no longer names a host, because deciding where to keep a copy should not be a code
-change. It pushes wherever `MIRROR_PUSH_URL` points and exits green saying nothing is configured
-when it points nowhere, which is the state today. **So there is no second copy of this source at
-the moment.**
-
-*Check:* `.github/workflows/mirror.yml`, and the last run of it under Actions, which says either
-the host it mirrored to or that no mirror is configured.
 
 ### Applying to SignPath again
 
