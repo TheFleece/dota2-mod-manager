@@ -83,7 +83,7 @@
         {"name":"Axe Heracles","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","head","tail","weapon","misc","shoulder","back","legs","shield"]},
         {"name":"Axe Immortal Bootblack","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","tail","weapon","misc","head"]},
         {"name":"Axe Immortal Bootblack Brawler","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","head","tail","weapon"]},
-        {"name":"Axe Kratos","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","head","tail","weapon"]},
+        {"name":"Axe Kratos","categoryId":"heroes","styleLabel":null,"slots":["weapon","tail","head","belt","arms"]},
         {"name":"Axe Unleashed","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","tail","weapon","misc","head"]}
       ]
     },
@@ -524,7 +524,7 @@
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI9 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
-        {"name":"White Natures Prophet","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]},
+        {"name":"White Natures Prophet","categoryId":"heroes","styleLabel":null,"slots":["misc","weapon","head","back","arms"]},
         {"name":"Yellow Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]}
       ]
     },

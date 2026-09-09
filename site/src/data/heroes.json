@@ -2746,11 +2746,11 @@
           "name": "White Natures Prophet",
           "categoryId": "heroes",
           "styleLabel": null,
-          "slots": ["misc","arms","back","head","weapon"],
+          "slots": ["misc","weapon","head","back","arms"],
           "image": {"src":"/mods/white-natures-prophet.webp","width":854,"height":480},
           "author": null,
           "authorUrl": null,
-          "date": 1766436957
+          "date": 1788958573
         },
         {
           "name": "Aghanim Ranged Attack",
@@ -12138,11 +12138,11 @@
           "name": "Axe Kratos",
           "categoryId": "heroes",
           "styleLabel": null,
-          "slots": ["arms","belt","head","tail","weapon"],
+          "slots": ["weapon","tail","head","belt","arms"],
           "image": {"src":"/mods/axe-kratos.webp","width":854,"height":480},
           "author": "Defiree",
           "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1774882421
+          "date": 1788956725
         }
       ]
     },
