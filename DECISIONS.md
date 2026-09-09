@@ -170,11 +170,15 @@ which is worth knowing before depending on it.
 
 ### The coverage floor is measured on one platform only
 
-The suite runs on both since 2026-09-08, which closed issue #5: `ubuntu-latest` carries the
-coverage gate and `windows-latest` runs the same tests for correctness. What is still one-sided
-is the floor itself. `src/steam.js` takes a different half of itself on each operating system, so
-the two platforms report different figures, and the gate is calibrated against the Linux one.
-Windows-only code can therefore lose its last test without the number moving.
+The suite runs on both since 2026-09-09, which is what issue
+[#5](https://github.com/TheFleece/dota2-mod-manager/issues/5) asked for: `ubuntu-latest` carries
+the coverage gate, `windows-latest` runs the same tests for correctness, and that job earned
+itself on its first run by finding a libuv abort Linux cannot see.
+
+What is still one-sided is the floor. `src/steam.js` takes a different half of itself on each
+operating system, so the two platforms report different figures, and the gate is calibrated
+against the Linux one. Windows-only code can therefore lose its last test without the number
+moving.
 
 *Check:* `.github/workflows/test.yml`, and the `test:coverage` script in `package.json`.
 
