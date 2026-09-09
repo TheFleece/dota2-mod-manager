@@ -1,5 +1,5 @@
 {
-  "count": 1302,
+  "count": 1303,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -763,6 +763,7 @@
     "9bf37eb9e21308ce8fc2668a00f81d3dff4140fe": [{"name":"Blood River","categoryId":"river","styleLabel":null,"type":"vpk"}],
     "9c13b01fa13e0513ae8391513c0b2476605ce0e7": [{"name":"Morphling Darktrench Purple","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "9c5aad0572ba3df20178c7c473e002a453586f89": [{"name":"Tidehunter Insatiable Seas","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "9cc0e8d8c4183abd404754dd96663bdf30a04c98": [{"name":"Abaddon Endless Night","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "9cc0f453c428ed764ad56b997a62308aa384b244": [{"name":"The International 2019","categoryId":"music","styleLabel":null,"type":"vpk"}],
     "9d18248fadaf87fe8e9f2eeb4a495ed4df3fe0aa": [{"name":"Pumpkin Trees","categoryId":"trees","styleLabel":null,"type":"vpk"}],
     "9d19b4ec82b49ff44c332f9c9f8d8503ee780d92": [{"name":"Keeper of the Light Prominence","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],

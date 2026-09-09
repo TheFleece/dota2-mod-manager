@@ -12656,6 +12656,63 @@
       ]
     },
     {
+      "id": "abaddon",
+      "name": "Abaddon",
+      "slug": "abaddon",
+      "mods": [
+        {
+          "name": "Abaddon Sayaka Miki",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","back","head","mount","shoulder","weapon","wings"],
+          "image": {"src":"/mods/abaddon-sayaka-miki.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1767093656
+        },
+        {
+          "name": "Abaddon Bloody Fallen King",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","head","mount","shoulder","weapon"],
+          "image": {"src":"/mods/abaddon-bloody-fallen-king.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1769266243
+        },
+        {
+          "name": "Abaddon Endless Night",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","head","mount","shoulder","weapon"],
+          "image": {"src":"/mods/abaddon-endless-night.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1788942404
+        },
+        {
+          "name": "Abaddon Fallen King",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","head","mount","shoulder","weapon"],
+          "image": {"src":"/mods/abaddon-fallen-king.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1768491259
+        },
+        {
+          "name": "Red Abaddon",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","head","mount","shoulder","weapon"],
+          "image": {"src":"/mods/red-abaddon.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1756972905
+        }
+      ]
+    },
+    {
       "id": "alchemist",
       "name": "Alchemist",
       "slug": "alchemist",
@@ -12937,53 +12994,6 @@
           "author": "frayserclick",
           "authorUrl": "https://t.me/frayserclick",
           "date": 1787470721
-        }
-      ]
-    },
-    {
-      "id": "abaddon",
-      "name": "Abaddon",
-      "slug": "abaddon",
-      "mods": [
-        {
-          "name": "Abaddon Sayaka Miki",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","back","head","mount","shoulder","weapon","wings"],
-          "image": {"src":"/mods/abaddon-sayaka-miki.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1767093656
-        },
-        {
-          "name": "Abaddon Bloody Fallen King",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","head","mount","shoulder","weapon"],
-          "image": {"src":"/mods/abaddon-bloody-fallen-king.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1769266243
-        },
-        {
-          "name": "Abaddon Fallen King",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","head","mount","shoulder","weapon"],
-          "image": {"src":"/mods/abaddon-fallen-king.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1768491259
-        },
-        {
-          "name": "Red Abaddon",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","head","mount","shoulder","weapon"],
-          "image": {"src":"/mods/red-abaddon.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1756972905
         }
       ]
     },

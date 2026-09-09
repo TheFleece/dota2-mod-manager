@@ -1,11 +1,12 @@
 {
   "heroes": 147,
-  "mods": 1311,
+  "mods": 1312,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
       "mods": [
         {"name":"Abaddon Bloody Fallen King","categoryId":"heroes","styleLabel":null,"slots":["back","head","mount","shoulder","weapon"]},
+        {"name":"Abaddon Endless Night","categoryId":"heroes","styleLabel":null,"slots":["back","head","mount","shoulder","weapon"]},
         {"name":"Abaddon Fallen King","categoryId":"heroes","styleLabel":null,"slots":["back","head","mount","shoulder","weapon"]},
         {"name":"Abaddon Sayaka Miki","categoryId":"heroes","styleLabel":null,"slots":["misc","back","head","mount","shoulder","weapon","wings"]},
         {"name":"Red Abaddon","categoryId":"heroes","styleLabel":null,"slots":["back","head","mount","shoulder","weapon"]}

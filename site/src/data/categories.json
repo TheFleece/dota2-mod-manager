@@ -1577,10 +1577,10 @@
     {
       "id": "pedestal",
       "mods": [
-        {"name":"Drow Ranger Pedestal","styleLabel":null,"image":{"src":"/mods/drow-ranger-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772758430},
-        {"name":"Earthshaker Pedestal","styleLabel":null,"image":{"src":"/mods/earthshaker-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772758430},
-        {"name":"Snow Pedestal","styleLabel":null,"image":{"src":"/mods/snow-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772758430},
-        {"name":"Windranger Pedestal","styleLabel":null,"image":{"src":"/mods/windranger-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772758430}
+        {"name":"Drow Ranger Pedestal","styleLabel":null,"image":{"src":"/mods/drow-ranger-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788940775},
+        {"name":"Earthshaker Pedestal","styleLabel":null,"image":{"src":"/mods/earthshaker-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788940775},
+        {"name":"Snow Pedestal","styleLabel":null,"image":{"src":"/mods/snow-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788940775},
+        {"name":"Windranger Pedestal","styleLabel":null,"image":{"src":"/mods/windranger-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788940775}
       ]
     },
     {
@@ -1637,8 +1637,8 @@
     {
       "id": "tormentor",
       "mods": [
-        {"name":"10th Anniversary Tormentor","styleLabel":null,"image":{"src":"/mods/10th-anniversary-tormentor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1770460734},
-        {"name":"Frostivus Tormentor","styleLabel":null,"image":{"src":"/mods/frostivus-tormentor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1770460734}
+        {"name":"10th Anniversary Tormentor","styleLabel":null,"image":{"src":"/mods/10th-anniversary-tormentor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788932483},
+        {"name":"Frostivus Tormentor","styleLabel":null,"image":{"src":"/mods/frostivus-tormentor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788932483}
       ]
     },
     {"id":"towers","mods":[{"name":"Holiday Radiant Tower","styleLabel":null,"image":{"src":"/mods/holiday-radiant-tower.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1766624100}]}
