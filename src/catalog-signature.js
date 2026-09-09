@@ -21,6 +21,9 @@ const crypto = require('crypto');
 // prints one in exactly this form. Empty means verification is off.
 const CATALOG_PUBLIC_KEY = '';
 
+// Where the signatures live in the catalog repository, and what they are called there:
+// assets/signatures/mods.json.sig for assets/data/mods.json.
+const SIG_DIR = 'assets/signatures';
 const SIG_SUFFIX = '.sig';
 
 /** Is there a key to check against at all? */
@@ -50,4 +53,4 @@ function verify(payload, signatureB64, key = CATALOG_PUBLIC_KEY) {
   }
 }
 
-module.exports = { verify, configured, CATALOG_PUBLIC_KEY, SIG_SUFFIX };
+module.exports = { verify, configured, CATALOG_PUBLIC_KEY, SIG_DIR, SIG_SUFFIX };

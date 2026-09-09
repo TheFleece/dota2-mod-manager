@@ -23,6 +23,7 @@ const OUT = path.join(process.cwd(), 'dist', 'mirror');
 const SIG = '.sig';
 
 const CATALOG = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main/assets/data/';
+const SIGNATURES = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main/assets/signatures/';
 
 /* The signatures travel with the files they sign.
  *
@@ -36,9 +37,9 @@ const SOURCES = [
   ['mods.json', `${CATALOG}mods.json`],
   ['constants.json', `${CATALOG}constants.json`],
   ['guides.json', `${CATALOG}guides.json`],
-  ['mods.json.sig', `${CATALOG}mods.json.sig`],
-  ['constants.json.sig', `${CATALOG}constants.json.sig`],
-  ['guides.json.sig', `${CATALOG}guides.json.sig`],
+  ['mods.json.sig', `${SIGNATURES}mods.json.sig`],
+  ['constants.json.sig', `${SIGNATURES}constants.json.sig`],
+  ['guides.json.sig', `${SIGNATURES}guides.json.sig`],
   ['fingerprints.json', 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/fingerprints.json'],
 ];
 

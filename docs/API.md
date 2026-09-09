@@ -96,6 +96,15 @@ const CATALOG_PUBLIC_KEY = ''
 Base64 SPKI of the catalog author's ed25519 public key. `tools/sign-catalog.js --keygen`
 prints one in exactly this form. Empty means verification is off.
 
+### `SIG_DIR`
+
+```js
+const SIG_DIR = 'assets/signatures'
+```
+
+Where the signatures live in the catalog repository, and what they are called there:
+assets/signatures/mods.json.sig for assets/data/mods.json.
+
 ### `SIG_SUFFIX`
 
 ```js

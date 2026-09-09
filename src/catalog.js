@@ -70,11 +70,17 @@ class Catalog {
       // anything at all, and raw.githubusercontent is not reachable everywhere
       const url = `${RAW_BASE}/assets/data/${name}`;
       const text = await fetchText(url);
-      // A mirror can rewrite anything it carries. Once the catalog's author publishes a
-      // signature next to each file, that is what decides whether these bytes are his -
-      // and a file that fails leaves the last good cache in place (see load()).
+      // A mirror can rewrite anything it carries, so what decides whether these bytes are the
+      // author's is his signature over them - and a file that fails leaves the last good cache
+      // in place (see load()).
+      //
+      // The signatures sit in a folder of their own rather than beside the data. They were
+      // published as assets/data/<name>.sig on 2026-09-09 and moved to assets/signatures/ the
+      // same day, which is why this is built from a path and not from a suffix: a layout that
+      // has already moved once can move again, and a suffix glued onto the data URL cannot
+      // follow it.
       if (signature.configured()) {
-        const sig = await fetchText(`${url}${signature.SIG_SUFFIX}`);
+        const sig = await fetchText(`${RAW_BASE}/${signature.SIG_DIR}/${name}${signature.SIG_SUFFIX}`);
         if (!signature.verify(text, sig)) {
           throw new Error(`${name}: signature does not match the catalog's key`);
         }
