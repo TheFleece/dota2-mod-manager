@@ -55,6 +55,23 @@ jobs:
           cat "$entry"
           grep -q 'x-scheme-handler/d2mm' "$entry"
 
+      - name: Register and verify the desktop entry
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$HOME/.local/share/applications"
+
+          cp dist/squashfs-root/*.desktop \
+            "$HOME/.local/share/applications/dota2-mod-manager.desktop"
+
+          update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+
+          xdg-mime default dota2-mod-manager.desktop x-scheme-handler/d2mm
+          xdg-mime default dota2-mod-manager.desktop application/x-d2mm
+
+          test "$(xdg-mime query default x-scheme-handler/d2mm)" = "dota2-mod-manager.desktop"
+          test "$(xdg-mime query default application/x-d2mm)" = "dota2-mod-manager.desktop"
+
       - uses: actions/upload-artifact@v7
         with:
           name: AppImage
