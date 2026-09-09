@@ -29,7 +29,10 @@ const SIGNATURES = [
 ].join('\r\n');
 
 function fakeGame(t, { version = '6888', signatures = SIGNATURES } = {}) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-patch-'));
+  // realpath, because os.tmpdir() on the Windows CI runner is an 8.3 short path
+  // (C:\Users\RUNNER~1\...) and fs.watch aborts the process when the events it gets back
+  // do not start with the directory it was given. See canonical() in src/patch-watch.js.
+  const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-patch-')));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'dota'), { recursive: true });
   fs.writeFileSync(path.join(root, 'dota', 'steam.inf'), INF(version));

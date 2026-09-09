@@ -84,8 +84,27 @@ function createPatchWatcher({ getGamePath, onPatch, log = () => {}, debounceMs =
     debounce = setTimeout(look, debounceMs);
   }
 
-  function watchDir(dir) {
-    if (!fs.existsSync(dir)) return;
+  /**
+   * The canonical path, because fs.watch on Windows aborts the process when it is handed a
+   * path that is not one.
+   *
+   * libuv turns the filename an event carries into one relative to the watched directory, and
+   * asserts the first is a prefix of the second. Hand it "C:\Users\RUNNER~1\..." and the event
+   * comes back with the long name, the prefix check fails, and the process dies on
+   * "Assertion failed: !_wcsnicmp(filename, dir, dirlen), file src\win\fs-event.c" - a native
+   * abort, not an exception, so nothing below can catch it and the whole app goes with it.
+   *
+   * Found by the Windows CI job on its first run (2026-09-09), where the runner's temp folder
+   * is an 8.3 short path. A player's game folder reached through a short path or a junction is
+   * the same shape of input, and one line here removes the whole class.
+   */
+  const canonical = (dir) => {
+    try { return fs.realpathSync.native(dir); } catch { return dir; }
+  };
+
+  function watchDir(rawDir) {
+    if (!fs.existsSync(rawDir)) return;
+    const dir = canonical(rawDir);
     try {
       const h = fs.watch(dir, { persistent: false }, ping);
       h.on('error', (err) => {
