@@ -55,5 +55,11 @@ jobs:
           host="$(printf '%s' "$MIRROR_PUSH_URL" | sed -E 's#^[a-z]+://[^@]*@##; s#/.*$##')"
           echo "Mirroring main and every tag to $host"
           git remote add mirror "$MIRROR_PUSH_URL"
-          git push --force mirror main:main
+
+          # A tag build checks out the tag, so HEAD is detached and there is no local main to
+          # push: "src refspec main does not match any", every release, while the branch push
+          # a moment earlier had already carried the same commit. Red on every release teaches
+          # people to stop reading CI, so the branch is fetched by name and pushed by name.
+          git fetch --no-tags --force origin refs/heads/main:refs/heads/main
+          git push --force mirror refs/heads/main:refs/heads/main
           git push --force mirror --tags
