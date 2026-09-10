@@ -55,6 +55,16 @@ jobs:
           [ "${DRY:-false}" = "true" ] && argv="$argv --dry"
           node tools/r2-sync.mjs $argv
 
+      # The pinned toolchain, so the one feature that needs a 50 MB download from somebody
+      # else's GitHub release keeps working when GitHub is the thing that is down. Cheap: it
+      # only moves bytes when a pin changes.
+      - name: Copy the pinned toolchain
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: node tools/r2-toolchain.mjs
+
       # Normally the release workflow does this as part of publishing. Here by hand for the
       # first fill, and for the day a release went out while the bucket was unreachable.
       - name: Publish a release to the update mirror

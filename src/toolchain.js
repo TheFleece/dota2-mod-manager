@@ -43,6 +43,20 @@ const BUILT_IN_PINS = {
 
 const TOOL_NAMES = Object.keys(BUILT_IN_PINS);
 
+/* A copy of the pinned archive in this project's own bucket.
+ *
+ * The primary URL is a GitHub release, and every mirror src/net.js knows is a proxy standing
+ * in front of GitHub, so all of them go down together. This one does not: tools/r2-toolchain.mjs
+ * copies the pinned archive there, byte for byte, after checking it against the same digest.
+ *
+ * Safe from anywhere, and that is the point of a pin: the digest lives in this file rather than
+ * travelling with the URL, so whoever hands the bytes over cannot also decide what they should
+ * hash to. The address is written here for the same reason the owner allowlist below is.
+ */
+const FALLBACK_BASE = 'https://cdn.dota2modmanager.com/tools/';
+/** Where the copy of a pinned archive lives, keyed by the tool and the version pinned to it. */
+const fallbackUrl = (name, version) => `${FALLBACK_BASE}${name}-${version}.zip`;
+
 /* Whose releases a pin may point at.
  *
  * "Some GitHub release with a matching digest" is not a pin: the digest travels in the same
@@ -141,11 +155,25 @@ function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} })
 
     const dest = path.join(root, `${name}-${pin.version}.zip`);
     onProgress({ type: 'stage', label: name, stage: 'download' });
-    const got = await downloadFile(pin.url, dest, {
-      expectSha256: pin.sha256,
-      onProgress: (loaded, total) => onProgress({ type: 'download', label: name, loaded, total }),
-      log,
-    });
+    const onBytes = (loaded, total) => onProgress({ type: 'download', label: name, loaded, total });
+    let got;
+    try {
+      got = await downloadFile(pin.url, dest, { expectSha256: pin.sha256, onProgress: onBytes, log });
+    } catch (err) {
+      // Every mirror in net.js is GitHub wearing another hostname, so a GitHub outage takes
+      // the whole chain. The bucket is the one copy that does not share its fate.
+      const spare = fallbackUrl(name, pin.version);
+      log(`toolchain: ${name} not available from the release (${err.message || err}), trying ${spare}`);
+      try {
+        got = await downloadFile(spare, dest, { expectSha256: pin.sha256, onProgress: onBytes, log });
+      } catch (spareErr) {
+        /* The first error is the one worth having. If the release handed over bytes that did
+         * not match the pin, that is what somebody needs to read - not a 404 from the copy
+         * that was asked afterwards, which turns a tampering signal into a routine outage. */
+        log(`toolchain: ${name} not available from the copy either (${spareErr.message || spareErr})`);
+        throw err;
+      }
+    }
     log(`toolchain: ${name} ${pin.version} downloaded, ${(got.bytes / 1048576).toFixed(1)} MB`);
 
     // Unpacked as one change: a tool half-written is a tool that starts and then fails in a
@@ -201,4 +229,4 @@ function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} })
   return { ensure, pathOf, state, remove, refreshPins, root, TOOL_NAMES, PINS_URL };
 }
 
-module.exports = { createToolchain, BUILT_IN_PINS, validPin, TOOL_NAMES, PINS_URL };
+module.exports = { createToolchain, BUILT_IN_PINS, validPin, TOOL_NAMES, PINS_URL, FALLBACK_BASE, fallbackUrl };
