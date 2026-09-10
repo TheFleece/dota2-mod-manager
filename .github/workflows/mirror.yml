@@ -56,10 +56,16 @@ jobs:
           echo "Mirroring main and every tag to $host"
           git remote add mirror "$MIRROR_PUSH_URL"
 
-          # A tag build checks out the tag, so HEAD is detached and there is no local main to
-          # push: "src refspec main does not match any", every release, while the branch push
-          # a moment earlier had already carried the same commit. Red on every release teaches
-          # people to stop reading CI, so the branch is fetched by name and pushed by name.
-          git fetch --no-tags --force origin refs/heads/main:refs/heads/main
-          git push --force mirror refs/heads/main:refs/heads/main
+          # Whatever started this run, push the commit main points at.
+          #
+          # A tag build checks out the tag, so HEAD is detached and `push main:main` fails with
+          # "src refspec main does not match any" - a red cross on every release for work the
+          # branch push had already done. Fetching into refs/heads/main instead fails the other
+          # way round, because on a branch build that branch is the one checked out and git
+          # refuses to move it underneath you.
+          #
+          # Fetching without a destination writes FETCH_HEAD and touches no branch, so the same
+          # two lines work from a tag and from a branch.
+          git fetch --no-tags --force origin main
+          git push --force mirror FETCH_HEAD:refs/heads/main
           git push --force mirror --tags
