@@ -257,6 +257,11 @@ class Installer {
         // the catalog's published hash when it has one, and otherwise what this file was the
         // first time it arrived here
         expectSha256: published || (known ? known.sha256 : null),
+        /* Neither of those is a hash this project pinned. One is a list somebody else's bot
+           rebuilds, the other is a note about a file this machine saw weeks ago, and both go
+           out of date the moment a mod's author replaces the archive. So they outrank every
+           proxy and nothing else: see downloadFile. */
+        fromPublishedList: true,
         onProgress: (loaded, total) => this.onProgress({ type: 'download', label: label || safeName, loaded, total }),
       });
       this.rememberDownload(key, { size: res.bytes, sha256: res.sha256, at: Date.now() });

@@ -65,7 +65,7 @@ test('the fingerprint index is still fetched from the path the entry says it can
   assert.ok(doc.includes('`FP_URL`'), 'the entry no longer points at the constant that proves it');
 });
 
-test('the eleven co-authored commits it describes are the eleven that are there', () => {
+test('the twelve co-authored commits it describes are the twelve that are there', () => {
   // Counted from the history rather than remembered. If somebody does rewrite it one day, the
   // entry explaining why nobody did should fail rather than sit there being wrong.
   //
@@ -82,7 +82,7 @@ test('the eleven co-authored commits it describes are the eleven that are there'
   } catch {
     return; // no git at all: a tarball, or an export with the history stripped
   }
-  assert.equal(count, 11, `DECISIONS.md says eleven such commits, git finds ${count}`);
+  assert.equal(count, 12, `DECISIONS.md says twelve such commits, git finds ${count}`);
 });
 
 test('the mirror named in the decisions is the mirror the READMEs point at', () => {

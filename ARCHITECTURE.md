@@ -194,6 +194,29 @@ checksum before uploading, so this bucket cannot be the reason a check fails.
 
 *Check:* `test/net.test.js`, "a mirror serving a stale copy costs that mirror its turn".
 
+### And the list can be wrong about the file
+
+`mod-hashes.json` is rebuilt by a bot in the catalog's repository. On 2026-09-10 it named a hash
+for `heroes/Axe Kratos.zip` that no copy of that archive has ever had - not GitHub's, not the
+API's, not any proxy's - so that mod was refused for everybody, working GitHub included. One mod
+in 1,178 checked, and complete for that one.
+
+A published hash is worth having because a proxy is a stranger, and it proves the bytes are the
+ones the catalog's author signed for. It proves nothing about GitHub itself: the list lives in
+the same repository as the archives, so whoever could rewrite one could rewrite the other. So
+when no copy matches, the file the catalog's own host serves is taken and the result is marked
+unverified, rather than the mod being refused over a list that has not caught up.
+
+The guarantee that survives, and the one that was actually worth having: no proxy can get bytes
+installed that the catalog's own host did not serve. A mod hosted somewhere else entirely (the
+catalog keeps its heaviest on Hugging Face) gets no such waiver, because there the published hash
+is the only thing tying those bytes to the catalog. Neither does the app's own update or the
+Source 2 toolchain: those hashes are pinned in this repository, and a mismatch there is the thing
+being guarded against.
+
+*Check:* `test/net.test.js`, "a published hash no copy matches is a stale list, and the origin
+wins", next to the three tests that say who does not get that treatment.
+
 ### The archives the list has not caught up with
 
 `mod-hashes.json` is rebuilt by a bot after mods are added, so the newest archives are not in it

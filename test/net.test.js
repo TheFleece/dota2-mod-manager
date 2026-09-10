@@ -227,6 +227,88 @@ test('half a file from a stale mirror is not resumed from the next one', async (
   assert.deepEqual(fs.readFileSync(dest), current);
 });
 
+/*
+ * The list is not always right about the file.
+ *
+ * `mod-hashes.json` named a hash for heroes/Axe Kratos.zip on 2026-09-10 that no copy of that
+ * archive has ever had, so the mod was refused for everybody - a working GitHub made no
+ * difference. The list is built in the same repository as the archives, so it can say nothing
+ * about GitHub that GitHub could not also say about itself; when every copy disagrees with it,
+ * the file wins.
+ *
+ * The first mirror here is the canonical host, so `RAW_URL` maps to itself.
+ */
+const asOrigin = (port) => ({ host: 'raw.githubusercontent.com', origin: true, map: (u) => u.replace(RAW_HOST, `http://127.0.0.1:${port}/`) });
+
+test('a published hash no copy matches is a stale list, and the origin wins', async (t) => {
+  const real = crypto.randomBytes(4096);
+  const origin = await serve(t, ranged(real));
+  const proxy = await serve(t, ranged(real));
+  net.setMirrors([asOrigin(origin.port), proxy.mirror()]);
+  const dir = tempDir(t);
+  const dest = path.join(dir, 'Mod.zip');
+
+  const res = await net.downloadFile(RAW_URL, dest, {
+    expectSha256: 'b'.repeat(64), // what the list claims, and what nothing hashes to
+    fromPublishedList: true,
+  });
+
+  assert.equal(res.unverified, true, 'and it is marked as taken on the origin\'s word');
+  assert.deepEqual(fs.readFileSync(dest), real);
+  assert.equal(fs.existsSync(`${dest}.origin`), false, 'the copy held back is not left lying around');
+});
+
+test('a proxy cannot pass off bytes the origin never served', async (t) => {
+  const invented = crypto.randomBytes(4096);
+  const origin = await serve(t, dead(503));
+  const proxy = await serve(t, ranged(invented));
+  net.setMirrors([asOrigin(origin.port), proxy.mirror()]);
+  const dir = tempDir(t);
+  const dest = path.join(dir, 'Mod.zip');
+
+  // the same stale-list situation, except the one host whose word counts never answered
+  await assert.rejects(
+    () => net.downloadFile(RAW_URL, dest, { expectSha256: 'b'.repeat(64), fromPublishedList: true }),
+  );
+  assert.equal(fs.existsSync(dest), false, 'bytes only a proxy ever had are not installed');
+  assert.equal(fs.existsSync(`${dest}.origin`), false);
+});
+
+/* The catalog keeps its heaviest mods on Hugging Face, and those entries carry a whole URL.
+ * Such a URL has no mirrors, which for a moment made it its own origin and so exempt from the
+ * check - the exact opposite of what it needs. Nothing on that host is signed by the catalog;
+ * the published hash is the only thing connecting those bytes to it. */
+test('a mod hosted somewhere else is held to the published hash, not excused from it', async (t) => {
+  const elsewhere = await serve(t, ranged(crypto.randomBytes(2048)));
+  const url = `http://127.0.0.1:${elsewhere.port}/big-mod.zip`;
+  const dir = tempDir(t);
+  const dest = path.join(dir, 'big-mod.zip');
+
+  assert.deepEqual(net.mirrorsFor(url), [url], 'it really is its own only source');
+  await assert.rejects(
+    () => net.downloadFile(url, dest, { expectSha256: 'd'.repeat(64), fromPublishedList: true }),
+    /checksum/,
+  );
+  assert.equal(fs.existsSync(dest), false);
+});
+
+test('a hash this project pinned itself is never waived', async (t) => {
+  const whatever = crypto.randomBytes(2048);
+  const origin = await serve(t, ranged(whatever));
+  net.setMirrors([asOrigin(origin.port)]);
+  const dir = tempDir(t);
+  const dest = path.join(dir, 'toolchain.zip');
+
+  // no fromPublishedList: this is the update binary and the toolchain, where the pinned hash
+  // is the whole point of downloading through mirrors at all
+  await assert.rejects(
+    () => net.downloadFile(RAW_URL, dest, { expectSha256: 'c'.repeat(64) }),
+    /checksum/,
+  );
+  assert.equal(fs.existsSync(dest), false, 'nothing unpacked from a binary that failed its pin');
+  assert.equal(fs.existsSync(`${dest}.origin`), false);
+});
+
 test('a file every mirror disowns is still refused', async (t) => {
   const one = await serve(t, ranged(crypto.randomBytes(2048)));
   const two = await serve(t, ranged(crypto.randomBytes(2048)));

@@ -102,12 +102,12 @@ when it points nowhere, so the next move is a secret and not a commit.
 *Check:* `git ls-remote https://gitlab.com/TheFleece/dota2-mod-manager.git`, which needs no
 account and should answer with the same commit on `main` and the same tags as this repository.
 
-### Eleven commits from August carry a co-author trailer, and the history was not rewritten
+### Twelve commits carry a co-author trailer, and the history was not rewritten
 
-They were made with an assistant and the trailer was left in the body. Cleaning them means
-rewriting everything from 7 August: about 350 of the SHAs move, the release tags move with them,
-and every external link to a commit dies. The assistant appears nowhere as an author, only in
-those eleven trailers.
+Eleven from August and one from 10 September. They were made with an assistant and the trailer
+was left in the body. Cleaning them means rewriting everything from 7 August: about 350 of the
+SHAs move, the release tags move with them, and every external link to a commit dies. The
+assistant appears nowhere as an author, only in those twelve trailers.
 
 *Check:* `git log --grep='Co-Authored-By' --format='%h %ad %s' --date=short` and
 `git shortlog -sne HEAD`.

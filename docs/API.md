@@ -1141,7 +1141,7 @@ _No description in the source._
 ### `mirrorsFor`
 
 ```js
-function mirrorsFor(url, { small = false, trustedOnly = false } = {})
+function mirrorsFor(url, opts = {})
 ```
 
 Every URL worth trying for this one, best first. A URL that is not on GitHub raw (a mod
@@ -1155,7 +1155,7 @@ whose catalog entry points somewhere else entirely) has no mirrors - it is itsel
 ### `fetchMirrored`
 
 ```js
-async function fetchMirrored(url, { small = false, trustedOnly = false, headers = {}, exclude = [], log = () => {} } = {})
+async function fetchMirrored(url, { small = false, trustedOnly = false, headers = {}, exclude = [], onMirror = () => {}, log = () => {}, } = {})
 ```
 
 Fetch, walking the mirrors. Returns the Response of the first mirror that answers.
@@ -1167,6 +1167,8 @@ Fetch, walking the mirrors. Returns the Response of the first mirror that answer
 @param {object} [opts.headers]
 @param {string[]} [opts.exclude] hosts already tried for this file and found wanting; a
 mirror that answered with the wrong bytes must not be offered again on the retry
+@param {(m: {host: string, origin: boolean}) => void} [opts.onMirror] which mirror is
+answering, called just before the response is handed back
 @param {(msg: string) => void} [opts.log]
 ```
 
@@ -1181,7 +1183,7 @@ Text from the first mirror that answers (catalog JSON, fingerprint map).
 ### `downloadFile`
 
 ```js
-async function downloadFile(url, dest, { onProgress = () => {}, expectSha256 = null, log = () => {} } = {})
+async function downloadFile(url, dest, { onProgress = () => {}, expectSha256 = null, fromPublishedList = false, log = () => {}, } = {})
 ```
 
 Download to a file, resuming where an interrupted attempt stopped.
@@ -1195,10 +1197,15 @@ over because a train went into a tunnel is the difference between a mod and a sh
 @param {string} dest
 @param {object} [opts]
 @param {(loaded: number, total: number) => void} [opts.onProgress]
-@param {string} [opts.expectSha256] what the catalog says this file hashes to; a mirror
-handing over something else is dropped and the next one is asked
+@param {string} [opts.expectSha256] what this file should hash to; a mirror handing over
+something else is dropped and the next one is asked
+@param {boolean} [opts.fromPublishedList] the expectation above came from a list somebody
+else maintains (the catalog's `mod-hashes.json`, or what this machine saw last time),
+rather than from a hash pinned in this project. Such a list can simply be wrong, and when
+it is, the file it names outranks it. Never pass this for the app's own update or for the
+toolchain: those hashes are pinned here and a mismatch there is the thing being guarded.
 @param {(msg: string) => void} [opts.log]
-@returns {Promise<{ path: string, bytes: number, sha256: string, resumedFrom: number }>}
+@returns {Promise<{ path: string, bytes: number, sha256: string, resumedFrom: number, unverified?: boolean }>}
 ```
 
 ### `sha256`
