@@ -892,6 +892,19 @@ const RESERVED_PAKS = [65, 66, 67]
 
 _No description in the source._
 
+### `RESERVED_LABEL`
+
+```js
+const RESERVED_LABEL = RESERVED_PAKS.length > 1
+```
+
+The reserved range as the interface says it out loud.
+
+The Library told people "pak65-67 and pak99 are left to it" for a release after pak99 stopped
+being reserved, because the sentence carried its own copy of the numbers. Built from the list
+instead, so the promise on screen and the slots the allocator actually skips cannot disagree
+again.
+
 ### `MINIFY_PAKS`
 
 ```js

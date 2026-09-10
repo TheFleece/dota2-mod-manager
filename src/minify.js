@@ -54,6 +54,16 @@ const MINIFY_BORROWED = 'dutch';
 const MINIFY_PAKS = [65, 66, 67, 99];
 const RESERVED_PAKS = [65, 66, 67];
 
+/* The reserved range as the interface says it out loud.
+ *
+ * The Library told people "pak65-67 and pak99 are left to it" for a release after pak99 stopped
+ * being reserved, because the sentence carried its own copy of the numbers. Built from the list
+ * instead, so the promise on screen and the slots the allocator actually skips cannot disagree
+ * again. */
+const RESERVED_LABEL = RESERVED_PAKS.length > 1
+  ? `pak${RESERVED_PAKS[0]}-${RESERVED_PAKS[RESERVED_PAKS.length - 1]}`
+  : `pak${RESERVED_PAKS[0]}`;
+
 /**
  * Is this file in the language folder one of Minify's paks?
  *
@@ -214,10 +224,11 @@ function readMinify({
 
   return {
     present, folder, mods, mounts, mounted, ourFolder, sharing, live, declared: !!declared,
+    reservedLabel: RESERVED_LABEL,
     // true even when nothing else here says it is installed: the wrapper is in Steam's config,
     // and it stays there after somebody deletes the program without uninstalling it
     prelaunch: prelaunchHook(launchOptions),
   };
 }
 
-module.exports = { readMinify, readConfig, configPath, folderOfPath, isMinifyFile, isMinifyPak, MINIFY_MARKERS, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS, MINIFY_PAKS, prelaunchHook };
+module.exports = { readMinify, readConfig, configPath, folderOfPath, isMinifyFile, isMinifyPak, MINIFY_MARKERS, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS, RESERVED_LABEL, MINIFY_PAKS, prelaunchHook };

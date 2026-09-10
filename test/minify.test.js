@@ -6,7 +6,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { readMinify: read, readConfig, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS, isMinifyFile, prelaunchHook } = require('../src/minify.js');
+const { readMinify: read, readConfig, MINIFY_FOLDER, MINIFY_BORROWED, RESERVED_PAKS, RESERVED_LABEL, isMinifyFile, prelaunchHook } = require('../src/minify.js');
 
 /* Every case below describes a whole machine, so none of them may read the Minify that is
  * installed on the one running the tests: without this the suite passes or fails depending on
@@ -255,4 +255,20 @@ test('in a shared folder its mods are counted by who wrote them, not by what is 
   assert.equal(got.mods, 2, 'only what Minify wrote');
   assert.equal(got.sharing, true);
   assert.equal(got.live, 'both');
+});
+
+/*
+ * What the Library tells people about the slots, against what the allocator actually skips.
+ *
+ * 2.6.4 stopped reserving pak99 and the sentence on screen went on promising it for a whole
+ * release: "the slots it writes - pak65-67 and pak99 - are left to it", while pak99 was being
+ * handed out to the next mod somebody installed. The numbers were written twice and only one
+ * copy was updated, so the label is built from the list now and this is the check that they
+ * stay the same thing.
+ */
+test('the slots the interface promises are the slots that are reserved', () => {
+  const numbers = RESERVED_LABEL.match(/\d+/g).map(Number);
+  assert.equal(numbers[0], RESERVED_PAKS[0], 'the label starts where the reserved range does');
+  assert.equal(numbers[numbers.length - 1], RESERVED_PAKS[RESERVED_PAKS.length - 1], 'and ends where it ends');
+  assert.ok(!/99/.test(RESERVED_LABEL), 'pak99 has not been reserved since 2.6.4');
 });

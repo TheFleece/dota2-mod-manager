@@ -77,6 +77,9 @@ behind. Found by running the tests on Windows for the first time.
   at dota2modmanager.com. Links you have already sent keep working.
 - The site no longer runs an animation on phones that could make Safari give up on the tab
   after a few seconds of scrolling, and it loads pictures sized for the screen showing them.
+- The Library said Minify was being left `pak65-67 and pak99` for a release after pak99
+  stopped being reserved. It reserves 65 to 67, which is what it now says; a pak99 already on
+  disk is still recognised as Minify's and left where it is.
 
 ## 2.6.4
 
