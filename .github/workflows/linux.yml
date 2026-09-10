@@ -106,6 +106,22 @@ jobs:
             exit 1
           fi
 
+      # A window can appear with the code behind it already broken. These three phrases are what
+      # a name that does not exist looks like by the time it reaches the log, and they do not
+      # occur in the GPU and sandbox noise a runner produces. Two releases in September shipped
+      # exactly this shape of failure; nothing here would have caught them, because nothing
+      # clicks anything, but a startup-time one has no excuse to get past this.
+      - name: Read the log for code that could not run
+        run: |
+          set -euo pipefail
+          log=sandbox/userdata/logs/app.log
+          [ -f "$log" ] || { echo "no app log was written"; exit 0; }
+          if grep -nE "unhandledrejection|is not defined|is not a function" "$log"; then
+            echo "::error::the app logged a name it could not resolve while starting"
+            exit 1
+          fi
+          echo "the log has no unresolved names in it"
+
       - name: What it looked like
         if: always()
         uses: actions/upload-artifact@v7

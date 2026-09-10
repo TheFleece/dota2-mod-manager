@@ -243,10 +243,18 @@ function buildGameTree() {
   take(['dota', 'gameinfo.gi'], GAMEINFO);
   take(['dota', 'gameinfo_branchspecific.gi'], BRANCHSPECIFIC);
 
+  /* The signature list, in the one place a real installation keeps one.
+   *
+   * This used to write it into linuxsteamrt64 as well, and that is why nothing here ever
+   * noticed that Valve's Linux build ships no dota.signatures at all: the sandbox was the only
+   * Linux install in the world that had one. A user's photograph of that folder settled it on
+   * 2026-09-11, after the app had spent every release refusing to patch a Linux game.
+   *
+   * So the tree matches the platform it is standing in for. A Linux developer now gets the
+   * install their users have. */
   const branchText = fs.readFileSync(path.join(GAME, 'dota', 'gameinfo_branchspecific.gi'), 'utf-8');
-  const signatures = signaturesFor(branchText);
-  for (const bin of ['win64', 'linuxsteamrt64']) {
-    fs.writeFileSync(path.join(GAME, 'bin', bin, 'dota.signatures'), signatures);
+  if (process.platform !== 'linux') {
+    fs.writeFileSync(path.join(GAME, 'bin', 'win64', 'dota.signatures'), signaturesFor(branchText));
   }
   fs.writeFileSync(path.join(GAME, 'dota', 'cfg', 'boot.vcfg'), BOOT_VCFG);
   fs.writeFileSync(path.join(GAME, 'dota', 'steam.inf'), STEAM_INF);

@@ -283,20 +283,23 @@ the language folder, which is more than one file's worth of subject.
 
 *Check:* `wc -l main.js`, and `ARCHITECTURE.md` for what is supposed to live where.
 
-### Nothing starts the app in CI
+### CI starts the app, and then does nothing with it
 
-Every check here reads the code or runs a module. None of them opens the window. `no-undef`
-catches a name that does not exist, and the contract tests catch a handler that cannot run and an
-import that points nowhere, but a runtime error on the first screen - a null where an element was
-expected, a channel called with the wrong shape - would still reach a release.
+`.github/workflows/linux.yml` runs Electron against the sandbox under xvfb on every change to the
+code, photographs the first window, and fails when no picture appears. Since 2026-09-11 it also
+reads the app's log and fails on `unhandledrejection`, `is not defined` or `is not a function`,
+which is what a name that does not exist looks like by the time it gets there.
 
-This is the gap that let installing break for two releases. The failure was not subtle; it was
-simply never executed. The answer is a smoke run that launches Electron against the sandbox and
-fails on any console error, which the `MM_SHOT` path already does most of the work for. Not built
-yet.
+What it still does not do: click anything. No mod is installed, no switch is thrown, no screen is
+opened. So a handler that throws the moment somebody presses a button gets through, which is
+exactly what happened in 2.6.5 and 2.6.6 - the window came up perfectly and installing was dead.
+It also runs on Linux only, and only when the paths it watches change.
 
-*Check:* `.github/workflows/` - no job runs `electron` - and `tools/sandbox.js` for what such a
-run would stand on.
+The next step is driving it: `MM_CLICK` already exists for that, and the sandbox already holds
+real mods. Not built.
+
+*Check:* `.github/workflows/linux.yml`, the "Start it against the sandbox" job, and the artifact
+it uploads from any run of it.
 
 ### No macOS build, and the Linux one is young
 
