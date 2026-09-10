@@ -27,7 +27,7 @@
   "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/TheFleece/dota2-mod-manager",
   "devDependencies": {
-    "electron": "^43.4.0",
+    "electron": "^44.2.0",
     "electron-builder": "^26.15.3",
     "eslint": "^10.10.0"
   },
