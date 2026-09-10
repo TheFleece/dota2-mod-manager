@@ -3,6 +3,11 @@
 <img src=".github/banner.svg" alt="Dota 2 Mod Manager" width="900">
 
 <p>
+  <img src="https://img.shields.io/badge/English-8b6ff0?style=for-the-badge&labelColor=8b6ff0&logoColor=white" alt="You are reading the English version">
+  <a href="README.ru.md"><img src="https://img.shields.io/badge/%D0%BF%D0%BE%E2%80%91%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8-211f26?style=for-the-badge&labelColor=211f26" alt="Читать по-русски"></a>
+</p>
+
+<p>
   <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe">
     <img src="https://img.shields.io/github/v/release/TheFleece/dota2-mod-manager?style=for-the-badge&color=8b6ff0&label=Download&logo=github&logoColor=white" alt="Download the latest release"></a>
   <img src="https://img.shields.io/github/downloads/TheFleece/dota2-mod-manager/Dota-2-Mod-Manager-Setup.exe?style=for-the-badge&color=4f378b&label=Installs" alt="Installer downloads">
@@ -27,8 +32,7 @@
   <a href="#alongside-dota2-minify">Alongside Minify</a> &nbsp;·&nbsp;
   <a href="#documentation">Docs</a> &nbsp;·&nbsp;
   <a href="#report-a-problem">Report a problem</a> &nbsp;·&nbsp;
-  <a href="#project-activity">Activity</a> &nbsp;·&nbsp;
-  <a href="README.ru.md">Русский</a>
+  <a href="#project-activity">Activity</a>
   </b>
 </p>
 

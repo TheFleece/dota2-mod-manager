@@ -3,6 +3,11 @@
 <img src=".github/banner.ru.svg" alt="Dota 2 Mod Manager" width="900">
 
 <p>
+  <a href="README.md"><img src="https://img.shields.io/badge/in%20English-211f26?style=for-the-badge&labelColor=211f26" alt="Read in English"></a>
+  <img src="https://img.shields.io/badge/%D0%BF%D0%BE%E2%80%91%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8-8b6ff0?style=for-the-badge&labelColor=8b6ff0&logoColor=white" alt="Вы читаете русскую версию">
+</p>
+
+<p>
   <a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest/download/Dota-2-Mod-Manager-Setup.exe">
     <img src="https://img.shields.io/github/v/release/TheFleece/dota2-mod-manager?style=for-the-badge&color=8b6ff0&label=%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C&logo=github&logoColor=white" alt="Скачать последнюю версию"></a>
   <img src="https://img.shields.io/github/downloads/TheFleece/dota2-mod-manager/Dota-2-Mod-Manager-Setup.exe?style=for-the-badge&color=4f378b&label=%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BE%D0%BA" alt="Загрузок установщика">
@@ -27,8 +32,7 @@
   <a href="#рядом-с-dota2-minify">Рядом с Minify</a> &nbsp;·&nbsp;
   <a href="#документация">Документация</a> &nbsp;·&nbsp;
   <a href="#сообщить-о-проблеме">Сообщить о проблеме</a> &nbsp;·&nbsp;
-  <a href="#жизнь-проекта">Жизнь проекта</a> &nbsp;·&nbsp;
-  <a href="README.md">English</a>
+  <a href="#жизнь-проекта">Жизнь проекта</a>
   </b>
 </p>
 
