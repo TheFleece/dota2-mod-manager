@@ -154,3 +154,28 @@ test('a build with no name and no author still opens', () => {
   assert.ok(back.name.length > 0, 'given a name rather than shown as blank');
   assert.equal(back.author, '');
 });
+
+test('the shared link points at a page this project actually serves', () => {
+  // The wrapper page moved off GitHub Pages on 2026-09-10, because a preset is the one thing
+  // people paste to each other and a link that will not open for anybody who cannot reach
+  // GitHub is not a shared preset. Three things have to agree or a shared link goes nowhere:
+  // the address the app writes, the page in the repository, and the build step that deploys
+  // it to that address.
+  const fs = require('fs');
+  const path = require('path');
+  const root = path.join(__dirname, '..');
+
+  const link = require('../src/preset-link.js');
+  const url = link.encodePresetLink({ name: 'x', mods: [{ categoryId: 'heroes', name: 'A' }] }).web || '';
+  const host = /^https:\/\/([^/]+)\//.exec(url)?.[1];
+  assert.ok(host, `no shareable link came back: ${url}`);
+
+  assert.ok(fs.existsSync(path.join(root, 'docs', 'p', 'index.html')), 'the page itself is gone');
+
+  const build = JSON.parse(fs.readFileSync(path.join(root, 'site', 'package.json'), 'utf-8')).scripts.build;
+  const deployed = build.includes('preset-page');
+  assert.ok(
+    host === 'thefleece.github.io' || deployed,
+    `links point at ${host}, and nothing in the site build puts the page there`,
+  );
+});
