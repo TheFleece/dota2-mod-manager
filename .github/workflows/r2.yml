@@ -54,6 +54,12 @@ jobs:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_PUBLIC_BASE: ${{ secrets.R2_PUBLIC_BASE }}
+          # Replacing an object does not replace what the cache in front of it already handed
+          # out, and .zip and .vpk are cached by default. Without these two the run says which
+          # objects wanted purging and carries on: a cache is not worth failing a sync over.
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_PURGE_TOKEN: ${{ secrets.CLOUDFLARE_PURGE_TOKEN }}
           LIMIT: ${{ inputs.limit }}
           DRY: ${{ inputs.dry }}
         run: |

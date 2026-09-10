@@ -217,6 +217,25 @@ being guarded against.
 *Check:* `test/net.test.js`, "a published hash no copy matches is a stale list, and the origin
 wins", next to the three tests that say who does not get that treatment.
 
+### And the cache in front of the mirror has its own copy
+
+Writing a new object into R2 does not change what Cloudflare has already handed out, and `.zip`
+and `.vpk` are among the extensions it caches without being asked. So a replaced archive keeps
+arriving from the edge in its old form until that entry expires: measured on 2026-09-10, one of
+the twenty-three archives refreshed that day was still being served in its 28 August version an
+hour later.
+
+`tools/r2-sync.mjs` now purges every object it replaced, and only those - an object nobody could
+have downloaded yet is in no cache. It needs `CLOUDFLARE_ZONE_ID` and a token allowed to purge
+that zone; without them the run says which objects wanted purging and finishes green, because a
+sync that copied everything correctly is not a failed sync.
+
+The app is not relying on any of this. A copy that fails its checksum costs the mirror its turn
+either way. This is so the mirror stops being wrong, not so the app stops coping.
+
+*Check:* `test/r2-purge.test.js`, and `curl -sI https://cdn.dota2modmanager.com/assets/files/<a
+recently changed archive> | grep cf-cache-status`.
+
 ### The archives the list has not caught up with
 
 `mod-hashes.json` is rebuilt by a bot after mods are added, so the newest archives are not in it

@@ -111,4 +111,59 @@ function createR2({ env = process.env, bucket = env.R2_BUCKET || 'd2mm-mods' } =
   return { bucket, list, put, remove, url, sign, configured: Boolean(account && key && secret) };
 }
 
-module.exports = { createR2, encodePath, rfc3986, sha };
+/* Replacing an object in the bucket does not replace what Cloudflare already handed out.
+ *
+ * The bucket is served through a cache, and .zip and .vpk are among the extensions it caches
+ * by default. So an archive that someone downloaded before it was replaced keeps arriving from
+ * the edge in its old form, for as long as the entry lives - measured on 2026-09-10, one of
+ * the twenty-three archives refreshed that day was still being served in the version it had on
+ * 28 August, more than an hour after the object under it had changed.
+ *
+ * The app survives it, since a copy that fails its checksum now costs the mirror its turn
+ * rather than the mod. That is a safety net, not a reason for the mirror to be wrong.
+ *
+ * Needs CLOUDFLARE_ZONE_ID and a token allowed to purge that zone. Without them this says what
+ * it would have purged and returns, because a sync that copied everything correctly should not
+ * be reported as a failure over a cache.
+ *
+ * @param {string[]} urls  public URLs to drop from the cache
+ * @param {object} [env]
+ * @returns {Promise<{purged: number, skipped?: string}>}
+ */
+async function purgeCache(urls, { env = process.env, log = console.log } = {}) {
+  const unique = [...new Set(urls)].filter(Boolean);
+  if (!unique.length) return { purged: 0 };
+
+  const zone = env.CLOUDFLARE_ZONE_ID || '';
+  const token = env.CLOUDFLARE_PURGE_TOKEN || env.CLOUDFLARE_API_TOKEN || '';
+  if (!zone || !token) {
+    log(`cache: ${unique.length} replaced object(s) want purging, and CLOUDFLARE_ZONE_ID / a token with Cache Purge are not set`);
+    return { purged: 0, skipped: 'no credentials' };
+  }
+
+  let purged = 0;
+  // the API takes at most 30 URLs per call
+  for (let i = 0; i < unique.length; i += 30) {
+    const batch = unique.slice(i, i + 30);
+    try {
+      const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ files: batch }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.success === false) {
+        const why = (body.errors || []).map((e) => e.message).join('; ') || `HTTP ${res.status}`;
+        log(`cache: purge refused for ${batch.length} url(s): ${why}`);
+        continue;
+      }
+      purged += batch.length;
+    } catch (e) {
+      log(`cache: purge failed for ${batch.length} url(s): ${e.message}`);
+    }
+  }
+  if (purged) log(`cache: purged ${purged} of ${unique.length} replaced object(s)`);
+  return { purged };
+}
+
+module.exports = { createR2, encodePath, rfc3986, sha, purgeCache };

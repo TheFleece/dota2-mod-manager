@@ -55,7 +55,7 @@ const FIRST = ['heroes', 'terrains', 'shaders', 'trees', 'river', 'backgrounds',
   'creeps', 'cursors', 'mega-kill', 'announcers', 'hero-sounds', 'couriers', 'wards'];
 
 import { iterMods } from './catalog-mods.js';
-import { createR2 } from './r2-client.js';
+import { createR2, purgeCache } from './r2-client.js';
 
 /* The bucket, and SigV4 with it, live in tools/r2-client.js: the release assets need the same
    signing and a second copy of eighty lines of crypto is how the catalog walk in this very file
@@ -196,6 +196,11 @@ const publishedFor = (objectPath) => {
   return typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
 };
 
+/* The public address of the bucket, which is what the cache is keyed on. R2_PUBLIC_BASE is
+   already a secret here because the index the app reads is written with it. */
+const PUBLIC_BASE = (process.env.R2_PUBLIC_BASE || 'https://cdn.dota2modmanager.com').replace(/[/]+$/, '');
+const replaced = [];
+
 let copied = 0;
 let skipped = 0;
 let failed = 0;
@@ -233,7 +238,8 @@ for (const item of wanted) {
     }
 
     const mb = (body.length / 1024 ** 2).toFixed(1);
-    const verb = have.has(item.path) ? 'refreshed' : 'copied';
+    const replacing = have.has(item.path);
+    const verb = replacing ? 'refreshed' : 'copied';
     if (DRY) {
       console.log(`would ${verb === 'copied' ? 'copy' : 'refresh'} ${item.path} (${mb} MB)`);
     } else {
@@ -243,6 +249,8 @@ for (const item of wanted) {
     used += body.length - already;
     copied++;
     index.push(item.path);
+    // only what was replaced: an object nobody could have downloaded yet is in no cache
+    if (replacing && !DRY) replaced.push(`${PUBLIC_BASE}/${item.path}`);
   } catch (e) {
     failed++;
     console.log(`skipped ${item.path}: ${e.message}`);
@@ -254,6 +262,8 @@ if (!DRY) {
   const payload = JSON.stringify({ updated: new Date().toISOString().slice(0, 10), count: index.length, files: index.sort() });
   await put('index.json', Buffer.from(payload), 'application/json');
 }
+
+await purgeCache(replaced);
 
 console.log(`\ncopied ${copied}, already current ${skipped}, too big ${tooBig}, failed ${failed}, refused ${refused}${stopped ? `, stopped on ${stopped}` : ''}`);
 console.log(`bucket now ~${(used / 1024 ** 3).toFixed(2)} GB, index lists ${index.length} archives`);
