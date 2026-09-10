@@ -23,24 +23,28 @@ const doc = fs.readFileSync(path.join(root, 'DECISIONS.md'), 'utf-8');
 /** How many lines a file in the repository has, counted the way `wc -l` counts them. */
 const lineCount = (file) => fs.readFileSync(path.join(root, file), 'utf-8').split('\n').length - 1;
 
-test('the line count it gives for main.js is the line count main.js has', () => {
+test('the line count it gives for main.js is roughly the line count main.js has', () => {
+  /* "About 1,300" rather than an exact figure, and within a tenth rather than to the line. The
+     claim being answered is "3,100 line monolith", which a rounded number settles just as well -
+     and an exact one turns every edit to main.js into a documentation chore, which is how the
+     co-author count in this file came to fail a build for no reason anybody cared about. */
   const real = lineCount('main.js');
-  const claimed = doc.match(/\|\s*([\d,]+) lines since 2026-09-06/);
+  const claimed = doc.match(/About ([\d,]+) lines since 2026-09-06/);
   assert.ok(claimed, 'the corrections table no longer carries a line count for main.js');
-  assert.equal(
-    Number(claimed[1].replace(/,/g, '')),
-    real,
-    `DECISIONS.md says ${claimed[1]} lines, main.js has ${real.toLocaleString('en-US')}`,
+  const said = Number(claimed[1].replace(/,/g, ''));
+  assert.ok(
+    Math.abs(said - real) <= real / 10,
+    `DECISIONS.md says about ${claimed[1]} lines, main.js has ${real.toLocaleString('en-US')}`,
   );
 });
 
-test('the number of test files it gives is the number of test files there are', () => {
+test('there are at least as many test files as the table claims', () => {
+  // A floor, not a count. It answers "there are 25 test files" without needing an edit every
+  // time somebody adds one, which happened three times in a day and failed the build each time.
   const real = fs.readdirSync(path.join(root, 'test')).filter((f) => f.endsWith('.test.js')).length;
-  // Anchored on the count and the words around it, not on the whole sentence: the row is allowed
-  // to say more about where they run without this needing a rewrite.
-  const claimed = doc.match(/\|\s*(\d+) of them, run on/);
+  const claimed = doc.match(/More than (\d+) of them, run on/);
   assert.ok(claimed, 'the corrections table no longer carries a test file count');
-  assert.equal(Number(claimed[1]), real, `DECISIONS.md says ${claimed[1]} test files, test/ holds ${real}`);
+  assert.ok(real > Number(claimed[1]), `DECISIONS.md says more than ${claimed[1]} test files, test/ holds ${real}`);
 });
 
 test('the dependencies it names are the dependencies package.json declares', () => {

@@ -52,6 +52,7 @@ each cost real time:
 ## How to know your change works
 
 ```bash
+npm run lint              # eslint: names that do not exist, not style
 npm test                  # node:test, no dependencies
 npm run test:coverage     # the same with the floor CI enforces
 node tools/check-i18n.js  # every Russian string has an English twin

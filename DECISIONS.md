@@ -11,27 +11,38 @@ is genuinely missing, and which claims keep coming back with the command that se
 disagrees with what is written above it, the check is right and the text is stale, and an issue
 saying so is welcome.
 
-The countable claims are held to the code by `test/decisions.test.js`, which fails when this
-file and the repository disagree about how long `main.js` is, how many test files there are, what
-the app depends on, or where the fingerprint index is fetched from. The date below is left out
-of that on purpose: it records when a person last read the whole file, and a test that kept it
-current would be forging a review nobody did.
+The countable claims are held to the code by `test/decisions.test.js`, and the wider ones by
+`test/docs-current.test.js`: between them they fail when this file and the repository disagree
+about how long `main.js` is, how many test files there are, what the app depends on, where the
+fingerprint index is fetched from, whether there is a linter, which npm scripts exist, or whether
+a link in any document points at a file that is gone. The date below is left out of that on
+purpose: it records when a person last read the whole file, and a test that kept it current would
+be forging a review nobody did.
 
-Last gone over on 2026-09-08, at version 2.6.4.
+Last gone over on 2026-09-10, at version 2.6.8.
 
 ---
 
 ## Decided on purpose
 
-### There is no linter and no formatter
+### The linter looks for code that cannot run, and never for style
 
-`.editorconfig` covers indentation, `.gitattributes` covers line endings, and nothing else
-enforces shape. ESLint would be the first development dependency beyond Electron and its
-builder, its first run over the source would produce a reformatting commit nobody can review,
-and a CI gate that fails on spacing rather than on behaviour teaches people to stop reading CI.
-The checks here aim at correctness instead, and there are enough of them to fail a bad change.
+`eslint.config.js` turns on `no-undef`, `no-unused-vars` and about fifteen other rules that all
+answer one question: will this line throw the first time somebody reaches it. No formatting
+rules, no opinions about spacing or quotes. `.editorconfig` covers indentation and
+`.gitattributes` covers line endings, and nothing enforces shape beyond that.
 
-*Check:* `CONTRIBUTING.md` under Style, and `.github/workflows/` for what does gate a push.
+That split is the whole decision. A full style config would produce a reformatting commit nobody
+can review, and a CI gate that fails on spacing teaches people to skim CI - and a lint run people
+skim is worth nothing on the day it has something to say. This one had something to say on the
+day it arrived: it named two live bugs, one of which had already shipped in two releases.
+
+Until 2026-09-10 there was no linter at all and this entry argued for that. What changed it:
+splitting a file left a call to `blocked('install')` in a module where `blocked` was not, every
+test passed, and nobody could install a mod in 2.6.5 or 2.6.6.
+
+*Check:* `npm run lint`, `eslint.config.js` for the rule list, and `.github/workflows/test.yml`,
+where it runs before the suite.
 
 ### The app ships two dependencies
 
@@ -87,7 +98,7 @@ the ones already out there.
 ### A quarter of the commits are made by a scheduled job, and they stay
 
 A workflow checks the upstream catalog every thirty minutes and commits when it moved, which is
-around 120 of the commits here. They are not squashed away and the interval is not lowered:
+127 of the 517 commits here. They are not squashed away and the interval is not lowered:
 freshness is the point, and since 2026-09-08 the files are written one record per line with a
 subject naming what arrived or left, so the commits can be read like any other.
 
@@ -167,8 +178,9 @@ The whole chain this belongs to - what carries a proof, what each failed check c
 none of it covers - is written out in [ARCHITECTURE.md](ARCHITECTURE.md) under "Who is allowed
 to have written this".
 
-*Check:* `src/catalog-signature.js`, `test/catalog-signature.test.js`, and the catalog's own
-`.github/workflows/update-catalog.yml`, where one `git add` stages the data and the signatures.
+*Check:* `src/catalog-signature.js`, `test/catalog-signature.test.js`, and, in the catalog's own
+repository, [update-catalog.yml](https://github.com/h6rd/Dota2PornFxWeb/blob/main/.github/workflows/update-catalog.yml),
+where one `git add` stages the data and the signatures.
 
 ### The switches this project can pull are signed too, and a failed check ignores them
 
@@ -214,8 +226,8 @@ in the release assets.
 
 ### One maintainer
 
-One person writes it, reviews it and releases it. There has been one outside pull request and a
-handful of issues from users. Nothing about the project survives that person losing interest,
+One person writes it, reviews it and releases it. There have been two outside pull requests and
+a handful of issues from users. Nothing about the project survives that person losing interest,
 which is worth knowing before depending on it.
 
 *Check:* `git shortlog -sne HEAD`, and the contributors list on GitHub.
@@ -234,19 +246,25 @@ moving.
 
 *Check:* `.github/workflows/test.yml`, and the `test:coverage` script in `package.json`.
 
-### The newest mods are still trusted on first sight
+### A mod the published hash list is wrong about is installed anyway
 
-Since 2026-09-09 the catalog publishes a signed sha256 for every archive, and a download that
-does not match it is refused rather than installed. What is left is the lag: the list is rebuilt
-by a bot after the mods are added, so the freshest archives are not in it yet - 21 of 992 on the
-day it arrived - and those fall back to the old behaviour, remembered on first download and
-checked against that copy afterwards.
+Since 2026-09-09 the catalog publishes a signed sha256 for every archive. A copy that does not
+match it is refused and the next mirror is asked instead. When no mirror matches, the file the
+catalog's own host serves is taken and marked unverified, rather than the mod being refused.
 
-Refusing them instead would mean the newest mods break for everyone until somebody else's bot
-catches up, which is a worse trade than the one this leaves open.
+That last part is a deliberate hole, and it is there because the list is not always right. On
+2026-09-10 it named a hash for one archive that no copy of that file has ever had - one wrong in
+1,178 checked - and until this changed, that mod was uninstallable for everybody, whatever their
+connection. The list is built by a bot in the same repository as the archives, so it can prove
+nothing about that repository in the first place. What it does prove is that bytes handed over by
+a proxy are the ones the catalog's author signed for, and that is the part worth keeping.
 
-*Check:* `src/catalog.js`, `publishedHash`, and `test/mod-hashes.test.js` for what each answer
-does to a download.
+Mods the list has not caught up with at all are a smaller version of the same thing: they fall
+back to the hash remembered from the first download.
+
+*Check:* `src/net.js`, `downloadFile`, and `test/net.test.js` for the four cases it separates - a
+stale mirror, a stale list, a proxy inventing bytes, and a hash pinned in this repository, which
+is never waived.
 
 ### The diagnostic report carries two real paths
 
@@ -259,11 +277,26 @@ along. Masking both to `%USERPROFILE%` and a placeholder is a small change nobod
 
 ### `main.js` still holds several jobs
 
-It went from 3,102 lines to 1,266 when the IPC handlers moved into `src/ipc-*.js`. What is left
+It went from 3,102 lines to 1,311 when the IPC handlers moved into `src/ipc-*.js`. What is left
 is the window, the log, auto-update, deep links, import orchestration, cursor reconciliation and
 the language folder, which is more than one file's worth of subject.
 
 *Check:* `wc -l main.js`, and `ARCHITECTURE.md` for what is supposed to live where.
+
+### Nothing starts the app in CI
+
+Every check here reads the code or runs a module. None of them opens the window. `no-undef`
+catches a name that does not exist, and the contract tests catch a handler that cannot run and an
+import that points nowhere, but a runtime error on the first screen - a null where an element was
+expected, a channel called with the wrong shape - would still reach a release.
+
+This is the gap that let installing break for two releases. The failure was not subtle; it was
+simply never executed. The answer is a smoke run that launches Electron against the sandbox and
+fails on any console error, which the `MM_SHOT` path already does most of the work for. Not built
+yet.
+
+*Check:* `.github/workflows/` - no job runs `electron` - and `tools/sandbox.js` for what such a
+run would stand on.
 
 ### No macOS build, and the Linux one is young
 
@@ -281,12 +314,12 @@ Weighed, not settled. Listed so nobody files them as an oversight.
 
 ### The repository carries 46 MB of catalog preview images
 
-`site/public/mods/` is 1,317 files and 45 MB on disk, and 82% of the pack once history is counted
-in. It grows by five to ten files a day. Committing them was decided when there were 468 of them
-averaging 14 KB. The candidates are leaving it alone, fetching them during the site build instead
-of committing them, and serving them from the R2 bucket that already mirrors the mod archives.
-For what it is worth, the four generated JSON files that reviews usually blame for the size are
-1.55 MB of that pack, so this is where the weight actually is.
+`site/public/mods/` is 1,324 files and 49 MB on disk, and 47.3 MB of a 57.2 MB pack once history
+is counted in: 83% of it. It grows by five to ten files a day. Committing them was decided when
+there were 468 of them averaging 14 KB. The candidates are leaving it alone, fetching them during
+the site build instead of committing them, and serving them from the R2 bucket that already
+mirrors the mod archives. For what it is worth, the generated JSON at the root that reviews
+usually blame for the size is 1.3 MB of that pack, so this is where the weight actually is.
 
 *Check:*
 ```
@@ -296,7 +329,7 @@ git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objec
 ### Applying to SignPath again
 
 The first application was turned down for public visibility rather than for anything in the code.
-The picture has changed since: 39 releases, tens of thousands of installs, a community around the
+The picture has changed since: 43 releases, tens of thousands of installs, a community around the
 catalog, and a comparable tool in the same ecosystem already signed by the same programme. Not
 resubmitted yet.
 
@@ -313,13 +346,14 @@ Each of these has arrived in a review. Each is answered by one command.
 | Claim | What is true | Check |
 |---|---|---|
 | "The repository cannot be opened, so the open-source promise is unverifiable" | It is public and has been. A fetch failing at one moment is not a private repository | `gh repo view TheFleece/dota2-mod-manager --json visibility` |
-| "`main.js` is a 3,100 line monolith" | 1,311 lines since 2026-09-06, with the IPC handlers in `src/ipc-*.js` | `wc -l main.js` |
+| "`main.js` is a 3,100 line monolith" | About 1,300 lines since 2026-09-06, with the IPC handlers in `src/ipc-*.js` | `wc -l main.js` |
 | "The catalog counts on the site disagree between pages" | They are counted when each page is built. Two pages built an hour apart show two numbers, and both were right when they were made | `site/src/lib/stats.ts` |
-| "The state files in the root are why the repository is 61 MB" | All four generated JSON files together are 1.55 MB of the pack. The preview images are 46.7 MB | the command under the open question above |
+| "The state files in the root are why the repository is 61 MB" | The generated JSON at the root is 1.3 MB of the pack. The preview images are 47.3 MB of 57.2 MB | the command under the open question above |
 | "It is a Windows-only app" | Every release since 2.4.0 also carries a Linux AppImage | `gh release view --json assets` |
 | "`main` is unprotected" | It is guarded by a ruleset, which the branch-protection endpoint does not report | `gh api repos/TheFleece/dota2-mod-manager/rulesets` |
-| "There are 25 test files" | 45 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
-| "An open issue asks for tests that already exist" | Issue #4 was closed on 2026-09-08 when that was pointed out. `#5`, `#6` and `#7` are open and really are open | `gh issue list --state open` |
+| "There are 25 test files" | More than 40 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
+| "An open issue asks for tests that already exist" | Issue #4 was closed on 2026-09-08 when that was pointed out, and `#5` on 2026-09-09 when Windows CI landed. `#3`, `#6`, `#7` and `#9` are open and really are open | `gh issue list --state open` |
+| "There is no static analysis, only tests" | `eslint` runs before the suite in CI and again in the commit guard, with rules about code that cannot run rather than about style | `npm run lint` |
 
 ---
 

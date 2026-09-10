@@ -190,7 +190,7 @@ is loading a tracker, and nothing has to be committed for the picture to move.
 
 | | |
 |---|---|
-| [Tests](.github/workflows/test.yml) | The full suite with a coverage floor. Includes four checks that hold the project against itself: every IPC channel has a handler, every Russian string has an English twin, the version and both changelogs agree, and `docs/API.md` still matches the source |
+| [Tests](.github/workflows/test.yml) | eslint first, then the full suite with a coverage floor, on Linux and on Windows. Several of the tests hold the project against itself rather than testing a module: every IPC channel has a handler and every handler runs, every renderer import resolves, every Russian string has an English twin, the version and both changelogs agree, `docs/API.md` still matches the source, and `DECISIONS.md` still matches the repository |
 | [CodeQL](.github/workflows/codeql.yml) | Security and quality analysis, plus a weekly scheduled run |
 | [Release](.github/workflows/release.yml) | On a tag only: builds the Windows installer, the portable build and the Linux AppImage from that commit, and publishes them with the changelog section for that version |
 | [Site](.github/workflows/site.yml) | Rebuilds the documentation site so its counts, its version and this card stay true |
@@ -229,7 +229,8 @@ This project has been written with [Claude Code](https://claude.com/claude-code)
 commit on 20 July 2026, and still is. Commits carry a `Co-Authored-By` trailer saying so.
 
 It says so here because guessing is worse. Everything that would tell you whether the code is any
-good is already in the open: 513 commits of history, 423 tests, a coverage floor CI enforces, and
+good is already in the open: every commit, more than forty test files, a linter and a coverage
+floor that CI enforces on two operating systems, and
 [DECISIONS.md](DECISIONS.md), which answers the questions reviewers keep asking with a command
 you can run yourself.
 

@@ -131,7 +131,7 @@ writing it ourselves is worse. Tools under `tools/` and the tests use no depende
   not go in.
 - Mods. The catalog belongs to [h6rd](https://github.com/h6rd/Dota2PornFxWeb) and its authors; a
   new mod goes to them, not here.
-- Whole-project reformatting, a linter config that rewrites every file, or a framework rewrite of
+- Whole-project reformatting, style rules added to the linter config, or a framework rewrite of
   the renderer.
 
 ## Style
@@ -141,11 +141,13 @@ especially when it looks wrong: most of them exist because a game update, a VPK 
 user's report made the obvious version fail. Match the surrounding code and the surrounding
 comment density.
 
-`.editorconfig` covers indentation and `.gitattributes` covers line endings. There is no linter
-on purpose: it would be the first development dependency beyond Electron and its builder, its
-first run over thirty thousand lines would produce a reformatting commit nobody can review, and
-a CI gate that fails on spacing rather than on behaviour teaches people to stop reading CI. The
-checks here are aimed at correctness instead, and there are enough of them to fail a bad change.
+`.editorconfig` covers indentation and `.gitattributes` covers line endings. `npm run lint` runs
+eslint, and its config carries no style rules on purpose - only rules that answer whether a line
+will throw the first time somebody reaches it, `no-undef` chief among them. A run over thirty
+thousand lines with formatting rules on would produce a reformatting commit nobody can review,
+and a CI gate that fails on spacing teaches people to skim CI, which is worth nothing on the day
+it has something real to say. Send a change that fails `npm run lint` and CI will stop it before
+the suite even runs; send one with unusual spacing and nothing will.
 
 **Anything that needs the network fails quietly.** The catalog, the fingerprint index, the
 update check, the icon toolchain: every one of them has to leave a working app behind when it

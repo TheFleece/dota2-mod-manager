@@ -286,9 +286,18 @@ deliberately does not: an unsigned executable that renames and relaunches itself
 antivirus vendors flag, and this project has already had one false positive. It downloads the new
 build next to the old one instead and says so (`src/portable-update.js`).
 
-## Tests and the sandbox
+## Checks, tests and the sandbox
 
-`npm test` is plain `node:test`, no framework, 22 files, run on every push and every pull request.
+`npm run lint` is eslint with no style rules at all: `no-undef` and a short list of others that
+answer whether a line will throw the first time somebody reaches it. It runs before the suite,
+because when it fails there is nothing below it worth reading.
+
+`npm test` is plain `node:test`, no framework, 45 files, run on every push and every pull request
+on Linux and on Windows. Four of them hold this project against itself rather than testing a
+module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
+what each module unpacks), the renderer's imports, the release contract, and `DECISIONS.md`
+against the repository it describes.
+
 `tools/sandbox.js` builds a throwaway Dota tree with the real game's `gameinfo.gi` and a
 `pak01_dir.vpk` built from its own item table, then downloads real catalog mods into it. Install,
 load order, packs, the schema patch and language folders are tested there rather than against
@@ -313,7 +322,9 @@ that location is not writable.
 
 | File | What it owns |
 |---|---|
-| `main.js` | Electron lifecycle, window, every IPC handler, deep links, auto-update |
+| `main.js` | Electron lifecycle, window, deep links, auto-update, and wiring the rest together |
+| `src/ipc-*.js` | The IPC handlers, one file per group of channels, each naming what it needs |
+| `src/feature-gate.js` | Whether a feature has been switched off from `config/app.json`, asked once |
 | `preload.js` | The `window.api` surface, and nothing else crosses |
 | `src/installer.js` | Download, slots, install, enable, remove, packs, imports |
 | `src/vpk.js` | The VPK format: read, write, merge, split, combine, fingerprint |
@@ -337,5 +348,6 @@ that location is not writable.
 | `renderer/views/*` | Catalog, My mods, Presets, Settings |
 | `renderer/ui/*` | Dialogs, toasts, the media player, the install queue, shared chrome |
 | `tools/sandbox.js` | The throwaway game tree |
+| `tools/r2-sync.mjs`, `tools/r2-release.mjs`, `tools/r2-client.js` | The archive mirror, the update mirror, and the signing they share |
 | `tools/gen-fingerprints.js` | Regenerating the published fingerprint map |
 | `tools/seo-report.mjs` | The weekly search report posted to an issue |

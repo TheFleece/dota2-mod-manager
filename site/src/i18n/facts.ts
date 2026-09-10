@@ -182,10 +182,10 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         items: [
           '<b>The installer is built in public.</b> Every release is produced by <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> on a GitHub-hosted runner, from the commit the version tag points at. Nothing is uploaded from a desktop. <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml">Every run, with its log</a>.',
           '<b>The tag and the code match.</b> A release page names its tag; the tag names a commit; the run log for that tag shows the checkout. Three clicks, no account.',
-          '<b>Tests run on every push.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>, with a coverage floor that fails the run rather than warning about it.',
+          '<b>Checks run on every push.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>: a linter aimed at code that cannot run, then the full suite on Linux and on Windows, with a coverage floor that fails the run rather than warning about it.',
           '<b>The code is scanned.</b> CodeQL on every push and weekly, with the security-and-quality rules; findings are public under the Security tab of the repository.',
           '<b>Dependencies are watched.</b> Dependabot covers the app, this site, and the actions the workflows themselves call.',
-          '<b>What it fetches while running</b> is two public files: the mods.json the catalog publishes, and the fingerprint map this repository publishes. Both are readable in a browser.',
+          '<b>What it fetches while running</b> is public files you can open in a browser: the catalog\'s own lists and the signatures over them, the fingerprint map this repository publishes, the mod you asked for, and the update check. Nothing about you goes the other way.',
         ],
       },
 
@@ -350,10 +350,10 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         items: [
           '<b>Установщик собирается публично.</b> Каждый релиз делает <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> на раннере GitHub из того коммита, на который указывает тег версии. Ничего не заливается с чьего-то компьютера. <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml">Все прогоны с логами</a>.',
           '<b>Тег и код сходятся.</b> Страница релиза называет тег, тег называет коммит, лог прогона по этому тегу показывает checkout. Три клика, без аккаунта.',
-          '<b>Тесты гоняются на каждый пуш.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>, с порогом покрытия, который роняет прогон, а не предупреждает.',
+          '<b>Проверки гоняются на каждый пуш.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>: сначала линтер, который ищет код, не способный выполниться, потом вся сюита на Linux и на Windows, с порогом покрытия, который роняет прогон, а не предупреждает.',
           '<b>Код сканируется.</b> CodeQL на каждый пуш и раз в неделю, набор правил security-and-quality; находки публичны во вкладке Security.',
           '<b>За зависимостями следят.</b> Dependabot покрывает приложение, этот сайт и сами actions, которые вызывают воркфлоу.',
-          '<b>Что программа тянет во время работы</b> - два публичных файла: mods.json самого каталога и карта отпечатков, которую публикует этот репозиторий. Оба открываются в браузере.',
+          '<b>Что программа тянет во время работы</b> - публичные файлы, которые открываются в браузере: списки самого каталога и подписи под ними, карту отпечатков из этого репозитория, тот мод, который ты попросил, и проверку обновлений. В обратную сторону о тебе не уходит ничего.',
         ],
       },
 
