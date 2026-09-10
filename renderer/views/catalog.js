@@ -1406,7 +1406,17 @@ async function doInstall(categoryId, mod, styleLabel, fileRef, preview, { batch 
   }
   installing.add(k);
   if (modalState) drawModal();
-  const r = await window.api.mods.install({ categoryId, name: mod.name, styleLabel, fileRef, preview });
+  /* A channel can reject rather than answer, and then this line used to throw: `installing`
+     kept the key, the button stayed on "Installing..." for as long as the window was open, and
+     the only trace was an unhandled rejection in the log. That is how a broken mods:install
+     read as a hang for two releases instead of as an error. Whatever went wrong, the button
+     comes back and says something. */
+  let r;
+  try {
+    r = await window.api.mods.install({ categoryId, name: mod.name, styleLabel, fileRef, preview });
+  } catch (err) {
+    r = { error: String(err?.message || err) };
+  }
   installing.delete(k);
   if (r.error && !r.already) toast(`${mod.name}: ${r.error}`, 'error', 6000);
   else if (r.replaced?.length) toast(L`${mod.name} установлен — «${r.replaced.join(', ')}» выключен: курсор в игре может быть только один`, 'warn', 7000);
@@ -1593,9 +1603,14 @@ async function pickCosmetic(slot, o, remove) {
   const live = pickedIn(slot);
   installing.add(k);
   if (cosModalState) drawCosmeticModal();
-  const r = remove
-    ? (live ? await window.api.mods.remove(live.id) : { ok: true })
-    : await window.api.cosmetics.pick(slot, o.id, o.name);
+  let r;
+  try {
+    r = remove
+      ? (live ? await window.api.mods.remove(live.id) : { ok: true })
+      : await window.api.cosmetics.pick(slot, o.id, o.name);
+  } catch (err) {
+    r = { error: String(err?.message || err) };
+  }
   installing.delete(k);
   if (r.error) { toast(r.error, 'error'); if (cosModalState) drawCosmeticModal(); return; }
   toast(remove ? L`Вернули как в игре` : L`Выбрано: ${o.name}`);
