@@ -154,6 +154,10 @@ catalog; anyone installing the app in those minutes would have had none at all, 
 a day. The author now writes data and signatures in one commit, so the disagreement has no moment
 to happen in.
 
+The whole chain this belongs to - what carries a proof, what each failed check costs, and what
+none of it covers - is written out in [ARCHITECTURE.md](ARCHITECTURE.md) under "Who is allowed
+to have written this".
+
 *Check:* `src/catalog-signature.js`, `test/catalog-signature.test.js`, and the catalog's own
 `.github/workflows/update-catalog.yml`, where one `git add` stages the data and the signatures.
 

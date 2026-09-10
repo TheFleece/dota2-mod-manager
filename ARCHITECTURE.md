@@ -149,10 +149,68 @@ game folder.
 ## The catalog is somebody else's
 
 Mods, previews and guides come from [Dota2PornFxWeb](https://github.com/h6rd/Dota2PornFxWeb), and
-when GitHub is unreachable they come through public proxies. That whole path is treated as
-untrusted: `src/catalog-signature.js` makes the catalog's own author the only person who can
-change what the app will fetch and show, guide HTML goes through an allowlist of tags, and a file
-name from a catalog record is a name and not a path.
+when GitHub is unreachable they come through public proxies. That whole path is untrusted: guide
+HTML goes through an allowlist of tags, and a file name from a catalog record is a name and not a
+path. Who is allowed to have written the bytes in the first place is the next section.
+
+## Who is allowed to have written this
+
+Everything the app downloads travels a route it does not control. `raw.githubusercontent.com` is
+slow or blocked for a good part of the userbase, so `src/net.js` falls back to public proxies,
+and a proxy is a stranger handing over bytes that claim to be GitHub's. TLS proves you reached
+the proxy. It says nothing about where the proxy got the file.
+
+So each thing carries its own proof, and each has a different answer to a proof that fails.
+
+| What | Proof | A failed check means |
+|---|---|---|
+| Catalog data: `mods.json`, `constants.json`, `guides.json`, `mod-hashes.json` | ed25519 signature by the catalog's author, public key pinned in `src/catalog-signature.js` | keep the last good copy; on a first run, no catalog and an error |
+| A mod archive | sha256 from the signed `mod-hashes.json` | refuse the download, delete the part file, install nothing |
+| `config/app.json`, the switches and notices this project can change after a release | ed25519 signature by this project's own key, pinned in `src/remote-config.js` | ignore the file, exactly as if it were unreachable |
+| The Source 2 toolchain executable | version and sha256 pinned in `src/toolchain.js`, checked before anything is unpacked | do not unpack it; item icons fall back to the wiki |
+
+The three answers differ because what each file costs differs. Without a catalog there is nothing
+to show, so the app keeps yesterday's rather than nothing. A mod that fails its hash is one mod,
+and installing it anyway would put unknown bytes in a game folder. The switches are an
+improvement on knowing nothing, so a copy that cannot be trusted is worth exactly as much as no
+copy, and the app carries on without it.
+
+### The archives the list has not caught up with
+
+`mod-hashes.json` is rebuilt by a bot after mods are added, so the newest archives are not in it
+yet: 21 of 992 on the day it arrived. Those fall back to what the app did before the list
+existed, which is to remember the sha256 of the first copy it ever downloaded and refuse
+different bytes under that name afterwards. That catches a substitution on every download except
+the first. Refusing them instead would break the newest mods for everyone until somebody else's
+bot ran.
+
+### Data and its signature can arrive from different moments
+
+The catalog writes a file and its signature in one commit, so the repository is never
+inconsistent. `raw.githubusercontent.com` is: it caches and purges per file, and on 2026-09-10 it
+served this project its own config from one commit and that config's signature from the one
+before, for minutes after the push. A cache-busting query string does not shake it loose.
+
+To a signature check that looks exactly like a forgery. So `Catalog.fetchSigned` asks again from
+the one source that cannot be half-updated: the site's own copy at `dota2modmanager.com/mirror/`,
+which goes out in a single deploy. It can be a day behind, and a day-old catalog that verifies
+beats no catalog at all. Whoever rewrote a proxy did not write the site, so a real forgery fails
+there too.
+
+### Where the keys are
+
+Two pinned public keys, both in the source and both meant to be read: the catalog's author holds
+the private half of the first, this project holds the private half of the second outside the
+repository. `*.pem` is in `.gitignore` and a test walks the tree to make sure neither private
+half was ever committed. `tools/sign-catalog.js` is the whole signing side, has no dependencies,
+and is what the catalog's author runs.
+
+Editing `config/app.json` without re-signing it would publish a file every client quietly
+refuses, and nobody would notice until a switch was needed. `test/remote-config-signature.test.js`
+fails the build instead, and prints the command that re-signs it.
+
+What none of this covers is in [DECISIONS.md](DECISIONS.md) under Known gaps, including the one
+that matters most to a new user: the installer itself carries no code-signing certificate.
 
 ## Surviving a patch
 
@@ -203,6 +261,8 @@ that location is not writable.
 | `src/settings.js` | `settings.json` and its defaults |
 | `src/catalog.js`, `src/catalog-signature.js` | Catalog data and who is allowed to change it |
 | `src/net.js` | Downloads, mirrors, backoff |
+| `src/remote-config.js` | The switches and notices this project can change after a release, and the signature over them |
+| `tools/sign-catalog.js` | The signing side, for whoever holds a private key |
 | `src/safe-zip.js` | Every foreign archive comes through here |
 | `src/steam.js` | Finding Steam and the game, and proving the folder is really a game |
 | `src/gamelang.js` | Which folder Dota will mount |

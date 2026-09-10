@@ -33,7 +33,7 @@ about you beyond what any HTTP request unavoidably reveals to the host it is sen
 | `raw.githubusercontent.com` | The mod catalog (`Dota2PornFxWeb`), the fingerprint map, and the remote config that lets a broken feature be switched off without a release | `src/catalog.js`, `src/fingerprints.js`, `src/remote-config.js` |
 | `github.com` | Update checks and downloading a new version from Releases | `electron-updater`, `main.js` |
 | `cdn.dota2modmanager.com` | A copy of the catalog's mod archives, so an install still works when GitHub is unreachable | `src/net.js` |
-| `dota2modmanager.com` | A mirror of the small catalog files, same reason | `src/net.js` |
+| `dota2modmanager.com` | A mirror of the small catalog files, same reason, and the one copy where a file and its signature are always from the same moment | `src/net.js`, `src/catalog.js` |
 | `cdn.jsdelivr.net`, `ghproxy.net`, `gh-proxy.com`, `ghfast.top` | Public GitHub mirrors, tried only when the ones above fail. The list itself is remote config, so a mirror that misbehaves can be dropped without a release | `src/net.js` |
 | `dota2.fandom.com`, `liquipedia.net` | Item and hero pictures for the free-cosmetics screen, when the game's own files do not have one | `src/icons.js` |
 | `discord.com`, `cdn.discordapp.com` | **Only** if you press *Sign in with Discord*, and only to read your name and avatar | `src/discord-auth.js` |

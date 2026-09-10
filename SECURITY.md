@@ -21,6 +21,13 @@ It runs on your machine, keeps no server of its own and holds no account. What i
   [h6rd/Dota2PornFxWeb](https://github.com/h6rd/Dota2PornFxWeb), through public mirrors when
   GitHub is unreachable, and it downloads one MIT-licensed tool from its own project's
   releases, pinned by SHA-256.
+
+  None of that route is trusted. The catalogue files carry an ed25519 signature by their author
+  and the app refuses bytes that do not verify against a pinned key; each mod archive is checked
+  against a SHA-256 from that signed list; and the file that can switch a feature off after a
+  release is signed by this project's own key and ignored when it does not verify. The whole
+  chain, including what each failure costs and what it does not cover, is written out in
+  [ARCHITECTURE.md](ARCHITECTURE.md) under "Who is allowed to have written this".
 - **Files you hand it.** Mod archives, preset files that travel between strangers, and folders
   you drop on the window.
 
