@@ -1524,7 +1524,7 @@ file this project writes itself. Anything missing or malformed is a manifest we 
 ### `fetchBeside`
 
 ```js
-async function fetchBeside(version, { onProgress = () => {}, dir = portableDir(), log = () => {} } = {})
+async function fetchBeside(version, { onProgress = () => {}, dir = portableDir(), log = () => {}, sources = SOURCES } = {})
 ```
 
 Fetch the new build and leave it beside the current one.
@@ -1534,6 +1534,7 @@ Fetch the new build and leave it beside the current one.
 @param {object} [opts]
 @param {(loaded: number, total: number) => void} [opts.onProgress]
 @param {string} [opts.dir]        where to put it; defaults to the folder holding the exe
+@param {Array} [opts.sources]     where to look and in what order; SOURCES unless a test says
 @returns {Promise<{ path: string, name: string, bytes: number }>}
 ```
 
@@ -1560,6 +1561,34 @@ const MANIFEST = 'portable.yml'
 ```
 
 _No description in the source._
+
+### `MIRROR`
+
+```js
+const MIRROR = 'https://cdn.dota2modmanager.com/updates/'
+```
+
+The bucket the mods already come from, carrying the current release as well since
+2026-09-10 (tools/r2-release.mjs). It holds one version, which is why the manifest's own
+version is checked below rather than assumed.
+
+### `SOURCES`
+
+```js
+const SOURCES = [
+```
+
+Where to look, in order.
+
+GitHub first and without mirrors: the manifest carries the hash everything else is checked
+against, so a public proxy must not be able to touch it. That rule cost the portable build
+its update entirely whenever GitHub was unreachable, which for part of the userbase is every
+day and for everybody was three hours on 2026-08-17.
+
+The second entry is not a proxy. It is this project's own bucket, reached with credentials
+only this project holds, which is the same trust as the release page itself - and the same
+reasoning as the update feed fallback in main.js. Manifest and binary both come from
+whichever source answered, so the hash and the file it describes are always from one place.
 
 ## src/preset-link.js
 
