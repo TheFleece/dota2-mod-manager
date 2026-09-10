@@ -183,6 +183,65 @@ test('a file that hashes to something else than last time is refused', async (t)
   assert.equal(fs.existsSync(`${dest}.part`), false, 'and the bad copy is not left to be resumed');
 });
 
+/*
+ * The mirror is wrong, the mod is not.
+ *
+ * On 2026-09-10 the bucket was still serving 24 archives in the versions they had months ago,
+ * because the sync skipped anything already there under the same name. Every one of them was
+ * unreachable for anybody who cannot get to GitHub: the checksum said no and the download gave
+ * up on the spot, with three proxies holding the current file and never asked.
+ *
+ * Both servers here serve real bytes and they are not the same bytes, which is the whole point
+ * - a fake mirror that answers correctly on every path proves nothing about a mirror that does
+ * not.
+ */
+test('a mirror serving a stale copy costs that mirror its turn, not the mod', async (t) => {
+  const current = crypto.randomBytes(8192);
+  const months_old = crypto.randomBytes(6000);
+  const stale = await serve(t, ranged(months_old));
+  const good = await serve(t, ranged(current));
+  net.setMirrors([stale.mirror(), good.mirror()]);
+  const dir = tempDir(t);
+  const dest = path.join(dir, 'Mod.zip');
+
+  const want = crypto.createHash('sha256').update(current).digest('hex');
+  const res = await net.downloadFile(RAW_URL, dest, { expectSha256: want });
+
+  assert.deepEqual(fs.readFileSync(dest), current, 'the mod that was asked for, byte for byte');
+  assert.equal(res.sha256, want);
+  assert.equal(stale.hits, 1, 'and the mirror that was wrong is not asked twice');
+});
+
+test('half a file from a stale mirror is not resumed from the next one', async (t) => {
+  const current = crypto.randomBytes(8192);
+  const stale = await serve(t, ranged(crypto.randomBytes(8192)));
+  const good = await serve(t, ranged(current));
+  net.setMirrors([stale.mirror(), good.mirror()]);
+  const dir = tempDir(t);
+  const dest = path.join(dir, 'Mod.zip');
+
+  const want = crypto.createHash('sha256').update(current).digest('hex');
+  const res = await net.downloadFile(RAW_URL, dest, { expectSha256: want });
+
+  assert.equal(res.resumedFrom, 0, 'it started over instead of gluing two mods together');
+  assert.deepEqual(fs.readFileSync(dest), current);
+});
+
+test('a file every mirror disowns is still refused', async (t) => {
+  const one = await serve(t, ranged(crypto.randomBytes(2048)));
+  const two = await serve(t, ranged(crypto.randomBytes(2048)));
+  net.setMirrors([one.mirror(), two.mirror()]);
+  const dir = tempDir(t);
+  const dest = path.join(dir, 'Mod.zip');
+
+  await assert.rejects(
+    () => net.downloadFile(RAW_URL, dest, { expectSha256: 'a'.repeat(64) }),
+    /checksum/,
+  );
+  assert.equal(fs.existsSync(dest), false, 'nothing is installed from any of them');
+  assert.equal(fs.existsSync(`${dest}.part`), false);
+});
+
 test('a finished download reports the hash it should be remembered by', async (t) => {
   const data = crypto.randomBytes(4096);
   const server = await serve(t, ranged(data));

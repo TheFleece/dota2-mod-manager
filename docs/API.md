@@ -1155,7 +1155,7 @@ whose catalog entry points somewhere else entirely) has no mirrors - it is itsel
 ### `fetchMirrored`
 
 ```js
-async function fetchMirrored(url, { small = false, trustedOnly = false, headers = {}, log = () => {} } = {})
+async function fetchMirrored(url, { small = false, trustedOnly = false, headers = {}, exclude = [], log = () => {} } = {})
 ```
 
 Fetch, walking the mirrors. Returns the Response of the first mirror that answers.
@@ -1165,6 +1165,8 @@ Fetch, walking the mirrors. Returns the Response of the first mirror that answer
 @param {object} [opts]
 @param {boolean} [opts.small]  allow size-capped mirrors
 @param {object} [opts.headers]
+@param {string[]} [opts.exclude] hosts already tried for this file and found wanting; a
+mirror that answered with the wrong bytes must not be offered again on the retry
 @param {(msg: string) => void} [opts.log]
 ```
 
@@ -1193,8 +1195,8 @@ over because a train went into a tunnel is the difference between a mod and a sh
 @param {string} dest
 @param {object} [opts]
 @param {(loaded: number, total: number) => void} [opts.onProgress]
-@param {string} [opts.expectSha256] what this file hashed to last time it was downloaded;
-a mirror handing over something else is refused rather than installed
+@param {string} [opts.expectSha256] what the catalog says this file hashes to; a mirror
+handing over something else is dropped and the next one is asked
 @param {(msg: string) => void} [opts.log]
 @returns {Promise<{ path: string, bytes: number, sha256: string, resumedFrom: number }>}
 ```

@@ -155,10 +155,15 @@ function liveOrder(urls) {
  * @param {object} [opts]
  * @param {boolean} [opts.small]  allow size-capped mirrors
  * @param {object} [opts.headers]
+ * @param {string[]} [opts.exclude] hosts already tried for this file and found wanting; a
+ *   mirror that answered with the wrong bytes must not be offered again on the retry
  * @param {(msg: string) => void} [opts.log]
  */
-async function fetchMirrored(url, { small = false, trustedOnly = false, headers = {}, log = () => {} } = {}) {
-  const candidates = liveOrder(mirrorsFor(url, { small, trustedOnly }));
+async function fetchMirrored(url, { small = false, trustedOnly = false, headers = {}, exclude = [], log = () => {} } = {}) {
+  // filtered before liveOrder, so the "everything is standing down, try them anyway" path
+  // cannot hand back a host this file has already been refused by
+  const usable = mirrorsFor(url, { small, trustedOnly }).filter((u) => !exclude.includes(hostOf(u)));
+  const candidates = liveOrder(usable);
   let last = null;
   for (let pass = 0; pass < ATTEMPTS_PER_MIRROR; pass++) {
     for (const candidate of candidates) {
@@ -219,56 +224,86 @@ const sha256 = (file) => new Promise((resolve, reject) => {
  * @param {string} dest
  * @param {object} [opts]
  * @param {(loaded: number, total: number) => void} [opts.onProgress]
- * @param {string} [opts.expectSha256] what this file hashed to last time it was downloaded;
- *   a mirror handing over something else is refused rather than installed
+ * @param {string} [opts.expectSha256] what the catalog says this file hashes to; a mirror
+ *   handing over something else is dropped and the next one is asked
  * @param {(msg: string) => void} [opts.log]
  * @returns {Promise<{ path: string, bytes: number, sha256: string, resumedFrom: number }>}
  */
 async function downloadFile(url, dest, { onProgress = () => {}, expectSha256 = null, log = () => {} } = {}) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   const part = `${dest}.part`;
-  let have = 0;
-  try { have = fs.statSync(part).size; } catch { /* nothing to resume */ }
+  /* A mirror that answers with bytes we cannot use has failed, exactly like one that does not
+   * answer at all - and until 2026-09-10 only the second kind was treated that way. The whole
+   * download was abandoned on the first wrong checksum, so a single stale copy on one mirror
+   * took the mod away from everybody who reaches that mirror first.
+   *
+   * That is not hypothetical: the bucket skipped an archive it already had under the same
+   * name, so 24 mods that upstream had replaced still sat there in their old versions. Anybody
+   * who cannot reach GitHub got those bytes, the checksum said no, and the install stopped -
+   * while three proxies that had the current file were never asked.
+   *
+   * So a wrong checksum costs that mirror its turn, not the mod.
+   */
+  const refused = [];
+  const mirrorCount = Math.max(1, mirrorsFor(url).length);
 
-  const headers = have > 0 ? { Range: `bytes=${have}-` } : {};
-  const res = await fetchMirrored(url, { headers, log });
-  if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status}`);
+  for (let attempt = 0; ; attempt++) {
+    let have = 0;
+    try { have = fs.statSync(part).size; } catch { /* nothing to resume */ }
 
-  // A mirror that ignores Range (or a file that changed upstream) answers 200 with the whole
-  // thing: start over rather than glue two halves of different files together.
-  const resuming = res.status === 206 && have > 0;
-  if (!resuming && have > 0) {
-    log(`resume refused by ${hostOf(res.url || url)}, starting over`);
-    have = 0;
-  }
-  const totalHeader = Number(res.headers.get('content-length')) || 0;
-  const total = totalHeader ? totalHeader + (resuming ? have : 0) : 0;
+    const headers = have > 0 ? { Range: `bytes=${have}-` } : {};
+    const res = await fetchMirrored(url, { headers, exclude: refused, log });
+    if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status}`);
+    const host = hostOf(res.url || url);
 
-  const out = fs.createWriteStream(part, { flags: resuming ? 'a' : 'w' });
-  let loaded = have;
-  const reader = res.body.getReader();
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      loaded += value.length;
-      onProgress(loaded, total);
-      await new Promise((resolve, reject) => {
-        out.write(Buffer.from(value), (err) => (err ? reject(err) : resolve()));
-      });
+    // A mirror that ignores Range (or a file that changed upstream) answers 200 with the whole
+    // thing: start over rather than glue two halves of different files together.
+    const resuming = res.status === 206 && have > 0;
+    if (!resuming && have > 0) {
+      log(`resume refused by ${host}, starting over`);
+      have = 0;
     }
-  } finally {
-    await new Promise((resolve) => out.end(resolve));
-  }
+    const totalHeader = Number(res.headers.get('content-length')) || 0;
+    const total = totalHeader ? totalHeader + (resuming ? have : 0) : 0;
 
-  const digest = await sha256(part);
-  if (expectSha256 && digest !== expectSha256) {
-    fs.rmSync(part, { force: true });
-    throw new Error(`checksum mismatch for ${path.basename(dest)}`);
+    const out = fs.createWriteStream(part, { flags: resuming ? 'a' : 'w' });
+    let loaded = have;
+    const reader = res.body.getReader();
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        loaded += value.length;
+        onProgress(loaded, total);
+        await new Promise((resolve, reject) => {
+          out.write(Buffer.from(value), (err) => (err ? reject(err) : resolve()));
+        });
+      }
+    } finally {
+      await new Promise((resolve) => out.end(resolve));
+    }
+
+    const digest = await sha256(part);
+    if (expectSha256 && digest !== expectSha256) {
+      // half a file resumed from a mirror that turned out to be wrong is worth nothing, and
+      // leaving it behind would poison the Range request of whichever mirror answers next
+      fs.rmSync(part, { force: true });
+      noteFailure(host, 'checksum mismatch');
+      refused.push(host);
+      log(`mirror ${host} served ${path.basename(dest)} with the wrong checksum`);
+      // every mirror has now handed over something the catalog disowns: that is a bad file,
+      // not a bad mirror, and it is the one case where refusing is the right answer
+      if (attempt + 1 < mirrorCount) continue;
+      // flagged rather than matched on its wording: the caller turns this into a sentence in
+      // the user's language, and it should not have to recognise it by its English
+      const bad = new Error(`checksum mismatch for ${path.basename(dest)}`);
+      bad.checksum = true;
+      throw bad;
+    }
+    fs.rmSync(dest, { force: true });
+    fs.renameSync(part, dest);
+    return { path: dest, bytes: fs.statSync(dest).size, sha256: digest, resumedFrom: resuming ? have : 0 };
   }
-  fs.rmSync(dest, { force: true });
-  fs.renameSync(part, dest);
-  return { path: dest, bytes: fs.statSync(dest).size, sha256: digest, resumedFrom: resuming ? have : 0 };
 }
 
 /** For the diagnostics report: which mirrors are currently standing down, and why. */

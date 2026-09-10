@@ -165,15 +165,34 @@ So each thing carries its own proof, and each has a different answer to a proof 
 | What | Proof | A failed check means |
 |---|---|---|
 | Catalog data: `mods.json`, `constants.json`, `guides.json`, `mod-hashes.json` | ed25519 signature by the catalog's author, public key pinned in `src/catalog-signature.js` | keep the last good copy; on a first run, no catalog and an error |
-| A mod archive | sha256 from the signed `mod-hashes.json` | refuse the download, delete the part file, install nothing |
+| A mod archive | sha256 from the signed `mod-hashes.json` | drop that mirror's copy, delete the part file and ask the next mirror; refuse the mod only when every mirror fails the same check |
 | `config/app.json`, the switches and notices this project can change after a release | ed25519 signature by this project's own key, pinned in `src/remote-config.js` | ignore the file, exactly as if it were unreachable |
 | The Source 2 toolchain executable | version and sha256 pinned in `src/toolchain.js`, checked before anything is unpacked | do not unpack it; item icons fall back to the wiki |
 
 The three answers differ because what each file costs differs. Without a catalog there is nothing
-to show, so the app keeps yesterday's rather than nothing. A mod that fails its hash is one mod,
-and installing it anyway would put unknown bytes in a game folder. The switches are an
-improvement on knowing nothing, so a copy that cannot be trusted is worth exactly as much as no
-copy, and the app carries on without it.
+to show, so the app keeps yesterday's rather than nothing. Bytes that fail their hash never reach
+a game folder. The switches are an improvement on knowing nothing, so a copy that cannot be
+trusted is worth exactly as much as no copy, and the app carries on without it.
+
+### A mirror can be wrong about a mod without the mod being wrong
+
+A failed checksum says one host handed over the wrong bytes. It does not say the mod is bad, and
+for the first day of hash checking the app treated the two as the same thing: the download
+stopped on the first mismatch and the other mirrors, which had the right file, were never asked.
+
+The bucket had gone stale to make that visible. `tools/r2-sync.mjs` skipped any object already
+there under the same name, so 24 archives their author had replaced still sat in the bucket in
+their old versions - one of them since August. Anybody who cannot reach GitHub is served from the
+bucket first, got the old bytes, and watched the install stop with a checksum error while three
+proxies carried the current file.
+
+So `downloadFile` in `src/net.js` now spends the mirror rather than the mod: a wrong checksum
+stands that host down for this file, the part file goes, and the next mirror is asked from the
+start. Only a file that every mirror disowns is refused. And the sync compares what is here
+against the size upstream reports, then measures the bytes it fetched against the published
+checksum before uploading, so this bucket cannot be the reason a check fails.
+
+*Check:* `test/net.test.js`, "a mirror serving a stale copy costs that mirror its turn".
 
 ### The archives the list has not caught up with
 

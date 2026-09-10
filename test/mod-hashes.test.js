@@ -98,8 +98,9 @@ test('an archive that does not hash to what the catalog published is refused', a
 
   await assert.rejects(
     () => inst.download('heroes', `http://127.0.0.1:${port}/Mod.zip`, 'Mod'),
-    /checksum mismatch|Не удалось скачать/,
-    'a mirror handing over other bytes has to fail the download',
+    // the sentence a player reads, not "checksum mismatch for Mod.zip"
+    /не совпадает с тем, что опубликовал автор|not what the mod's author published/,
+    'a mirror handing over other bytes has to fail the download, in words somebody can read',
   );
   // and nothing is left behind pretending to be a mod
   const dir = path.join(inst.downloadsDir, 'heroes');

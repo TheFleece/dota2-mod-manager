@@ -262,6 +262,12 @@ class Installer {
       this.rememberDownload(key, { size: res.bytes, sha256: res.sha256, at: Date.now() });
       return dest;
     } catch (err) {
+      /* "checksum mismatch for Earthshaker Arcana.zip" is a sentence for whoever wrote the
+         downloader. What it means to the player is that every copy of this mod he can reach
+         is not the mod the catalog describes, and that this is not something he did or can
+         fix from here. Said in his own language, with the technical half kept for the
+         diagnostics report. */
+      if (err.checksum) throw new Error(t('{0}: скачанный файл не совпадает с тем, что опубликовал автор мода. Попробуй позже', safeName));
       throw new Error(t('Не удалось скачать {0}: {1}', safeName, String(err.message || err)));
     }
   }
