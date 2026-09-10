@@ -146,7 +146,7 @@ class Catalog {
     // and the hashes, which the app is allowed to do without
     try {
       fs.writeFileSync(this.cachePath(HASH_FILE), await this.fetchSigned(HASH_FILE));
-    } catch (e) {
+    } catch {
       this.hashes = undefined; // re-read whatever is on disk next time it is asked
     }
     fs.writeFileSync(this.cachePath('meta.json'), JSON.stringify({ fetchedAt: Date.now() }));

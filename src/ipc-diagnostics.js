@@ -12,7 +12,6 @@
  * Bodies unchanged from main.js.
  */
 const fs = require('fs');
-const path = require('path');
 const AdmZip = require('adm-zip');
 const { app, BrowserWindow, dialog, ipcMain, screen, shell } = require('electron');
 

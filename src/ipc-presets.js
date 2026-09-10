@@ -240,7 +240,7 @@ function registerPresetsIpc({
     library.save();
     if (stash) { try { fs.rmSync(stash, { force: true }); } catch { /* noop */ } }
 
-    errors.push(...applyPreset(preset));
+    errors.push(...presets.applyPreset(preset));
     // a mod that arrived already enabled never passes through applyPreset's own switch, so
     // its freshly lifted blocks would sit in the library without ever reaching the build
     if (schemaTouched) schemaService.refresh();

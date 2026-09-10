@@ -2,6 +2,22 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.8
+
+### A preset someone shared with you finishes
+
+Opening a shared preset file installed everything in it, wrote it to your library, and then
+stopped one line short of switching the mods on. Nothing said so: the window went on waiting for
+an answer that had already failed. The same file split that broke Install in 2.6.5 broke this,
+in the same way, and nobody had reported it because reaching it needs a preset file from another
+player.
+
+### An action that fails says so
+
+Any failure in the process behind the window used to leave the button it belongs to stuck on
+"Installing...", with the reason written only to a log file. That is how a plain error looked
+like a hang for two releases. The button now comes back and the reason is on screen.
+
 ## 2.6.7
 
 ### Installing a mod works again

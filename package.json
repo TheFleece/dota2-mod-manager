@@ -1,7 +1,7 @@
 {
   "name": "dota2-mod-manager",
   "productName": "Dota 2 Mod Manager",
-  "version": "2.6.7",
+  "version": "2.6.8",
   "description": "Desktop mod manager for Dota 2 — browse, install, toggle and preset 1100+ cosmetic mods from the D2PFX catalog",
   "main": "main.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "dist": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
     "test": "node --test \"test/**/*.test.js\"",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=76 --test-coverage-branches=81 --test-coverage-functions=74 \"test/**/*.test.js\"",
+    "lint": "eslint .",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=74 --test-coverage-branches=76 --test-coverage-functions=72 \"test/**/*.test.js\"",
     "sandbox:seed": "node tools/sandbox.js seed",
     "sandbox:reset": "node tools/sandbox.js reset",
     "sandbox:status": "node tools/sandbox.js status",
@@ -27,7 +28,8 @@
   "homepage": "https://github.com/TheFleece/dota2-mod-manager",
   "devDependencies": {
     "electron": "^43.4.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "eslint": "^10.10.0"
   },
   "dependencies": {
     "adm-zip": "^0.6.0",

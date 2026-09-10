@@ -223,6 +223,21 @@ and here is why". [CONTRIBUTING.md](CONTRIBUTING.md) has the rest;
 
 <br>
 
+## Written with Claude Code
+
+This project has been written with [Claude Code](https://claude.com/claude-code) since its first
+commit on 20 July 2026, and still is. Commits carry a `Co-Authored-By` trailer saying so.
+
+It says so here because guessing is worse. Everything that would tell you whether the code is any
+good is already in the open: 513 commits of history, 423 tests, a coverage floor CI enforces, and
+[DECISIONS.md](DECISIONS.md), which answers the questions reviewers keep asking with a command
+you can run yourself.
+
+Send a change written with an assistant and keep the trailer on it. [AGENTS.md](AGENTS.md) is
+what the project asks for in return.
+
+<br>
+
 ## What it is built on
 
 Everything third-party the app ships or fetches, with the licence it comes under. The

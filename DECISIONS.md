@@ -35,11 +35,19 @@ The checks here aim at correctness instead, and there are enough of them to fail
 
 ### The app ships two dependencies
 
-`adm-zip` and `electron-updater` ship inside it; `electron` and `electron-builder` only build
-it. The VPK reader and writer, the KeyValues parser, the zip guards, the mirror logic and the
-update checks are written here, because every dependency is a stranger with write access to a
-game folder on tens of thousands of machines. That is a bias rather than a ban: a pull request
-adding one has to say what it replaces and why writing it here is worse.
+`adm-zip` and `electron-updater` ship inside it; `electron`, `electron-builder` and `eslint`
+only build and check it, and never reach a user's machine. The VPK reader and writer, the
+KeyValues parser, the zip guards, the mirror logic and the update checks are written here,
+because every dependency is a stranger with write access to a game folder on tens of thousands
+of machines. That is a bias rather than a ban: a pull request adding one has to say what it
+replaces and why writing it here is worse.
+
+`eslint` was added on 2026-09-10 and is the one case where writing it here would have been the
+wrong answer. Two releases shipped in which no mod could be installed, because splitting a file
+left a function call pointing at a function that had stayed behind. Every test passed: they read
+the files as text, or never loaded a module that needs Electron. `no-undef` names that in under
+a second, and a scope analyser is exactly the kind of thing not to write by hand - the version
+attempted here first reported 240 problems, of which one was real.
 
 *Check:* `node -e "const p=require('./package.json');console.log(p.dependencies,p.devDependencies)"`
 
@@ -102,26 +110,23 @@ when it points nowhere, so the next move is a secret and not a commit.
 *Check:* `git ls-remote https://gitlab.com/TheFleece/dota2-mod-manager.git`, which needs no
 account and should answer with the same commit on `main` and the same tags as this repository.
 
-### Eleven commits from August carry a co-author trailer, and the history was not rewritten
+### This project is written with Claude Code, and says so
 
-They were made with an assistant and the trailer was left in the body. Cleaning them means
-rewriting everything from 7 August: about 350 of the SHAs move, the release tags move with them,
-and every external link to a commit dies. The assistant appears nowhere as an author, only in
-the trailers.
+Since the first commit, on 20 July 2026. Commits carry a `Co-Authored-By` trailer, `README.md`
+has a section about it above the dependency table, and `AGENTS.md` asks anyone sending a change
+to keep the trailer on theirs.
 
-Later commits carry it too, and are not counted here: this entry is about what is already
-published and cannot be tidied without breaking every link to it. A count that had to be edited
-on every commit would be a chore, not a check.
+Two entries used to stand here instead. One explained why eleven commits from August had a
+trailer nobody had cleaned out of them. The other said that working with an assistant was
+"stated rather than hidden", while `AGENTS.md` on the same day asked contributors not to state
+it. Together they read as a project embarrassed by a tool it uses every day, which was never the
+position and is not worth the room.
 
-*Check:* `git log --grep='Co-Authored-By' --format='%h %ad %s' --date=short` and
-`git shortlog -sne HEAD`.
+So nobody has to open a review with "was this AI-generated". Yes, it is on the front page, and
+every question worth asking after that one is answered elsewhere in this file with a command.
 
-### Working with an assistant is stated rather than hidden
-
-`AGENTS.md` says how this project expects an assistant to be used, what the tests will not let
-one do, and where the house style is written down. Commits and pushes are the maintainer's.
-
-*Check:* `AGENTS.md`.
+*Check:* `git log --grep='Co-Authored-By' --format='%h %ad %s' --date=short`, the "Written with
+Claude Code" section of `README.md`, and **Attribution** in `AGENTS.md`.
 
 ### The maintainer pushes to `main` without opening a pull request
 
@@ -313,7 +318,7 @@ Each of these has arrived in a review. Each is answered by one command.
 | "The state files in the root are why the repository is 61 MB" | All four generated JSON files together are 1.55 MB of the pack. The preview images are 46.7 MB | the command under the open question above |
 | "It is a Windows-only app" | Every release since 2.4.0 also carries a Linux AppImage | `gh release view --json assets` |
 | "`main` is unprotected" | It is guarded by a ruleset, which the branch-protection endpoint does not report | `gh api repos/TheFleece/dota2-mod-manager/rulesets` |
-| "There are 25 test files" | 42 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
+| "There are 25 test files" | 43 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
 | "An open issue asks for tests that already exist" | Issue #4 was closed on 2026-09-08 when that was pointed out. `#5`, `#6` and `#7` are open and really are open | `gh issue list --state open` |
 
 ---

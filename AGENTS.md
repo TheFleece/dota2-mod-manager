@@ -104,13 +104,15 @@ reproduction is a change nobody can review.
 
 ## Attribution
 
-**Commits and pull requests go out under the contributor's own name.** No `Co-Authored-By` for
-an assistant, no "generated with" footer, no assistant listed as an author anywhere in the
-history.
+**Say what wrote it.** If an assistant helped, put a `Co-Authored-By` trailer on the commit.
+This project does: it has been written with Claude Code since July 2026, the trailers are in the
+history, and the README says so on its front page.
 
-This is not squeamishness about AI — the paragraph at the top of this file says the opposite.
-It is that **a commit's author is the person who is answerable for it**. If you ran the
-assistant, you read the diff, you tested it, and it is your name on it. An assistant cannot
-answer a question about a commit two years from now; you can.
+**The author line is still yours, and so is the answer for what it does.** You ran the
+assistant, you read the diff, you tested it. An assistant cannot answer a question about a
+commit two years from now; you can. The trailer records how the work was done, not who is
+accountable for it.
 
-So: use whatever tools you like, and sign your own work.
+Until 10 September 2026 this file said the opposite and asked for no trailer at all. That was
+the wrong call: it made an open project look like it was hiding a tool it uses every day, while
+the trailers from August sat in the history anyway.

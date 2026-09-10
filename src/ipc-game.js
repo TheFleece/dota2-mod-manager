@@ -5,9 +5,7 @@
  * These are the channels that answer "what is the game like right now" rather than "do this to
  * a mod". Bodies unchanged from main.js.
  */
-const fs = require('fs');
-const path = require('path');
-const { app, ipcMain } = require('electron');
+const { ipcMain } = require('electron');
 
 const { t } = require('./i18n');
 

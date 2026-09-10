@@ -184,3 +184,63 @@ test('every handler runs far enough to prove its own names exist', async () => {
   }
   assert.deepEqual(notDefined, [], notDefined.join('; '));
 });
+
+/*
+ * And that main.js hands each module everything the module unpacks.
+ *
+ * A name a module destructures out of its context and never receives is `undefined`, and the
+ * first call on it throws "x is not a function". That is the same failure as `blocked is not
+ * defined` wearing a different message, and no linter can see it: the name is a parameter, so
+ * it is defined as far as the file is concerned. Only the two sides together tell the truth.
+ */
+test('every ipc module is handed everything it unpacks', () => {
+  const main = read('main.js');
+
+  /** The text between the brace at `from` and the one that closes it. */
+  const braced = (src, from) => {
+    let depth = 0;
+    for (let i = from; i < src.length; i++) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}') { depth -= 1; if (!depth) return src.slice(from + 1, i); }
+    }
+    return '';
+  };
+
+  /** Top-level keys of an object literal or a destructuring pattern. */
+  const keysOf = (raw) => {
+    // comments go first: one of these lists has a comma inside a comment, and splitting before
+    // stripping cut a name out of the list and hid it from this check while it was being written
+    const body = raw.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
+    const parts = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of body) {
+      if ('{[('.includes(ch)) depth++;
+      if ('}])'.includes(ch)) depth--;
+      if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; continue; }
+      cur += ch;
+    }
+    parts.push(cur);
+    return parts
+      .map((s) => s.trim().split(/[:=]/)[0].trim())
+      .filter((s) => /^[A-Za-z_$][\w$]*$/.test(s));
+  };
+
+  const gaps = [];
+  for (const file of HANDLER_FILES.filter((f) => f.startsWith('src/ipc-'))) {
+    const src = read(file);
+    const sig = src.match(/function\s+(register\w+)\s*\(\s*\{/);
+    assert.ok(sig, `${file}: no register function taking a context`);
+    const wants = keysOf(braced(src, src.indexOf('{', sig.index + sig[0].length - 1)));
+    assert.ok(wants.length > 0, `${file}: unpacked nothing, which means this test stopped reading`);
+
+    const callAt = main.indexOf(`${sig[1]}({`);
+    assert.ok(callAt > 0, `${file}: ${sig[1]} is never called from main.js`);
+    const gives = new Set(keysOf(braced(main, main.indexOf('{', callAt))));
+
+    for (const name of wants) {
+      if (!gives.has(name)) gaps.push(`${file} unpacks ${name}, main.js does not pass it`);
+    }
+  }
+  assert.deepEqual(gaps, [], gaps.join('; '));
+});

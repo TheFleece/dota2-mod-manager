@@ -31,6 +31,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # A name that is not there is not something a test can see.
+      #
+      # Splitting registerIpc on 2026-09-06 moved a call into one file and left the function it
+      # called in another. Every test passed - the contract test reads these files as text, and
+      # the unit tests never load a module that needs Electron - and two releases shipped in
+      # which no mod could be installed at all. The same split left a second one in
+      # ipc-presets.js that nobody had hit yet.
+      #
+      # `no-undef` names both in under a second. It runs before the suite because when it fails
+      # there is no point reading anything below it.
+      - name: Check for names that do not exist
+        run: npm run lint
+
       # Coverage is a floor, not a target. The numbers sit just under what the suite reaches,
       # so the gate does not fail on the state it was written in and does fail the moment
       # somebody adds code nothing exercises. Raise them when the real figure moves up; never
@@ -45,6 +58,13 @@ jobs:
       # Node only reports files a test loaded, so a module with no test at all is invisible
       # here rather than counted as zero. Several modules are still in that position - the gate
       # holds the line, it does not claim the line is where it should be.
+      #
+      # The floor moved down on 2026-09-10, from 76/81/74, and the reason is the opposite of the
+      # usual one. The contract test now registers all nine src/ipc-*.js modules and calls every
+      # handler, so those files are loaded and counted for the first time. They are large and
+      # thinly covered, and the aggregate fell about two points because code that was invisible
+      # became visible. Nothing stopped being tested. Raise this again by testing those handlers,
+      # not by hiding them.
       - name: Run tests with a coverage floor
         run: npm run test:coverage
 

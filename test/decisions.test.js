@@ -48,13 +48,13 @@ test('the dependencies it names are the dependencies package.json declares', () 
   const ships = Object.keys(pkg.dependencies ?? {});
   const builds = Object.keys(pkg.devDependencies ?? {});
 
-  // The entry names all four and says which two of them reach a user's machine. A fifth arriving
-  // without the paragraph changing is exactly the drift this catches.
+  // The entry names every one of them and says which two reach a user's machine. One more
+  // arriving without the paragraph changing is exactly the drift this catches.
   for (const name of [...ships, ...builds]) {
     assert.ok(doc.includes(`\`${name}\``), `DECISIONS.md does not mention the dependency ${name}`);
   }
   assert.equal(ships.length, 2, `the entry says the app ships two dependencies, package.json declares ${ships.length}`);
-  assert.equal(builds.length, 2, `the entry says two more only build it, package.json declares ${builds.length}`);
+  assert.equal(builds.length, 3, `the entry says three more build and check it, package.json declares ${builds.length}`);
 });
 
 test('the fingerprint index is still fetched from the path the entry says it cannot leave', () => {
@@ -65,29 +65,19 @@ test('the fingerprint index is still fetched from the path the entry says it can
   assert.ok(doc.includes('`FP_URL`'), 'the entry no longer points at the constant that proves it');
 });
 
-test('the eleven co-authored commits from August it describes are the eleven that are there', () => {
-  // Counted from the history rather than remembered. If somebody does rewrite it one day, the
-  // entry explaining why nobody did should fail rather than sit there being wrong.
-  //
-  // Only where the history is all there. CI checks out with depth 1, so this asked a repository
-  // holding a single commit how many commits from August it had, got nought, and failed the build
-  // on the first push after it was written. A shallow clone cannot answer the question, and a
-  // test that reads "cannot answer" as "the answer is zero" is worse than no test at all.
-  const { execFileSync } = require('child_process');
-  const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf-8' }).trim();
-  let count;
-  try {
-    if (git(['rev-parse', '--is-shallow-repository']) === 'true') return;
-    /* August only. The entry is about history that is already published and cannot be tidied
-       without moving 350 SHAs; commits made since carry the trailer too and are none of its
-       business. Counting all of them would fail the build on every commit that has one, which
-       is a chore wearing a test's clothes - it did exactly that on the day it was written. */
-    count = git(['log', '--grep=Co-Authored-By', '--since=2026-08-01', '--until=2026-09-01', '--format=%h'])
-      .split('\n').filter(Boolean).length;
-  } catch {
-    return; // no git at all: a tarball, or an export with the history stripped
+test('the three places that say how this is written still say it', () => {
+  /* The entry's whole point is that nobody should have to guess, and a claim like that is only
+     worth anything while all three places agree. They did not once before: AGENTS.md asked
+     contributors to leave the trailer off while DECISIONS.md called the practice "stated rather
+     than hidden". */
+  for (const file of ['README.md', 'README.ru.md']) {
+    const text = fs.readFileSync(path.join(root, file), 'utf-8');
+    assert.ok(text.includes('Claude Code'), `${file} no longer says what this is written with`);
   }
-  assert.equal(count, 11, `DECISIONS.md says eleven such commits in August, git finds ${count}`);
+  const agents = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf-8');
+  assert.ok(/Co-Authored-By/.test(agents), 'AGENTS.md no longer mentions the trailer it asks for');
+  assert.ok(!/No `Co-Authored-By`/.test(agents), 'AGENTS.md is back to asking for no trailer');
+  assert.ok(doc.includes('Claude Code'), 'DECISIONS.md no longer carries the entry');
 });
 
 test('the mirror named in the decisions is the mirror the READMEs point at', () => {

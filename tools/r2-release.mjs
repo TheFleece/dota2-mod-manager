@@ -19,8 +19,6 @@
  * Usage: node tools/r2-release.mjs <version>        e.g. 2.6.5
  *        node tools/r2-release.mjs <version> --dry
  */
-import fs from 'node:fs';
-import path from 'node:path';
 import { createR2 } from './r2-client.js';
 
 const version = (process.argv[2] || '').replace(/^v/, '');
