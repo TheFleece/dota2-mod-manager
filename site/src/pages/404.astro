@@ -1,0 +1,77 @@
+---
+/*
+ * The page for an address that is not here.
+ *
+ * There was none, so Cloudflare answered every unknown path with the landing page and a 200.
+ * Two costs. Somebody who mistyped a link, or followed one that moved, got the front page and
+ * no hint that they were anywhere other than where they meant to be. And nothing could tell
+ * "this file is missing" from "this file is here": the mirror checks in this repository were
+ * fooled by it twice in one day, reading 43 KB of HTML as a signature.
+ *
+ * Astro builds this to dist/404.html and Cloudflare Pages serves it with the status it should
+ * have had all along.
+ *
+ * Bilingual on one page rather than two. A visitor who is lost has not chosen a language yet,
+ * and the alternative is a Russian speaker landing on an English apology and vice versa.
+ */
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Not found - Dota 2 Mod Manager"
+  description="This address does not exist on dota2modmanager.com."
+  path="/404/"
+>
+  <article class="lost wrap">
+    <p class="code">404</p>
+
+    <h1>This page is not here</h1>
+    <p class="lead">
+      The address may have moved, or it may never have existed. Nothing is broken: the app,
+      the catalog and the downloads all work.
+    </p>
+
+    <p lang="ru" class="lead ru">
+      Такой страницы нет. Возможно, адрес изменился или его никогда не было. Ничего не сломалось:
+      приложение, каталог и загрузки работают.
+    </p>
+
+    <nav class="ways">
+      <a class="btn" href="/">Home</a>
+      <a class="btn" href="/ru/">Главная</a>
+      <a class="btn ghost" href="/docs/">Guides</a>
+      <a class="btn ghost" href="/ru/docs/">Гайды</a>
+      <a class="btn ghost" href="https://github.com/TheFleece/dota2-mod-manager">Source</a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .lost {
+    min-height: 62vh;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 60px 0 80px;
+    text-align: center;
+  }
+
+  /* Big, because it is the one word that explains the whole page, and quiet, because being
+     lost is not an emergency. */
+  .code {
+    margin: 0 0 6px;
+    font-size: clamp(64px, 16vw, 132px);
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+
+  h1 { margin: 0 0 14px; font-size: clamp(24px, 4.4vw, 34px); }
+  .lead { margin: 0 auto 10px; max-width: 56ch; color: var(--text-dim); }
+  .ru { color: color-mix(in srgb, var(--text-dim) 78%, transparent); }
+
+  .ways {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    margin-top: 26px;
+  }
+  .ways .btn { text-decoration: none; }
+</style>
