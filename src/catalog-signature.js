@@ -12,14 +12,23 @@
 // against a public key baked into this file. A rewritten mods.json then fails here rather than
 // at the point where somebody's machine does what it says.
 //
-// Until that key exists this module answers "no key pinned, carry on". That is deliberate:
-// refusing every fetch because a signature has not been arranged yet would take the app down
-// for everybody and protect nobody.
+// Without a key this module answers "nothing pinned, carry on", which is what it did from the
+// day it was written until 2026-09-10. Refusing every fetch because a signature had not been
+// arranged yet would have taken the app down for everybody and protected nobody.
 const crypto = require('crypto');
 
 // Base64 SPKI of the catalog author's ed25519 public key. `tools/sign-catalog.js --keygen`
 // prints one in exactly this form. Empty means verification is off.
-const CATALOG_PUBLIC_KEY = '';
+//
+// Pinned on 2026-09-10, and not the day the key arrived. A signature is only good for the
+// bytes it was made from, and the catalog was publishing data and signature in separate
+// commits: for the one to eight minutes between them the published files disagreed with their
+// own signatures, which reads here as an attack and is really a bot that has not run yet.
+// Anybody already using the app would have kept their cached catalog; anybody installing it in
+// those minutes would have had no catalog at all, and the catalog moves about five times a day.
+// The author now writes the data and the signatures in one commit, so there is no moment when
+// what is published disagrees with what is signed.
+const CATALOG_PUBLIC_KEY = 'MCowBQYDK2VwAyEAkzP+iIJLaFlc20Uj3OyLnDX4arckiBuSpPk1BcRKUsk=';
 
 // Where the signatures live in the catalog repository, and what they are called there:
 // assets/signatures/mods.json.sig for assets/data/mods.json.

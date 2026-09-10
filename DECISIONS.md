@@ -140,14 +140,22 @@ holds the line; it does not claim the line is where it should be.
 *Check:* the `test:coverage` script in `package.json`, and the comment above the step in
 `.github/workflows/test.yml`.
 
-### The catalog signature check ships switched off
+### The catalog is verified, and the key was pinned later than it arrived
 
-`src/catalog-signature.js` verifies an ed25519 signature over the catalog data and has tests for
-every way it can fail, but `CATALOG_PUBLIC_KEY` is empty, so it stands aside. The key has to come
-from whoever publishes the catalog, and a check that failed shut without one would break the app
-for everybody until it arrived. What this leaves open is in the gaps below.
+`src/catalog-signature.js` checks an ed25519 signature over every catalog file the app reads, so
+a proxy handing over a rewritten `mods.json` fails here rather than at the point where somebody's
+machine acts on it. The catalog's author holds the private half.
 
-*Check:* `src/catalog-signature.js` and `test/catalog-signature.test.js`.
+The key arrived on 2026-09-09 and was pinned on the 10th. In between, the catalog published its
+data and its signatures in separate commits, which left one to eight minutes after every update
+where the published files disagreed with their own signatures - indistinguishable here from an
+attack, and really a bot that had not run yet. Existing users would have kept their cached
+catalog; anyone installing the app in those minutes would have had none at all, about five times
+a day. The author now writes data and signatures in one commit, so the disagreement has no moment
+to happen in.
+
+*Check:* `src/catalog-signature.js`, `test/catalog-signature.test.js`, and the catalog's own
+`.github/workflows/update-catalog.yml`, where one `git add` stages the data and the signatures.
 
 ### Nothing is collected, and that is enforced by review rather than by a setting
 
@@ -198,14 +206,17 @@ moving.
 
 *Check:* `.github/workflows/test.yml`, and the `test:coverage` script in `package.json`.
 
-### The catalog is read without verifying who wrote it
+### `config/app.json` is read without verifying who wrote it
 
-The app reads the catalog through public mirrors for users who cannot reach GitHub, and today
-nothing proves the JSON came from the catalog's author rather than from the mirror operator. The
-verification code is written and dormant, waiting on a public key from the catalog side. The same
-gap covers `config/app.json`, which carries the remote notices and the feature switches.
+The catalog itself has been signed since 2026-09-10, but this file has not. It is this project's
+own, it carries the remote notices and the switches that can turn a feature off after a release,
+and it travels the same public proxies as everything else. A proxy operator can rewrite it, which
+means switching a feature off for people or showing them a notice over this project's name.
 
-*Check:* `src/catalog.js`, `src/net.js`, `src/remote-config.js`.
+Nobody else has to act for this one: both halves of the key would be ours, and the crypto is
+written and tested. It is not done.
+
+*Check:* `src/remote-config.js` - the fetch has no verification step of any kind.
 
 ### The newest mods are still trusted on first sight
 
