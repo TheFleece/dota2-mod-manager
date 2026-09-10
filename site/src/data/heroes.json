@@ -2917,7 +2917,7 @@
           "image": {"src":"/mods/devotions-of-dragonus-atos.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783628721
+          "date": 1788999662
         },
         {
           "name": "Devotions of Dragonus Atos II",
@@ -2927,7 +2927,7 @@
           "image": {"src":"/mods/devotions-of-dragonus-atos-ii.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783697952
+          "date": 1788999662
         },
         {
           "name": "Devotions of Dragonus Phylactery",
@@ -2937,7 +2937,7 @@
           "image": {"src":"/mods/devotions-of-dragonus-phylactery.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783594076
+          "date": 1788999662
         },
         {
           "name": "Devotions of Dragonus Phylactery II",
@@ -2947,7 +2947,7 @@
           "image": {"src":"/mods/devotions-of-dragonus-phylactery-ii.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783594076
+          "date": 1788999662
         },
         {
           "name": "Green Diretide Ranged Attack",
@@ -5978,6 +5978,143 @@
       ]
     },
     {
+      "id": "monkey_king",
+      "name": "Monkey King",
+      "slug": "monkey-king",
+      "mods": [
+        {
+          "name": "Ifrit Monkey King",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","weapon","head","shoulder"],
+          "image": {"src":"/mods/ifrit-monkey-king.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1758312287
+        },
+        {
+          "name": "Monkey King Immortal",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","weapon","head","shoulder"],
+          "image": {"src":"/mods/monkey-king-immortal.webp","width":854,"height":480},
+          "author": "ibcsz",
+          "authorUrl": "http://t.me/nixwaretop",
+          "date": 1789001882
+        },
+        {
+          "name": "Monkey King Simian Sovereign",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","weapon","head","shoulder"],
+          "image": {"src":"/mods/monkey-king-simian-sovereign.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1766284079
+        },
+        {
+          "name": "Monkey King Water Demon",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","weapon","head","shoulder"],
+          "image": {"src":"/mods/monkey-king-water-demon.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1784176630
+        },
+        {
+          "name": "Red Monkey King",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","weapon","head","shoulder"],
+          "image": {"src":"/mods/red-monkey-king.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1769787537
+        },
+        {
+          "name": "Monkey King Arcana",
+          "categoryId": "heroes",
+          "styleLabel": "Death",
+          "slots": ["head"],
+          "image": {"src":"/mods/monkey-king-arcana-death.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781270968
+        },
+        {
+          "name": "Monkey King Arcana",
+          "categoryId": "heroes",
+          "styleLabel": "Fire",
+          "slots": ["head"],
+          "image": {"src":"/mods/monkey-king-arcana-fire.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781270968
+        },
+        {
+          "name": "Monkey King Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head"],
+          "image": {"src":"/mods/monkey-king-arcana.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781270968
+        },
+        {
+          "name": "Monkey King Arcana",
+          "categoryId": "heroes",
+          "styleLabel": "Water",
+          "slots": ["head"],
+          "image": {"src":"/mods/monkey-king-arcana-water.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781270968
+        },
+        {
+          "name": "Monkey King Staff of Gun-Yu",
+          "categoryId": "hero-items",
+          "styleLabel": "Anniversary",
+          "slots": ["weapon"],
+          "image": {"src":"/mods/monkey-king-staff-of-gun-yu-anniversary.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781348535
+        },
+        {
+          "name": "Monkey King Staff of Gun-Yu",
+          "categoryId": "hero-items",
+          "styleLabel": "Crimson",
+          "slots": ["weapon"],
+          "image": {"src":"/mods/monkey-king-staff-of-gun-yu-crimson.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781348535
+        },
+        {
+          "name": "Monkey King Staff of Gun-Yu",
+          "categoryId": "hero-items",
+          "styleLabel": "Golden",
+          "slots": ["weapon"],
+          "image": {"src":"/mods/monkey-king-staff-of-gun-yu-golden.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781348535
+        },
+        {
+          "name": "Monkey King Staff of Gun-Yu",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["weapon"],
+          "image": {"src":"/mods/monkey-king-staff-of-gun-yu.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1781348535
+        }
+      ]
+    },
+    {
       "id": "oracle",
       "name": "Oracle",
       "slug": "oracle",
@@ -7548,133 +7685,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1764003644
-        }
-      ]
-    },
-    {
-      "id": "monkey_king",
-      "name": "Monkey King",
-      "slug": "monkey-king",
-      "mods": [
-        {
-          "name": "Ifrit Monkey King",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","weapon","head","shoulder"],
-          "image": {"src":"/mods/ifrit-monkey-king.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1758312287
-        },
-        {
-          "name": "Monkey King Simian Sovereign",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","weapon","head","shoulder"],
-          "image": {"src":"/mods/monkey-king-simian-sovereign.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1766284079
-        },
-        {
-          "name": "Monkey King Water Demon",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","weapon","head","shoulder"],
-          "image": {"src":"/mods/monkey-king-water-demon.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1784176630
-        },
-        {
-          "name": "Red Monkey King",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","weapon","head","shoulder"],
-          "image": {"src":"/mods/red-monkey-king.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1769787537
-        },
-        {
-          "name": "Monkey King Arcana",
-          "categoryId": "heroes",
-          "styleLabel": "Death",
-          "slots": ["head"],
-          "image": {"src":"/mods/monkey-king-arcana-death.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781270968
-        },
-        {
-          "name": "Monkey King Arcana",
-          "categoryId": "heroes",
-          "styleLabel": "Fire",
-          "slots": ["head"],
-          "image": {"src":"/mods/monkey-king-arcana-fire.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781270968
-        },
-        {
-          "name": "Monkey King Arcana",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["head"],
-          "image": {"src":"/mods/monkey-king-arcana.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781270968
-        },
-        {
-          "name": "Monkey King Arcana",
-          "categoryId": "heroes",
-          "styleLabel": "Water",
-          "slots": ["head"],
-          "image": {"src":"/mods/monkey-king-arcana-water.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781270968
-        },
-        {
-          "name": "Monkey King Staff of Gun-Yu",
-          "categoryId": "hero-items",
-          "styleLabel": "Anniversary",
-          "slots": ["weapon"],
-          "image": {"src":"/mods/monkey-king-staff-of-gun-yu-anniversary.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781348535
-        },
-        {
-          "name": "Monkey King Staff of Gun-Yu",
-          "categoryId": "hero-items",
-          "styleLabel": "Crimson",
-          "slots": ["weapon"],
-          "image": {"src":"/mods/monkey-king-staff-of-gun-yu-crimson.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781348535
-        },
-        {
-          "name": "Monkey King Staff of Gun-Yu",
-          "categoryId": "hero-items",
-          "styleLabel": "Golden",
-          "slots": ["weapon"],
-          "image": {"src":"/mods/monkey-king-staff-of-gun-yu-golden.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781348535
-        },
-        {
-          "name": "Monkey King Staff of Gun-Yu",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["weapon"],
-          "image": {"src":"/mods/monkey-king-staff-of-gun-yu.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1781348535
         }
       ]
     },
@@ -11329,7 +11339,7 @@
           "image": {"src":"/mods/earthshaker-blink-dagger.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783547273
+          "date": 1788999662
         },
         {
           "name": "Earthshaker Gold Blink Dagger",
@@ -11339,7 +11349,7 @@
           "image": {"src":"/mods/earthshaker-gold-blink-dagger.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783547273
+          "date": 1788999662
         }
       ]
     },
@@ -11523,7 +11533,7 @@
           "image": {"src":"/mods/phantom-adven-blademail-red.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783594076
+          "date": 1788999662
         },
         {
           "name": "Phantom Adven Blademail White",
@@ -11533,7 +11543,7 @@
           "image": {"src":"/mods/phantom-adven-blademail-white.webp","width":854,"height":480},
           "author": "Ромчик",
           "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783594076
+          "date": 1788999662
         }
       ]
     },
