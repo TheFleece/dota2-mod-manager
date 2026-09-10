@@ -17,6 +17,9 @@ const DATA_FILES = ['mods.json', 'constants.json', 'guides.json'];
  */
 const HASH_FILE = 'mod-hashes.json';
 
+/** The site's own copy, which goes out in one deploy and so is never half-updated. */
+const SNAPSHOT_BASE = 'https://dota2modmanager.com/mirror/';
+
 // Walk every mod in a mods.json, whatever shape its category is in: a plain array, or a
 // group list for the categories that are sorted by hero.
 function eachMod(modsData, fn) {
@@ -52,8 +55,15 @@ function normalizeCatalog(mods) {
 }
 
 class Catalog {
-  constructor(userDataDir) {
+  /**
+   * @param {string} userDataDir
+   * @param {object} [opts]
+   * @param {string} [opts.snapshotBase]  where to look for a data-and-signature pair that is
+   *   guaranteed to be from one moment; the site's own copy unless a test says otherwise
+   */
+  constructor(userDataDir, { snapshotBase = SNAPSHOT_BASE } = {}) {
     this.cacheDir = path.join(userDataDir, 'catalog-cache');
+    this.snapshotBase = snapshotBase;
     fs.mkdirSync(this.cacheDir, { recursive: true });
   }
 
@@ -75,21 +85,53 @@ class Catalog {
   }
 
   /** Fetches one published file and, when a key is pinned, refuses bytes it did not sign. */
+  /**
+   * Fetches one published file and, when a key is pinned, refuses bytes it did not sign.
+   *
+   * The signatures sit in a folder of their own rather than beside the data. They were
+   * published as assets/data/<name>.sig on 2026-09-09 and moved to assets/signatures/ the same
+   * day, which is why this is built from a path and not from a suffix glued onto the data URL:
+   * a layout that has already moved once can move again.
+   */
   async fetchSigned(name) {
-    const text = await fetchText(`${RAW_BASE}/assets/data/${name}`);
-    // A mirror can rewrite anything it carries, so what decides whether these bytes are the
-    // author's is his signature over them.
-    //
-    // The signatures sit in a folder of their own rather than beside the data. They were
-    // published as assets/data/<name>.sig on 2026-09-09 and moved to assets/signatures/ the
-    // same day, which is why this is built from a path and not from a suffix glued onto the
-    // data URL: a layout that has already moved once can move again.
-    if (signature.configured()) {
-      const sig = await fetchText(`${RAW_BASE}/${signature.SIG_DIR}/${name}${signature.SIG_SUFFIX}`);
-      if (!signature.verify(text, sig)) throw new Error(`${name}: signature does not match the catalog's key`);
+    const dataUrl = `${RAW_BASE}/assets/data/${name}`;
+    const sigUrl = `${RAW_BASE}/${signature.SIG_DIR}/${name}${signature.SIG_SUFFIX}`;
+    const text = await fetchText(dataUrl);
+    if (!signature.configured()) {
+      JSON.parse(text);
+      return text;
     }
-    JSON.parse(text); // validate before persisting
-    return text;
+
+    const sig = await fetchText(sigUrl);
+    if (signature.verify(text, sig)) {
+      JSON.parse(text); // validate before persisting
+      return text;
+    }
+
+    /* A pair that does not verify is usually not an attack. It is the two files arriving from
+     * different moments in time.
+     *
+     * The catalog writes a data file and its signature in one commit, so the repository is
+     * never inconsistent. raw.githubusercontent is: it caches per file and purges per file,
+     * and on 2026-09-10 it served this project its own config from one commit and that
+     * config's signature from the one before, for minutes after the push. Measured, not
+     * feared. A query string does not shake it loose either.
+     *
+     * So before calling it a forgery, ask the one source that cannot be half-updated: the
+     * site's own copy goes out in a single deploy, where the data and the signature are
+     * always from the same snapshot. It can be up to a day behind, and a day-old catalog that
+     * verifies beats no catalog at all - which is what a fresh install would otherwise get.
+     *
+     * A real rewrite fails here too, because whoever rewrote the proxy did not write this.
+     */
+    const snapshot = `${this.snapshotBase}${name}`;
+    const consistent = await fetchText(snapshot);
+    const consistentSig = await fetchText(`${snapshot}${signature.SIG_SUFFIX}`);
+    if (!signature.verify(consistent, consistentSig)) {
+      throw new Error(`${name}: signature does not match the catalog's key`);
+    }
+    JSON.parse(consistent);
+    return consistent;
   }
 
   async refresh() {
