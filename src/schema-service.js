@@ -103,7 +103,9 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
     const healed = [];
     try {
       const st = patcher.state(game, patcher.FOLDER);
-      if (!st.patched || !st.signed) {
+      // an install with no signature list has nothing to sign the patch into, so an unsigned
+      // patch there is finished rather than half-done (Linux; see patcher.state)
+      if (!st.patched || (st.signable && !st.signed)) {
         patcher.apply({ gamePath: game, folder: patcher.FOLDER, backupDir });
         healed.push('patch');
       }

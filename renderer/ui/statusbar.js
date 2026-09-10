@@ -49,7 +49,10 @@ export function paintSafeModeSwitch() {
   // something needs attention: the patch fell off, the schema is stale, two mods want the
   // same item, or another patcher is already in gameinfo — a dot, checked only when unsafe
   const st = state.patchState;
-  const trouble = !safe && st && (st.stale || !st.patched || !st.signed || (st.conflicts || []).length || st.foreign);
+  // `signable` is false where the game ships no signature list at all, which is every Linux
+  // install: an unsigned patch there is the finished state, not a warning
+  const trouble = !safe && st && (st.stale || !st.patched || (st.signable && !st.signed)
+    || (st.conflicts || []).length || st.foreign);
   btn.classList.toggle('trouble', !!trouble);
 }
 

@@ -237,12 +237,19 @@ function stripSignatures(text) {
 
 /**
  * What the install looks like right now.
- * @returns {{ patched: boolean, signed: boolean, folder: string|null, foreign: string|null }}
+ *
+ * `signable` says whether this installation has a signature list at all. Valve's Linux build
+ * ships no `dota.signatures`, so on Linux there is nothing to sign the patch into and nothing
+ * to check it against - which is not the same as an unsigned patch, and callers have to tell
+ * the two apart or a Linux user gets a permanent warning about a file that was never there.
+ *
+ * @returns {{ patched: boolean, signed: boolean, signable: boolean, folder: string|null, foreign: string|null, vanillaOk: boolean }}
  */
 function state(gamePath, folder) {
   const p = paths(gamePath);
-  const out = { patched: false, signed: false, folder: null, foreign: null, vanillaOk: true };
-  if (!fs.existsSync(p.branch) || !fs.existsSync(p.signatures)) return out;
+  const out = { patched: false, signed: false, signable: false, folder: null, foreign: null, vanillaOk: true };
+  if (!fs.existsSync(p.branch)) return out;
+  out.signable = fs.existsSync(p.signatures);
   const branch = fs.readFileSync(p.branch, 'latin1');
   if (branch.includes(MARKER)) {
     out.patched = true;
@@ -251,6 +258,9 @@ function state(gamePath, folder) {
   for (const name of KNOWN_FOREIGN) {
     if (new RegExp(`^\\s*(Game|Mod)\\s+${name}\\s*$`, 'm').test(branch)) out.foreign = name;
   }
+  // Without a list there is nothing to sign into and nothing to compare against. The patch
+  // itself is the whole job on such an install.
+  if (!out.signable) return out;
   const sigText = fs.readFileSync(p.signatures, 'latin1');
   if (out.patched) {
     const want = signatureLine(fs.readFileSync(p.branch));
@@ -316,25 +326,32 @@ function writeAtomic(file, buf) {
  */
 function apply({ gamePath, folder, backupDir }) {
   const p = paths(gamePath);
-  for (const f of [p.gameinfo, p.branch, p.signatures]) {
+  /* The two files every Dota install has. `dota.signatures` is not one of them: Valve's Linux
+     build ships `bin/linuxsteamrt64/` without it, and requiring it here meant a Linux user
+     pressing "safe mode off" got "dota.signatures not found" and no way forward. Reported with
+     a photo of that folder, which has the client, forty shared libraries and no list. */
+  for (const f of [p.gameinfo, p.branch]) {
     if (!fs.existsSync(f)) throw new Error(t('Не найден {0}', f));
   }
-  const want = vanillaBranchHashes(fs.readFileSync(p.signatures, 'latin1'));
+  const hasList = fs.existsSync(p.signatures);
+  const want = hasList ? vanillaBranchHashes(fs.readFileSync(p.signatures, 'latin1')) : null;
   const good = (text) => matchesVanilla(restoreBranch(text, want).text, want);
   backupOnce(p.branch, backupDir, (t) => restoreBranch(t, want).text, (t) => t.includes(MARKER), good);
-  backupOnce(p.signatures, backupDir, stripSignatures, hasSignaturePatch);
+  if (hasList) backupOnce(p.signatures, backupDir, stripSignatures, hasSignaturePatch);
 
   // Always start from the pristine copies so patches never stack. A backup that somehow
   // carries our edit is cleaned rather than refused - the user has nothing to fix by hand.
   const branchOrig = restoreBranch(fs.readFileSync(path.join(backupDir, path.basename(p.branch) + '.orig'), 'latin1'), want).text;
-  const sigOrig = stripSignatures(fs.readFileSync(path.join(backupDir, path.basename(p.signatures) + '.orig'), 'latin1'));
 
   const block = withModFolder(searchPathsBlock(fs.readFileSync(p.gameinfo, 'latin1')), folder);
   const branchBuf = Buffer.from(patchedBranch(branchOrig, block), 'latin1');
   writeAtomic(p.branch, branchBuf);
 
-  const line = signatureLine(branchBuf);
-  writeAtomic(p.signatures, Buffer.from(sigOrig.replace(/\s+$/, '') + '\r\n' + line + '\r\n', 'latin1'));
+  if (hasList) {
+    const sigOrig = stripSignatures(fs.readFileSync(path.join(backupDir, path.basename(p.signatures) + '.orig'), 'latin1'));
+    const line = signatureLine(branchBuf);
+    writeAtomic(p.signatures, Buffer.from(sigOrig.replace(/\s+$/, '') + '\r\n' + line + '\r\n', 'latin1'));
+  }
 
   fs.mkdirSync(path.join(gamePath, folder), { recursive: true });
   return state(gamePath, folder);

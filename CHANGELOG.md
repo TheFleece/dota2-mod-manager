@@ -2,6 +2,32 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.9
+
+### Safe mode can be switched off on Linux
+
+It could not before. Pressing the switch answered `dota.signatures not found` and stopped there,
+which meant no mod could be loaded by the game at all on Linux.
+
+The file it was looking for does not exist there. On Windows the client keeps a list of hashes in
+`bin/win64/dota.signatures` and checks the files it loads against it, so this app has to write its
+own line into that list. Valve's Linux build ships `bin/linuxsteamrt64/` with the client, forty
+shared libraries and no list at all, and the app treated that as a broken installation rather than
+as a different one.
+
+Nothing about it needs signing on Linux, so the patch is simply written and that is the whole job.
+The switch also stops showing a warning dot for a list that was never there, and the app stops
+re-applying a patch it thought had failed.
+
+Reported with a photograph of the folder, which is what made it obvious.
+
+### Updates have a second source on Linux too
+
+They were supposed to since 2.6.5, and for Linux they never did: the mirror was filled before the
+Linux build existed, so it carried the Windows files and nothing else. Four releases went out that
+way. Both Linux files are on it now, and a release that leaves any of the six behind fails loudly
+instead of quietly.
+
 ## 2.6.8
 
 ### A preset someone shared with you finishes

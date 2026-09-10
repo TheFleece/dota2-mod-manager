@@ -1503,8 +1503,13 @@ function state(gamePath, folder)
 
 What the install looks like right now.
 
+`signable` says whether this installation has a signature list at all. Valve's Linux build
+ships no `dota.signatures`, so on Linux there is nothing to sign the patch into and nothing
+to check it against - which is not the same as an unsigned patch, and callers have to tell
+the two apart or a Linux user gets a permanent warning about a file that was never there.
+
 ```
-@returns {{ patched: boolean, signed: boolean, folder: string|null, foreign: string|null }}
+@returns {{ patched: boolean, signed: boolean, signable: boolean, folder: string|null, foreign: string|null, vanillaOk: boolean }}
 ```
 
 ### `apply`
