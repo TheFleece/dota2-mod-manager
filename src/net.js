@@ -180,7 +180,17 @@ async function fetchMirrored(url, { small = false, trustedOnly = false, headers 
       }
     }
   }
-  throw last || new Error('no mirror answered');
+  /* Say which kind of failure this was, so the interface can say something a player
+   * understands. "fetch failed" is what Node calls being unable to open a socket, and it is
+   * what the catalog screen printed at somebody who had simply turned their wifi off.
+   *
+   * Every mirror having failed to connect is one thing (no network, or all of them blocked
+   * at once, which for this userbase is the same afternoon). A mirror answering with an HTTP
+   * status is another, and the app should not tell that person to check their connection.
+   */
+  const err = last || new Error('no mirror answered');
+  err.offline = !/HTTP \d/.test(String(err.message || ''));
+  throw err;
 }
 
 /** Text from the first mirror that answers (catalog JSON, fingerprint map). */

@@ -653,6 +653,10 @@ const EN = {
   'Обновляю каталог…': 'Refreshing the catalog…',
   'Каталог обновлён': 'Catalog updated',
   'Каталог не обновился, показан последний загруженный': 'Could not update the catalog, showing the last one downloaded',
+  'Нет соединения с интернетом': 'No internet connection',
+  'Каталог сейчас недоступен': 'The catalog is unavailable right now',
+  'Моды, которые уже стоят, работают. Каталог появится, как только связь вернётся.': 'The mods you already have keep working. The catalog will be here as soon as you are back online.',
+  'Моды, которые уже стоят, работают. Попробуй ещё раз через минуту.': 'The mods you already have keep working. Try again in a minute.',
   'Часть превью не загрузилась. Проверь интернет — каталог и моды работают': 'Some previews did not load. Check your connection - the catalog and the mods still work',
 
   // ---------- thanks ----------

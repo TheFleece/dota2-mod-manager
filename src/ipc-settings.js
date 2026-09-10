@@ -92,7 +92,11 @@ function registerSettingsIpc({
     try {
       return await catalog.load({ forceRefresh: !!force });
     } catch (err) {
-      return { error: String(err.message || err) };
+      /* The kind of failure travels with the words. "fetch failed" is Node's way of saying it
+         could not open a socket, and printing that at somebody who turned their wifi off is
+         the same as printing nothing. src/net.js marks a failure to connect; the screen turns
+         that into a sentence and keeps the technical half for the diagnostics report. */
+      return { error: String(err.message || err), offline: !!err.offline };
     }
   });
 }

@@ -393,10 +393,26 @@ async function renderCatalog() {
     return;
   }
   if (state.catalog.error) {
+    /* Two failures that need different sentences.
+     *
+     * Not being able to open a socket is what happens when the wifi is off or the whole route
+     * to the catalog is blocked, and it used to print "fetch failed" - Node's words, at a
+     * player, on the screen where the mods should be. Anything else is a server that answered
+     * with something, and telling that person to check their connection sends them to fix
+     * what is not broken.
+     *
+     * Either way the app itself is fine and the mods already installed are still installed,
+     * which is the part worth saying out loud on an otherwise empty screen. */
+    const offline = state.catalog.offline;
     await paint(() => { viewRoot.innerHTML = `
-      <div class="empty-note">
-        ${L`Не удалось загрузить каталог: ${esc(state.catalog.error)}`}<br><br>
+      <div class="empty-note offline-note">
+        <span class="ms offline-icon">${offline ? 'wifi_off' : 'cloud_off'}</span>
+        <b>${offline ? L`Нет соединения с интернетом` : L`Каталог сейчас недоступен`}</b>
+        <span>${offline
+          ? L`Моды, которые уже стоят, работают. Каталог появится, как только связь вернётся.`
+          : L`Моды, которые уже стоят, работают. Попробуй ещё раз через минуту.`}</span>
         <button class="btn btn-primary" id="retryCat">${L`Повторить`}</button>
+        <span class="offline-detail">${esc(state.catalog.error)}</span>
       </div>`; });
     $('#retryCat').addEventListener('click', () => loadCatalog(true));
     return;

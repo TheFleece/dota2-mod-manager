@@ -274,6 +274,28 @@
   grid-column: 1 / -1;
 }
 
+/* The screen somebody sees instead of the catalog when the network is gone.
+   It used to be one line of Node's own words; this is the same note with room to say what
+   still works, because an empty grid with "fetch failed" on it reads as a broken app. */
+.offline-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 64px 24px;
+}
+.offline-note b { color: var(--text); font-size: 17px; }
+.offline-note > span { max-width: 46ch; line-height: 1.5; }
+.offline-icon { font-size: 44px; opacity: 0.5; }
+.offline-note .btn { margin-top: 6px; }
+/* The technical half stays on screen for a bug report, and out of the way of everyone else. */
+.offline-detail {
+  margin-top: 8px;
+  font-size: 11px;
+  opacity: 0.45;
+  user-select: text;
+}
+
 /* ============ Preview badge on cards ============ */
 .mtag-play {
   position: absolute;

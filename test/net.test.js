@@ -230,3 +230,33 @@ test('every file the app expects from our own mirror is a file the site actually
     );
   }
 });
+
+/*
+ * Which failure this was, so the catalog screen can say something a player understands.
+ *
+ * It used to print "fetch failed" - Node's words for being unable to open a socket - at
+ * somebody whose wifi was off, on the screen where the mods should be. Telling those two
+ * apart is the whole job: send the person with no connection to check their connection, and
+ * do not send that message to the person whose connection is fine and whose server answered.
+ */
+test('a network that is not there is marked as such', async (t) => {
+  net.setMirrors([{ host: '127.0.0.1:1', map: () => 'http://127.0.0.1:1/x.json' }]);
+  t.after(() => net.setMirrors(null));
+
+  const err = await net.fetchText(`${RAW_HOST}owner/repo/main/x.json`).then(() => null, (e) => e);
+  assert.ok(err, 'a dead host has to fail');
+  assert.equal(err.offline, true, 'nothing answered at all, so the connection is the thing to mention');
+});
+
+test('a server that answered is not called a missing connection', async (t) => {
+  const server = http.createServer((req, res) => { res.writeHead(500); res.end('nope'); });
+  server.listen(0, '127.0.0.1');
+  await new Promise((r) => server.on('listening', r));
+  const port = server.address().port;
+  net.setMirrors([{ host: `127.0.0.1:${port}`, map: () => `http://127.0.0.1:${port}/x.json` }]);
+  t.after(() => { server.close(); net.setMirrors(null); });
+
+  const err = await net.fetchText(`${RAW_HOST}owner/repo/main/x.json`).then(() => null, (e) => e);
+  assert.ok(err, 'a 500 from every mirror is still a failure');
+  assert.equal(err.offline, false, 'the wifi is fine; saying otherwise sends somebody to fix nothing');
+});
