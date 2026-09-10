@@ -157,6 +157,21 @@ to happen in.
 *Check:* `src/catalog-signature.js`, `test/catalog-signature.test.js`, and the catalog's own
 `.github/workflows/update-catalog.yml`, where one `git add` stages the data and the signatures.
 
+### The switches this project can pull are signed too, and a failed check ignores them
+
+`config/app.json` can turn a feature off after a release and put a notice in front of everyone
+who opens the app, and it travels the same public proxies as everything else. It is signed with a
+key of this project's own, pinned in `src/remote-config.js`.
+
+A copy that does not verify is treated as no file at all, which is what that module already does
+with every other failure. Refusing to start would be the wrong trade: the worst an attacker gets
+from breaking the signature is that the notices stop arriving, and dropping the request achieved
+that already. What they no longer get is to put words on the screen in this project's name.
+
+*Check:* `test/remote-config-signature.test.js`, which fails the build when the committed file
+and its signature disagree - the failure an unsigned edit would otherwise cause in silence, on
+the day somebody reached for a switch and it did not work.
+
 ### Nothing is collected, and that is enforced by review rather than by a setting
 
 There is no telemetry, no analytics, no crash reporting and no opt-out to configure, because
@@ -205,18 +220,6 @@ against the Linux one. Windows-only code can therefore lose its last test withou
 moving.
 
 *Check:* `.github/workflows/test.yml`, and the `test:coverage` script in `package.json`.
-
-### `config/app.json` is read without verifying who wrote it
-
-The catalog itself has been signed since 2026-09-10, but this file has not. It is this project's
-own, it carries the remote notices and the switches that can turn a feature off after a release,
-and it travels the same public proxies as everything else. A proxy operator can rewrite it, which
-means switching a feature off for people or showing them a notice over this project's name.
-
-Nobody else has to act for this one: both halves of the key would be ours, and the crypto is
-written and tested. It is not done.
-
-*Check:* `src/remote-config.js` - the fetch has no verification step of any kind.
 
 ### The newest mods are still trusted on first sight
 
@@ -302,7 +305,7 @@ Each of these has arrived in a review. Each is answered by one command.
 | "The state files in the root are why the repository is 61 MB" | All four generated JSON files together are 1.55 MB of the pack. The preview images are 46.7 MB | the command under the open question above |
 | "It is a Windows-only app" | Every release since 2.4.0 also carries a Linux AppImage | `gh release view --json assets` |
 | "`main` is unprotected" | It is guarded by a ruleset, which the branch-protection endpoint does not report | `gh api repos/TheFleece/dota2-mod-manager/rulesets` |
-| "There are 25 test files" | 37 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
+| "There are 25 test files" | 38 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
 | "An open issue asks for tests that already exist" | Issue #4 was closed on 2026-09-08 when that was pointed out. `#5`, `#6` and `#7` are open and really are open | `gh issue list --state open` |
 
 ---

@@ -101,19 +101,28 @@ test('versions compare by number, not by string', () => {
 test('a fetched file is used and kept; a missing one changes nothing', async (t) => {
   const dir = userDir(t);
   const payload = JSON.stringify({ features: { voice: { off: true, en: 'voices are off today' } } });
+  // The config is signed, so the fixture has to be too. The real private key is not in this
+  // repository, which is the point of it, so the test makes a key of its own and tells the
+  // module to accept that one instead.
+  const crypto = require('crypto');
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
+  const signature = crypto.sign(null, Buffer.from(payload), privateKey).toString('base64');
+  const pub = publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
   let serve404 = false;
   const server = http.createServer((req, res) => {
     if (serve404) { res.writeHead(404); res.end('no'); return; }
-    res.writeHead(200, { 'content-length': Buffer.byteLength(payload) });
-    res.end(payload);
+    const body = req.url.endsWith('.sig') ? signature : payload;
+    res.writeHead(200, { 'content-length': Buffer.byteLength(body) });
+    res.end(body);
   });
   server.listen(0, '127.0.0.1');
   await new Promise((r) => server.on('listening', r));
   t.after(() => { server.close(); net.setMirrors(null); });
   const port = server.address().port;
-  net.setMirrors([{ host: `127.0.0.1:${port}`, map: () => `http://127.0.0.1:${port}/config.json` }]);
+  // the signature keeps its own address, or the module would ask for it and be handed the data
+  net.setMirrors([{ host: `127.0.0.1:${port}`, map: (u) => `http://127.0.0.1:${port}/config.json${u.endsWith('.sig') ? '.sig' : ''}` }]);
 
-  const cfg = make(dir);
+  const cfg = createRemoteConfig({ userDataDir: dir, appVersion: () => '2.0.0', publicKey: pub });
   await cfg.refresh();
   assert.equal(cfg.feature('voice').off, true);
   assert.ok(fs.existsSync(path.join(dir, 'remote-config.json')), 'kept for the next start');

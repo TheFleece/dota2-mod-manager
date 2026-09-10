@@ -52,6 +52,9 @@ const MIRRORED = {
   'h6rd/Dota2PornFxWeb/main/assets/data/constants.json': 'constants.json',
   'h6rd/Dota2PornFxWeb/main/assets/data/guides.json': 'guides.json',
   'TheFleece/dota2-mod-manager/main/fingerprints.json': 'fingerprints.json',
+  // the switches and notices, which matter most on the day GitHub is the thing that is down
+  'TheFleece/dota2-mod-manager/main/config/app.json': 'app.json',
+  'TheFleece/dota2-mod-manager/main/config/app.json.sig': 'app.json.sig',
   // and the signatures, or this mirror stops being one the day the catalog's key is pinned:
   // a data file whose signature cannot be fetched is a data file the app refuses.
   'h6rd/Dota2PornFxWeb/main/assets/signatures/mods.json.sig': 'mods.json.sig',

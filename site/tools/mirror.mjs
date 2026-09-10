@@ -43,6 +43,8 @@ const SOURCES = [
   ['mod-hashes.json', `${CATALOG}mod-hashes.json`],
   ['mod-hashes.json.sig', `${SIGNATURES}mod-hashes.json.sig`],
   ['fingerprints.json', 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/fingerprints.json'],
+  ['app.json', 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/config/app.json'],
+  ['app.json.sig', 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/config/app.json.sig'],
 ];
 
 async function one(name, url) {

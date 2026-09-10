@@ -22,8 +22,31 @@
 const fs = require('fs');
 const path = require('path');
 const { fetchText } = require('./net');
+const { verify } = require('./catalog-signature');
 
 const CONFIG_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/config/app.json';
+/** The signature, always the config's own address with .sig on the end. */
+const CONFIG_SIG_URL = `${CONFIG_URL}.sig`;
+
+/* This file is signed, and by us rather than by the catalog's author.
+ *
+ * It travels the same public proxies as everything else (see net.js), and it is the file that
+ * can switch a feature off after a release and put a notice in front of people. A proxy
+ * operator rewriting it means taking a feature away from somebody, or saying something in this
+ * project's name. Both halves of this key are ours, so unlike the catalog there was nobody to
+ * wait for.
+ *
+ * A failed check is treated as no file at all, which is what the rest of this module already
+ * does with every other kind of failure. That is not a weaker choice than refusing to start:
+ * the worst an attacker gets from breaking the signature is that the notices stop arriving,
+ * and they could already do that by dropping the request. What they no longer get is to put
+ * words on the screen.
+ *
+ * Signed with tools/sign-catalog.js. The private half is not in this repository and never will
+ * be; test/remote-config-signature.test.js fails the build if the committed file and its
+ * signature ever stop agreeing.
+ */
+const CONFIG_PUBLIC_KEY = 'MCowBQYDK2VwAyEA8M9IOVLfxK6V1n2fHAHlE9zzCsXFoUAJki8RdqLPBdA=';
 // What the app is willing to be told to switch off. A name that is not on this list is
 // ignored: a typo in the config must not disable something at random, and this list is the
 // contract between the file and the code that honours it.
@@ -79,7 +102,15 @@ function normalize(raw) {
  * @param {() => string} deps.appVersion   so a notice can be aimed at the builds it is about
  * @param {(msg: string) => void} [deps.log]
  */
-function createRemoteConfig({ userDataDir, appVersion, log = () => {} }) {
+/**
+ * @param {object} opts
+ * @param {string} opts.userDataDir  where the last good copy is kept between starts
+ * @param {() => string} opts.appVersion  used to decide which notices apply
+ * @param {(msg: string) => void} [opts.log]
+ * @param {string} [opts.publicKey]  whose signature to accept; the pinned one unless a test
+ *   wants to sign its own fixture, which it cannot do with a private key that is not here
+ */
+function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey = CONFIG_PUBLIC_KEY }) {
   const file = path.join(userDataDir, 'remote-config.json');
   let cache = null;
 
@@ -93,6 +124,8 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {} }) {
   async function refresh() {
     try {
       const text = await fetchText(CONFIG_URL);
+      const sig = await fetchText(CONFIG_SIG_URL);
+      if (!verify(text, sig, publicKey)) throw new Error('signature does not match');
       const parsed = normalize(JSON.parse(text));
       fs.writeFileSync(file, JSON.stringify(parsed, null, 2));
       cache = parsed;
@@ -128,4 +161,4 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {} }) {
   return { refresh, feature, notices, url: CONFIG_URL, SWITCHABLE };
 }
 
-module.exports = { createRemoteConfig, normalize, cmpVersion, SWITCHABLE, CONFIG_URL };
+module.exports = { createRemoteConfig, normalize, cmpVersion, SWITCHABLE, CONFIG_URL, CONFIG_SIG_URL, CONFIG_PUBLIC_KEY };
