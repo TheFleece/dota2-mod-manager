@@ -631,12 +631,51 @@ function setupAutoUpdate() {
   autoUpdater.on('update-downloaded', (info) => {
     if (win && !win.isDestroyed()) win.webContents.send('update', { type: 'downloaded', version: info.version });
   });
+  /* When GitHub is not answering, ask our own copy.
+   *
+   * electron-updater is told one feed at build time and this one is GitHub. On 2026-08-17
+   * GitHub was down for three hours, which meant no installed copy could check for an update
+   * or fetch one, and nobody noticed, because an app that fails to update looks like an app.
+   * It is the release that fixes something urgent where that stops being survivable. The same
+   * goes for the part of the userbase that cannot reach GitHub on an ordinary day.
+   *
+   * tools/r2-release.mjs puts each release's manifests and binaries in the bucket the mods
+   * already live in, so the fallback is a generic feed pointed at it. Tried second and only
+   * after a failure: GitHub is the origin, this is a copy, and a copy that is a version behind
+   * should not be what people update from while the origin works.
+   *
+   * Not a proxy. Both feeds are hosts this project controls, which is what makes it safe to
+   * install what they hand over - the same reason src/portable-update.js refuses mirrors for
+   * its manifest.
+   */
+  const MIRROR_FEED = 'https://cdn.dota2modmanager.com/updates/';
+  let triedMirror = false;
+
   // Silent for the user - being offline is not something to interrupt anybody about - but
   // remembered, because "it never updates" is a support question and this is the answer to it.
-  autoUpdater.on('error', (err) => { lastUpdateError = String(err?.message || err).slice(0, 500); });
+  autoUpdater.on('error', (err) => {
+    lastUpdateError = String(err?.message || err).slice(0, 500);
+    if (triedMirror) return;
+    triedMirror = true;
+    diag(`update check failed on GitHub, trying the mirror: ${lastUpdateError}`);
+    try {
+      autoUpdater.setFeedURL({ provider: 'generic', url: MIRROR_FEED });
+      autoUpdater.checkForUpdates().catch(() => {});
+    } catch (e) {
+      diag(`update mirror unusable: ${e.message || e}`);
+    }
+  });
   autoUpdater.checkForUpdates().catch(() => {});
   // re-check every 4 hours while the app is open
-  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
+  // Four-hourly, and each round starts at GitHub again: the mirror is for the hours it is down,
+  // not a place to settle into.
+  setInterval(() => {
+    if (triedMirror) {
+      triedMirror = false;
+      try { autoUpdater.setFeedURL({ provider: 'github', owner: 'TheFleece', repo: 'dota2-mod-manager' }); } catch { /* keep whatever it has */ }
+    }
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 4 * 60 * 60 * 1000);
 }
 
 app.on('window-all-closed', () => app.quit());

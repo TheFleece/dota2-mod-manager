@@ -98,6 +98,27 @@ jobs:
           done
           echo "one release, it is the latest, and it carries the installer and the manifest"
 
+      # A second place to get the update from.
+      #
+      # Until now the app updated out of GitHub Releases and nowhere else, so during the outage
+      # on 2026-08-17 no installed copy could check for an update, let alone fetch one. Nobody
+      # noticed, because an app that fails to update looks like an app; it becomes visible on
+      # the day a release fixes something urgent.
+      #
+      # Only the current version is kept there, so this costs about 320 MB of the bucket rather
+      # than 320 MB per release for ever. Old versions stay on GitHub, which is where anybody
+      # looking for one goes. A failure here does not fail the release: the update is published,
+      # and a mirror that is a version behind is a worse mirror rather than a broken release.
+      - name: Publish the release to the update mirror
+        continue-on-error: true
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: node tools/r2-release.mjs "${TAG#v}"
+
   # Linux ships from the same tag, and after the Windows job rather than beside it.
   # electron-builder creates a release when it finds none, and two builds creating one for the
   # same tag is exactly what left 2.2.0 with its update file on a second page. By the time this

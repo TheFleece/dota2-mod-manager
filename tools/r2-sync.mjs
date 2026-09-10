@@ -54,77 +54,14 @@ const FIRST = ['heroes', 'terrains', 'shaders', 'trees', 'river', 'backgrounds',
   'creeps', 'cursors', 'mega-kill', 'announcers', 'hero-sounds', 'couriers', 'wards'];
 
 import { iterMods } from './catalog-mods.js';
+import { createR2 } from './r2-client.js';
 
-const host = `${ACCOUNT}.r2.cloudflarestorage.com`;
-const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
-const hmac = (k, s) => crypto.createHmac('sha256', k).update(s).digest();
-/* RFC 3986, not encodeURIComponent.
- *
- * SigV4 hashes a canonical request that contains the encoded path, and S3 builds its own copy
- * of that string from what arrives. encodeURIComponent leaves ! ' ( ) * alone; S3 percent-
- * encodes them, so the two strings differ and the request comes back 403 SignatureDoesNotMatch.
- * One mod in the catalog is called "Techies Bismillah Blast Off!.zip" and it had never once
- * been mirrored.
- */
-const rfc3986 = (segment) => encodeURIComponent(segment)
-  .replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
-const encodePath = (key) => '/' + key.split('/').map(rfc3986).join('/');
-
-/** SigV4, all of it. R2 wants region "auto" and service "s3". */
-function sign({ method, key, payloadHash, headers = {}, query = '' }) {
-  const stamp = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
-  const date = stamp.slice(0, 8);
-  const all = { host, 'x-amz-content-sha256': payloadHash, 'x-amz-date': stamp, ...headers };
-  const names = Object.keys(all).map((n) => n.toLowerCase()).sort();
-  const canonicalHeaders = names
-    .map((n) => `${n}:${String(all[Object.keys(all).find((k) => k.toLowerCase() === n)]).trim()}\n`)
-    .join('');
-  const signedHeaders = names.join(';');
-  const canonical = [method, encodePath(key), query, canonicalHeaders, signedHeaders, payloadHash].join('\n');
-  const scope = `${date}/auto/s3/aws4_request`;
-  const toSign = ['AWS4-HMAC-SHA256', stamp, scope, sha(canonical)].join('\n');
-  const signingKey = hmac(hmac(hmac(hmac(`AWS4${SECRET}`, date), 'auto'), 's3'), 'aws4_request');
-  const signature = hmac(signingKey, toSign).toString('hex');
-  return {
-    ...all,
-    Authorization: `AWS4-HMAC-SHA256 Credential=${KEY}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
-  };
-}
-
-const endpoint = (key, query) => `https://${host}${encodePath(key)}${query ? `?${query}` : ''}`;
-
-/** What is already in the bucket, so a second run is cheap. */
-async function listBucket() {
-  const have = new Map();
-  let token = '';
-  do {
-    const q = new URLSearchParams({ 'list-type': '2', 'max-keys': '1000' });
-    if (token) q.set('continuation-token', token);
-    q.sort();
-    const query = q.toString();
-    const headers = sign({ method: 'GET', key: BUCKET, payloadHash: sha(''), query });
-    const res = await fetch(endpoint(BUCKET, query), { headers });
-    const xml = await res.text();
-    if (!res.ok) throw new Error(`list: HTTP ${res.status} ${xml.slice(0, 300)}`);
-    for (const m of xml.matchAll(/<Key>([^<]+)<\/Key>[\s\S]*?<Size>(\d+)<\/Size>/g)) {
-      have.set(m[1], Number(m[2]));
-    }
-    token = (xml.match(/<NextContinuationToken>([^<]+)</) || [])[1] || '';
-  } while (token);
-  return have;
-}
-
-async function put(objectKey, body, type) {
-  const key = `${BUCKET}/${objectKey}`;
-  const headers = sign({
-    method: 'PUT',
-    key,
-    payloadHash: sha(body),
-    headers: { 'content-type': type, 'content-length': String(body.length) },
-  });
-  const res = await fetch(endpoint(key), { method: 'PUT', headers, body });
-  if (!res.ok) throw new Error(`put ${objectKey}: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
-}
+/* The bucket, and SigV4 with it, live in tools/r2-client.js: the release assets need the same
+   signing and a second copy of eighty lines of crypto is how the catalog walk in this very file
+   came to be the one of three that was wrong. */
+const r2 = createR2({ bucket: BUCKET });
+const listBucket = () => r2.list();
+const put = (objectKey, body, type) => r2.put(objectKey, body, type);
 
 // ---------------------------------------------------------------------------
 
