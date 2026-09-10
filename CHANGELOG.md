@@ -2,6 +2,39 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.6
+
+### Mods that would not install now install
+
+2.6.5 started checking every archive against the checksum its author publishes, and refused
+anything that did not match. Two things then went wrong on the same day, and between them they
+took mods away from people who had done nothing.
+
+One mirror was serving old copies. The job that fills it skipped any file already there under
+the same name, so a mod its author had replaced kept its old bytes for as long as the name
+stayed the same. Twenty-four of them, one since August. Anybody who cannot reach GitHub is
+served from that mirror first, got the old file, and the check said no.
+
+And the check said no was the end of it. A download stopped at the first mirror that disagreed,
+while three others holding the current file were never asked. That is now the other way round: a
+wrong checksum costs that mirror its turn and the next one is asked. All twenty-four mirrored
+copies have been replaced as well.
+
+The list itself can also be wrong. It is rebuilt by a bot, and on 10 September it named a hash
+for one mod that no copy of that file has ever had - so that mod was refused for everybody,
+whatever their connection. When nothing matches, the app now takes what the catalog's own host
+serves rather than refusing a mod over a list that has not caught up. What a mirror hands over
+still has to match: none of them can give you bytes that GitHub did not.
+
+The app's own updates and the toolchain behind item icons are held to their checksums exactly as
+before. Those are pinned here, and a mismatch there is the thing being guarded against.
+
+### And it says so in your own language
+
+A refused download used to report itself as `checksum mismatch for Some Mod.zip`, in English, in
+the middle of a Russian interface. It now says the file does not match what the mod's author
+published and to try later.
+
 ## 2.6.5
 
 ### The app keeps working when GitHub does not

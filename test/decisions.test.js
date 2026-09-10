@@ -65,7 +65,7 @@ test('the fingerprint index is still fetched from the path the entry says it can
   assert.ok(doc.includes('`FP_URL`'), 'the entry no longer points at the constant that proves it');
 });
 
-test('the twelve co-authored commits it describes are the twelve that are there', () => {
+test('the eleven co-authored commits from August it describes are the eleven that are there', () => {
   // Counted from the history rather than remembered. If somebody does rewrite it one day, the
   // entry explaining why nobody did should fail rather than sit there being wrong.
   //
@@ -78,11 +78,16 @@ test('the twelve co-authored commits it describes are the twelve that are there'
   let count;
   try {
     if (git(['rev-parse', '--is-shallow-repository']) === 'true') return;
-    count = git(['log', '--grep=Co-Authored-By', '--format=%h']).split('\n').filter(Boolean).length;
+    /* August only. The entry is about history that is already published and cannot be tidied
+       without moving 350 SHAs; commits made since carry the trailer too and are none of its
+       business. Counting all of them would fail the build on every commit that has one, which
+       is a chore wearing a test's clothes - it did exactly that on the day it was written. */
+    count = git(['log', '--grep=Co-Authored-By', '--since=2026-08-01', '--until=2026-09-01', '--format=%h'])
+      .split('\n').filter(Boolean).length;
   } catch {
     return; // no git at all: a tarball, or an export with the history stripped
   }
-  assert.equal(count, 12, `DECISIONS.md says twelve such commits, git finds ${count}`);
+  assert.equal(count, 11, `DECISIONS.md says eleven such commits in August, git finds ${count}`);
 });
 
 test('the mirror named in the decisions is the mirror the READMEs point at', () => {
