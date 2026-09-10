@@ -13,7 +13,7 @@ const { t } = require('./i18n');
 
 /** @param {object} ctx  the services and main-process callbacks these channels use */
 function registerModsIpc({
-  applyMasterToCursors, catalog, diag, disableOtherCursors, fingerprints, importVpkBuffers, importVpkPaths, installer, isCursorRecord, library, refreshPresence, schemaService, sendProgress, verifyStuck, win,
+  applyMasterToCursors, blocked, catalog, diag, disableOtherCursors, fingerprints, importVpkBuffers, importVpkPaths, installer, isCursorRecord, library, refreshPresence, schemaService, sendProgress, verifyStuck, win,
 }) {
   // `win` arrives as a getter, not as the window. These are registered before the window
   // is created, so a value captured here would be undefined forever - which is exactly

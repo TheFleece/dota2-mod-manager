@@ -41,6 +41,7 @@ const { uninstallFlow } = require('./src/uninstall-window');
 const { presetsService } = require('./src/presets-service');
 const { registerPresetsIpc } = require('./src/ipc-presets');
 const { registerModsIpc } = require('./src/ipc-mods');
+const { createGate } = require('./src/feature-gate');
 const { registerLibraryIpc } = require('./src/ipc-library');
 const { registerPacksIpc } = require('./src/ipc-packs');
 const { registerWindowIpc } = require('./src/ipc-window');
@@ -1246,11 +1247,15 @@ function registerIpc() {
     win: () => win,
   });
 
+  // One gate, handed to both of the modules that guard a channel with it. Two copies is how
+  // installing broke: the call went to one file and the helper stayed in the other.
+  const blocked = createGate({ remoteConfig, settings });
+
   // ----- install/manage ----- (src/ipc-mods.js)
   registerModsIpc({
-    applyMasterToCursors, catalog, diag, disableOtherCursors, fingerprints, importVpkBuffers,
-    importVpkPaths, installer, isCursorRecord, library, refreshPresence, schemaService,
-    sendProgress, win: () => win,
+    applyMasterToCursors, blocked, catalog, diag, disableOtherCursors, fingerprints,
+    importVpkBuffers, importVpkPaths, installer, isCursorRecord, library, refreshPresence,
+    schemaService, sendProgress, win: () => win,
     // read late: Steam's verify rewrites this while the app is running
     verifyStuck: () => verifyStuck,
   });
@@ -1271,8 +1276,8 @@ function registerIpc() {
 
   // ----- what the app was told from the network ----- (src/ipc-game.js)
   registerGameIpc({
-    diag, dotaIsRunning, gameIcons, icons, library, modPreviews, remoteConfig, repairAfterPatch,
-    schemaService, settings, toolchain,
+    blocked, diag, dotaIsRunning, gameIcons, icons, library, modPreviews, remoteConfig,
+    repairAfterPatch, schemaService, settings, toolchain,
     patchRepair: () => patchRepair,
     setPatchRepair,
   });

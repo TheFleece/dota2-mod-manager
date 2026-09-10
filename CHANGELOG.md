@@ -2,6 +2,26 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.7
+
+### Installing a mod works again
+
+It did not in 2.6.5 or 2.6.6. Pressing Install did nothing at all: the button sat on
+"Installing…", no progress, no error, and nothing was ever written. Every mod, everybody.
+
+The handler behind that button checks one thing before it starts - whether installing has been
+switched off from our side, which it never has been. When the process code was split into files
+on 6 September, that check moved to one file and the function it calls stayed in another. It
+threw on the first line, before anything was downloaded, and the window went on waiting for an
+answer that was never coming.
+
+Nothing was damaged by it. No file was written, no mod half-installed. The button was lying
+about being busy.
+
+The check now lives in one place that both files are handed, and the tests here register every
+one of these handlers for real and call it, instead of reading the files as text and finding
+the names all present.
+
 ## 2.6.6
 
 ### Mods that would not install now install

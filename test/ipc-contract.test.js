@@ -121,3 +121,66 @@ test('the channels are worth counting, so a silent emptying of this test is visi
   assert.ok(found.size > 80, `expected 80+ handlers, found ${found.size}`);
   assert.ok(exposed().size > 80, `expected 80+ exposed channels, found ${exposed().size}`);
 });
+
+/*
+ * And that the handler can actually run.
+ *
+ * Everything above reads these files as text. Text is how `blocked is not defined` survived
+ * two releases: splitting registerIpc moved the call to `blocked('install')` into ipc-mods.js
+ * and left the helper behind in ipc-game.js, so every channel name lined up, every module was
+ * wired in, and `mods:install` threw a ReferenceError the moment anybody clicked Install. The
+ * renderer awaited a promise that rejected and left the button on "Installing…" forever, which
+ * is why it read as a hang rather than an error.
+ *
+ * So each module is registered for real against a stub of Electron and a context that answers
+ * to anything, and every handler is called once. Nothing here cares what a handler returns or
+ * which other error it raises against stub data - only that the code in it exists.
+ */
+test('every handler runs far enough to prove its own names exist', async () => {
+  const Module = require('module');
+  const registered = new Map();
+  const electron = {
+    ipcMain: { handle: (ch, fn) => registered.set(ch, fn), on: (ch, fn) => registered.set(ch, fn) },
+    dialog: { showOpenDialog: async () => ({ canceled: true, filePaths: [] }), showSaveDialog: async () => ({ canceled: true }), showMessageBox: async () => ({ response: 0 }) },
+    shell: { openExternal: () => {}, openPath: () => {}, showItemInFolder: () => {} },
+    app: { getVersion: () => '0.0.0', getPath: () => __dirname, quit: () => {} },
+    clipboard: { writeText: () => {} },
+    nativeImage: { createFromPath: () => ({ isEmpty: () => true }) },
+    BrowserWindow: class { static getAllWindows() { return []; } },
+  };
+  // anything asked of the context answers, so a handler gets past its dependencies and into
+  // its own body - which is the only part being examined here
+  const ctx = new Proxy({}, { get: () => () => undefined, has: () => true });
+
+  const load = Module._load;
+  Module._load = function stubbed(request, ...rest) {
+    return request === 'electron' ? electron : load.call(this, request, ...rest);
+  };
+  const notDefined = [];
+  try {
+    for (const file of HANDLER_FILES.filter((f) => f.startsWith('src/ipc-'))) {
+      const abs = path.join(ROOT, file);
+      delete require.cache[require.resolve(abs)];
+      const mod = require(abs);
+      const register = Object.values(mod).find((v) => typeof v === 'function');
+      registered.clear();
+      register(ctx);
+      assert.ok(registered.size > 0, `${file} registered nothing`);
+      for (const [channel, fn] of registered) {
+        try {
+          await fn({ sender: { send: () => {} } });
+        } catch (err) {
+          // a stub handing back undefined breaks plenty of handlers, and that is fine. A name
+          // the file does not have is not fine, and reads the same to the person clicking.
+          if (err instanceof ReferenceError) notDefined.push(`${channel} (${file}): ${err.message}`);
+        }
+      }
+    }
+  } finally {
+    Module._load = load;
+    for (const file of HANDLER_FILES.filter((f) => f.startsWith('src/ipc-'))) {
+      delete require.cache[require.resolve(path.join(ROOT, file))];
+    }
+  }
+  assert.deepEqual(notDefined, [], notDefined.join('; '));
+});

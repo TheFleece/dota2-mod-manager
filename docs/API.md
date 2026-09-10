@@ -18,6 +18,7 @@ the code, not in this page.
 | [`src/diagnostics.js`](#srcdiagnosticsjs) | A support report a user can send instead of a round of screenshots: Dota's own path and |
 | [`src/discord-auth.js`](#srcdiscord-authjs) | Sign in with Discord, without a server of our own. |
 | [`src/discord-presence.js`](#srcdiscord-presencejs) | "Playing Dota 2 Mod Manager" in Discord, via Discord's local IPC socket. |
+| [`src/feature-gate.js`](#srcfeature-gatejs) | Is this feature switched off right now? |
 | [`src/file-tx.js`](#srcfile-txjs) | All of it, or none of it. |
 | [`src/fingerprints.js`](#srcfingerprintsjs) | Fingerprint index: fetch + cache the fp -> mod identity map published alongside the |
 | [`src/game-icons.js`](#srcgame-iconsjs) | Item pictures taken from the installed game instead of scraped off a wiki. |
@@ -345,6 +346,36 @@ class DiscordPresence
 ```
 
 _No description in the source._
+
+## src/feature-gate.js
+
+Is this feature switched off right now?
+
+`config/app.json` can turn a feature off after a release (see remote-config.js). The check
+belongs on the main-process side of every channel it guards, because that is the boundary a
+stale window, an old screen and a replayed click all have to come through.
+
+It lives here, on its own, for a duller reason. It used to be a local helper inside
+ipc-game.js, and when registerIpc was split into modules on 2026-09-06 the call went to
+ipc-mods.js while the helper stayed behind. `mods:install` then threw "blocked is not
+defined" on every single click: no mod could be installed at all, in 2.6.5 and 2.6.6, and
+the app said nothing - the renderer awaited a promise that rejected, so the button sat on
+"Installing…" forever.
+
+One definition, handed to whoever needs it, so there is no second copy to leave behind.
+
+### `createGate`
+
+```js
+function createGate({ remoteConfig, settings })
+```
+
+```
+@param {object} deps
+@param {{feature: (name: string, lang: string) => {off: boolean, note?: string}}} deps.remoteConfig
+@param {{get: (key: string) => any}} deps.settings
+@returns {(name: string) => {error: string}|null} the answer to send back, or null to carry on
+```
 
 ## src/file-tx.js
 
