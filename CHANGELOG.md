@@ -2,6 +2,82 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.5
+
+### The app keeps working when GitHub does not
+
+Everything here has come from GitHub: the catalog, the mods, the previews, the updates. On
+17 August GitHub was down for three hours and none of it worked, and for a good part of the
+userbase it is not reachable on an ordinary day either. Every one of those now has a second
+place to come from.
+
+The mods themselves: a quarter of the catalog had never reached the copy this app falls back
+to. Five categories are stored differently from the rest and the job that fills it walked past
+them, so 313 mods (item effects, hero items, creeps, denies and towers) were installable only
+while GitHub answered. They are all there now.
+
+The previews: those were fetched straight from GitHub, so a catalog full of empty squares was
+what anybody blocked from it saw. A picture that does not arrive is fetched again from the
+copy, and if that fails too the tile says so instead of leaving a grey rectangle.
+
+Updates: the app checked GitHub Releases and nothing else. It now falls back to our own copy,
+both for the installed build and for the portable one, and goes back to GitHub as soon as it
+answers. The manifest and the file it describes always come from the same place, so nothing
+can hand over one version's checksum with another version's build.
+
+And the icon toolchain, the 50 MB download behind item pictures for free cosmetics, has a copy
+as well.
+
+### It tells you what went wrong
+
+Opening the app with no connection, before it had cached anything, used to put this where the
+catalog should be:
+
+    Could not load the catalog: fetch failed
+
+That is Node's phrase for being unable to open a socket, printed at a person. There is now a
+screen that says there is no connection, that the mods already installed keep working, and
+that the catalog will be back when the connection is. A server that answers badly gets a
+different message, because telling somebody to check a connection that works sends them to fix
+nothing.
+
+### The catalog is signed, and mods are checked against what its author published
+
+The catalog is read through public proxies for anybody who cannot reach GitHub directly, and
+until now nothing proved the list came from its author rather than from whoever was carrying
+it. It carries his signature now, and this app refuses a catalog that does not verify.
+
+Mod archives are checked the same way. They used to be trusted the first time they arrived and
+compared against that first copy afterwards, which catches a substitution on every download
+except the one that matters. The catalog now publishes a checksum for every archive and each
+download is measured against it before anything reaches your game folder.
+
+### The window opens at a size your screen has room for
+
+On a 1366x768 laptop, and on any screen with Windows scaling at 125% or 150%, the app asked
+for a window bigger than the desktop and got it. The part hanging off the bottom held the
+launch bar and the end of every list, and nothing about it looked broken: the list scrolled,
+and the rows it scrolled to were past the edge of the screen. Restarting did not help, because
+the size was asked for again rather than remembered.
+
+### A crash on some Windows setups
+
+The watcher that notices a Dota update could take the whole app down with it, without an error
+and without anything in the log. It happens when the path to your game is a short 8.3 name or
+reaches the folder through a junction, which is the sort of thing a moved Steam library leaves
+behind. Found by running the tests on Windows for the first time.
+
+### Smaller things
+
+- English users saw a catalog category called "Sound" that should have read "Audio". Thirteen
+  translation keys were written twice and two of the pairs disagreed; the duplicates are gone
+  and the build now fails if another one appears.
+- A preset you share is wrapped in a page that hands it to the app, and that page lived on
+  GitHub Pages, so the link would not open for anybody who cannot reach GitHub. New links point
+  at dota2modmanager.com. Links you have already sent keep working.
+- The site no longer runs an animation on phones that could make Safari give up on the tab
+  after a few seconds of scrolling, and it loads pictures sized for the screen showing them.
+
 ## 2.6.4
 
 ### Mods reach the folder the game reads again, if you run the new Minify
