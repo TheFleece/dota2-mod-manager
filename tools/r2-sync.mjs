@@ -53,10 +53,22 @@ const MAX_FILE = Number(flag('--max-file', '1200')) * 1024 ** 2;
 const FIRST = ['heroes', 'terrains', 'shaders', 'trees', 'river', 'backgrounds', 'hero-items',
   'creeps', 'cursors', 'mega-kill', 'announcers', 'hero-sounds', 'couriers', 'wards'];
 
+import { iterMods } from './catalog-mods.js';
+
 const host = `${ACCOUNT}.r2.cloudflarestorage.com`;
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const hmac = (k, s) => crypto.createHmac('sha256', k).update(s).digest();
-const encodePath = (key) => '/' + key.split('/').map(encodeURIComponent).join('/');
+/* RFC 3986, not encodeURIComponent.
+ *
+ * SigV4 hashes a canonical request that contains the encoded path, and S3 builds its own copy
+ * of that string from what arrives. encodeURIComponent leaves ! ' ( ) * alone; S3 percent-
+ * encodes them, so the two strings differ and the request comes back 403 SignatureDoesNotMatch.
+ * One mod in the catalog is called "Techies Bismillah Blast Off!.zip" and it had never once
+ * been mirrored.
+ */
+const rfc3986 = (segment) => encodeURIComponent(segment)
+  .replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+const encodePath = (key) => '/' + key.split('/').map(rfc3986).join('/');
 
 /** SigV4, all of it. R2 wants region "auto" and service "s3". */
 function sign({ method, key, payloadHash, headers = {}, query = '' }) {
@@ -151,9 +163,13 @@ const byCategory = catalog.modsData || catalog;
 
 const wanted = [];
 const rank = (id) => (FIRST.indexOf(id) < 0 ? FIRST.length : FIRST.indexOf(id));
-for (const [categoryId, list] of Object.entries(byCategory)) {
-  if (!Array.isArray(list) || categoryId === 'tools' || categoryId === 'news') continue;
-  for (const mod of list) {
+
+/* tools and news are not mods people install, so the bucket does not carry them. Everything
+   else comes through iterMods, which knows that five categories arrive as { groups: [...] }
+   rather than as an array - the thing this file used to get wrong, and the reason 313 mods had
+   never been mirrored. */
+for (const { categoryId, mod } of iterMods(byCategory, { skip: ['tools', 'news'] })) {
+  {
     const ref = mod?.file;
     if (typeof ref !== 'string' || !/\.(vpk|zip)$/i.test(ref)) continue;
     /* Some entries carry a whole URL rather than a file name: the catalog keeps its heaviest
