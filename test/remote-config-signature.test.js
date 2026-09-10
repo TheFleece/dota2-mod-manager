@@ -36,6 +36,17 @@ test('the committed config is the one the pinned key signed', () => {
   );
 });
 
+test('the file has no carriage returns, or the signature is over bytes nobody downloads', () => {
+  // This is not tidiness. The file was signed on a Windows machine at 1014 bytes and served
+  // from the repository at 999, because text=auto stores LF and checks out CRLF, and the
+  // signature verified on that machine and nowhere else on earth. The test above cannot see
+  // it: it signs and checks the same local bytes and is happy either way.
+  //
+  // .gitattributes pins this file to LF so the two can no longer differ. This is the alarm for
+  // the day something rewrites it anyway.
+  assert.ok(!fs.readFileSync(configFile).includes(0x0d), 'config/app.json has CRLF line endings');
+});
+
 test('a config with one byte added does not pass, or the check above proves nothing', () => {
   const tampered = Buffer.concat([fs.readFileSync(configFile), Buffer.from(' ')]);
   assert.equal(verify(tampered, fs.readFileSync(sigFile, 'utf-8'), CONFIG_PUBLIC_KEY), false);

@@ -13,6 +13,13 @@ packaging/aur/PKGBUILD text eol=lf
 packaging/aur/.SRCINFO text eol=lf
 *.sh text eol=lf
 
+# Signed, and the signature is over the bytes git publishes rather than the bytes on the machine
+# that made it. Left to text=auto this file is CRLF in a Windows working tree and LF in the
+# repository, so it was signed at 1014 bytes and served at 999 and verified nowhere. Forcing LF
+# here makes what you sign and what everyone downloads the same thing.
+config/app.json text eol=lf
+config/app.json.sig text eol=lf
+
 # Anything below is bytes, not lines. Git guesses this correctly most of the time; the guess is
 # wrong exactly once, and the cost of it being wrong is a corrupted icon in a release.
 *.png binary
