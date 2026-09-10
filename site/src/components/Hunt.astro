@@ -100,7 +100,12 @@ const { complete, shared } = Astro.props;
     animation: pop 380ms cubic-bezier(0.2, 0, 0, 1);
   }
   .hunt-slots { display: flex; gap: 6px; }
-  .hunt-slots i {
+
+  /* :global, because the script builds these and Astro only scopes what is in the template.
+     Without it the eight dots carried no styles at all: eleven pixels wide became zero, and the
+     panel opened as an empty 66-pixel pill every time somebody found a mascot. The same reason
+     .hunt-hero above is global, which is the half of this that was remembered. */
+  :global(.hunt-slots i) {
     width: 11px; height: 11px; border-radius: 4px;
     border: 1px solid color-mix(in srgb, var(--slot) 34%, transparent);
     background: transparent;
@@ -108,7 +113,7 @@ const { complete, shared } = Astro.props;
     transition: background 300ms ease, transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 300ms ease;
   }
-  .hunt-slots i.on {
+  :global(.hunt-slots i.on) {
     background: var(--slot);
     border-color: var(--slot);
     transform: scale(1);
