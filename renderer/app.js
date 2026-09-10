@@ -17,6 +17,7 @@ import { esc, fmtMB } from './ui/format.js';
 import { showWhatsNew, confirmDialog, safeModeDialog, toolchainDialog } from './ui/dialog.js';
 import { state } from './core/store.js';
 import { toast } from './ui/toast.js';
+import { watchMedia } from './ui/media.js';
 import { render, switchView, invalidateViews } from './core/router.js';
 import { refreshInstalledIndex, refreshCosmeticSlots } from './core/installed.js';
 import { refreshPatchState, paintMasterSwitch, refreshMasterSwitch, refreshSidebarStatus } from './ui/statusbar.js';
@@ -350,6 +351,12 @@ window.api.patch.onRepair((st) => {
 // ---------- boot ----------
 
 (async function boot() {
+  /* Pictures come from the network and the network is the part that fails. Started before
+     anything is drawn so the first grid is covered too: a preview that cannot be fetched is
+     asked for again from the mirror, and if that fails the tile says so instead of leaving a
+     grey rectangle with no explanation anywhere on the screen. */
+  watchMedia(() => toast(L`Часть превью не загрузилась. Проверь интернет — каталог и моды работают`, 'warn', 7000));
+
   const maxed = await window.api.win.isMaximized();
   if (maxed) $('#winMax').innerHTML = '<svg viewBox="0 0 12 12" width="12" height="12"><rect x="2" y="3.5" width="6.5" height="6.5" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><path d="M4 3.5V2.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>';
 

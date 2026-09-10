@@ -653,6 +653,7 @@ const EN = {
   'Обновляю каталог…': 'Refreshing the catalog…',
   'Каталог обновлён': 'Catalog updated',
   'Каталог не обновился, показан последний загруженный': 'Could not update the catalog, showing the last one downloaded',
+  'Часть превью не загрузилась. Проверь интернет — каталог и моды работают': 'Some previews did not load. Check your connection - the catalog and the mods still work',
 
   // ---------- thanks ----------
   'Спасибо': 'Thanks',

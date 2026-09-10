@@ -120,6 +120,24 @@ for (const { categoryId, mod } of iterMods(byCategory, { skip: ['tools', 'news']
       rank: rank(categoryId),
     });
   }
+
+  /* The picture as well as the archive.
+   *
+   * The renderer asks raw.githubusercontent for every preview directly, so a user who cannot
+   * reach GitHub gets a catalog that loads and a grid of empty squares - the app looks broken
+   * while working. All 1,336 of them come to about 38 MB, which is nothing beside the archives
+   * and is the difference between a usable window and a blank one.
+   *
+   * First in the list on purpose: a picture is what somebody looks at before deciding to spend
+   * 300 MB on the mod under it, and if the budget ever runs out it should run out on archives.
+   */
+  const preview = mod?.preview;
+  if (typeof preview === 'string' && preview && !/^https?:\/\//i.test(preview)) {
+    const key = preview.startsWith('assets/previews/')
+      ? preview
+      : `assets/previews/${categoryId}/${preview}`;
+    wanted.push({ path: key, source: null, rank: -1 });
+  }
 }
 wanted.sort((a, b) => a.rank - b.rank);
 console.log(`catalog: ${wanted.length} archives`);

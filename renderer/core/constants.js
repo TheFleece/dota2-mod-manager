@@ -7,6 +7,16 @@
 
 export const RAW_BASE = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main';
 
+/* The same files, from a host that is not GitHub.
+ *
+ * Pictures are the one thing the renderer fetches itself, so they never went through the
+ * mirror chain in src/net.js that everything else uses. For anybody who cannot reach GitHub
+ * that meant a catalog that loaded and a grid of empty squares: the app looked broken while
+ * working. tools/r2-sync.mjs copies every preview here, and ui/media.js reaches for it when a
+ * picture fails to arrive.
+ */
+export const MIRROR_BASE = 'https://cdn.dota2modmanager.com';
+
 export const CAT_RU = {
   heroes: 'Герои', 'item-effects': 'Эффекты предметов', 'hero-items': 'Предметы героев',
   backgrounds: 'Фоны меню', cursors: 'Курсоры', 'mega-kill': 'Мега-килл', shaders: 'Шейдеры',
