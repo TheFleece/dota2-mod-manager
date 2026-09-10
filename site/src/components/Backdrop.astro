@@ -87,13 +87,32 @@
     canvas { display: none; }
     .glow { animation: none; }
   }
+
+  /* Same rule as the script, said in CSS as well: without it the element is still laid out and
+     composited on a phone for an effect that never runs. */
+  @media not all and (hover: hover) and (pointer: fine) {
+    canvas { display: none; }
+  }
 </style>
 
 <script>
   const canvas = document.getElementById('dust') as HTMLCanvasElement | null;
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  if (canvas && !still) {
+  /* No pointer, no dust.
+   *
+   * Every mote here exists to be stirred by the pointer, and a phone has none: the same test
+   * Cursor.astro uses to decide there is nothing for it to do. Without it this ran a full
+   * screen of canvas at device resolution, every frame, for an effect nobody on that device
+   * could interact with - 1.2 megapixels of repaint on a 375-pixel screen. Alongside the
+   * screenshots decoding as they scroll into view, that is what made Safari give up on the
+   * page after a few seconds of scrolling.
+   *
+   * The .glow gradient underneath stays. It costs one paint and carries the look on its own.
+   */
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (canvas && !still && fine) {
     const ctx = canvas.getContext('2d', { alpha: true })!;
     let w = 0, h = 0, raf = 0, t = 0;
     let px = -9999, py = -9999;

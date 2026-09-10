@@ -26,7 +26,7 @@
  * radius, the lit top edge, the layered shadow - so the frame stayed and the bar went.
  */
 import type { Lang } from '../i18n/ui';
-import { SHOT_SIZE } from '../lib/media';
+import { SHOT_SIZE, srcsetFor } from '../lib/media';
 
 interface Props {
   lang: Lang;
@@ -63,6 +63,9 @@ const { shots, tablist } = Astro.props;
       <div class="win">
         <img
           src={s.src}
+          srcset={srcsetFor(s.src, SHOT_SIZE.width)}
+          {/* the window is the column width on a phone and never wider than the shot itself */}
+          sizes={`(max-width: 900px) 92vw, ${SHOT_SIZE.width}px`}
           width={SHOT_SIZE.width}
           height={SHOT_SIZE.height}
           loading={i === 0 ? 'eager' : 'lazy'}

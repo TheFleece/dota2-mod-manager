@@ -18,7 +18,7 @@
  */
 import type { Lang } from '../i18n/ui';
 import { landing } from '../i18n/landing';
-import { CREATOR } from '../lib/media';
+import { CREATOR, srcsetFor } from '../lib/media';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -35,6 +35,8 @@ const c = landing[lang];
       <a class="creator-thumb win" href={CREATOR.video} rel="noopener" aria-label={c.creatorName}>
         <img
           src={CREATOR.thumb}
+          srcset={srcsetFor(CREATOR.thumb, CREATOR.size.width)}
+          sizes={`(max-width: 900px) 92vw, ${CREATOR.size.width}px`}
           width={CREATOR.size.width}
           height={CREATOR.size.height}
           alt={c.creatorAlt}

@@ -19,6 +19,17 @@ export type ShotName = (typeof shotNames)[number];
 export const shotUrl = (lang: Lang, name: ShotName) =>
   `/screenshots/dota-2-mod-manager-${name}-${lang}.webp`;
 
+/* The same picture, small enough for a phone.
+ *
+ * site/tools/shots.mjs writes these at build time. Without them a phone decodes the full
+ * 1360x860 frame to show it 333 pixels wide, three times over as the screenshots scroll into
+ * view, and iOS ends the tab rather than the page.
+ */
+export const SMALL_SHOT = 760;
+export const smallUrl = (url: string) => url.replace(/\.webp$/, `-${SMALL_SHOT}.webp`);
+export const srcsetFor = (url: string, fullWidth: number) =>
+  `${smallUrl(url)} ${SMALL_SHOT}w, ${url} ${fullWidth}w`;
+
 export const tourUrl = (lang: Lang) => `/video/dota-2-mod-manager-tour-${lang}.webm`;
 export const tourPoster = (lang: Lang) => `/video/dota-2-mod-manager-tour-${lang}.webp`;
 
