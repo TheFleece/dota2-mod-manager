@@ -21,6 +21,10 @@ on:
         description: 'Say what it would do and touch nothing'
         type: boolean
         default: false
+      release:
+        description: 'Also publish this release version to updates/ (e.g. 2.6.4), blank to skip'
+        required: false
+        default: ''
 
 concurrency:
   group: r2-mirror
@@ -50,3 +54,13 @@ jobs:
           [ -n "${LIMIT:-}" ] && argv="--limit $LIMIT"
           [ "${DRY:-false}" = "true" ] && argv="$argv --dry"
           node tools/r2-sync.mjs $argv
+
+      # Normally the release workflow does this as part of publishing. Here by hand for the
+      # first fill, and for the day a release went out while the bucket was unreachable.
+      - name: Publish a release to the update mirror
+        if: inputs.release != ''
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: node tools/r2-release.mjs '${{ inputs.release }}'
