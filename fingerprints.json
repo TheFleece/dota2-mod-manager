@@ -1,5 +1,5 @@
 {
-  "count": 1306,
+  "count": 1309,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -624,6 +624,7 @@
     "7a1919bcae22ea913f4658f3cab1512799542a90": [{"name":"Invoker Magus Accord","categoryId":"hero-items","styleLabel":"White","type":"vpk"}],
     "7a24ac60f86b71ecce1c14e48b790b5ce16c1540": [{"name":"Immortal Beastmaster","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "7a3c4b1141e17fa7c23cefc40b259a14aab5f0cf": [{"name":"Strongback the Swift","categoryId":"couriers","styleLabel":null,"type":"vpk"}],
+    "7a63614e91c51b860f6f0614cf6ee60eb555b8bc": [{"name":"Total Black Hud","categoryId":"huds","styleLabel":null,"type":"vpk"}],
     "7a9a4fb06d315c5fd86153b5f2e3388c7380011e": [{"name":"White Sora Hud","categoryId":"huds","styleLabel":null,"type":"vpk"}],
     "7aab6dbe55381c4ce9ef2878e8b0ff6406e0243d": [{"name":"Simple Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],
     "7ae45a7779350dc298e211d349545548aff8197d": [{"name":"Cosmic Alchemist","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -851,6 +852,7 @@
     "ab913a275d1e06c0f71766eda0bca4a3064ce29b": [{"name":"Vengeful Spirit Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],
     "abe9800f58debbac909bc076a9b7cf1425269b90": [{"name":"Nemestice Radiant Creeps","categoryId":"creeps","styleLabel":null,"type":"vpk"}],
     "ac1a3cb4c3912a3f05faece5c7ecf295c5b21c6d": [{"name":"Battle Pass 2022 Emblem","categoryId":"emblems","styleLabel":null,"type":"vpk"}],
+    "ac38414c2da65726f3fb0bb97bfa8a948fcf2753": [{"name":"Centaur Otday","categoryId":"hero-sounds","styleLabel":null,"type":"vpk"}],
     "ac4ef5acde2dabd9fa32863ac0755823b65403e5": [{"name":"Ogre Magi Freeboot Fortunes","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "ad02467e7e05db3fc1a3a4f963d837055db96288": [{"name":"Simple Dark Terrain Minify","categoryId":"terrains","styleLabel":"Green","type":"vpk"}],
     "ad40626c7a93234647906b7af19cf1a98622fe22": [{"name":"Orange River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -1195,6 +1197,7 @@
     "ed4abfa68a5a97668360ee1af7fcf78189ab208b": [{"name":"Immortal Slardar","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "ed57a5ef885e4c64f5965b3ed2ac536caf8df9cc": [{"name":"TI8 Phase Boots","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "ed73d2eea262fbf1d9af32af44322fcdcf34b6e4": [{"name":"White Ethereal","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
+    "ee04c468058f5827cef7b15741c2f4fd52ba9604": [{"name":"Keeper of the Light Waitureally","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "ee055eed14a449c7e447b0f681e4ebdd4f0a7fc0": [{"name":"Void Spirit Hidden Vector","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "ee0fb08d8b1eb2a7b68f5131f9bdaf558c186bd5": [{"name":"LowPoly Trees","categoryId":"trees","styleLabel":null,"type":"vpk"}],
     "ee4977f77427e39e6a07d4534f943253b7d8b643": [{"name":"Tiny Majesty of the Colossus","categoryId":"heroes","styleLabel":null,"type":"vpk"}],

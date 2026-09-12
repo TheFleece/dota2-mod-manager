@@ -1778,6 +1778,16 @@
           "date": 1775454991
         },
         {
+          "name": "Keeper of the Light Waitureally",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","mount","legs","weapon"],
+          "image": {"src":"/mods/keeper-of-the-light-waitureally.webp","width":854,"height":480},
+          "author": "keeper",
+          "authorUrl": "https://t.me/eternalsadism",
+          "date": 1789234312
+        },
+        {
           "name": "Scarlet Keeper of the Light",
           "categoryId": "heroes",
           "styleLabel": null,
