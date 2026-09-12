@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1313,
+  "mods": 1314,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -584,6 +584,7 @@
       "mods": [
         {"name":"Aghanim Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Bedrock","categoryId":"terrains","styleLabel":null,"slots":["misc"]},
+        {"name":"Black Huskar","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","shoulder"]},
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Blue Soul Huskar","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","shoulder"]},
         {"name":"Dark Terrain Minify","categoryId":"terrains","styleLabel":null,"slots":["misc"]},

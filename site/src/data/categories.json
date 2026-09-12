@@ -1255,62 +1255,9 @@
       ]
     },
     {
-      "id": "other",
-      "mods": [
-        {"name":"Black Click","styleLabel":null,"image":{"src":"/mods/black-click.webp","width":854,"height":480},"author":"Morecursed","authorUrl":null,"date":1788815201},
-        {"name":"Light Brown Click","styleLabel":null,"image":{"src":"/mods/light-brown-click.webp","width":854,"height":480},"author":"YuyaKizami","authorUrl":"https://t.me/YuyaKizami","date":1788762686},
-        {"name":"Sapphire Click","styleLabel":null,"image":{"src":"/mods/sapphire-click.webp","width":854,"height":480},"author":"YuyaKizami","authorUrl":"https://t.me/YuyaKizami","date":1788762686},
-        {
-          "name": "White Click",
-          "styleLabel": null,
-          "image": {"src":"/mods/white-click.webp","width":854,"height":480},
-          "author": "3atvorn1k",
-          "authorUrl": "https://discord.com/users/642254136053596200",
-          "date": 1788095311
-        },
-        {
-          "name": "Profile Graffiti & Phrases",
-          "styleLabel": null,
-          "image": {"src":"/mods/profile-graffiti-phrases.webp","width":854,"height":480},
-          "author": "DotaMiniProfile",
-          "authorUrl": "https://t.me/DotaMiniProfile",
-          "date": 1785640852
-        },
-        {"name":"Blue Click","styleLabel":null,"image":{"src":"/mods/blue-click.webp","width":854,"height":480},"author":"NahuiToSay","authorUrl":"https://t.me/NahuiToSay","date":1785081533},
-        {
-          "name": "Dummy In Profile",
-          "styleLabel": null,
-          "image": {"src":"/mods/dummy-in-profile.webp","width":854,"height":480},
-          "author": "DotaMiniProfile",
-          "authorUrl": "https://t.me/DotaMiniProfile",
-          "date": 1784702480
-        },
-        {
-          "name": "Unlock Hidden Profile Animations",
-          "styleLabel": null,
-          "image": {"src":"/mods/unlock-hidden-profile-animations.webp","width":854,"height":480},
-          "author": "DotaMiniProfile",
-          "authorUrl": "https://t.me/DotaMiniProfile",
-          "date": 1784562310
-        },
-        {"name":"Purple Click","styleLabel":null,"image":{"src":"/mods/purple-click.webp","width":854,"height":480},"author":"NahuiToSay","authorUrl":"https://t.me/NahuiToSay","date":1778331617},
-        {
-          "name": "Tower re-aggro Radius",
-          "styleLabel": null,
-          "image": {"src":"/mods/tower-re-aggro-radius.webp","width":854,"height":480},
-          "author": "NahuiToSay",
-          "authorUrl": "https://t.me/NahuiToSay",
-          "date": 1776801533
-        },
-        {"name":"Gabe Shopkeeper","styleLabel":null,"image":{"src":"/mods/gabe-shopkeeper.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203},
-        {"name":"Rage Voice Icon","styleLabel":null,"image":{"src":"/mods/rage-voice-icon.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203},
-        {"name":"Showcase Rotation","styleLabel":null,"image":{"src":"/mods/showcase-rotation.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203},
-        {"name":"Techies Mine Radius","styleLabel":null,"image":{"src":"/mods/techies-mine-radius.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203}
-      ]
-    },
-    {
       "id": "sounds",
       "mods": [
+        {"name":"Dagon Revolver","styleLabel":null,"image":{"src":"/mods/dagon-revolver.webp","width":854,"height":480},"author":"keeper","authorUrl":"https://t.me/eternalsadism","date":1789192305},
         {
           "name": "1st September Horn",
           "styleLabel": null,
@@ -1388,6 +1335,60 @@
           "authorUrl": "https://t.me/fr0dech_vpk",
           "date": null
         }
+      ]
+    },
+    {
+      "id": "other",
+      "mods": [
+        {"name":"Black Click","styleLabel":null,"image":{"src":"/mods/black-click.webp","width":854,"height":480},"author":"Morecursed","authorUrl":null,"date":1788815201},
+        {"name":"Light Brown Click","styleLabel":null,"image":{"src":"/mods/light-brown-click.webp","width":854,"height":480},"author":"YuyaKizami","authorUrl":"https://t.me/YuyaKizami","date":1788762686},
+        {"name":"Sapphire Click","styleLabel":null,"image":{"src":"/mods/sapphire-click.webp","width":854,"height":480},"author":"YuyaKizami","authorUrl":"https://t.me/YuyaKizami","date":1788762686},
+        {
+          "name": "White Click",
+          "styleLabel": null,
+          "image": {"src":"/mods/white-click.webp","width":854,"height":480},
+          "author": "3atvorn1k",
+          "authorUrl": "https://discord.com/users/642254136053596200",
+          "date": 1788095311
+        },
+        {
+          "name": "Profile Graffiti & Phrases",
+          "styleLabel": null,
+          "image": {"src":"/mods/profile-graffiti-phrases.webp","width":854,"height":480},
+          "author": "DotaMiniProfile",
+          "authorUrl": "https://t.me/DotaMiniProfile",
+          "date": 1785640852
+        },
+        {"name":"Blue Click","styleLabel":null,"image":{"src":"/mods/blue-click.webp","width":854,"height":480},"author":"NahuiToSay","authorUrl":"https://t.me/NahuiToSay","date":1785081533},
+        {
+          "name": "Dummy In Profile",
+          "styleLabel": null,
+          "image": {"src":"/mods/dummy-in-profile.webp","width":854,"height":480},
+          "author": "DotaMiniProfile",
+          "authorUrl": "https://t.me/DotaMiniProfile",
+          "date": 1784702480
+        },
+        {
+          "name": "Unlock Hidden Profile Animations",
+          "styleLabel": null,
+          "image": {"src":"/mods/unlock-hidden-profile-animations.webp","width":854,"height":480},
+          "author": "DotaMiniProfile",
+          "authorUrl": "https://t.me/DotaMiniProfile",
+          "date": 1784562310
+        },
+        {"name":"Purple Click","styleLabel":null,"image":{"src":"/mods/purple-click.webp","width":854,"height":480},"author":"NahuiToSay","authorUrl":"https://t.me/NahuiToSay","date":1778331617},
+        {
+          "name": "Tower re-aggro Radius",
+          "styleLabel": null,
+          "image": {"src":"/mods/tower-re-aggro-radius.webp","width":854,"height":480},
+          "author": "NahuiToSay",
+          "authorUrl": "https://t.me/NahuiToSay",
+          "date": 1776801533
+        },
+        {"name":"Gabe Shopkeeper","styleLabel":null,"image":{"src":"/mods/gabe-shopkeeper.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203},
+        {"name":"Rage Voice Icon","styleLabel":null,"image":{"src":"/mods/rage-voice-icon.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203},
+        {"name":"Showcase Rotation","styleLabel":null,"image":{"src":"/mods/showcase-rotation.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203},
+        {"name":"Techies Mine Radius","styleLabel":null,"image":{"src":"/mods/techies-mine-radius.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1772534203}
       ]
     },
     {

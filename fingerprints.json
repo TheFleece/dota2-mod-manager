@@ -1,5 +1,5 @@
 {
-  "count": 1304,
+  "count": 1306,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -539,6 +539,7 @@
     "6ae63e880476896f07197d1f525541fe7803db2f": [{"name":"Christmas Iron Branch","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "6b08b9627189ab9b31735db9a3cba44f91f2803e": [{"name":"Treant Protector Frost Hideaway","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "6b0e0f8a2df94a1327a7863727c4988feca1dd36": [{"name":"Tinker Fortified Fabricator","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "6b25a92af61515262adec14bbf54aae100a9fd80": [{"name":"Dagon Revolver","categoryId":"sounds","styleLabel":null,"type":"vpk"}],
     "6b3ff97672f9b0aa9f87790bed909eeec4d20dd0": [{"name":"Broodmother Epoch of the Abysm","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "6b6e505a4e86f727e7b7fe9822d916ba749d0239": [{"name":"BP 2022 Teleport II","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "6b7e74ef442f6ddab92e8f5e7b8a244c32087741": [{"name":"Lifestealer Cong Yu","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -592,6 +593,7 @@
     "725dc6f90edebe7ec014dc5aeb2869c7d2472cd1": [{"name":"Dark Moon Baby Roshan","categoryId":"couriers","styleLabel":null,"type":"vpk"}],
     "726d4b8cbcd081db6e060db7f8ffd36eb94667ef": [{"name":"Lina Aerial Aphrodite Flame","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "7270878e02eb361baefbef29d1eb196ead786255": [{"name":"TI5 Desert Terrain","categoryId":"terrains","styleLabel":null,"type":"vpk"}],
+    "72e6ae7240bde054683bc61853be3593af398882": [{"name":"Black Huskar","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "72f337eee26002536463837c56fbb4d02fc2bf14": [{"name":"Tinker Alexander Prime","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "731257dc55e056803cb44287e0bb81002bc4c05b": [{"name":"Drow Ranger Immortal","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "7338f0b7114e121a75ba133aa7b7ab32880e6d58": [{"name":"Nedotrax Mega-Kill","categoryId":"mega-kill","styleLabel":null,"type":"vpk"}],

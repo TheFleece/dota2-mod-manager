@@ -1558,6 +1558,16 @@
           "date": 1777751902
         },
         {
+          "name": "Black Huskar",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","misc","head","shoulder"],
+          "image": {"src":"/mods/black-huskar.webp","width":854,"height":480},
+          "author": "ibcsz",
+          "authorUrl": "http://t.me/nixwaretop",
+          "date": 1789184752
+        },
+        {
           "name": "Blue Soul Huskar",
           "categoryId": "heroes",
           "styleLabel": null,
