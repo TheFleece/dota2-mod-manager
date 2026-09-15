@@ -36,10 +36,17 @@ function render(pkg) {
   };
 }
 
-/** The text with every known block replaced by what it should say. Unknown blocks are left alone. */
+/**
+ * The text with every known block replaced by what it should say. Unknown blocks are left alone.
+ *
+ * A Windows checkout has CRLF line endings. The pattern used to expect a bare newline, matched
+ * nothing there, and --check reported every block current however stale it was, so the file's
+ * own line ending is kept and matched.
+ */
 function apply(text, facts) {
-  return text.replace(/<!-- facts:([a-z0-9-]+) -->\n[\s\S]*?\n<!-- \/facts:\1 -->/g, (whole, name) => (
-    Object.prototype.hasOwnProperty.call(facts, name) ? `<!-- facts:${name} -->\n${facts[name]}\n<!-- /facts:${name} -->` : whole
+  const nl = text.includes('\r\n') ? '\r\n' : '\n';
+  return text.replace(/<!-- facts:([a-z0-9-]+) -->\r?\n[\s\S]*?\r?\n<!-- \/facts:\1 -->/g, (whole, name) => (
+    Object.prototype.hasOwnProperty.call(facts, name) ? `<!-- facts:${name} -->${nl}${facts[name]}${nl}<!-- /facts:${name} -->` : whole
   ));
 }
 

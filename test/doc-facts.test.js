@@ -37,3 +37,16 @@ test('the sentence follows package.json, not the other way round', () => {
   assert.match(four['deps-en'], /lists four/);
   assert.match(four['deps-ru'], /их четыре/);
 });
+
+test('a README checked out on Windows is still read, not skipped', () => {
+  /* On a Windows checkout every newline is CRLF. The block pattern was written against \n, so it
+     matched nothing there, apply() returned the file unchanged, and --check reported every block
+     current however stale it was. The Windows CI job is where that would have hidden. */
+  const facts = render(pkg);
+  const stale = '# x\r\n<!-- facts:deps-en -->\r\nold words\r\n<!-- /facts:deps-en -->\r\nmore\r\n';
+  const out = apply(stale, facts);
+  assert.notEqual(out, stale, 'a CRLF block was not recognised');
+  assert.ok(out.includes(`<!-- facts:deps-en -->\r\n${facts['deps-en']}\r\n<!-- /facts:deps-en -->`), 'the block was not rewritten with the file\'s own line endings');
+  const current = apply(out, facts);
+  assert.equal(apply(current, facts), current, 'rewriting a current block changed it again');
+});

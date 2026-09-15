@@ -18,7 +18,10 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const DIR = path.join(ROOT, '.github', 'workflows');
 const workflows = fs.readdirSync(DIR).filter((f) => /\.ya?ml$/.test(f)).sort();
-const read = (f) => fs.readFileSync(path.join(DIR, f), 'utf8');
+/* A Windows checkout turns every newline into CRLF, and the rules below are written against a bare
+   newline. Without this the Windows job failed on files that were fine, which is how the pull request
+   adding these tests merged with that job red. */
+const read = (f) => fs.readFileSync(path.join(DIR, f), 'utf8').replace(/\r\n/g, '\n');
 const json = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
 
 test('there are workflows to check', () => {
