@@ -124,3 +124,15 @@ test('the mirror job is handed a zone and a token, so the purge cannot be skippe
   assert.match(step[1], /CLOUDFLARE_ZONE_ID: [0-9a-f]{32}\n/, 'the step has no zone id to purge in');
   assert.match(step[1], /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/, 'the step has no token to purge with');
 });
+
+test('the purge URLs use the address the app downloads from, not a secret that can go stale', () => {
+  /* R2_PUBLIC_BASE was a secret, and on 2026-09-15 it held an address answering 401, so every purge
+     URL named the wrong host. The address is written into r2-sync now. */
+  const fs = require('fs');
+  const path = require('path');
+  const sync = fs.readFileSync(path.join(__dirname, '..', 'tools', 'r2-sync.mjs'), 'utf8');
+  assert.match(sync, /const PUBLIC_BASE = 'https:\/\/cdn\.dota2modmanager\.com';/);
+  assert.doesNotMatch(sync, /process\.env\.R2_PUBLIC_BASE/);
+  const net = fs.readFileSync(path.join(__dirname, '..', 'src', 'net.js'), 'utf8');
+  assert.match(net, /cdn\.dota2modmanager\.com/, 'the app no longer downloads from the address the purge uses');
+});

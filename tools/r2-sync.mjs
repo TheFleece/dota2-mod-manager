@@ -196,9 +196,12 @@ const publishedFor = (objectPath) => {
   return typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
 };
 
-/* The public address of the bucket, which is what the cache is keyed on. R2_PUBLIC_BASE is
-   already a secret here because the index the app reads is written with it. */
-const PUBLIC_BASE = (process.env.R2_PUBLIC_BASE || 'https://cdn.dota2modmanager.com').replace(/[/]+$/, '');
+/* The public address of the bucket, which is what the cache is keyed on and what the app
+   downloads from. It used to come from an R2_PUBLIC_BASE secret, and on 2026-09-15 the daily
+   credential check found that secret still holding an address that answered 401: every purge
+   URL built from it named a host nobody downloads from. An address is not a secret, so it is
+   written here, next to the code that uses it. */
+const PUBLIC_BASE = 'https://cdn.dota2modmanager.com';
 const replaced = [];
 
 let copied = 0;

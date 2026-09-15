@@ -117,12 +117,6 @@ export const CHECKS = {
     return env.R2_SECRET_ACCESS_KEY ? io.r2() : missing('R2_SECRET_ACCESS_KEY');
   },
 
-  async R2_PUBLIC_BASE(env, { http }) {
-    if (!env.R2_PUBLIC_BASE) return missing('R2_PUBLIC_BASE');
-    const res = await http(`${env.R2_PUBLIC_BASE.replace(/\/$/, '')}/index.json`, { method: 'HEAD' });
-    return res.status === 200 ? ok('the public mirror answers') : failed(`the public mirror answered HTTP ${res.status} for index.json`);
-  },
-
   async MIRROR_PUSH_URL(env, { http }) {
     if (!env.MIRROR_PUSH_URL) return missing('MIRROR_PUSH_URL');
     let token = '';
@@ -209,13 +203,17 @@ async function realHttp(url, { method = 'GET', headers = {}, body } = {}) {
   return { status: res.status, json };
 }
 
-async function realR2(env) {
-  const { createR2 } = require('./r2-client.js');
+/**
+ * Lists the bucket under one key. list() throws on anything but a 200, so resolving is the proof.
+ * Its answer is a Map; the first version of this check asked for an array and, on its first real
+ * run, reported three working R2 secrets as broken to the maintainer's phone.
+ */
+export async function checkR2(env, createR2 = require('./r2-client.js').createR2) {
   const r2 = createR2({ env });
   if (!r2.configured) return failed('the R2 key pair or account id is incomplete');
   try {
-    const listed = await r2.list('index.json');
-    return Array.isArray(listed) ? ok('lists the mirror bucket') : failed('the R2 key did not list the bucket');
+    await r2.list('index.json');
+    return ok('lists the mirror bucket');
   } catch (err) {
     const code = (/\b([45]\d\d)\b/.exec(String(err.message)) || [])[1];
     return failed(`the R2 key can no longer list the bucket${code ? ` (HTTP ${code})` : ''}`);
@@ -250,7 +248,7 @@ if (invokedDirectly) {
     google: (json) => googleAccessToken(json, 'https://www.googleapis.com/auth/webmasters.readonly'),
     ssh: realSsh,
     r2: () => {
-      if (!r2Result) r2Result = realR2(env);
+      if (!r2Result) r2Result = checkR2(env);
       return r2Result;
     },
   };

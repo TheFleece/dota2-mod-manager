@@ -136,3 +136,16 @@ test('the radar turns live results into red lines, real dates and a working coun
   assert.ok(healthy.fine.includes('3 of 3 secrets checked today and working'));
   assert.ok(!healthy.look.some((x) => /No expiry date recorded/.test(x.title)), 'a secret proven to work today is not a question to answer');
 });
+
+test('a working R2 key is ok whatever shape its listing comes back in, and a refusal says so', async () => {
+  /* The first real run called three working R2 secrets broken: list() answers with a Map and the
+     check wanted an array. Resolving at all is the proof, because list() throws on anything but 200. */
+  const { checkR2 } = await load();
+  const factory = (list) => () => ({ configured: true, list });
+  assert.equal((await checkR2({}, factory(async () => new Map([['index.json', 120]])))).state, 'ok');
+  assert.equal((await checkR2({}, factory(async () => new Map()))).state, 'ok', 'an empty listing is still a key that works');
+  const refused = await checkR2({}, factory(async () => { throw new Error('list: HTTP 403 <Error><Code>AccessDenied</Code></Error>'); }));
+  assert.equal(refused.state, 'failed');
+  assert.match(refused.detail, /HTTP 403/);
+  assert.equal((await checkR2({}, () => ({ configured: false }))).state, 'failed');
+});
