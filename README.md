@@ -196,6 +196,9 @@ is loading a tracker, and nothing has to be committed for the picture to move.
 | [Site](.github/workflows/site.yml) | Rebuilds the documentation site so its counts, its version and this card stay true. On a pull request it only builds the site and checks the output |
 | [Mirror](.github/workflows/mirror.yml) | Pushes the same history to [GitLab](https://gitlab.com/TheFleece/dota2-mod-manager), so the code outlives this repository |
 | [Search report](.github/workflows/seo.yml) | Weekly, not per push: downloads, update checks, and visits from Google, Bing and Yandex, posted to [one public issue](https://github.com/TheFleece/dota2-mod-manager/issues/3) with every earlier week above it |
+| [Radar](.github/workflows/radar.yml) | Daily, not per push: rewrites the pinned "Project status" issue with what waits on a decision, what is red and what is about to expire, and messages the maintainer about anything overdue |
+| [Pull request rules](.github/workflows/pull-request.yml) | On every pull request: a change that fixes something changes a test too, or says in a `No-Test-Because:` line why it cannot |
+| [Labels](.github/workflows/labels.yml) | Keeps the repository's labels equal to `.github/labels.json` |
 
 Nothing here commits back to `main`. Workflows that need to remember something between runs
 keep it in the Actions cache, or, for the weekly report, at the end of its own comment, because
@@ -256,9 +259,10 @@ section 7 of the GPL.
 | [Inter](https://github.com/rsms/inter), [Exo 2](https://github.com/NDISCOVER/Exo-2.0), [Material Symbols](https://github.com/google/material-design-icons) | The typefaces and icons, shipped inside the app rather than fetched | OFL-1.1, Apache-2.0 |
 | [Astro](https://github.com/withastro/astro) | The documentation site, not the app | MIT |
 
-`package.json` lists exactly four: `adm-zip` and `electron-updater` ship inside the app,
-`electron` and `electron-builder` only build it. The tests and everything under `tools/` use no
-dependencies at all. The VPK reader and writer, the KeyValues parser, the zip guards and the
+<!-- facts:deps-en -->
+`package.json` lists five: `adm-zip` and `electron-updater` ship inside the app, `electron`, `electron-builder` and `eslint` only build or check it.
+<!-- /facts:deps-en -->
+The tests and everything under `tools/` use no dependencies at all. The VPK reader and writer, the KeyValues parser, the zip guards and the
 update logic are written here, because every dependency is a stranger with write access to a
 game folder on tens of thousands of machines.
 

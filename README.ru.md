@@ -194,6 +194,9 @@ v1.14rc7 проверяет принадлежность перед чистко
 | [Сайт](.github/workflows/site.yml) | Пересобирает сайт, чтобы его счётчики, версия и эта картинка оставались правдой. На pull request только собирает сайт и проверяет результат |
 | [Зеркало](.github/workflows/mirror.yml) | Толкает ту же историю на [GitLab](https://gitlab.com/TheFleece/dota2-mod-manager), чтобы код пережил этот репозиторий |
 | [Отчёт о поиске](.github/workflows/seo.yml) | Раз в неделю, а не на каждый пуш: скачивания, проверки обновлений и переходы из Google, Bing и Яндекса. Всё уходит в [одно открытое issue](https://github.com/TheFleece/dota2-mod-manager/issues/3), прошлые недели там же выше |
+| [Радар](.github/workflows/radar.yml) | Раз в день, а не на каждый пуш: переписывает закреплённое issue «Project status» (что ждёт решения, что красное, что скоро истекает) и пишет мейнтейнеру обо всём просроченном |
+| [Правила PR](.github/workflows/pull-request.yml) | На каждом pull request: изменение, которое что-то чинит, меняет и тест или объясняет строкой `No-Test-Because:`, почему не может |
+| [Метки](.github/workflows/labels.yml) | Держит метки репозитория равными `.github/labels.json` |
 
 Ничто из этого не коммитит обратно в `main`. То, что воркфлоу нужно помнить между запусками,
 лежит в кеше Actions, а у еженедельного отчёта в конце его же комментария: коммит от бота на каждый
@@ -252,9 +255,10 @@ Node 24, Electron 44, без сборщика: рендерер — обычны
 | [Inter](https://github.com/rsms/inter), [Exo 2](https://github.com/NDISCOVER/Exo-2.0), [Material Symbols](https://github.com/google/material-design-icons) | Шрифты и иконки, лежат внутри приложения, а не тянутся из сети | OFL-1.1, Apache-2.0 |
 | [Astro](https://github.com/withastro/astro) | Сайт документации, не приложение | MIT |
 
-В `package.json` их ровно четыре: `adm-zip` и `electron-updater` едут внутри приложения,
-`electron` и `electron-builder` только собирают его. Тесты и всё в `tools/` не зависят ни от
-чего. Чтение и запись VPK, разбор KeyValues, защита от zip-бомб и логика обновления написаны
+<!-- facts:deps-ru -->
+В `package.json` их пять: `adm-zip` и `electron-updater` едут внутри приложения, `electron`, `electron-builder` и `eslint` только собирают или проверяют его.
+<!-- /facts:deps-ru -->
+Тесты и всё в `tools/` не зависят ни от чего. Чтение и запись VPK, разбор KeyValues, защита от zip-бомб и логика обновления написаны
 здесь, потому что каждая зависимость — это чужак с правом записи в папку игры на десятках тысяч
 машин.
 

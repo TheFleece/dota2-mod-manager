@@ -351,3 +351,8 @@ that location is not writable.
 | `tools/r2-sync.mjs`, `tools/r2-release.mjs`, `tools/r2-client.js` | The archive mirror, the update mirror, and the signing they share |
 | `tools/gen-fingerprints.js` | Regenerating the published fingerprint map |
 | `tools/seo-report.mjs`, `tools/seo-state.mjs` | The weekly reach and search report posted to [issue #3](https://github.com/TheFleece/dota2-mod-manager/issues/3), and the numbers it carries from one week to the next inside the comment |
+| `tools/release-gate.mjs` | First job of every release: waits until the tagged commit has passed the checks in `.github/required-checks.json`, and refuses it otherwise |
+| `tools/radar.mjs` | The daily "Project status" issue and the maintainer's overdue alerts; reads expiry dates from `.github/credentials.json` |
+| `tools/pr-test-rule.mjs` | The pull request check that a fix changes a test or says why it cannot |
+| `tools/gen-doc-facts.js` | Writes the sentences in the READMEs that come from `package.json`, between `facts:` markers |
+| `tools/sync-labels.mjs` | Makes the repository's labels match `.github/labels.json` |

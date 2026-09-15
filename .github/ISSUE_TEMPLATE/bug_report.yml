@@ -45,7 +45,7 @@ body:
     attributes:
       label: Diagnostic archive
       description: |
-        The app writes one: help menu, then Diagnostics. It carries the log, the manifest, the
+        The app writes one: Settings, Diagnostics, Export report. It carries the log, the manifest, the
         load order and what the app believes about your installation. Drag the file into this
         box. Most reports become a same-day fix with it, and a week of guessing without it.
 

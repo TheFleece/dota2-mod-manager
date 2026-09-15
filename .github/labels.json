@@ -1,0 +1,25 @@
+{
+  "_why": "The repository's labels, as code. .github/workflows/labels.yml makes GitHub match this file whenever it changes, and test/labels.test.js checks that every label a tool or workflow relies on is here. Labels that exist on GitHub but not here are reported, never deleted: an issue may still carry one.",
+  "labels": [
+    { "name": "bug", "color": "d73a4a", "description": "Something does not work as it should" },
+    { "name": "regression", "color": "b60205", "description": "Worked in an earlier release and stopped" },
+    { "name": "security", "color": "5319e7", "description": "A vulnerability or a hardening change" },
+    { "name": "needs-decision", "color": "fbca04", "description": "Waiting on the maintainer to decide" },
+    { "name": "needs-info", "color": "d4c5f9", "description": "Waiting on the reporter for details or the diagnostic archive" },
+    { "name": "enhancement", "color": "a2eeef", "description": "A new feature or an improvement" },
+    { "name": "documentation", "color": "0075ca", "description": "README, guides, the site or the documents in the repository" },
+    { "name": "question", "color": "d876e3", "description": "Asking rather than reporting" },
+    { "name": "good first issue", "color": "7057ff", "description": "Small, self-contained, a good place to start" },
+    { "name": "help wanted", "color": "008672", "description": "The maintainer would welcome someone taking this" },
+    { "name": "duplicate", "color": "cfd3d7", "description": "Already reported elsewhere" },
+    { "name": "invalid", "color": "e4e669", "description": "Not a problem with this project" },
+    { "name": "wontfix", "color": "ffffff", "description": "Decided against, with the reason in the thread" },
+    { "name": "dependencies", "color": "0366d6", "description": "A dependency update" },
+    { "name": "javascript", "color": "168700", "description": "Dependabot: an npm dependency" },
+    { "name": "github_actions", "color": "000000", "description": "Dependabot: an action used by a workflow" },
+    { "name": "area: installer", "color": "c5def5", "description": "Installing, toggling and removing mods" },
+    { "name": "area: vpk", "color": "c5def5", "description": "Reading and writing VPK archives" },
+    { "name": "area: site", "color": "c5def5", "description": "dota2modmanager.com" },
+    { "name": "area: ci", "color": "c5def5", "description": "Workflows, releases and the checks around them" }
+  ]
+}

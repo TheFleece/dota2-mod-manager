@@ -1,0 +1,63 @@
+#!/usr/bin/env node
+/**
+ * The facts in the READMEs that the repository already knows, written from the repository.
+ *
+ * README.md said "`package.json` lists exactly four" for five days after eslint became the fifth,
+ * and README.ru.md said the same in Russian. Nobody lied; a number was typed once and the file it
+ * described moved on. A test that checks the sentence still has to be updated by hand, so the
+ * sentence is generated instead: anything between `<!-- facts:NAME -->` and `<!-- /facts:NAME -->`
+ * is written by this script, and test/doc-facts.test.js fails when a README holds anything else
+ * there.
+ *
+ * Usage:
+ *   node tools/gen-doc-facts.js            # rewrite the blocks
+ *   node tools/gen-doc-facts.js --check    # exit 1 if any block is out of date
+ */
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.resolve(__dirname, '..');
+const FILES = ['README.md', 'README.ru.md'];
+
+const EN = ['none', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const RU = ['ни одной', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять', 'десять', 'одиннадцать', 'двенадцать'];
+
+const code = (name) => `\`${name}\``;
+const list = (items, and) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} ${and} ${items[items.length - 1]}`);
+
+/** Every generated sentence, by block name. */
+function render(pkg) {
+  const ship = Object.keys(pkg.dependencies || {}).sort().map(code);
+  const build = Object.keys(pkg.devDependencies || {}).sort().map(code);
+  const total = ship.length + build.length;
+  return {
+    'deps-en': `\`package.json\` lists ${EN[total] || total}: ${list(ship, 'and')} ship inside the app, ${list(build, 'and')} only build or check it.`,
+    'deps-ru': `В \`package.json\` их ${RU[total] || total}: ${list(ship, 'и')} едут внутри приложения, ${list(build, 'и')} только собирают или проверяют его.`,
+  };
+}
+
+/** The text with every known block replaced by what it should say. Unknown blocks are left alone. */
+function apply(text, facts) {
+  return text.replace(/<!-- facts:([a-z0-9-]+) -->\n[\s\S]*?\n<!-- \/facts:\1 -->/g, (whole, name) => (
+    Object.prototype.hasOwnProperty.call(facts, name) ? `<!-- facts:${name} -->\n${facts[name]}\n<!-- /facts:${name} -->` : whole
+  ));
+}
+
+module.exports = { render, apply, FILES };
+
+if (require.main === module) {
+  const check = process.argv.includes('--check');
+  const facts = render(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')));
+  let stale = 0;
+  for (const rel of FILES) {
+    const file = path.join(ROOT, rel);
+    const text = fs.readFileSync(file, 'utf8');
+    const next = apply(text, facts);
+    if (next === text) continue;
+    stale++;
+    if (check) console.error(`${rel}: a facts block is out of date, run node tools/gen-doc-facts.js`);
+    else fs.writeFileSync(file, next);
+  }
+  if (check && stale) process.exit(1);
+  console.log(check ? 'facts blocks are current' : `facts blocks written (${stale} file${stale === 1 ? '' : 's'} changed)`);
+}

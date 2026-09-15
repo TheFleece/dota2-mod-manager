@@ -1,0 +1,38 @@
+name: Pull request rules
+
+# Rules that only make sense for a change on its way into main. The branch ruleset requires every
+# job here, the same way it requires the suite. tools/pr-test-rule.mjs says why the rule exists.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+# Reads the commits and the files they change. Writes nothing.
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  fix-has-test:
+    name: A fix brings its test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      # The title and description are text somebody typed, so they reach the script through the
+      # environment and never through the command line, where they would be run by the shell.
+      - name: Check that a fix changes a test, or says why it cannot
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: node tools/pr-test-rule.mjs
