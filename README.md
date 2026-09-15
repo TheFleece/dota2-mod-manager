@@ -105,6 +105,23 @@
 > rather than uploaded from anybody's desktop, and the build log for the exact file you
 > downloaded is open to read.
 
+Every file on a release is listed with its SHA-256 in `SHA256SUMS`, and the release workflow signs
+that list through Sigstore. To check that a download came out of that workflow, with the GitHub CLI:
+
+```bash
+gh attestation verify Dota-2-Mod-Manager-Setup.exe --repo TheFleece/dota2-mod-manager
+```
+
+Or against the list alone, in a folder holding both files:
+
+```bash
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+On Windows without the GitHub CLI, `Get-FileHash Dota-2-Mod-Manager-Setup.exe` in PowerShell prints
+the hash to compare with its line in `SHA256SUMS`. Releases published before this check existed
+have no `SHA256SUMS`.
+
 <br>
 
 ## How it works

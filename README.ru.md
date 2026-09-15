@@ -102,6 +102,24 @@
 > [публичным воркфлоу](https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml),
 > а не заливается с чьего-то компьютера, и лог сборки ровно того файла, что ты скачал, открыт.
 
+Каждый файл релиза перечислен со своим SHA-256 в `SHA256SUMS`, а сам список релизный воркфлоу
+подписывает через Sigstore. Проверить, что скачанный файл собран именно этим воркфлоу, можно через
+GitHub CLI:
+
+```bash
+gh attestation verify Dota-2-Mod-Manager-Setup.exe --repo TheFleece/dota2-mod-manager
+```
+
+Или только по списку, в папке, где лежат оба файла:
+
+```bash
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+На Windows без GitHub CLI команда `Get-FileHash Dota-2-Mod-Manager-Setup.exe` в PowerShell покажет
+хеш, его сравниваешь со строкой в `SHA256SUMS`. У релизов, вышедших до появления этой проверки,
+`SHA256SUMS` нет.
+
 <br>
 
 ## Как это работает

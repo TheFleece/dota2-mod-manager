@@ -173,6 +173,82 @@ jobs:
           done
           echo "the AppImage and its update file are on the draft"
 
+  # Every file on the draft, fingerprinted and signed for, before anything tries it.
+  #
+  # SHA256SUMS lists each file's SHA-256. The provenance attestation signs that list through
+  # Sigstore with this workflow's identity, so `gh attestation verify` can say a download came out
+  # of this workflow at this commit, which a hash printed next to the file cannot. The bundle goes
+  # on the release as SHA256SUMS.intoto.jsonl for anyone checking offline. The SBOM names what the
+  # app ships inside it, and is attested for the same files. The try jobs then check their download
+  # against SHA256SUMS, so the bytes that get installed and clicked are the bytes signed for.
+  checksums:
+    name: Fingerprint and attest the draft
+    needs: [build, linux]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      # reading the draft and adding files to it
+      contents: write
+      # Sigstore signs with the workflow's identity token
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Download every file on the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir release
+          gh api "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .assets[] | \"\(.id) \(.name)\"" > assets.txt
+          while read -r id name; do
+            # a rerun finds this job's own files already there; they are written fresh below
+            case "$name" in SHA256SUMS|SHA256SUMS.intoto.jsonl|dota2-mod-manager.cdx.json) continue ;; esac
+            gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$id" > "release/$name"
+          done < assets.txt
+          ls -l release
+
+      # From the lockfile alone: what the app ships, without the tools that build it.
+      - name: Write the SBOM
+        run: npm sbom --sbom-format cyclonedx --omit dev --package-lock-only > release/dota2-mod-manager.cdx.json
+
+      - name: Write SHA256SUMS
+        working-directory: release
+        run: |
+          sha256sum -- * > ../SHA256SUMS
+          cat ../SHA256SUMS
+
+      - name: Attest where every file came from
+        id: provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: SHA256SUMS
+
+      - name: Attest the SBOM for the same files
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-checksums: SHA256SUMS
+          sbom-path: release/dota2-mod-manager.cdx.json
+
+      # OpenSSF Scorecard's Signed-Releases check looks for a signature among a release's files, and
+      # checking a download without asking GitHub needs the bundle anyway.
+      - name: Put SHA256SUMS, the SBOM and the provenance bundle on the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          cp "$BUNDLE" SHA256SUMS.intoto.jsonl
+          gh release upload "$TAG" SHA256SUMS SHA256SUMS.intoto.jsonl release/dota2-mod-manager.cdx.json --repo "$REPO" --clobber
+
   # Install the build that is about to go out, and use it.
   #
   # The Window workflow proves the source tree works. These two prove the bytes on the draft do:
@@ -182,7 +258,7 @@ jobs:
   # of the package, which a run from source can never notice.
   try-windows:
     name: Install a mod with the installer on the draft
-    needs: build
+    needs: [build, checksums]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
     # a draft can be read only by a token that can write to the repository
@@ -214,6 +290,17 @@ jobs:
           [ -n "$id" ] || { echo "::error::the draft has no installer"; exit 1; }
           gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$id" > setup.exe
           ls -l setup.exe
+          # the installer about to be tried is the one checksums fingerprinted and attested
+          sums=$(gh api "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .assets[] | select(.name == \"SHA256SUMS\") | .id")
+          [ -n "$sums" ] || { echo "::error::the draft has no SHA256SUMS"; exit 1; }
+          gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$sums" > SHA256SUMS
+          want=$(awk '$2 == "Dota-2-Mod-Manager-Setup.exe" { print $1 }' SHA256SUMS)
+          have=$(sha256sum setup.exe | cut -d' ' -f1)
+          if [ -z "$want" ] || [ "$want" != "$have" ]; then
+            echo "::error::the installer on the draft is not the one SHA256SUMS lists"
+            exit 1
+          fi
+          echo "the installer matches SHA256SUMS: $have"
 
       # /S installs without asking anything, into the same per-user folder a person's click does.
       - name: Install it
@@ -240,7 +327,7 @@ jobs:
 
   try-linux:
     name: Install a mod with the AppImage on the draft
-    needs: linux
+    needs: [linux, checksums]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -272,6 +359,17 @@ jobs:
           id=$(gh api "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .assets[] | select(.name == \"Dota-2-Mod-Manager.AppImage\") | .id")
           [ -n "$id" ] || { echo "::error::the draft has no AppImage"; exit 1; }
           gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$id" > app.AppImage
+          # the AppImage about to be tried is the one checksums fingerprinted and attested
+          sums=$(gh api "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .assets[] | select(.name == \"SHA256SUMS\") | .id")
+          [ -n "$sums" ] || { echo "::error::the draft has no SHA256SUMS"; exit 1; }
+          gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$sums" > SHA256SUMS
+          want=$(awk '$2 == "Dota-2-Mod-Manager.AppImage" { print $1 }' SHA256SUMS)
+          have=$(sha256sum app.AppImage | cut -d' ' -f1)
+          if [ -z "$want" ] || [ "$want" != "$have" ]; then
+            echo "::error::the AppImage on the draft is not the one SHA256SUMS lists"
+            exit 1
+          fi
+          echo "the AppImage matches SHA256SUMS: $have"
           chmod +x app.AppImage
           ./app.AppImage --appimage-extract > /dev/null
           ls -l squashfs-root/AppRun
@@ -294,7 +392,7 @@ jobs:
   # A failure above leaves the draft where only the maintainer can see it. RELEASING.md says what
   # to do with it, and what to do when a release that did go out turns out to be broken.
   publish:
-    needs: [build, linux, try-windows, try-linux]
+    needs: [build, linux, checksums, try-windows, try-linux]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -336,11 +434,12 @@ jobs:
           fi
           names=$(gh api "repos/$REPO/releases/latest" --jq '.assets[].name')
           for want in latest.yml latest-linux.yml portable.yml \
-                      Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe Dota-2-Mod-Manager.AppImage; do
+                      Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe Dota-2-Mod-Manager.AppImage \
+                      SHA256SUMS SHA256SUMS.intoto.jsonl dota2-mod-manager.cdx.json; do
             echo "$names" | grep -qx "$want" \
               || { echo "::error::$want is missing from the release the updater reads"; exit 1; }
           done
-          echo "one release, it is the latest, and it carries every file the updater reads"
+          echo "one release, it is the latest, and it carries every file the updater and a person checking a download read"
 
   # A second place to get the update from.
   #

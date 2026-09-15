@@ -17,8 +17,9 @@ The tag starts `.github/workflows/release.yml`:
 | `gate` | Waits until the tagged commit has passed every check in `.github/required-checks.json`, and fails if one failed | nobody |
 | `build` | Opens the release as a draft with its changelog section, builds the installer and the portable exe into it, and checks the draft is the only release on the tag | the maintainer |
 | `linux` | Builds the AppImage into the same draft | the maintainer |
-| `try-windows` | Downloads the installer from the draft, installs it, and runs `tools/e2e.mjs` against the installed app | the maintainer |
-| `try-linux` | Downloads the AppImage from the draft, unpacks it, and runs `tools/e2e.mjs` against it | the maintainer |
+| `checksums` | Downloads every file on the draft, writes `SHA256SUMS` and an SBOM, attests the build provenance of every file and the SBOM through Sigstore, and puts `SHA256SUMS`, the SBOM and the provenance bundle on the draft | the maintainer |
+| `try-windows` | Downloads the installer from the draft, checks it against `SHA256SUMS`, installs it, and runs `tools/e2e.mjs` against the installed app | the maintainer |
+| `try-linux` | Downloads the AppImage from the draft, checks it against `SHA256SUMS`, unpacks it, and runs `tools/e2e.mjs` against it | the maintainer |
 | `publish` | Takes the release out of draft, then checks it is the latest and carries every file the updater reads | everybody |
 | `mirror-update` | Copies the release to the update mirror | everybody |
 | `notify` | Posts the changelog section to Discord | everybody |

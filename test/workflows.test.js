@@ -122,15 +122,25 @@ test('release.yml shows a release to nobody until both builds on it installed a 
   assert.match(job('build'), /gh release create[^\n]*--draft/, 'the build job opens the release in public instead of as a draft');
   // electron-builder publishes a release it has to create itself, unless it is told to make a draft
   assert.equal((text.match(/EP_DRAFT: 'true'/g) || []).length, 2, 'an electron-builder step without EP_DRAFT can publish the release');
+  // Every file is fingerprinted and signed for before anything tries it (2026-09-16).
+  const checksums = job('checksums');
+  assert.ok(checksums, 'release.yml has no checksums job');
+  for (const n of ['build', 'linux']) assert.ok(needs(checksums).includes(n), `checksums does not wait for ${n} to put its files on the draft`);
+  assert.match(checksums, /id-token: write/, 'checksums cannot sign without id-token: write');
+  assert.match(checksums, /attestations: write/, 'checksums cannot store an attestation without attestations: write');
+  assert.match(checksums, /actions\/attest-build-provenance@[0-9a-f]{40}[^\n]*\n\s+with:\n\s+subject-checksums: SHA256SUMS/, 'the provenance attestation does not cover every file in SHA256SUMS');
+  assert.match(checksums, /gh release upload[^\n]*SHA256SUMS[^\n]*SHA256SUMS\.intoto\.jsonl/, 'SHA256SUMS and its signed bundle do not go on the release');
   for (const [name, after] of [['try-windows', 'build'], ['try-linux', 'linux']]) {
     const body = job(name);
     assert.ok(body, `release.yml has no ${name} job`);
     assert.match(body, /node tools\/e2e\.mjs --app /, `${name} does not click through the build it downloaded`);
     assert.ok(needs(body).includes(after), `${name} does not wait for ${after} to put its build on the draft`);
+    assert.ok(needs(body).includes('checksums'), `${name} can try a file before it was fingerprinted`);
+    assert.match(body, /not the one SHA256SUMS lists/, `${name} does not check its download against SHA256SUMS`);
   }
   const publish = job('publish');
   assert.ok(publish, 'release.yml has no publish job');
-  for (const n of ['try-windows', 'try-linux']) assert.ok(needs(publish).includes(n), `publish does not wait for ${n}`);
+  for (const n of ['checksums', 'try-windows', 'try-linux']) assert.ok(needs(publish).includes(n), `publish does not wait for ${n}`);
   assert.match(publish, /-F draft=false/, 'the publish job does not take the release out of draft');
   for (const n of ['mirror-update', 'notify']) assert.ok(needs(job(n)).includes('publish'), `${n} can run before the release is public`);
   // the API call, not the words: comments and error messages above publish name the endpoint on purpose

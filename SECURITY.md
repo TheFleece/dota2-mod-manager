@@ -49,3 +49,13 @@ idea, which is a question for you and not a vulnerability.
 
 The current release is the one that gets fixed. The app updates itself, so there is no line of
 older versions to patch.
+
+## Checking a download
+
+Each release carries `SHA256SUMS`, a list of every file on it with its SHA-256, and a provenance
+attestation for that list, signed through Sigstore by `.github/workflows/release.yml` at the tagged
+commit. `gh attestation verify <file> --repo TheFleece/dota2-mod-manager` confirms a file came out of
+that workflow; the README shows the commands. The signed bundle is on the release as
+`SHA256SUMS.intoto.jsonl`, and a CycloneDX SBOM of what the app ships is beside it as
+`dota2-mod-manager.cdx.json`. A file that fails the check did not come from this repository's
+release job, whatever page it was downloaded from.
