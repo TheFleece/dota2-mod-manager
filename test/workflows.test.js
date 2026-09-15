@@ -130,6 +130,24 @@ test('RELEASING.md names every job release.yml runs', () => {
   assert.deepEqual(missing, [], `RELEASING.md does not mention: ${missing.join(', ')}`);
 });
 
+test('a dependency update merges itself only when it is minor or patch, and only through the checks', () => {
+  /* Majors changed the runtime and the site generator under the project twice in a month
+     (Electron 43 to 44, Astro 5 to 7), and the Astro one built green while the site came out
+     broken. A merge that is not limited to minor and patch, or that skips the required checks,
+     would put the next one straight into main. */
+  const text = read('dependency-updates.yml');
+  assert.match(text, /user\.login == 'dependabot\[bot\]'/, 'the policy does not check that Dependabot opened the pull request');
+  assert.match(text, /github\.actor == 'dependabot\[bot\]'/, 'a person pushing to a Dependabot branch could set off the merge');
+  const step = /\n {6}- name:[^\n]*\n((?: {8}[^\n]*\n)*? {8}run: gh pr merge[^\n]*)/.exec(text);
+  assert.ok(step, 'no step merges the update');
+  assert.match(step[1], /--auto\b/, 'the merge does not wait for the required checks');
+  assert.ok(!/--admin/.test(step[1]), 'the merge goes around the required checks');
+  const cond = /if: ([^\n]*)/.exec(step[1]);
+  assert.ok(cond, 'the merge step runs for every update');
+  assert.ok(/semver-minor/.test(cond[1]) && /semver-patch/.test(cond[1]) && !/semver-major|!=/.test(cond[1]),
+    `the merge step is not limited to minor and patch updates: ${cond[1]}`);
+});
+
 test('every required check is a job that exists, under the name GitHub will show', () => {
   /* The ruleset waits for a check by name. Rename the job, or turn it into a matrix, and a merge
      waits for ever for a check that no longer exists; the comment in test.yml was the only thing

@@ -17,6 +17,7 @@
     { "name": "dependencies", "color": "0366d6", "description": "A dependency update" },
     { "name": "javascript", "color": "168700", "description": "Dependabot: an npm dependency" },
     { "name": "github_actions", "color": "000000", "description": "Dependabot: an action used by a workflow" },
+    { "name": "major-update", "color": "e99695", "description": "A dependency update that does not merge itself and waits for the maintainer" },
     { "name": "area: installer", "color": "c5def5", "description": "Installing, toggling and removing mods" },
     { "name": "area: vpk", "color": "c5def5", "description": "Reading and writing VPK archives" },
     { "name": "area: site", "color": "c5def5", "description": "dota2modmanager.com" },

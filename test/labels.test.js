@@ -19,7 +19,7 @@ test('every label has a unique name, a colour and a short description', async ()
   }
 });
 
-test('the labels the radar, the pull request rule and the issue forms rely on exist', async () => {
+test('the labels the radar, the pull request rule, the issue forms and the workflows rely on exist', async () => {
   const { desiredLabels } = await load();
   const names = new Set(desiredLabels().map((l) => l.name));
   const { FIX_LABELS } = await import('../tools/pr-test-rule.mjs');
@@ -28,6 +28,13 @@ test('the labels the radar, the pull request rule and the issue forms rely on ex
     for (const f of fs.readdirSync(path.join(ROOT, dir)).filter((x) => /\.ya?ml$/.test(x))) {
       const m = /^labels:\s*\[([^\]]*)\]/m.exec(fs.readFileSync(path.join(ROOT, dir, f), 'utf8'));
       if (m) m[1].split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean).forEach((l) => needed.add(l));
+    }
+  }
+  // GitHub refuses `gh pr edit --add-label` for a label that does not exist, and the step fails
+  const workflows = path.join(ROOT, '.github', 'workflows');
+  for (const f of fs.readdirSync(workflows).filter((x) => /\.ya?ml$/.test(x))) {
+    for (const m of fs.readFileSync(path.join(workflows, f), 'utf8').matchAll(/--add-label\s+(?:"([^"]+)"|'([^']+)'|([\w:-]+))/g)) {
+      needed.add(m[1] || m[2] || m[3]);
     }
   }
   const missing = [...needed].filter((n) => !names.has(n));

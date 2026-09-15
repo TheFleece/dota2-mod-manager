@@ -129,6 +129,11 @@ dependency is a stranger with write access to a game folder on 27,000 machines.
 That is a bias, not a ban. A pull request that adds one needs to say what it replaces and why
 writing it ourselves is worse. Tools under `tools/` and the tests use no dependencies at all.
 
+Dependabot proposes updates every Monday. A minor or patch update merges itself once every
+required check has passed. A major one gets the `major-update` label and waits for the maintainer,
+because a new major version of Electron or of the site generator can pass every check and still
+ship something broken.
+
 ## What will not be merged
 
 - Telemetry, analytics, crash reporting, "anonymous usage statistics". The app phones no home and

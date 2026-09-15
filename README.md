@@ -201,6 +201,7 @@ is loading a tracker, and nothing has to be committed for the picture to move.
 | [Radar](.github/workflows/radar.yml) | Daily, not per push: rewrites the pinned "Project status" issue with what waits on a decision, what is red and what is about to expire, and messages the maintainer about anything overdue |
 | [Pull request rules](.github/workflows/pull-request.yml) | On every pull request: a change that fixes something changes a test too, or says in a `No-Test-Because:` line why it cannot |
 | [Labels](.github/workflows/labels.yml) | Keeps the repository's labels equal to `.github/labels.json` |
+| [Dependency updates](.github/workflows/dependency-updates.yml) | On Dependabot's pull requests: a minor or patch update merges itself once every required check passes, and anything bigger gets a label and waits for the maintainer |
 
 Nothing here commits back to `main`. Workflows that need to remember something between runs
 keep it in the Actions cache, or, for the weekly report, at the end of its own comment, because

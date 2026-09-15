@@ -1,0 +1,47 @@
+# What happens to a dependency update once Dependabot has opened it.
+#
+# A minor or patch update merges itself, through the same door as every other change:
+# `gh pr merge --auto` waits for every required check, so an update that breaks the suite on
+# either system, CodeQL, the Linux build or installing a mod through the window never lands.
+#
+# Anything else waits for a person, with the major-update label, and the radar lists it among
+# the pull requests waiting on a decision. Majors changed the runtime and the site generator
+# under this project twice in a month (Electron 43 to 44, Astro 5 to 7), and the Astro one built
+# green while the site came out on version 0.0.0 with none of its cards.
+name: Dependency updates
+
+on: pull_request
+
+# The token reads the repository and nothing more. The one job below asks for what it needs.
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    name: Merge minor and patch updates once every check passes
+    # The author and the actor both: a person pushing to a Dependabot branch must not set off a merge.
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # For a grouped update this is the largest change in the group.
+      - name: Read what the update changes
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Minor and patch merge themselves once the required checks pass
+        if: steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.update-type == 'version-update:semver-patch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR"
+
+      # An allow-list, not "not major": an update whose kind could not be read waits too.
+      - name: Anything else waits for a person
+        if: steps.meta.outputs.update-type != 'version-update:semver-minor' && steps.meta.outputs.update-type != 'version-update:semver-patch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: gh pr edit "$PR" --add-label major-update
