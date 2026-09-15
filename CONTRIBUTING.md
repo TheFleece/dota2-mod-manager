@@ -156,9 +156,27 @@ feature that throws because GitHub is unreachable is a bug rather than an outage
 came back, use the cache when nothing comes back, and say so in the interface rather than in a
 dialog nobody can act on.
 
+## How a change reaches main
+
+Through a pull request, the maintainer's own changes included. It merges when the required checks
+are green: the suite on Linux and on Windows, CodeQL, the Linux build and its start-up run, and
+one rule of its own. A pull request that fixes something changes a test as well, or carries a
+line `No-Test-Because: <reason>` in a commit message or in its description. `npm run verify` runs
+the same lint and suite on your machine before you push.
+
+## Response times
+
+An issue gets a first reply from the project within 72 hours. A pull request is looked at within
+3 days: merged, sent back with what to change, or closed with the reason. A report sent the way
+[SECURITY.md](SECURITY.md) describes gets a reply within 48 hours.
+
+These are checked rather than hoped for. Every morning a workflow reads what is open and rewrites
+the pinned "Project status" issue, and anything past these times is marked overdue there and
+sent to the maintainer.
+
 ## Reporting a bug
 
-The app writes a diagnostic archive: Help, then Diagnostics. It holds the app log, the manifest,
+The app writes a diagnostic archive: Settings, Diagnostics, Export report. It holds the app log, the manifest,
 the load order and what the app thinks about your installation. Attaching it turns most reports
 into a five minute fix.
 

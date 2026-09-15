@@ -10,6 +10,8 @@ It reaches the author and nobody else. Do not open a public issue for something 
 Tell me what you did and what happened. A rough description beats none, and a way to reproduce
 it beats everything. I will answer, and I will say plainly whether I think it is a problem.
 
+A first reply comes within 48 hours.
+
 ## What the app is, in terms of what can go wrong
 
 It runs on your machine, keeps no server of its own and holds no account. What it does touch:
