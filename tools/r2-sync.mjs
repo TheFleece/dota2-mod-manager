@@ -263,7 +263,15 @@ if (!DRY) {
   await put('index.json', Buffer.from(payload), 'application/json');
 }
 
-await purgeCache(replaced);
+/* A replaced archive that stays cached at the edge is the stale-mirror bug from 2026-09-10 in a new
+   place: the bucket holds the new bytes and everybody is still served the old ones. Until
+   2026-09-15 a missing zone id or purge token only printed a line, and the purge had in fact never
+   run once. Now the job goes red, which the radar reports. */
+const purge = await purgeCache(replaced);
+if (replaced.length && purge && purge.skipped) {
+  console.error(`::error::${replaced.length} replaced file(s) are still cached at the edge (${purge.skipped}). Set CLOUDFLARE_ZONE_ID and CLOUDFLARE_PURGE_TOKEN, see .github/credentials.json`);
+  process.exitCode = 1;
+}
 
 console.log(`\ncopied ${copied}, already current ${skipped}, too big ${tooBig}, failed ${failed}, refused ${refused}${stopped ? `, stopped on ${stopped}` : ''}`);
 console.log(`bucket now ~${(used / 1024 ** 3).toFixed(2)} GB, index lists ${index.length} archives`);

@@ -96,3 +96,11 @@ test('the API throwing is reported, not thrown', async (t) => {
   assert.equal(out.purged, 0);
   assert.match(said.join(' '), /ENOTFOUND/);
 });
+
+test('the mirror job fails when it replaced files it could not purge', () => {
+  /* The purge had never run: CLOUDFLARE_ZONE_ID was not set, purgeCache said so in one log line,
+     and the job stayed green while replaced archives kept being served from cache. */
+  const sync = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'r2-sync.mjs'), 'utf8');
+  assert.match(sync, /const purge = await purgeCache\(replaced\)/, 'r2-sync no longer keeps the purge result');
+  assert.match(sync, /replaced\.length && purge && purge\.skipped\)[\s\S]{0,300}process\.exitCode = 1/, 'a skipped purge after replacing files no longer fails the job');
+});

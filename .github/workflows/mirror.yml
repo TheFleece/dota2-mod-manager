@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'TheFleece/dota2-mod-manager'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # the whole history, or the mirror is a repository with one commit in it
           fetch-depth: 0

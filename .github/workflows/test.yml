@@ -11,16 +11,19 @@ on:
   pull_request:
   workflow_dispatch:
 
+# The token reads the repository and nothing more. A job that needs more asks for it itself.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # Node 24 for the test runner, not the 20 Electron bundles: the tests use zlib.crc32
       # (Node 22+). Nothing under test/ or tools/ is packaged into the app - the build's file
       # list is main.js, preload.js, src/, renderer/ - so this cannot drift into runtime code.
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
 
@@ -41,9 +44,6 @@ jobs:
       #
       # `no-undef` names both in under a second. It runs before the suite because when it fails
       # there is no point reading anything below it.
-      - name: Check for names that do not exist
-        run: npm run lint
-
       # Coverage is a floor, not a target. The numbers sit just under what the suite reaches,
       # so the gate does not fail on the state it was written in and does fail the moment
       # somebody adds code nothing exercises. Raise them when the real figure moves up; never
@@ -65,8 +65,13 @@ jobs:
       # thinly covered, and the aggregate fell about two points because code that was invisible
       # became visible. Nothing stopped being tested. Raise this again by testing those handlers,
       # not by hiding them.
-      - name: Run tests with a coverage floor
-        run: npm run test:coverage
+      #
+      # Both run as `npm run verify`, the command a person runs before pushing and the commit
+      # hook runs before committing: one gate everywhere, so a check cannot live in only one of
+      # them. On 2026-09-15 one did, and a commit that added and committed in one command walked
+      # straight past it.
+      - name: Lint, then the suite with its coverage floor
+        run: npm run verify
 
   # The same suite on the operating system most of these users are actually on. Issue #5.
   #
@@ -82,9 +87,8 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
 
