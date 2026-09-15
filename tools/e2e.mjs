@@ -28,6 +28,7 @@
  * Usage:
  *   node tools/e2e.mjs            # under `xvfb-run -a` on Linux
  *   node tools/e2e.mjs --keep     # leave the sandbox as the run left it
+ *   node tools/e2e.mjs --app <p>  # a packaged build: the installed exe, or an unpacked AppImage's AppRun
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -48,6 +49,10 @@ const FIXTURES = path.join(root, 'test', 'fixtures', 'e2e');
 const OUT = path.join(root, 'e2e-output');
 // the app's note of which files in the language folder are its own, rewritten on every change
 const OWNERSHIP = 'dota2modmanager.json';
+// --app <path>: a packaged build instead of this source tree. release.yml passes the installed
+// exe and the unpacked AppImage from the draft release, so what gets clicked is what goes out.
+const appAt = process.argv.indexOf('--app');
+const APP = appAt > 0 && process.argv[appAt + 1] ? path.resolve(process.argv[appAt + 1]) : null;
 
 export const MOD = { categoryId: 'heroes', name: 'Brewmaster E2E Fixture', file: 'Brewmaster E2E Fixture.zip' };
 
@@ -193,16 +198,19 @@ async function launch(label, env, timeoutMs = 180000) {
   const shot = path.join(OUT, `${label}.png`);
   for (const f of [shot, `${shot}.eval.json`, `${shot}.err.txt`]) fs.rmSync(f, { force: true });
   const log = fs.openSync(path.join(OUT, `${label}.electron.log`), 'w');
-  const args = ['.', `--user-data-dir=${USERDATA}`];
+  const args = [`--user-data-dir=${USERDATA}`];
   if (process.platform === 'linux') args.push('--no-sandbox');
-  const child = spawn(require('electron'), args, {
+  const child = spawn(APP || require('electron'), APP ? args : ['.', ...args], {
     cwd: root,
     env: { ...process.env, MM_SHOT: shot, ...env },
     stdio: ['ignore', log, log],
     detached: process.platform !== 'win32',
   });
+  // a path that is not there fails at once, not after three minutes of waiting for a window
+  let startError = null;
+  child.on('error', (e) => { startError = e; });
   const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline && !fs.existsSync(shot) && !fs.existsSync(`${shot}.err.txt`)) await sleep(1000);
+  while (Date.now() < deadline && !startError && !fs.existsSync(shot) && !fs.existsSync(`${shot}.err.txt`)) await sleep(1000);
   await sleep(1500);
   stop(child);
   await sleep(2500); // let Windows release the files before the disk is read
@@ -210,7 +218,7 @@ async function launch(label, env, timeoutMs = 180000) {
   const evaluated = readIfThere(`${shot}.eval.json`);
   return {
     result: evaluated ? JSON.parse(evaluated) : null,
-    error: readIfThere(`${shot}.err.txt`),
+    error: startError ? `could not start ${APP || 'electron'}: ${startError.message}` : readIfThere(`${shot}.err.txt`),
     timedOut: Date.now() >= deadline,
   };
 }
@@ -234,6 +242,8 @@ if (invokedDirectly) {
 
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
+  report.app = APP || 'this source tree';
+  console.log(`the app under test: ${report.app}`);
   // seed adds to whatever game tree and userdata are already there, and a pak or a manifest left
   // by an earlier run would put mods in My mods that this run never installed
   fs.rmSync(USERDATA, { recursive: true, force: true });

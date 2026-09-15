@@ -194,7 +194,7 @@ is loading a tracker, and nothing has to be committed for the picture to move.
 | [CodeQL](.github/workflows/codeql.yml) | Security and quality analysis, plus a weekly scheduled run |
 | [Linux](.github/workflows/linux.yml) | Builds the AppImage, starts the app against the sandbox, photographs the first window and reads the log for code that could not run |
 | [Window](.github/workflows/e2e.yml) | On Linux and on Windows: installs a mod, switches it off and on and removes it by clicking in the window, checking the game folder on disk after each launch. Offline, with a fixture catalog |
-| [Release](.github/workflows/release.yml) | On a tag only: builds the Windows installer, the portable build and the Linux AppImage from that commit, and publishes them with the changelog section for that version |
+| [Release](.github/workflows/release.yml) | On a tag only: builds the Windows installer, the portable build and the Linux AppImage from that commit into a draft release, installs the installer and the AppImage from the draft and clicks a mod through each, and publishes the release with its changelog section only when both pass |
 | [Site](.github/workflows/site.yml) | Rebuilds the documentation site so its counts, its version and this card stay true. On a pull request it only builds the site and checks the output |
 | [Mirror](.github/workflows/mirror.yml) | Pushes the same history to [GitLab](https://gitlab.com/TheFleece/dota2-mod-manager), so the code outlives this repository |
 | [Search report](.github/workflows/seo.yml) | Weekly, not per push: downloads, update checks, and visits from Google, Bing and Yandex, posted to [one public issue](https://github.com/TheFleece/dota2-mod-manager/issues/3) with every earlier week above it |

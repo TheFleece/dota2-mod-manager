@@ -298,7 +298,9 @@ a pull request merges and before a release builds.
 
 What it still does not cover: one mod of one shape, a zip holding a single VPK, in one category.
 Packs, load order, cursors, the schema patch, presets and imports are never driven through the
-window, and it runs the app from source rather than the installer a release ships.
+window. A pull request tries the source tree; the installer and the AppImage are tried only on a
+tag, by `.github/workflows/release.yml` against the draft release, so a packaging mistake is found
+at release time rather than at merge time.
 
 *Check:* `.github/workflows/e2e.yml` and the `e2e-linux` and `e2e-windows` artifacts it uploads:
 a screenshot per launch, the window's own step report and the app log.

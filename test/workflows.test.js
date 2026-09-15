@@ -92,6 +92,44 @@ test('release.yml builds nothing before the gate says the commit passed', () => 
   assert.match(gate[1], /checks:\s*read/, 'the gate cannot read check runs without checks: read');
 });
 
+test('release.yml shows a release to nobody until both builds on it installed a mod', () => {
+  /* Until 2026-09-15 the release was public the moment it was created, and the update file, the
+     mirror and the Discord post followed before anything had started the build that was going
+     out. A draft is invisible to /releases/latest, so no installed copy can update to it. */
+  const text = read('release.yml');
+  const job = (name) => (new RegExp(`\\n {2}${name}:\\n([\\s\\S]*?)(?=\\n {2}[a-z][\\w-]*:\\n|$)`).exec(text) || [])[1] || '';
+  const needs = (body) => {
+    const m = /(?:^|\n) {4}needs:\s*(\[[^\]]*\]|[\w-]+)/.exec(body);
+    return m ? m[1].replace(/[[\]\s]/g, '').split(',') : [];
+  };
+  assert.match(job('build'), /gh release create[^\n]*--draft/, 'the build job opens the release in public instead of as a draft');
+  // electron-builder publishes a release it has to create itself, unless it is told to make a draft
+  assert.equal((text.match(/EP_DRAFT: 'true'/g) || []).length, 2, 'an electron-builder step without EP_DRAFT can publish the release');
+  for (const [name, after] of [['try-windows', 'build'], ['try-linux', 'linux']]) {
+    const body = job(name);
+    assert.ok(body, `release.yml has no ${name} job`);
+    assert.match(body, /node tools\/e2e\.mjs --app /, `${name} does not click through the build it downloaded`);
+    assert.ok(needs(body).includes(after), `${name} does not wait for ${after} to put its build on the draft`);
+  }
+  const publish = job('publish');
+  assert.ok(publish, 'release.yml has no publish job');
+  for (const n of ['try-windows', 'try-linux']) assert.ok(needs(publish).includes(n), `publish does not wait for ${n}`);
+  assert.match(publish, /-F draft=false/, 'the publish job does not take the release out of draft');
+  for (const n of ['mirror-update', 'notify']) assert.ok(needs(job(n)).includes('publish'), `${n} can run before the release is public`);
+  // the API call, not the words: comments and error messages above publish name the endpoint on purpose
+  assert.ok(!/repos\/\$REPO\/releases\/latest/.test(text.split(/\n {2}publish:\n/)[0]), 'a job before publish asks /releases/latest, which cannot show a draft');
+});
+
+test('RELEASING.md names every job release.yml runs', () => {
+  /* The runbook gets read on the day a release went wrong, which is the worst day to find it
+     describing a workflow that has changed since. */
+  const jobs = [...(read('release.yml').split(/\njobs:\n/)[1] || '').matchAll(/^ {2}([a-z][\w-]*):\s*$/gm)].map((m) => m[1]);
+  assert.ok(jobs.length >= 8, `found only ${jobs.length} jobs in release.yml`);
+  const doc = fs.readFileSync(path.join(ROOT, 'RELEASING.md'), 'utf8');
+  const missing = jobs.filter((j) => !doc.includes(`\`${j}\``));
+  assert.deepEqual(missing, [], `RELEASING.md does not mention: ${missing.join(', ')}`);
+});
+
 test('every required check is a job that exists, under the name GitHub will show', () => {
   /* The ruleset waits for a check by name. Rename the job, or turn it into a matrix, and a merge
      waits for ever for a check that no longer exists; the comment in test.yml was the only thing

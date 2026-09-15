@@ -167,10 +167,15 @@ dialog nobody can act on.
 ## How a change reaches main
 
 Through a pull request, the maintainer's own changes included. It merges when the required checks
-are green: the suite on Linux and on Windows, CodeQL, the Linux build and its start-up run, and
-one rule of its own. A pull request that fixes something changes a test as well, or carries a
-line `No-Test-Because: <reason>` in a commit message or in its description. `npm run verify` runs
-the same lint and suite on your machine before you push.
+are green: the suite on Linux and on Windows, CodeQL, the Linux build and its start-up run,
+installing a mod through the window on Linux and on Windows, and one rule of its own. A pull
+request that fixes something changes a test as well, or carries a line `No-Test-Because: <reason>`
+in a commit message or in its description. `npm run verify` runs the same lint and suite on your
+machine before you push.
+
+A version goes out from a tag, as a draft that becomes public only after its installer and its
+AppImage have each installed a mod. [RELEASING.md](RELEASING.md) has the steps, and what to do when
+a release goes wrong.
 
 ## Response times
 
