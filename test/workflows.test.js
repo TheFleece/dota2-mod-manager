@@ -51,6 +51,23 @@ test('every workflow says what its token may do', () => {
   assert.deepEqual(bad, [], `no top-level permissions: ${bad.join(', ')}`);
 });
 
+test('no workflow lets every job write: a job that needs to write asks for it itself', () => {
+  /* OpenSSF Scorecard's first run on 2026-09-15 found two: codeql.yml gave security-events: write
+     and fingerprints.yml gave contents: write to the whole workflow. Every job added to either file
+     would have inherited it without anybody deciding so. */
+  const bad = [];
+  for (const f of workflows) {
+    const m = /^permissions:([^\n]*)\n((?:[ \t]+[^\n]*\n|[ \t]*#[^\n]*\n)*)/m.exec(read(f));
+    if (!m) continue;
+    const inline = m[1].trim();
+    if (inline && !/^(read-all|\{\s*\})$/.test(inline)) bad.push(`${f}: permissions: ${inline}`);
+    for (const line of m[2].split('\n')) {
+      if (/^\s+[\w-]+:\s*write\b/.test(line)) bad.push(`${f}: top-level ${line.trim()}`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('\n'));
+});
+
 test('every secret a workflow reads is in the registry, and the registry lists nothing unused', () => {
   const registry = json('.github/credentials.json').secrets;
   const used = new Map();

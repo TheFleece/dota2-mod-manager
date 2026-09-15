@@ -8,14 +8,17 @@ on:
     paths: ['.github/labels.json']
   workflow_dispatch:
 
-# Labels are issue metadata, so this needs issues: write and nothing else.
+# The token reads the repository and nothing more. The job that edits labels asks for that itself.
 permissions:
   contents: read
-  issues: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # labels are issue metadata, so this needs issues: write and nothing else
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 

@@ -26,11 +26,9 @@ on:
         type: boolean
         default: false
 
-# Reading the repository and writing one comment. It used to ask for contents: write, from the
-# days when the state was pushed back as a commit; nothing is pushed any more.
+# The token reads the repository and nothing more. The job that posts the report asks for that itself.
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: seo-report
@@ -39,6 +37,11 @@ concurrency:
 jobs:
   report:
     runs-on: ubuntu-latest
+    # Reading the repository and writing one comment. It used to ask for contents: write, from the
+    # days when the state was pushed back as a commit; nothing is pushed any more.
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7

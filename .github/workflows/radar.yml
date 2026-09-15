@@ -18,13 +18,9 @@ on:
         type: boolean
         default: false
 
-# Read everything it reports on, write one issue. Nothing here pushes, labels or closes.
+# The token reads the repository and nothing more. The job below asks for what it reports on.
 permissions:
   contents: read
-  issues: write
-  pull-requests: read
-  actions: read
-  security-events: read
 
 concurrency:
   group: radar
@@ -33,6 +29,13 @@ concurrency:
 jobs:
   radar:
     runs-on: ubuntu-latest
+    # Read everything it reports on, write one issue. Nothing here pushes, labels or closes.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      actions: read
+      security-events: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 

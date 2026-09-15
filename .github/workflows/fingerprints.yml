@@ -18,8 +18,11 @@ on:
     - cron: '*/30 * * * *'   # every 30 min; a no-op unless the catalog changed
   workflow_dispatch:
 
+# Read only. The commit goes back over SSH with the deploy key below, which carries its own write
+# access to this one repository, and the checkpoint cache has a token of its own. Nothing in the job
+# writes with the workflow token, so it no longer gets to (OpenSSF Scorecard, 2026-09-15).
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: fingerprints

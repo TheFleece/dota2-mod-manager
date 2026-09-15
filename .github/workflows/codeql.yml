@@ -22,9 +22,10 @@ on:
     # is most of what scheduled scanning is actually for.
     - cron: '17 4 * * 1'
 
+# The token reads the repository and nothing more. The job that uploads results asks for that
+# itself, so a job added to this file later does not inherit the right to write findings.
 permissions:
   contents: read
-  security-events: write
 
 concurrency:
   group: codeql-${{ github.ref }}
@@ -34,6 +35,10 @@ jobs:
   analyze:
     name: Analyse JavaScript and TypeScript
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # the results go to the Security tab
+      security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
