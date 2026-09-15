@@ -141,3 +141,24 @@ test('the response times the radar enforces are the ones the documents promise',
   assert.match(contributing, new RegExp(`${POLICY.waitingDays} days`), `CONTRIBUTING.md does not say a pull request is flagged after ${POLICY.waitingDays} days`);
   assert.match(security, new RegExp(`within ${POLICY.securityHours} hours`), `SECURITY.md does not promise a reply within ${POLICY.securityHours} hours`);
 });
+
+test('a frequent schedule is not called silent over GitHub delays, a stopped one is', async () => {
+  /* On its first real run the radar called the 30-minute catalog job silent after two hours.
+     GitHub had simply not started it: that job runs every five or six hours in practice. */
+  const { evaluate } = await load();
+  const every30 = (hours) => ({ name: 'Fingerprints', state: 'active', intervalHours: 0.5, url: 'u', created_at: ago(2000), lastRun: { conclusion: 'success', created_at: ago(hours), url: 'r' } });
+  assert.equal(evaluate({ workflows: [every30(2)] }, NOW).red.length, 0, 'two hours is an ordinary GitHub delay');
+  assert.equal(evaluate({ workflows: [every30(6)] }, NOW).red.length, 0, 'six hours is what this job really looks like');
+  assert.equal(evaluate({ workflows: [every30(30)] }, NOW).red.length, 1, 'more than a day of nothing is a stopped job');
+});
+
+test('a scheduled workflow added today is new, not silent', async () => {
+  /* The radar reported itself as never having run, on the run that created it. */
+  const { evaluate } = await load();
+  const fresh = { name: 'Radar', state: 'active', intervalHours: 24, url: 'u', created_at: ago(1), lastRun: null };
+  assert.equal(evaluate({ workflows: [fresh] }, NOW).red.length, 0);
+  const neverRan = { ...fresh, created_at: ago(24 * 5) };
+  const r = evaluate({ workflows: [neverRan] }, NOW);
+  assert.equal(r.red.length, 1);
+  assert.match(r.red[0].title, /has not run once in the 5 days since it was added/);
+});

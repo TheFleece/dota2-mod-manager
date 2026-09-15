@@ -46,6 +46,7 @@ export const POLICY = {
   unreleasedDays: 7,
   goodFirstIssues: 3,
   searchReportDays: 8,
+  silenceFloorHours: 24, // never call a scheduled job silent sooner than this; see the silence check
 };
 
 const HOUR = 3600000;
@@ -192,10 +193,19 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
       r.red.push({ title: `${w.name} failed on main`, url: w.lastRun.url, detail: `last run ${String(w.lastRun.created_at).slice(0, 10)}`, overdue: true });
     }
     if (w.intervalHours) {
-      const since = w.lastRun ? hoursSince(w.lastRun.created_at, now) : Infinity;
-      if (since > w.intervalHours * 2 + 1) {
+      /* GitHub starts scheduled runs when it can, not when the cron says: in September 2026 the
+         30-minute catalog job actually ran every five or six hours. Twice the interval is the
+         allowance, but never less than a day, or a busy afternoon at GitHub reads as a dead job
+         and the radar cries wolf every morning until nobody reads it. A workflow with no run yet
+         is measured from when it was added, so one committed today is new rather than silent: on
+         its own first run the radar reported itself as never having run. */
+      const allowance = Math.max(w.intervalHours * 2, policy.silenceFloorHours) + 1;
+      const from = w.lastRun ? w.lastRun.created_at : w.created_at;
+      const since = from ? hoursSince(from, now) : Infinity;
+      if (since > allowance) {
         late++;
-        r.red.push({ title: `${w.name} has not run for ${fmtAge(since)}`, url: w.url, detail: `it is scheduled every ${fmtInterval(w.intervalHours)}`, overdue: true });
+        const title = w.lastRun ? `${w.name} has not run for ${fmtAge(since)}` : `${w.name} has not run once in the ${fmtAge(since)} since it was added`;
+        r.red.push({ title, url: w.url, detail: `it is scheduled every ${fmtInterval(w.intervalHours)}`, overdue: true });
       }
     }
   }
@@ -360,6 +370,7 @@ async function gather(repo, token, now) {
       state: w.state,
       url: w.html_url,
       intervalHours: schedules.get(w.path) || null,
+      created_at: w.created_at,
       lastRun: last ? { conclusion: last.conclusion, created_at: last.created_at, url: last.html_url } : null,
     });
   }
