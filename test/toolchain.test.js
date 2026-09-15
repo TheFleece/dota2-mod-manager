@@ -46,10 +46,23 @@ async function serve(t, data) {
   return port;
 }
 
-test('the built-in pins are the shape the code demands of a remote one', () => {
+test('every built-in pin passes the check the app enforces on a pin', () => {
   for (const [name, pin] of Object.entries(BUILT_IN_PINS)) {
     assert.ok(validPin(pin, name), `${name} pin is valid`);
   }
+});
+
+test('the pins travel with the release, not over the network', () => {
+  /* config/tools.json was never published, so every start asked main for it, got a 404 and used
+     the built-in pins anyway. A channel that never carried anything is not a rollback plan, and an
+     unsigned file that can redirect a fifty megabyte download is not one worth keeping. Removed
+     2026-09-16; a new tool version travels with a release. */
+  // the code, not the prose: the comment in that file explains this history on purpose
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'toolchain.js'), 'utf8');
+  assert.ok(!/raw\.githubusercontent\.com/.test(src), 'toolchain.js has an address to fetch pins from again');
+  assert.ok(!/fetchText/.test(src), 'toolchain.js fetches something other than the archive it pinned');
+  const tc = createToolchain({ userDataDir: os.tmpdir() });
+  assert.equal(tc.refreshPins, undefined, 'createToolchain still hands out a pin refresher');
 });
 
 test('both homes of the tool are accepted, and nothing that merely looks like them', () => {

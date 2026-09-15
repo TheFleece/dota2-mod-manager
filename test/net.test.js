@@ -101,12 +101,16 @@ test('a URL that is not on GitHub raw is its own only mirror', () => {
   assert.deepEqual(net.mirrorsFor(other), [other]);
 });
 
-// A proxy hands over bytes claiming they are GitHub's, which is a fair trade for a mod
-// archive and not for the file that says which binary the app should download and run.
+// A proxy hands over bytes claiming they are GitHub's, which is a fair trade for a mod archive
+// and not for a file that says which bytes to trust. src/portable-update.js asks for the portable
+// build's manifest this way: it carries the hash the downloaded exe is checked against.
 test('a file asked for trusted-only goes to GitHub itself or nowhere', () => {
-  const pins = `${RAW_HOST}TheFleece/dota2-mod-manager/main/config/tools.json`;
-  assert.deepEqual(net.mirrorsFor(pins, { small: true, trustedOnly: true }), [pins]);
-  assert.ok(net.mirrorsFor(pins, { small: true }).length > 1, 'and the ordinary path still has its mirrors');
+  assert.deepEqual(net.mirrorsFor(RAW_URL, { small: true, trustedOnly: true }), [RAW_URL]);
+  assert.ok(net.mirrorsFor(RAW_URL, { small: true }).length > 1, 'and the ordinary path still has its mirrors');
+
+  const manifest = 'https://github.com/TheFleece/dota2-mod-manager/releases/download/v2.6.11/portable.yml';
+  assert.deepEqual(net.mirrorsFor(manifest, { small: true, trustedOnly: true }), [manifest],
+    'the manifest the portable build really asks for this way');
 });
 
 test('a mirror that is down is stepped over', async (t) => {

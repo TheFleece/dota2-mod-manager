@@ -13,19 +13,19 @@
 //   nothing proprietary - Valve's own vpk.exe is not here and must not be added (see the
 //     SignPath terms: a project that bundles it is not open source in their sense). Both
 //     tools below are MIT, downloaded rather than bundled, and credited in the README;
-//   the pins can be moved without a release - the same config channel the kill switch uses
-//     (config/tools.json), so a tool release that breaks something can be rolled back the
-//     same day.
+//   the pins ship with the release - the version, the URL and the digest are in this file and
+//     move only when a release moves them. There used to be a second channel: a config/tools.json
+//     on main, read at first use. That file was never published, so every start asked for it and
+//     got a 404, and the pins below were used anyway. A channel that never carried anything is
+//     not a rollback plan, and an unsigned file that can redirect a fifty megabyte download is
+//     not one worth building. Removed 2026-09-16; a new tool version travels with a release.
 const fs = require('fs');
 const path = require('path');
-const { downloadFile, fetchText } = require('./net');
+const { downloadFile } = require('./net');
 const { openZip } = require('./safe-zip');
 const { FileTx } = require('./file-tx');
 
-const PINS_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/config/tools.json';
-
-// What the app was built knowing. Checked against the live pins on first use; these are what
-// it falls back to offline, and what it uses if the remote file is missing or malformed.
+// The only pins there are: what the app was built knowing.
 // Measured again 2026-09-07 for 20.0: the digest comes from GitHub's own release API and was
 // confirmed by downloading the file and hashing it, and the archive was opened to check the
 // executable is at its root under the name below.
@@ -96,8 +96,7 @@ function validPin(pin, name) {
  */
 function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} }) {
   const root = path.join(userDataDir, 'toolchain');
-  let pins = { ...BUILT_IN_PINS };
-  let pinsFetched = false;
+  const pins = BUILT_IN_PINS;
 
   const dirFor = (name, version) => path.join(root, name, version);
   const stateFile = path.join(root, 'installed.json');
@@ -111,23 +110,6 @@ function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} })
     if (entry) all[name] = entry; else delete all[name];
     fs.mkdirSync(root, { recursive: true });
     fs.writeFileSync(stateFile, JSON.stringify(all, null, 2));
-  }
-
-  /** Live pins, if they can be had. Anything that fails to validate keeps the built-in one. */
-  async function refreshPins() {
-    if (pinsFetched) return pins;
-    pinsFetched = true;
-    try {
-      const raw = JSON.parse(await fetchText(PINS_URL, { trustedOnly: true }));
-      for (const name of TOOL_NAMES) {
-        const pin = raw && raw[name];
-        if (validPin(pin, name)) pins[name] = { ...BUILT_IN_PINS[name], ...pin };
-        else if (pin) log(`toolchain: pin for ${name} rejected, keeping the built-in one`);
-      }
-    } catch (err) {
-      log(`toolchain pins not fetched: ${err.message || err}`);
-    }
-    return pins;
   }
 
   /** Where this tool's executable sits right now, or null if it is not downloaded. */
@@ -144,7 +126,6 @@ function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} })
    */
   async function ensure(name) {
     if (!TOOL_NAMES.includes(name)) throw new Error(`unknown tool ${name}`);
-    await refreshPins();
     const pin = pins[name];
     const have = installed()[name];
     if (have && have.version === pin.version) {
@@ -226,7 +207,7 @@ function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} })
     remember(name, null);
   }
 
-  return { ensure, pathOf, state, remove, refreshPins, root, TOOL_NAMES, PINS_URL };
+  return { ensure, pathOf, state, remove, root, TOOL_NAMES };
 }
 
-module.exports = { createToolchain, BUILT_IN_PINS, validPin, TOOL_NAMES, PINS_URL, FALLBACK_BASE, fallbackUrl };
+module.exports = { createToolchain, BUILT_IN_PINS, validPin, TOOL_NAMES, FALLBACK_BASE, fallbackUrl };
