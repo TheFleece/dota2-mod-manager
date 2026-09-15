@@ -36,10 +36,10 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { encodeState, previousState, ctr, positionBuckets, countLocs, latestWeekOfQueries } from './seo-state.mjs';
+import { googleAccessToken } from './google-auth.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -92,38 +92,7 @@ async function bing(method, params = {}) {
  */
 let googleAccess = null;
 async function googleToken() {
-  if (googleAccess) return googleAccess;
-  let key;
-  try {
-    key = JSON.parse(GOOGLE_KEY);
-  } catch {
-    throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON is not JSON');
-  }
-  if (!key.client_email || !key.private_key) throw new Error('that JSON has no client_email or private_key');
-
-  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-  const iat = Math.floor(Date.now() / 1000);
-  const unsigned = `${b64({ alg: 'RS256', typ: 'JWT' })}.${b64({
-    iss: key.client_email,
-    scope: 'https://www.googleapis.com/auth/webmasters.readonly',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat,
-    exp: iat + 3600,
-  })}`;
-  const signer = crypto.createSign('RSA-SHA256');
-  signer.update(unsigned);
-  signer.end();
-  const assertion = `${unsigned}.${signer.sign(key.private_key).toString('base64url')}`;
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }),
-  });
-  const json = await res.json().catch(() => ({}));
-  // The assertion carries the private key's signature, so it stays out of the message.
-  if (!json.access_token) throw new Error(`token: HTTP ${res.status} ${String(json.error_description || json.error || '').slice(0, 160)}`);
-  googleAccess = json.access_token;
+  if (!googleAccess) googleAccess = await googleAccessToken(GOOGLE_KEY, 'https://www.googleapis.com/auth/webmasters.readonly');
   return googleAccess;
 }
 

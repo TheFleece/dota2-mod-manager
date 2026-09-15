@@ -211,24 +211,42 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
   }
   if ((data.workflows || []).length && !late) r.fine.push('Every scheduled workflow ran on time');
 
+  /* What tools/check-credentials.mjs found this morning, when it ran: a secret that fails or is
+     missing is red whatever its date says, and a date a service reports wins over a typed one. A
+     secret proven to work today is not a question to answer, even with no date on record: if it
+     stops, it is red here the same morning. */
+  const live = data.credentialStatus || null;
   const unknown = [];
   let next = null;
+  let working = 0;
   for (const [name, s] of Object.entries(data.credentials || {})) {
-    if (s.expires === 'unknown') {
-      unknown.push(name);
-    } else if (/^\d{4}-\d{2}-\d{2}$/.test(s.expires)) {
-      const days = (new Date(`${s.expires}T00:00:00Z`).getTime() - now) / DAY;
+    const check = live ? live[name] : null;
+    if (check && check.state === 'failed') {
+      r.red.push({ title: `${name} no longer works`, detail: `${check.detail}. To replace it: ${s.rotate}`, overdue: true });
+      continue;
+    }
+    if (check && check.state === 'missing') {
+      r.red.push({ title: `${name} is not set`, detail: `${s.what}. To set it: ${s.rotate}`, overdue: true });
+      continue;
+    }
+    if (check && check.state === 'ok') working++;
+    const expires = (check && check.expires) || s.expires;
+    if (expires === 'unknown') {
+      if (!check || check.state !== 'ok') unknown.push(name);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(expires)) {
+      const days = (new Date(`${expires}T00:00:00Z`).getTime() - now) / DAY;
       if (days <= policy.expiryWarnDays) {
         r.expiring.push({
-          title: `${name} ${days < 0 ? 'expired on' : 'expires on'} ${s.expires}`,
+          title: `${name} ${days < 0 ? 'expired on' : 'expires on'} ${expires}`,
           detail: `${s.what}. To replace it: ${s.rotate}`,
           overdue: days <= policy.expiryAlertDays,
         });
-      } else if (!next || s.expires < next.expires) {
-        next = { name, expires: s.expires };
+      } else if (!next || expires < next.expires) {
+        next = { name, expires };
       }
     }
   }
+  if (live) r.fine.push(`${working} of ${Object.keys(data.credentials || {}).length} secrets checked today and working`);
   if (unknown.length) {
     r.look.push({ title: `No expiry date recorded for ${unknown.length} secret${unknown.length === 1 ? '' : 's'}`, detail: `${unknown.join(', ')}: check each dashboard and write the date into .github/credentials.json`, overdue: false });
   }
@@ -384,6 +402,9 @@ async function gather(repo, token, now) {
   }
 
   const credentials = JSON.parse(fs.readFileSync(path.join(root, '.github', 'credentials.json'), 'utf8')).secrets;
+  // written a step earlier by tools/check-credentials.mjs; absent on a run without it
+  const statusFile = path.join(root, 'credentials-status.json');
+  const credentialStatus = fs.existsSync(statusFile) ? JSON.parse(fs.readFileSync(statusFile, 'utf8')).results : null;
   const decisionsReviewed = lastGoneOver(fs.readFileSync(path.join(root, 'DECISIONS.md'), 'utf8'));
 
   return {
@@ -397,6 +418,7 @@ async function gather(repo, token, now) {
       communityHealth: community.health_percentage,
       workflows,
       credentials,
+      credentialStatus,
       searchReportAt,
       searchIssueUrl: searchIssue ? searchIssue.html_url : undefined,
       unreleased,

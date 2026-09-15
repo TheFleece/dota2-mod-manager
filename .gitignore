@@ -26,3 +26,5 @@ seo-state.json
 # tree and a stray one committed here would look like protection while being the opposite.
 *.pem
 catalog-key.pem
+# written by tools/check-credentials.mjs in radar.yml
+credentials-status.json

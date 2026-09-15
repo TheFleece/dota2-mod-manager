@@ -40,6 +40,26 @@ jobs:
         with:
           node-version: 24
 
+      # Every secret the workflows use, tried against the service it belongs to: does it still
+      # work, and when does it stop. The results go to credentials-status.json for the next step,
+      # without a single value in them. tools/check-credentials.mjs says why this exists.
+      - name: Check that every secret still works
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_PUBLIC_BASE: ${{ secrets.R2_PUBLIC_BASE }}
+          MIRROR_PUSH_URL: ${{ secrets.MIRROR_PUSH_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RADAR_DISCORD_WEBHOOK: ${{ secrets.RADAR_DISCORD_WEBHOOK }}
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          YANDEX_OAUTH_TOKEN: ${{ secrets.YANDEX_OAUTH_TOKEN }}
+          FINGERPRINTS_DEPLOY_KEY: ${{ secrets.FINGERPRINTS_DEPLOY_KEY }}
+        run: node tools/check-credentials.mjs
+
       # The webhook address is a credential. The script never prints it, including in an error.
       - name: Look at everything that waits on a person
         env:
