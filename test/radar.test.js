@@ -124,6 +124,29 @@ test('a quiet day sends nothing and says what is in order', async () => {
   assert.match(body, /_Nothing is waiting\._/);
 });
 
+test('Scorecard findings are one line to look at, and CodeQL alerts stay decisions', async () => {
+  /* Scorecard uploads into the same code scanning list as CodeQL. Several of its findings describe
+     work with a plan rather than a bug (fuzzing, a paid signing certificate), and one overdue
+     decision each would keep the radar red every morning. */
+  const { evaluate } = await load();
+  const scorecard = (number, id) => ({ number, tool: { name: 'Scorecard' }, rule: { id, severity: 'error' }, html_url: `https://github.com/x/y/security/code-scanning/${number}`, created_at: ago(30 * 24), most_recent_instance: { location: { path: 'no file associated' } } });
+  const codeql = { number: 95, tool: { name: 'CodeQL' }, rule: { id: 'js/file-system-race', security_severity_level: 'high' }, html_url: 'https://github.com/x/y/security/code-scanning/95', created_at: ago(5 * 24), most_recent_instance: { location: { path: 'tools/e2e.mjs' } } };
+
+  const mixed = evaluate({ codeScanning: [scorecard(1, 'FuzzingID'), scorecard(2, 'CIIBestPracticesID'), codeql] }, NOW);
+  const scanning = (list) => list.filter((x) => /^Code scanning/.test(x.title)).map((x) => x.title);
+  assert.deepEqual(scanning(mixed.decide), ['Code scanning #95: js/file-system-race']);
+  assert.deepEqual(scanning(mixed.overdue), ['Code scanning #95: js/file-system-race'], 'a CodeQL alert past three days is still overdue');
+  const line = mixed.look.find((x) => x.title === 'Scorecard has 2 open findings');
+  assert.ok(line, 'the Scorecard findings are not counted on one line');
+  assert.equal(line.detail, 'CIIBestPracticesID, FuzzingID');
+  assert.equal(line.overdue, false);
+
+  const onlyScorecard = evaluate({ codeScanning: [scorecard(1, 'FuzzingID')] }, NOW);
+  assert.deepEqual(scanning(onlyScorecard.decide), []);
+  assert.ok(!onlyScorecard.overdue.some((x) => /Scorecard|Code scanning/.test(x.title)), 'a Scorecard finding made the radar overdue');
+  assert.ok(onlyScorecard.fine.includes('No open code scanning alerts'), 'Scorecard findings alone are not alerts to act on');
+});
+
 test('a long overdue list still fits one Discord message', async () => {
   const { evaluate, renderDiscord } = await load();
   const pulls = Array.from({ length: 80 }, (_, i) => ({ number: i + 1, title: `A pull request with a fairly long title number ${i + 1}`, html_url: `https://github.com/x/y/pull/${i + 1}`, created_at: ago(200), user: { login: 'someone' } }));

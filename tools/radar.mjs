@@ -164,7 +164,15 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
   if (data.codeScanning === 'unreadable') {
     r.look.push({ title: 'Code scanning alerts could not be read', detail: 'the workflow token needs security-events: read', overdue: false });
   } else {
-    for (const a of data.codeScanning || []) {
+    /* Scorecard reports into the same list as CodeQL, but its findings are about how the project
+       is run, and several describe work with a plan rather than a mistake to fix this week: no
+       fuzzing, no paid signing certificate. One overdue decision each would turn the radar red
+       every morning for things nobody can close by Friday, and a radar that is always red is not
+       read. So they are counted on one line, and every other tool's alert stays a decision. */
+    const all = data.codeScanning || [];
+    const scorecard = all.filter((a) => a.tool && /scorecard/i.test(a.tool.name || ''));
+    const alerts = all.filter((a) => !scorecard.includes(a));
+    for (const a of alerts) {
       const h = hoursSince(a.created_at, now);
       const where = a.most_recent_instance && a.most_recent_instance.location ? a.most_recent_instance.location.path : 'unknown file';
       r.decide.push({
@@ -174,7 +182,16 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
         overdue: h > policy.waitingDays * 24,
       });
     }
-    if (!(data.codeScanning || []).length) r.fine.push('No open code scanning alerts');
+    if (!alerts.length) r.fine.push('No open code scanning alerts');
+    if (scorecard.length) {
+      const checks = [...new Set(scorecard.map((a) => (a.rule && a.rule.id) || 'unknown'))].sort();
+      r.look.push({
+        title: `Scorecard has ${scorecard.length} open finding${scorecard.length === 1 ? '' : 's'}`,
+        url: data.scorecardUrl,
+        detail: checks.join(', '),
+        overdue: false,
+      });
+    }
   }
 
   if (data.privateReporting === false) {
@@ -413,6 +430,7 @@ async function gather(repo, token, now) {
       pulls,
       issues,
       codeScanning,
+      scorecardUrl: `https://github.com/${repo}/security/code-scanning?query=tool%3AScorecard+is%3Aopen`,
       privateReporting: typeof pvr.enabled === 'boolean' ? pvr.enabled : undefined,
       securitySettingsUrl: `https://github.com/${repo}/settings/security_analysis`,
       communityHealth: community.health_percentage,

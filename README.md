@@ -19,6 +19,8 @@
     <img src="https://img.shields.io/github/actions/workflow/status/TheFleece/dota2-mod-manager/test.yml?style=flat-square&label=tests&labelColor=211f26&color=2bffa3" alt="Test status"></a>
   <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/codeql.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/TheFleece/dota2-mod-manager/codeql.yml?style=flat-square&label=codeql&labelColor=211f26&color=2bffa3" alt="CodeQL status"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/TheFleece/dota2-mod-manager">
+    <img src="https://img.shields.io/ossf-scorecard/github.com/TheFleece/dota2-mod-manager?style=flat-square&label=openssf%20scorecard&labelColor=211f26" alt="OpenSSF Scorecard"></a>
   <img src="https://img.shields.io/github/last-commit/TheFleece/dota2-mod-manager?style=flat-square&label=last%20commit&labelColor=211f26&color=8b6ff0" alt="Last commit">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-c4b5fd?style=flat-square&labelColor=211f26" alt="License"></a>
   <a href="https://dota2modmanager.com"><img src="https://img.shields.io/badge/site-dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Website"></a>
@@ -202,6 +204,7 @@ is loading a tracker, and nothing has to be committed for the picture to move.
 | [Pull request rules](.github/workflows/pull-request.yml) | On every pull request: a change that fixes something changes a test too, or says in a `No-Test-Because:` line why it cannot |
 | [Labels](.github/workflows/labels.yml) | Keeps the repository's labels equal to `.github/labels.json` |
 | [Dependency updates](.github/workflows/dependency-updates.yml) | On Dependabot's pull requests: a minor or patch update merges itself once every required check passes, and anything bigger gets a label and waits for the maintainer |
+| [Scorecard](.github/workflows/scorecard.yml) | Weekly and on every change to main: OpenSSF Scorecard grades how the repository is kept (pinned actions, token permissions, branch protection, signed releases) and publishes the score behind the badge above |
 
 Nothing here commits back to `main`. Workflows that need to remember something between runs
 keep it in the Actions cache, or, for the weekly report, at the end of its own comment, because

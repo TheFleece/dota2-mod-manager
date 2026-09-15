@@ -1,0 +1,55 @@
+# An outside score for how this repository is kept, taken every week and on every change to main.
+#
+# OpenSSF Scorecard checks what a reviewer checks by hand: pinned dependencies, token permissions,
+# branch protection, whether CI runs on pull requests, whether releases are signed. The result
+# goes to three places: the badge in the README, the public viewer at scorecard.dev, and the
+# repository's Security tab. The radar counts its findings on one line rather than treating each
+# as a decision waiting on the maintainer (tools/radar.mjs says why).
+#
+# publish_results only works from a narrow workflow: read-only at the top, no env or defaults at
+# the top, and only these actions in the job. That is why this file is plainer than the others.
+name: Scorecard
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # the SARIF goes to the Security tab
+      security-events: write
+      # publishing the result, which the badge and the viewer read
+      id-token: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Score the repository
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Keep the raw result
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: scorecard
+          path: results.sarif
+          retention-days: 5
+
+      - name: Send the findings to the Security tab
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
+        with:
+          sarif_file: results.sarif

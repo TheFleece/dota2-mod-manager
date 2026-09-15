@@ -19,6 +19,8 @@
     <img src="https://img.shields.io/github/actions/workflow/status/TheFleece/dota2-mod-manager/test.yml?style=flat-square&label=%D1%82%D0%B5%D1%81%D1%82%D1%8B&labelColor=211f26&color=2bffa3" alt="Статус тестов"></a>
   <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/codeql.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/TheFleece/dota2-mod-manager/codeql.yml?style=flat-square&label=codeql&labelColor=211f26&color=2bffa3" alt="Статус CodeQL"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/TheFleece/dota2-mod-manager">
+    <img src="https://img.shields.io/ossf-scorecard/github.com/TheFleece/dota2-mod-manager?style=flat-square&label=openssf%20scorecard&labelColor=211f26" alt="Оценка OpenSSF Scorecard"></a>
   <img src="https://img.shields.io/github/last-commit/TheFleece/dota2-mod-manager?style=flat-square&label=%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BD%D0%B8%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BC%D0%B8%D1%82&labelColor=211f26&color=8b6ff0" alt="Последний коммит">
   <a href="LICENSE"><img src="https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-GPL--3.0-c4b5fd?style=flat-square&labelColor=211f26" alt="Лицензия"></a>
   <a href="https://dota2modmanager.com/ru/"><img src="https://img.shields.io/badge/%D1%81%D0%B0%D0%B9%D1%82-dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Сайт"></a>
@@ -200,6 +202,7 @@ v1.14rc7 проверяет принадлежность перед чистко
 | [Правила PR](.github/workflows/pull-request.yml) | На каждом pull request: изменение, которое что-то чинит, меняет и тест или объясняет строкой `No-Test-Because:`, почему не может |
 | [Метки](.github/workflows/labels.yml) | Держит метки репозитория равными `.github/labels.json` |
 | [Обновления зависимостей](.github/workflows/dependency-updates.yml) | На PR от Dependabot: minor и patch сливаются сами, когда прошли все обязательные проверки, а всё крупнее получает метку и ждёт мейнтейнера |
+| [Scorecard](.github/workflows/scorecard.yml) | Раз в неделю и на каждое изменение main: OpenSSF Scorecard оценивает, как содержится репозиторий (закреплённые actions, права токенов, защита ветки, подписанные релизы), и публикует оценку за значком выше |
 
 Ничто из этого не коммитит обратно в `main`. То, что воркфлоу нужно помнить между запусками,
 лежит в кеше Actions, а у еженедельного отчёта в конце его же комментария: коммит от бота на каждый
