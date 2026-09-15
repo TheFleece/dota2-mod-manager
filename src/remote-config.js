@@ -17,7 +17,7 @@
 //     "features": { "install": { "off": true, "ru": "…", "en": "…" } },
 //     "notices": [ { "id": "2026-08-dota-patch", "date": "2026-08-07", "level": "warn",
 //                    "ru": "…", "en": "…", "url": "https://…",
-//                    "minVersion": "2.0.0", "maxVersion": "2.1.0" } ]
+//                    "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ]
 //   }
 const fs = require('fs');
 const path = require('path');
@@ -91,6 +91,8 @@ function normalize(raw) {
       url: /^https:\/\//i.test(n.url || '') ? str(n.url, 300) : null,
       minVersion: str(n.minVersion, 20) || null,
       maxVersion: str(n.maxVersion, 20) || null,
+      // the last day it shows, in UTC; anything but a real date means no end, so a typo never hides a notice
+      until: /^\d{4}-\d{2}-\d{2}$/.test(n.until || '') && !Number.isNaN(Date.parse(`${n.until}T00:00:00Z`)) ? n.until : null,
     });
   }
   return out;
@@ -109,8 +111,9 @@ function normalize(raw) {
  * @param {(msg: string) => void} [opts.log]
  * @param {string} [opts.publicKey]  whose signature to accept; the pinned one unless a test
  *   wants to sign its own fixture, which it cannot do with a private key that is not here
+ * @param {() => number} [opts.now]  the clock a notice's until date is read against
  */
-function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey = CONFIG_PUBLIC_KEY }) {
+function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey = CONFIG_PUBLIC_KEY, now = () => Date.now() }) {
   const file = path.join(userDataDir, 'remote-config.json');
   let cache = null;
 
@@ -150,9 +153,11 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey
   /** Notices meant for this build, newest first, with the text already in one language. */
   function notices(lang = 'en') {
     const version = appVersion();
+    const today = new Date(now()).toISOString().slice(0, 10);
     return read().notices
       .filter((n) => (!n.minVersion || cmpVersion(version, n.minVersion) >= 0)
-        && (!n.maxVersion || cmpVersion(version, n.maxVersion) <= 0))
+        && (!n.maxVersion || cmpVersion(version, n.maxVersion) <= 0)
+        && (!n.until || today <= n.until))
       .map((n) => ({ id: n.id, date: n.date, level: n.level, url: n.url, text: (lang === 'ru' ? n.ru : n.en) || n.en || n.ru || '' }))
       .filter((n) => n.text)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));

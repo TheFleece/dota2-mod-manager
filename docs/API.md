@@ -1839,13 +1839,13 @@ Shape:
     "features": { "install": { "off": true, "ru": "…", "en": "…" } },
     "notices": [ { "id": "2026-08-dota-patch", "date": "2026-08-07", "level": "warn",
                    "ru": "…", "en": "…", "url": "https://…",
-                   "minVersion": "2.0.0", "maxVersion": "2.1.0" } ]
+                   "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ]
   }
 
 ### `createRemoteConfig`
 
 ```js
-function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey = CONFIG_PUBLIC_KEY })
+function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey = CONFIG_PUBLIC_KEY, now = () => Date.now() })
 ```
 
 ```
@@ -1855,6 +1855,7 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey
 @param {(msg: string) => void} [opts.log]
 @param {string} [opts.publicKey]  whose signature to accept; the pinned one unless a test
 wants to sign its own fixture, which it cannot do with a private key that is not here
+@param {() => number} [opts.now]  the clock a notice's until date is read against
 ```
 
 ### `normalize`

@@ -91,6 +91,33 @@ test('notices come back newest first', (t) => {
   assert.deepEqual(make(dir).notices().map((n) => n.id), ['newest', 'middle', 'older']);
 });
 
+test('a notice with an until date stops showing after that day', (t) => {
+  /* The thank-you for hanta's video carried a note saying "take this one down after 2026-08-29",
+     and on 2026-09-15 every copy of the app was still showing it. A date in a comment asks a
+     person to remember. A date the app reads does not. */
+  const dir = userDir(t, JSON.stringify({
+    notices: [
+      { id: 'week', date: '2026-08-22', until: '2026-08-29', en: 'a thank-you for a week' },
+      { id: 'broken', date: '2026-08-21', until: 'soon', en: 'an until that is not a date' },
+    ],
+  }));
+  const at = (iso) => createRemoteConfig({ userDataDir: dir, appVersion: () => '2.0.0', now: () => Date.parse(iso) });
+  assert.deepEqual(at('2026-08-29T23:59:00Z').notices().map((n) => n.id), ['week', 'broken'], 'the last day still counts');
+  assert.deepEqual(at('2026-08-30T00:00:01Z').notices().map((n) => n.id), ['broken'], 'the day after, it is gone');
+  // like a broken version bound, a broken date never hides a notice
+  assert.equal(normalize({ notices: [{ id: 'x', en: 'x', until: 'soon' }] }).notices[0].until, null);
+});
+
+test('every notice in config/app.json says when it stops showing', () => {
+  /* Without one a notice lasts until somebody remembers to take it out, and the one this rule
+     comes from outlived its week by more than a fortnight. Copies older than the until field
+     ignore it, so a notice past its date still has to leave the file; this only makes sure no
+     notice is written as permanent by leaving the date off. */
+  const file = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config', 'app.json'), 'utf8'));
+  const open = (file.notices || []).filter((n) => !/^\d{4}-\d{2}-\d{2}$/.test(n.until || '')).map((n) => n.id);
+  assert.deepEqual(open, [], `notices in config/app.json with no until date: ${open.join(', ')}`);
+});
+
 test('versions compare by number, not by string', () => {
   assert.equal(cmpVersion('2.0.0', '10.0.0'), -1, '10 is after 2, not before it');
   assert.equal(cmpVersion('2.1.0', '2.1.0'), 0);
