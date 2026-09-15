@@ -2,6 +2,50 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.6.12
+
+### A technical release
+
+Nothing in the window looks or behaves differently. This one is about how a release reaches you.
+The machinery below was built this week, and it should be tried on a release nobody is waiting for
+rather than on an urgent fix.
+
+### A release is installed and used before anybody can get it
+
+Until now CI built the installer and published it in the same breath. Two releases in September
+went out with installing broken: every check was green, because nothing had ever pressed the
+button.
+
+A release is now created as a draft, which no installed copy can update to. CI takes the installer
+and the AppImage from that draft, installs them, and clicks through the app: install a mod, switch
+it off, restart, switch it on, remove it, checking the game folder on disk after every step. Only
+when both pass does the release become public, for everybody at once.
+
+### Every file of a release can be checked
+
+Each release now carries `SHA256SUMS`, the SHA-256 of every file on it, and a signature for that
+list made by the release workflow itself. If you want to be sure the installer you downloaded is
+the one this repository built, with the GitHub CLI:
+
+```
+gh attestation verify Dota-2-Mod-Manager-Setup.exe --repo TheFleece/dota2-mod-manager
+```
+
+Beside it is a list of what the app ships inside it. The README and SECURITY.md show the other ways
+to check a download.
+
+### Notices in the app expire on their own
+
+The app can put a dated notice in front of you, and until now one stayed until somebody remembered
+to take it down. The thank-you for hanta's video was meant to run for a week in August and was
+still on screen in the middle of September. A notice now carries the last day it is shown, and that
+one is gone.
+
+### One less pointless request at every start
+
+The app asked GitHub for a settings file that was never published, got a 404 and carried on with
+what was built into it. It no longer asks.
+
 ## 2.6.11
 
 ### Built on Electron 44
