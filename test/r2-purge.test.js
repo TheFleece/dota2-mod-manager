@@ -82,6 +82,7 @@ test('a refused purge is reported, not thrown', async (t) => {
   const out = await purgeCache(['https://cdn.example/a.zip'], { env, log: (m) => said.push(m) });
 
   assert.equal(out.purged, 0);
+  assert.equal(out.failed, 1, 'a refusal is counted, so the job can fail on it instead of staying green');
   assert.match(said.join(' '), /Actor is not authorized/);
 });
 
@@ -94,6 +95,7 @@ test('the API throwing is reported, not thrown', async (t) => {
   const out = await purgeCache(['https://cdn.example/a.zip'], { env, log: (m) => said.push(m) });
 
   assert.equal(out.purged, 0);
+  assert.equal(out.failed, 1);
   assert.match(said.join(' '), /ENOTFOUND/);
 });
 
@@ -102,5 +104,23 @@ test('the mirror job fails when it replaced files it could not purge', () => {
      and the job stayed green while replaced archives kept being served from cache. */
   const sync = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'r2-sync.mjs'), 'utf8');
   assert.match(sync, /const purge = await purgeCache\(replaced\)/, 'r2-sync no longer keeps the purge result');
-  assert.match(sync, /replaced\.length && purge && purge\.skipped\)[\s\S]{0,300}process\.exitCode = 1/, 'a skipped purge after replacing files no longer fails the job');
+  assert.match(sync, /replaced\.length && purge && \(purge\.skipped \|\| purge\.failed\)\)[\s\S]{0,400}process\.exitCode = 1/, 'a skipped or refused purge after replacing files no longer fails the job');
+});
+
+test('the site token alone is enough, which is what the mirror job passes', async (t) => {
+  const cf = api();
+  t.after(cf.restore);
+  const out = await purgeCache(['https://cdn.example/a.zip'], { env: { CLOUDFLARE_ZONE_ID: 'zone123', CLOUDFLARE_API_TOKEN: 'site-token' }, log: quiet });
+  assert.equal(out.purged, 1);
+  assert.equal(cf.calls[0].auth, 'Bearer site-token');
+});
+
+test('the mirror job is handed a zone and a token, so the purge cannot be skipped by omission', () => {
+  /* Both used to be secrets nobody had set. The zone id is an identifier and is written into the
+     workflow; the token is the one already set for the site. */
+  const yml = require('fs').readFileSync(require('path').join(__dirname, '..', '.github', 'workflows', 'r2.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const step = /- name: Copy what is missing\n([\s\S]*?)\n\s*run:/.exec(yml);
+  assert.ok(step, 'r2.yml has no "Copy what is missing" step');
+  assert.match(step[1], /CLOUDFLARE_ZONE_ID: [0-9a-f]{32}\n/, 'the step has no zone id to purge in');
+  assert.match(step[1], /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/, 'the step has no token to purge with');
 });

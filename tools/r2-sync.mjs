@@ -268,8 +268,9 @@ if (!DRY) {
    2026-09-15 a missing zone id or purge token only printed a line, and the purge had in fact never
    run once. Now the job goes red, which the radar reports. */
 const purge = await purgeCache(replaced);
-if (replaced.length && purge && purge.skipped) {
-  console.error(`::error::${replaced.length} replaced file(s) are still cached at the edge (${purge.skipped}). Set CLOUDFLARE_ZONE_ID and CLOUDFLARE_PURGE_TOKEN, see .github/credentials.json`);
+if (replaced.length && purge && (purge.skipped || purge.failed)) {
+  const why = purge.skipped || `${purge.failed} refused or failed at Cloudflare`;
+  console.error(`::error::${replaced.length} replaced file(s) may still be cached at the edge (${why}). The token in CLOUDFLARE_API_TOKEN needs Zone, Cache Purge on dota2modmanager.com; see .github/credentials.json`);
   process.exitCode = 1;
 }
 

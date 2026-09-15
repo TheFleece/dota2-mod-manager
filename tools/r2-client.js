@@ -122,13 +122,14 @@ function createR2({ env = process.env, bucket = env.R2_BUCKET || 'd2mm-mods' } =
  * The app survives it, since a copy that fails its checksum now costs the mirror its turn
  * rather than the mod. That is a safety net, not a reason for the mirror to be wrong.
  *
- * Needs CLOUDFLARE_ZONE_ID and a token allowed to purge that zone. Without them this says what
- * it would have purged and returns, because a sync that copied everything correctly should not
- * be reported as a failure over a cache.
+ * Needs CLOUDFLARE_ZONE_ID and a token allowed to purge that zone. It never throws: a missing
+ * credential comes back as `skipped`, a refused or failed batch is counted in `failed`, and
+ * r2-sync turns either into a red job. Until 2026-09-15 both only printed a line, and the purge
+ * had in fact never run once.
  *
  * @param {string[]} urls  public URLs to drop from the cache
  * @param {object} [env]
- * @returns {Promise<{purged: number, skipped?: string}>}
+ * @returns {Promise<{purged: number, failed?: number, skipped?: string}>}
  */
 async function purgeCache(urls, { env = process.env, log = console.log } = {}) {
   const unique = [...new Set(urls)].filter(Boolean);
@@ -142,6 +143,7 @@ async function purgeCache(urls, { env = process.env, log = console.log } = {}) {
   }
 
   let purged = 0;
+  let failed = 0;
   // the API takes at most 30 URLs per call
   for (let i = 0; i < unique.length; i += 30) {
     const batch = unique.slice(i, i + 30);
@@ -155,15 +157,17 @@ async function purgeCache(urls, { env = process.env, log = console.log } = {}) {
       if (!res.ok || body.success === false) {
         const why = (body.errors || []).map((e) => e.message).join('; ') || `HTTP ${res.status}`;
         log(`cache: purge refused for ${batch.length} url(s): ${why}`);
+        failed += batch.length;
         continue;
       }
       purged += batch.length;
     } catch (e) {
       log(`cache: purge failed for ${batch.length} url(s): ${e.message}`);
+      failed += batch.length;
     }
   }
   if (purged) log(`cache: purged ${purged} of ${unique.length} replaced object(s)`);
-  return { purged };
+  return failed ? { purged, failed } : { purged };
 }
 
 module.exports = { createR2, encodePath, rfc3986, sha, purgeCache };
