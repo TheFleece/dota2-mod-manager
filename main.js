@@ -356,7 +356,9 @@ function createWindow() {
             fs.writeFileSync(`${process.env.MM_SHOT}.eval.json`, JSON.stringify(out, null, 1));
           }
           await new Promise((r) => setTimeout(r, 500));
-          const img = await win.webContents.capturePage();
+          // a runner's xvfb sometimes has no frame to hand over yet (UnknownVizError): src/capture.js
+          const { captureWithRetry } = require('./src/capture');
+          const img = await captureWithRetry(() => win.webContents.capturePage(), { log: diag });
           fs.writeFileSync(process.env.MM_SHOT, img.toPNG());
           diag('capture done ' + img.getSize().width + 'x' + img.getSize().height);
         } catch (e) {

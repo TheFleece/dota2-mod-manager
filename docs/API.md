@@ -13,6 +13,7 @@ the code, not in this page.
 
 | Module | What it owns |
 |---|---|
+| [`src/capture.js`](#srccapturejs) |  |
 | [`src/catalog-signature.js`](#srccatalog-signaturejs) | Making the catalog's own author the only person who can change the catalog. |
 | [`src/catalog.js`](#srccatalogjs) | Catalog: fetch + cache mods.json / constants.json / guides.json from the Dota2PornFx repo |
 | [`src/diagnostics.js`](#srcdiagnosticsjs) | A support report a user can send instead of a round of screenshots: Dota's own path and |
@@ -46,6 +47,33 @@ the code, not in this page.
 | [`src/toolchain.js`](#srctoolchainjs) | Tools the app can borrow, fetched only when something actually needs them. |
 | [`src/vpk.js`](#srcvpkjs) | Minimal reader for the index of Source-engine VPK "_dir" files (v1/v2). |
 | [`src/vtex.js`](#srcvtexjs) | The picture inside a compiled Source 2 texture, when it is already a picture. |
+
+## src/capture.js
+
+### `captureWithRetry`
+
+```js
+async function captureWithRetry(capture, { tries = 3, waitMs = 1500, log = () => {}, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), } = {})
+```
+
+Take a screenshot of the window, and try again when Chromium has no frame to hand over yet.
+
+Under xvfb on a CI runner, webContents.capturePage() now and then rejects with UnknownVizError:
+the compositor has nothing to give at that moment. On 2026-09-15 that failed the Linux start
+check on a pull request that had not touched the app, after seven green runs in a row. A
+required check that fails at random for reasons outside the change gets rerun without being
+read, and then it guards nothing. So a capture gets a few tries, and every failed try goes to
+the log, which keeps a capture that never works exactly as visible as before.
+
+```
+@param {() => Promise<any>} capture  the call to make, usually () => win.webContents.capturePage()
+@param {object} [opts]
+@param {number} [opts.tries]  how many times to call it before giving up
+@param {number} [opts.waitMs]  the pause between tries
+@param {(msg: string) => void} [opts.log]  where each failed try is reported
+@param {(ms: number) => Promise<void>} [opts.sleep]  the pause itself, replaceable in tests
+@returns {Promise<any>} whatever the capture returned
+```
 
 ## src/catalog-signature.js
 
