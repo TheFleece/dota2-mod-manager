@@ -292,7 +292,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 45 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 58 files, run on every push and every pull request
 on Linux and on Windows. Four of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, and `DECISIONS.md`
@@ -302,6 +302,12 @@ against the repository it describes.
 `pak01_dir.vpk` built from its own item table, then downloads real catalog mods into it. Install,
 load order, packs, the schema patch and language folders are tested there rather than against
 anybody's actual installation. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+`tools/e2e.mjs` drives the app in that tree the way a player does. It writes a fixture catalog and
+a fixture archive into the app's caches, starts the app twice, and clicks: install, switch off,
+restart, switch on, remove. After each launch it compares the language folder on disk with what
+should be there. No network is involved. `.github/workflows/e2e.yml` runs it on Linux and on
+Windows, and both jobs have to pass before a pull request merges and before a release builds.
 
 ## On disk
 
@@ -348,6 +354,7 @@ that location is not writable.
 | `renderer/views/*` | Catalog, My mods, Presets, Settings |
 | `renderer/ui/*` | Dialogs, toasts, the media player, the install queue, shared chrome |
 | `tools/sandbox.js` | The throwaway game tree |
+| `tools/e2e.mjs`, `test/fixtures/e2e/*` | Installing, switching and removing a mod by clicking through the real window, offline, in the sandbox |
 | `tools/r2-sync.mjs`, `tools/r2-release.mjs`, `tools/r2-client.js` | The archive mirror, the update mirror, and the signing they share |
 | `tools/gen-fingerprints.js` | Regenerating the published fingerprint map |
 | `tools/seo-report.mjs`, `tools/seo-state.mjs` | The weekly reach and search report posted to [issue #3](https://github.com/TheFleece/dota2-mod-manager/issues/3), and the numbers it carries from one week to the next inside the comment |

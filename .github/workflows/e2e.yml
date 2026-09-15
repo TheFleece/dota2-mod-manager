@@ -1,0 +1,71 @@
+# Install a mod, switch it off and on, and remove it, by clicking in the window.
+#
+# 2.6.5 and 2.6.6 went out with Install dead while every check here was green, because nothing
+# ever pressed the button (issue #19). tools/e2e.mjs presses it, in the sandbox game tree, with a
+# fixture catalog and a fixture archive written into the app's own caches. It needs no network,
+# and it does not go red because the live catalog changed overnight.
+#
+# Both systems the app ships for, because the code that breaks is rarely the same on the two:
+# processes, file locks and Steam's layout all take a different branch on Windows.
+name: Window
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# The token reads the repository and nothing more.
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Install a mod through the window
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Electron needs an X server that a runner does not have.
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Install, switch off, switch on and remove a mod by clicking
+        run: xvfb-run -a node tools/e2e.mjs
+
+      - name: What the window showed
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: e2e-linux
+          path: e2e-output/
+          if-no-files-found: warn
+
+  windows:
+    name: Install a mod through the window on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install, switch off, switch on and remove a mod by clicking
+        run: node tools/e2e.mjs
+
+      - name: What the window showed
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: e2e-windows
+          path: e2e-output/
+          if-no-files-found: warn

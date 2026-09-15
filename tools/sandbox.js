@@ -383,8 +383,33 @@ async function downloadMods() {
 
 const sha256 = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
+/* The Steam account the sandbox library belongs to.
+ *
+ * src/gamelang.js takes -language from the launch options of whoever is logged in, looking first
+ * at the Steam root the game path implies (sandbox/ here) and, on Windows, going on to
+ * Program Files\Steam when that root has no account. With no account of its own, a sandbox run
+ * on a machine where Dota starts with -language dutch (Minify sets exactly that) installed into
+ * dota_dutch, and tools/e2e.mjs watched an empty dota_russian. An account whose launch options
+ * say nothing answers first and ends the search there, on every platform.
+ *
+ * Steam's userdata folder and the app's --user-data-dir are both sandbox/userdata. They share it
+ * without trouble: Electron writes nothing with a numeric name.
+ */
+const SANDBOX_STEAM_ID = '76561197972611406'; // 32-bit account 12345678
+const LOGINUSERS = `"users"\n{\n\t"${SANDBOX_STEAM_ID}"\n\t{\n\t\t"AccountName"\t\t"sandbox"\n\t\t"MostRecent"\t\t"1"\n\t\t"Timestamp"\t\t"1757894400"\n\t}\n}\n`;
+const LOCALCONFIG = '"UserLocalConfigStore"\n{\n\t"Software"\n\t{\n\t\t"Valve"\n\t\t{\n\t\t\t"Steam"\n\t\t\t{\n\t\t\t\t"apps"\n\t\t\t\t{\n\t\t\t\t\t"570"\n\t\t\t\t\t{\n\t\t\t\t\t\t"LaunchOptions"\t\t""\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n';
+
+function seedSteamAccount() {
+  const account = String(BigInt(SANDBOX_STEAM_ID) - 76561197960265728n);
+  mkdir(path.join(USERDATA, account, 'config'));
+  fs.writeFileSync(path.join(USERDATA, account, 'config', 'localconfig.vdf'), LOCALCONFIG);
+  mkdir(path.join(SANDBOX, 'config'));
+  fs.writeFileSync(path.join(SANDBOX, 'config', 'loginusers.vdf'), LOGINUSERS);
+}
+
 function seedUserData() {
   mkdir(USERDATA);
+  seedSteamAccount();
   // Pre-answered first run: game path found, mod folder pinned to the sandbox's own language
   // folder, language picker and "what's new" already seen. Without this every sandbox launch
   // would open on the first-run dialogs instead of the screen under test.
@@ -394,6 +419,8 @@ function seedUserData() {
     langSuffixAuto: true,
     uiLang: 'ru',
     langPromptSeen: true,
+    // the Source 2 Viewer offer; unanswered, it opened in front of every sandbox launch
+    toolsPromptSeen: true,
     lastSeenVersion: require('../package.json').version,
     discordPresence: false,
     schemaPatch: false,

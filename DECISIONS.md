@@ -284,24 +284,24 @@ the language folder, which is more than one file's worth of subject.
 
 *Check:* `wc -l main.js`, and `ARCHITECTURE.md` for what is supposed to live where.
 
-### CI starts the app, and then does nothing with it
+### CI clicks through one mod, and only one
 
 `.github/workflows/linux.yml` runs Electron against the sandbox under xvfb on every change to the
-code, photographs the first window, and fails when no picture appears. Since 2026-09-11 it also
-reads the app's log and fails on `unhandledrejection`, `is not defined` or `is not a function`,
-which is what a name that does not exist looks like by the time it gets there.
+code, photographs the first window and fails on `unhandledrejection`, `is not defined` or
+`is not a function` in the app's log. Since 2026-09-15 `.github/workflows/e2e.yml` runs
+`tools/e2e.mjs` on Linux and on Windows: it presses Install on a fixture mod, switches it off,
+restarts the app, switches it on and removes it, and compares the language folder on disk after
+each launch. Run against the 2.6.6 code it stops at Install with `blocked is not defined`, the
+error that left installing dead in 2.6.5 and 2.6.6
+([#19](https://github.com/TheFleece/dota2-mod-manager/issues/19)). These jobs are required before
+a pull request merges and before a release builds.
 
-What it still does not do: click anything. No mod is installed, no switch is thrown, no screen is
-opened. So a handler that throws the moment somebody presses a button gets through, which is
-exactly what happened in 2.6.5 and 2.6.6 - the window came up perfectly and installing was dead.
-It also runs on Linux only, and only when the paths it watches change. Making it press Install is
-[#19](https://github.com/TheFleece/dota2-mod-manager/issues/19).
+What it still does not cover: one mod of one shape, a zip holding a single VPK, in one category.
+Packs, load order, cursors, the schema patch, presets and imports are never driven through the
+window, and it runs the app from source rather than the installer a release ships.
 
-The next step is driving it: `MM_CLICK` already exists for that, and the sandbox already holds
-real mods. Not built.
-
-*Check:* `.github/workflows/linux.yml`, the "Start it against the sandbox" job, and the artifact
-it uploads from any run of it.
+*Check:* `.github/workflows/e2e.yml` and the `e2e-linux` and `e2e-windows` artifacts it uploads:
+a screenshot per launch, the window's own step report and the app log.
 
 ### No macOS build, and the Linux one is young
 

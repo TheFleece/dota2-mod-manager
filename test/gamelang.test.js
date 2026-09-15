@@ -344,6 +344,25 @@ test('no Steam layout at all is not an override', (t) => {
   assert.equal(gamelang.launchLanguage(game), null);
 });
 
+test('an account beside the library that sets no language ends the search there', (t) => {
+  /* tools/sandbox.js depends on this. Its library had no Steam account, so on Windows the lookup
+   * went on to Program Files\Steam, found the developer's own -language dutch, and a sandbox run
+   * installed into dota_dutch while the end-to-end test watched dota_russian. */
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-pf-'));
+  t.after(() => fs.rmSync(base, { recursive: true, force: true }));
+  fakeSteam(path.join(base, 'Steam', 'steamapps', 'common', 'dota 2 beta', 'game'),
+    [{ id32: 222, launchOptions: '-language dutch', mostRecent: true }]);
+  process.env['ProgramFiles(x86)'] = base;
+  t.after(() => { process.env['ProgramFiles(x86)'] = NO_STEAM; });
+
+  const game = fakeGame(t, { boot: bootFile('russian', 'russian') });
+  if (process.platform === 'win32') {
+    assert.equal(gamelang.launchLanguage(game), 'dutch', 'with no account of its own the library borrows the default install');
+  }
+  fakeSteam(game, [{ id32: 111, launchOptions: '', mostRecent: true }]);
+  assert.equal(gamelang.launchLanguage(game), null);
+});
+
 test('a launch option naming a real language decides the folder, and the app follows it', () => {
   /* `-language X` locks both language settings and the engine builds its content path from it,
    * so a mod anywhere else is invisible however the app sets boot.vcfg. The app used to set the

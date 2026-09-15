@@ -192,6 +192,8 @@ is loading a tracker, and nothing has to be committed for the picture to move.
 |---|---|
 | [Tests](.github/workflows/test.yml) | eslint first, then the full suite with a coverage floor, on Linux and on Windows. Several of the tests hold the project against itself rather than testing a module: every IPC channel has a handler and every handler runs, every renderer import resolves, every Russian string has an English twin, the version and both changelogs agree, `docs/API.md` still matches the source, and `DECISIONS.md` still matches the repository |
 | [CodeQL](.github/workflows/codeql.yml) | Security and quality analysis, plus a weekly scheduled run |
+| [Linux](.github/workflows/linux.yml) | Builds the AppImage, starts the app against the sandbox, photographs the first window and reads the log for code that could not run |
+| [Window](.github/workflows/e2e.yml) | On Linux and on Windows: installs a mod, switches it off and on and removes it by clicking in the window, checking the game folder on disk after each launch. Offline, with a fixture catalog |
 | [Release](.github/workflows/release.yml) | On a tag only: builds the Windows installer, the portable build and the Linux AppImage from that commit, and publishes them with the changelog section for that version |
 | [Site](.github/workflows/site.yml) | Rebuilds the documentation site so its counts, its version and this card stay true. On a pull request it only builds the site and checks the output |
 | [Mirror](.github/workflows/mirror.yml) | Pushes the same history to [GitLab](https://gitlab.com/TheFleece/dota2-mod-manager), so the code outlives this repository |

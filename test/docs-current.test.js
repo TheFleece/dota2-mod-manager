@@ -103,6 +103,15 @@ test('every file a document names in backticks is a file that is there', () => {
   assert.deepEqual([...new Set(missing)], [], [...new Set(missing)].join('; '));
 });
 
+test('the number of test files ARCHITECTURE.md gives is the number there are', () => {
+  /* It said 45 on 2026-09-15, when there were 58. Thirteen files had arrived since the sentence
+     was written, and nobody rereads a count to check it. */
+  const m = read('ARCHITECTURE.md').match(/no framework, (\d+) files/);
+  assert.ok(m, 'ARCHITECTURE.md no longer says how many test files there are');
+  const real = fs.readdirSync(path.join(ROOT, 'test')).filter((f) => f.endsWith('.test.js')).length;
+  assert.equal(Number(m[1]), real, `ARCHITECTURE.md says ${m[1]} test files and test/ has ${real}: change the number`);
+});
+
 test('every relative link in a document points at something that exists', () => {
   const missing = [];
   for (const doc of DOCS) {

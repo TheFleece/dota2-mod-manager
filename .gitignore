@@ -28,3 +28,5 @@ seo-state.json
 catalog-key.pem
 # written by tools/check-credentials.mjs in radar.yml
 credentials-status.json
+# screenshots, window results and the app log of tools/e2e.mjs
+e2e-output/

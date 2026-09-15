@@ -37,12 +37,20 @@ npm run sandbox:seed     # build sandbox/ and download real catalog mods into it
 npm run start:sandbox    # run the app against that tree, with its own settings
 npm run sandbox:status   # what is on disk right now
 npm run sandbox:reset    # back to a clean state
+npm run e2e              # install, switch and remove a mod by clicking through the window
 ```
 
 The seeder copies `gameinfo.gi` out of your real installation and builds a `pak01_dir.vpk` with
 the game's own `items_game.txt`, so slot allocation, load order, the schema patch and language
 folders behave the way they do in a real install. It downloads around fourteen real mods from the
 catalog, because synthetic VPKs agree with our own parser and prove nothing.
+
+`npm run e2e` needs none of those downloads and no network. It writes a fixture mod into the
+app's caches, starts the app twice, clicks through install, switch off, switch on and remove, and
+after each launch compares the language folder on disk with what it should hold. Screenshots, the
+window's own report and the app log land in `e2e-output/`. It rebuilds `sandbox/` as it runs, so
+anything you set up there by hand is gone afterwards. CI runs the same script on Linux and on
+Windows, and a pull request cannot merge until both pass.
 
 Nothing in `sandbox/` is committed, and nothing in it touches
 `steamapps/common/dota 2 beta`. Please keep it that way in your own changes: a test that needs a
