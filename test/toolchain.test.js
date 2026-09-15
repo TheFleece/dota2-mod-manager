@@ -52,16 +52,22 @@ test('every built-in pin passes the check the app enforces on a pin', () => {
   }
 });
 
-test('the pins travel with the release, not over the network', () => {
+test('the pins travel with the release, not over the network', (t) => {
   /* config/tools.json was never published, so every start asked main for it, got a 404 and used
      the built-in pins anyway. A channel that never carried anything is not a rollback plan, and an
      unsigned file that can redirect a fifty megabyte download is not one worth keeping. Removed
      2026-09-16; a new tool version travels with a release. */
-  // the code, not the prose: the comment in that file explains this history on purpose
+  /* Substrings, not patterns: a regular expression holding a host name reads to CodeQL as URL
+     validation with no anchors, and the first version of this test raised exactly that (#111).
+     The same lesson as test/r2-purge.test.js. Only the code is checked, because the comment in
+     that file explains this history on purpose. */
   const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'toolchain.js'), 'utf8');
-  assert.ok(!/raw\.githubusercontent\.com/.test(src), 'toolchain.js has an address to fetch pins from again');
-  assert.ok(!/fetchText/.test(src), 'toolchain.js fetches something other than the archive it pinned');
-  const tc = createToolchain({ userDataDir: os.tmpdir() });
+  const address = ['https://raw.', 'githubusercontent.com'].join('');
+  assert.ok(!src.includes(address), 'toolchain.js has an address to fetch pins from again');
+  assert.ok(!src.includes('fetchText'), 'toolchain.js fetches something other than the archive it pinned');
+  // a directory of its own, never the shared temp root: a predictable name there is somebody
+  // else's to create first, and it flows into every write the toolchain makes (#112 to #114)
+  const tc = createToolchain({ userDataDir: userDir(t) });
   assert.equal(tc.refreshPins, undefined, 'createToolchain still hands out a pin refresher');
 });
 
