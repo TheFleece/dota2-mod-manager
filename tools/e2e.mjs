@@ -95,15 +95,21 @@ export function seedCaches({ userData = USERDATA, fixtures = FIXTURES, now = Dat
  * own check.
  */
 export function snapshot(dir) {
-  if (!fs.existsSync(dir)) return {};
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return {}; }
   const out = {};
-  for (const name of fs.readdirSync(dir).sort()) {
-    if (name === OWNERSHIP) continue;
-    const full = path.join(dir, name);
-    if (!fs.statSync(full).isFile()) continue;
-    out[name] = crypto.createHash('sha256').update(fs.readFileSync(full)).digest('hex');
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (entry.name === OWNERSHIP || !entry.isFile()) continue;
+    // read once, no stat before it: a check and then a read is two looks at a file that can change between them
+    const data = readIfThere(path.join(dir, entry.name), null);
+    if (data) out[entry.name] = crypto.createHash('sha256').update(data).digest('hex');
   }
   return out;
+}
+
+/** A file's contents, or null when it is not there. One read instead of an existence check and a read. */
+function readIfThere(file, encoding = 'utf8') {
+  try { return fs.readFileSync(file, encoding); } catch { return null; }
 }
 
 /** What changed between two snapshots. */
@@ -201,10 +207,10 @@ async function launch(label, env, timeoutMs = 180000) {
   stop(child);
   await sleep(2500); // let Windows release the files before the disk is read
   fs.closeSync(log);
-  const evalFile = `${shot}.eval.json`;
+  const evaluated = readIfThere(`${shot}.eval.json`);
   return {
-    result: fs.existsSync(evalFile) ? JSON.parse(fs.readFileSync(evalFile, 'utf8')) : null,
-    error: fs.existsSync(`${shot}.err.txt`) ? fs.readFileSync(`${shot}.err.txt`, 'utf8') : null,
+    result: evaluated ? JSON.parse(evaluated) : null,
+    error: readIfThere(`${shot}.err.txt`),
     timedOut: Date.now() >= deadline,
   };
 }
@@ -263,9 +269,10 @@ if (invokedDirectly) {
   }
 
   const appLog = path.join(USERDATA, 'logs', 'app.log');
-  const unresolved = fs.existsSync(appLog) ? fs.readFileSync(appLog, 'utf8').split('\n').filter((l) => /unhandledrejection|is not defined|is not a function/.test(l)) : [];
+  const logText = readIfThere(appLog);
+  const unresolved = (logText || '').split('\n').filter((l) => /unhandledrejection|is not defined|is not a function/.test(l));
   passed = check('the app log has no unresolved name in it', !unresolved.length, unresolved.slice(0, 3).join(' / ')) && passed;
-  if (fs.existsSync(appLog)) fs.copyFileSync(appLog, path.join(OUT, 'app.log'));
+  if (logText !== null) fs.writeFileSync(path.join(OUT, 'app.log'), logText);
 
   report.passed = passed;
   fs.writeFileSync(path.join(OUT, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
