@@ -355,6 +355,8 @@ test("a base item is dressed in another item's visuals, without the paid style g
 
   const dressed = schema.mergeSchema(WEATHER, [{ id: '555', block }]).text;
   assert.equal(schema.listItems(dressed).find((i) => i.id === '555').hasVisuals, true);
+  // once dressed, the base item has visuals of its own, and is still not an option for itself
+  assert.deepEqual(schema.cosmeticOptions(dressed, 'weather').map((o) => o.id), ['4002', '4000']);
 
   // dressing it again replaces the visuals rather than stacking a second block
   const again = schema.baseItemPatch(dressed, '555', '4002');
