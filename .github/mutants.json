@@ -321,6 +321,86 @@
       "from": "if (!verify(bytes, sig, pinned)) {",
       "to": "if (false) {",
       "test": "test/rollback.test.js"
+    },
+    {
+      "name": "archive entry names are handed out unchecked",
+      "file": "src/safe-zip.js",
+      "anchor": "function isUnsafeName(rel) {",
+      "from": "return rel.split('/').some((part) => part === '..' || windowsRefuses(part));",
+      "to": "return false;",
+      "test": "test/safe-zip.test.js"
+    },
+    {
+      "name": "reserved device names are handed out",
+      "file": "src/safe-zip.js",
+      "anchor": "const RESERVED =",
+      "from": "(/[. ]$/.test(part) || RESERVED.test(part))",
+      "to": "/[. ]$/.test(part)",
+      "test": "test/safe-zip-fuzz.test.js"
+    },
+    {
+      "name": "an absolute name is handed out",
+      "file": "src/safe-zip.js",
+      "anchor": "function isUnsafeName(rel) {",
+      "from": "if (!rel || rel.startsWith('/')) return true;",
+      "to": "if (!rel) return true;",
+      "test": "test/safe-zip.test.js"
+    },
+    {
+      "name": "a drive letter is handed out",
+      "file": "src/safe-zip.js",
+      "anchor": "function isUnsafeName(rel) {",
+      "from": "if (/^[a-z]:/i.test(rel)) return true;",
+      "to": ";",
+      "test": "test/safe-zip.test.js"
+    },
+    {
+      "name": "safeJoin lets the folder next door through",
+      "file": "src/safe-zip.js",
+      "anchor": "function safeJoin(rootAbs, rel) {",
+      "from": "!dest.startsWith(root + path.sep)",
+      "to": "!dest.startsWith(root)",
+      "test": "test/safe-zip.test.js"
+    },
+    {
+      "name": "a damaged archive reaches the user in the library's words",
+      "file": "src/safe-zip.js",
+      "anchor": "function openZip(source, { label, limits } = {}) {",
+      "from": "throw damaged();",
+      "to": "throw new Error('ADM-ZIP: Invalid or unsupported zip format');",
+      "test": "test/safe-zip-fuzz.test.js"
+    },
+    {
+      "name": "a damaged file inside reaches the user in the library's words",
+      "file": "src/safe-zip.js",
+      "anchor": "function openZip(source, { label, limits } = {}) {",
+      "from": "try { return entry.getData(); } catch { throw damaged(rel); }",
+      "to": "return entry.getData();",
+      "test": "test/safe-zip-fuzz.test.js"
+    },
+    {
+      "name": "an honest bomb is unpacked",
+      "file": "src/safe-zip.js",
+      "anchor": "function openZip(source, { label, limits } = {}) {",
+      "from": "if (size >= lim.ratioFloor && packed > 0 && size / packed > lim.ratio) {",
+      "to": "if (false) {",
+      "test": "test/safe-zip.test.js"
+    },
+    {
+      "name": "the VPK writer records the wrong CRC",
+      "file": "src/vpk.js",
+      "anchor": "function buildVpk(",
+      "from": "meta.writeUInt32LE(en.crc >>> 0, 0);",
+      "to": "meta.writeUInt32LE(0, 0);",
+      "test": "test/vpk-fuzz.test.js"
+    },
+    {
+      "name": "the VPK writer points every entry at the start of the data",
+      "file": "src/vpk.js",
+      "anchor": "function buildVpk(",
+      "from": "en._offset = dataLen;",
+      "to": "en._offset = 0;",
+      "test": "test/vpk-fuzz.test.js"
     }
   ]
 }

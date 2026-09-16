@@ -2234,8 +2234,8 @@ over, this one guards the actual write.
 function isUnsafeName(rel)
 ```
 
-An entry name is data, not a path we agreed to. Absolute names, drive letters and any
-".." segment are dropped before a caller ever sees them.
+An entry name is data, not a path we agreed to. Absolute names, drive letters, any ".."
+segment and any segment Windows refuses are dropped before a caller ever sees them.
 
 ### `LIMITS`
 

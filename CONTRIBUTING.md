@@ -136,14 +136,21 @@ would report noise instead of mistakes.
 
 ```bash
 npm run fuzz
+npm run fuzz -- --target zip
 npm run fuzz -- --seed 20260916 --iterations 500000
 ```
 
 A mod's VPK index is written by whoever made the mod, and the app reads it on every start. The
 walkers used to trust it: a file cut short came back as a `RangeError` from Buffer rather than a
 refusal, in paths that do not catch one. `test/vpk-fuzz.test.js` runs a few hundred cases on every
-push (truncations, a forged preload length, seeded byte noise) and the command above runs the same
-generator for as long as you like.
+push (truncations, a forged preload length, seeded byte noise, and random sets of entries that have
+to read back byte for byte) and the command above runs the same generator for as long as you like.
+
+Every zip the app opens comes through `src/safe-zip.js`, and `--target zip` fuzzes that door.
+`test/safe-zip-fuzz.test.js` holds two things on every push: a damaged archive is refused in this
+project's words rather than a library's, and no entry name, however it is built, puts a file
+outside the folder or hands out a name Windows itself would refuse. The name check writes to the
+real filesystem of whichever runner it is on, so Windows and Linux each answer for themselves.
 
 A finding is written to `fuzz-output/` together with the seed that made it. Add it to the test
 before touching the parser, so the fix has proof.

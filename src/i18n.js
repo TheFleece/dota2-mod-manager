@@ -131,6 +131,8 @@ const EN = {
   // ---- safe-zip.js (a foreign archive turned down) ----
   'архив': 'archive',
   '{0}: архив слишком большой': '{0}: the archive is too large',
+  '{0}: архив повреждён или не докачан': '{0}: the archive is damaged or did not finish downloading',
+  '{0}: файл {1} в архиве повреждён': '{0}: {1} inside the archive is damaged',
   '{0}: в архиве слишком много файлов': '{0}: too many files in the archive',
   '{0}: файл в архиве слишком большой': '{0}: a file inside the archive is too large',
   '{0}: архив распакуется в слишком большой объём': '{0}: the archive would unpack to too much data',

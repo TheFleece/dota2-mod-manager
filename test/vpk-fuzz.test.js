@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
 const { crc32 } = require('zlib');
 
 const {
-  buildVpk, listVpkPaths, listVpkPathCrcs, listVpkEntries,
+  buildVpk, listVpkPaths, listVpkPathCrcs, listVpkEntries, readVpkEntries, entryPath,
 } = require('../src/vpk.js');
 
 /** A small valid VPK with entries of different shapes, to cut up. */
@@ -124,4 +124,36 @@ test('seeded byte noise in the tree is refused, not crashed on', () => {
     }
   }
   assert.deepEqual(bad.slice(0, 8), [], `${bad.length} mutation(s) escaped with something other than a VPK refusal`);
+});
+
+test('any set of entries the writer is given reads back exactly, byte for byte', () => {
+  /* The fixed sample above proves one archive. This proves the writer and the reader agree on
+     whatever they are handed: empty files, files at the archive root, a few thousand bytes, up to
+     twenty entries at once, all from a seed so a failure replays exactly. */
+  const random = prng(20260916);
+  const pick = (list) => list[Math.floor(random() * list.length)];
+  const FOLDERS = [' ', 'models', 'materials/models/heroes/wisp', 'panorama/images/heroes', 'particles/econ/items/pudge', 'scripts/items'];
+  const EXTS = ['vtex_c', 'vmdl_c', 'vpcf_c', 'txt', 'vmat_c', 'vsnd_c'];
+  for (let round = 0; round < 60; round++) {
+    const want = new Map();
+    const files = [];
+    for (let i = 1 + Math.floor(random() * 20); i > 0; i--) {
+      const folder = pick(FOLDERS);
+      const name = `f${Math.floor(random() * 1e6)}`;
+      const ext = pick(EXTS);
+      const rel = folder === ' ' ? `${name}.${ext}` : `${folder}/${name}.${ext}`;
+      if (want.has(rel)) continue;
+      const data = Buffer.alloc(Math.floor(random() * 3000));
+      for (let j = 0; j < data.length; j++) data[j] = Math.floor(random() * 256);
+      want.set(rel, data);
+      files.push({ ext, folder, name, data, preload: Buffer.alloc(0), crc: crc32(data) >>> 0 });
+    }
+    const back = readVpkEntries(buildVpk(files), 'mem');
+    assert.deepEqual(back.map((e) => entryPath(e)).sort(), [...want.keys()].sort(), `round ${round}: paths`);
+    for (const e of back) {
+      const expected = want.get(entryPath(e));
+      assert.ok(e.data.equals(expected), `round ${round}: ${entryPath(e)} came back different`);
+      assert.equal(e.crc, crc32(expected) >>> 0, `round ${round}: ${entryPath(e)} has the wrong CRC`);
+    }
+  }
 });

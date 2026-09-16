@@ -292,7 +292,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 71 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 72 files, run on every push and every pull request
 on Linux and on Windows. Four of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, and `DECISIONS.md`
@@ -368,7 +368,7 @@ that location is not writable.
 | `tools/gen-doc-facts.js` | Writes the sentences in the READMEs that come from `package.json`, between `facts:` markers |
 | `tools/sync-labels.mjs` | Makes the repository's labels match `.github/labels.json` |
 | `tools/typecheck.mjs` | Runs `tsc --checkJs` over the JSDoc and holds the error count per file at or below `.github/typecheck-baseline.json` |
-| `tools/fuzz-parsers.mjs` | Throws truncated and mutated VPK indexes at the tree walkers for as long as you let it, from a seed, and keeps anything they mishandle |
+| `tools/fuzz-parsers.mjs` | Throws damaged VPK indexes at the tree walkers and damaged zips at the archive door for as long as you let it, from a seed, and keeps anything they mishandle |
 | `tools/coverage.mjs` | Runs the suite and holds coverage per file and per platform against `.github/coverage-baseline.json`, plus the aggregate floor everywhere |
 | `tools/size-budget.mjs` | Holds the five largest files at the length in `.github/size-budget.json`, and stops a sixth crossing 800 lines unnoticed |
 | `tools/mutate.mjs` | Breaks one promise at a time from `.github/mutants.json` and fails where no test goes red, or where the mutant no longer applies to the code it names |

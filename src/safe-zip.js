@@ -44,12 +44,21 @@ function refuse(message) {
   return err;
 }
 
-// An entry name is data, not a path we agreed to. Absolute names, drive letters and any
-// ".." segment are dropped before a caller ever sees them.
+/* Names Windows will not create by itself: a component that ends in a dot or a space, and the
+ * reserved device names, with or without an extension. Node writes them anyway, so an archive
+ * could leave "...", ".. " or "CON" behind as files Explorer can neither open nor delete; a probe
+ * on NTFS on 2026-09-16 did exactly that, in a folder that for fonts and cursors is the game's.
+ * "." on its own is left alone: it is the folder itself, and some packers write "./name". None of
+ * the 415 names in 147 real archives on the maintainer's machine is refused by this. */
+const RESERVED = /^(con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³]|conin\$|conout\$)(\..*)?$/i;
+const windowsRefuses = (part) => part !== '.' && (/[. ]$/.test(part) || RESERVED.test(part));
+
+// An entry name is data, not a path we agreed to. Absolute names, drive letters, any ".."
+// segment and any segment Windows refuses are dropped before a caller ever sees them.
 function isUnsafeName(rel) {
   if (!rel || rel.startsWith('/')) return true;
   if (/^[a-z]:/i.test(rel)) return true;
-  return rel.split('/').some((part) => part === '..');
+  return rel.split('/').some((part) => part === '..' || windowsRefuses(part));
 }
 
 /**
@@ -87,8 +96,20 @@ function openZip(source, { label, limits } = {}) {
     throw tooBig();
   }
 
-  const zip = new AdmZip(source);
-  const all = zip.getEntries();
+  /* A damaged archive is a refusal like any other. Left alone, adm-zip explains it in its own
+   * words ("ADM-ZIP: Invalid or unsupported zip format. No END header found"), in English
+   * whatever language the window is in, and zlib now and then as a RangeError. Measured on
+   * 2026-09-16: of 5000 damaged archives, 23 came out as this project's refusal and the rest as
+   * those. test/safe-zip-fuzz.test.js holds the line. */
+  const damaged = (inside) => refuse(inside
+    ? t('{0}: файл {1} в архиве повреждён', name, inside)
+    : t('{0}: архив повреждён или не докачан', name));
+  let all;
+  try {
+    all = new AdmZip(source).getEntries();
+  } catch {
+    throw damaged();
+  }
   if (all.length > lim.entries) throw refuse(t('{0}: в архиве слишком много файлов', name));
 
   let total = 0;
@@ -105,7 +126,14 @@ function openZip(source, { label, limits } = {}) {
     }
     const rel = toPosix(entry.entryName);
     if (isUnsafeName(rel)) continue; // never handed out, so it can never be written
-    files.push({ path: rel, size, read: () => entry.getData() });
+    files.push({
+      path: rel,
+      size,
+      read() {
+        // the checksum and the inflate both happen here, so a damaged file surfaces here too
+        try { return entry.getData(); } catch { throw damaged(rel); }
+      },
+    });
   }
 
   return {

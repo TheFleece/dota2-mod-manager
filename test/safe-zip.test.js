@@ -8,10 +8,10 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const zlib = require('zlib');
 const AdmZip = require('adm-zip');
 
 const { openZip, safeJoin, isUnsafeName } = require('../src/safe-zip.js');
+const { rawZip } = require('./fixtures/raw-zip.js');
 
 const MB = 1024 * 1024;
 
@@ -28,55 +28,6 @@ function makeZip(entries /* Array<[string, Buffer|string]> */) {
   return zip.toBuffer();
 }
 
-/**
- * A zip laid out byte by byte, because the interesting archives cannot be written by a
- * well-behaved library: adm-zip cleans "../" out of a name as it stores it, and no writer
- * will put a size in the header that the data does not have. Stored (uncompressed) entries,
- * which is all these tests need.
- * @param {Array<{name: string, data: Buffer, declaredSize?: number}>} entries
- */
-function rawZip(entries) {
-  const parts = [];
-  const central = [];
-  let offset = 0;
-
-  for (const e of entries) {
-    const name = Buffer.from(e.name, 'utf-8');
-    const data = e.data;
-    const crc = zlib.crc32(data);
-    const claimed = e.declaredSize == null ? data.length : e.declaredSize;
-
-    const local = Buffer.alloc(30);
-    local.writeUInt32LE(0x04034b50, 0);   // signature
-    local.writeUInt16LE(20, 4);           // version needed
-    local.writeUInt32LE(crc, 14);
-    local.writeUInt32LE(data.length, 18); // compressed size
-    local.writeUInt32LE(claimed, 22);     // uncompressed size, truthful or not
-    local.writeUInt16LE(name.length, 26);
-    parts.push(local, name, data);
-
-    const cen = Buffer.alloc(46);
-    cen.writeUInt32LE(0x02014b50, 0);
-    cen.writeUInt16LE(20, 4);             // version made by
-    cen.writeUInt16LE(20, 6);             // version needed
-    cen.writeUInt32LE(crc, 16);
-    cen.writeUInt32LE(data.length, 20);
-    cen.writeUInt32LE(claimed, 24);
-    cen.writeUInt16LE(name.length, 28);
-    cen.writeUInt32LE(offset, 42);        // where the local header sits
-    central.push(cen, name);
-    offset += local.length + name.length + data.length;
-  }
-
-  const dir = Buffer.concat(central);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(entries.length, 8);
-  end.writeUInt16LE(entries.length, 10);
-  end.writeUInt32LE(dir.length, 12);
-  end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...parts, dir, end]);
-}
 
 const file = (name, body, declaredSize) => ({ name, data: Buffer.from(body), declaredSize });
 
@@ -164,4 +115,54 @@ test('each budget refuses on its own', (t) => {
   const onDisk = path.join(dir, 'big.zip');
   fs.writeFileSync(onDisk, three);
   assert.throws(() => openZip(onDisk, { limits: { archiveBytes: 10 } }), refusal);
+});
+
+test('safeJoin refuses the folder next door whose name starts the same way', (t) => {
+  /* The textbook form of this bug: with "…/tools" as the root, "…/tools-evil/a.exe" passes a check
+     that only asks whether the path starts with the root's text. */
+  const root = path.join(tempDir(t), 'tools');
+  assert.throws(() => safeJoin(root, '../tools-evil/a.exe'), (err) => err.safeZip === true);
+  assert.throws(() => safeJoin(root, '../toolsX'), (err) => err.safeZip === true);
+  assert.equal(safeJoin(root, '.'), path.resolve(root), 'the root itself is not outside the root');
+});
+
+test('names Windows itself refuses never reach the caller', () => {
+  /* None of these escapes the folder: a probe on NTFS put every one of them inside it. They land as
+     names Explorer cannot open or delete, and for fonts and cursors that folder is the game's. */
+  const archive = openZip(rawZip([
+    file('mod.../x.vpk', 'no'),
+    file('mod /x.vpk', 'no'),
+    file('.. /x.vpk', 'no'),
+    file('fonts/CON', 'no'),
+    file('fonts/nul.ttf', 'no'),
+    file('COM1/x.vpk', 'no'),
+    file('readme.', 'no'),
+    file('./mod/ok.vpk', 'yes'),
+    file('mod/pak01_dir.vpk', 'yes'),
+    file('fonts/console.ttf', 'yes'),
+    file(' lead/ok.txt', 'yes'),
+  ]));
+  assert.deepEqual(archive.files.map((f) => f.path),
+    ['./mod/ok.vpk', 'mod/pak01_dir.vpk', 'fonts/console.ttf', ' lead/ok.txt']);
+});
+
+test('an archive that is not really one is refused as damaged, by its name', () => {
+  assert.throws(() => openZip(Buffer.from('PK not really a zip at all'), { label: 'Broken Mod' }), (err) => {
+    assert.equal(err.safeZip, true, `came out as ${err.constructor.name}: ${err.message}`);
+    assert.match(err.message, /Broken Mod/);
+    return true;
+  });
+});
+
+test('a file whose bytes do not match their checksum is refused when it is read', () => {
+  const name = 'mod/pak01_dir.vpk';
+  const buf = rawZip([{ name, data: Buffer.from('payload bytes') }]);
+  buf[30 + name.length] ^= 0xff; // the first byte of the stored data, after the local header and name
+  const archive = openZip(buf, { label: 'Broken Mod' });
+  assert.throws(() => archive.files[0].read(), (err) => {
+    assert.equal(err.safeZip, true, `came out as ${err.constructor.name}: ${err.message}`);
+    assert.match(err.message, /Broken Mod/);
+    assert.match(err.message, /pak01_dir\.vpk/);
+    return true;
+  });
 });
