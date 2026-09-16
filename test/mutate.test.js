@@ -12,6 +12,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -98,6 +99,37 @@ test('a mutant that got past the tests fails the run, and so does one that never
     ]).escaped.map((e) => e.name),
     ['b', 'c', 'd'],
   );
+});
+
+test('a restore is not believed until the file has been read back', async () => {
+  /* On 2026-09-16 a run reported every mutant caught and left one of them in src/installer.js.
+     The write that should have put the file back did not take, and each later mutant on that
+     file read the broken copy as its own original and put THAT back. Nothing said a word. A
+     write that does not take has to be a failure this can see. */
+  const { restoreFile } = await load();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-restore-'));
+  const file = path.join(dir, 'x.js');
+  try {
+    fs.writeFileSync(file, 'the mutant');
+    assert.equal(restoreFile(file, 'the original'), true);
+    assert.equal(fs.readFileSync(file, 'utf8'), 'the original');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  // a write that silently does nothing is the case that actually happened
+  const noop = { writeFileSync: () => {}, readFileSync: () => 'the mutant' };
+  assert.equal(restoreFile('anywhere', 'the original', noop), false);
+
+  // one that throws once and works the second time is worth another go, not a failed run
+  let tries = 0;
+  let held = 'the mutant';
+  const flaky = {
+    writeFileSync: (_, body) => { tries += 1; if (tries === 1) throw new Error('EBUSY'); held = body; },
+    readFileSync: () => held,
+  };
+  assert.equal(restoreFile('anywhere', 'the original', flaky), true);
+  assert.equal(tries, 2);
 });
 
 test('every mutant still applies to the code it names', async () => {

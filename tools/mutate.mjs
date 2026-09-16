@@ -18,6 +18,14 @@
  * mutant that cannot be applied fails the run exactly like one that survived, and test/mutate.test.js
  * holds every mutant against today's source on every push, without running any of them.
  *
+ * Putting the file back is checked rather than assumed. On 2026-09-16 a run reported every
+ * mutant caught and left one of them in src/installer.js: the write that should have restored it
+ * did not take, and each later mutant on that file then read the broken copy as its own original
+ * and faithfully put THAT back. Nothing said a word, and the branch was one push away from
+ * carrying a deliberately broken installer. So a restore is read back and compared, a file that
+ * changed under the run stops it on the spot, and the end of the run asks git whether anything
+ * was left behind.
+ *
  *   node tools/mutate.mjs             every mutant
  *   node tools/mutate.mjs deployPack  only those whose name or file matches
  */
@@ -91,6 +99,31 @@ function dirty(files) {
   return r.stdout.split('\n').map((l) => l.slice(3).trim()).filter(Boolean);
 }
 
+/**
+ * Put a file back, and prove it went back. A write that does not take leaves a mutant on disk
+ * and every later mutant on that file reads the broken copy as its original, so the one thing
+ * this must not do is trust the write.
+ *
+ * @param {string} abs        the file
+ * @param {string} original   what it held before the mutant
+ * @param {{readFileSync: Function, writeFileSync: Function}} [io]  the filesystem, injectable for the test
+ * @returns {boolean} whether the file now holds the original again
+ */
+export function restoreFile(abs, original, io = fs) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      io.writeFileSync(abs, original);
+      if (io.readFileSync(abs, 'utf8') === original) return true;
+    } catch { /* locked, or gone: the next attempt says whether it came back */ }
+  }
+  return false;
+}
+
+/** How to say a file is still broken, in the one form that fixes it. */
+function restoreByHand(files) {
+  return `Restore it before anything else:  git checkout -- ${files.join(' ')}`;
+}
+
 const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
   const filter = process.argv.slice(2).find((a) => !a.startsWith('-'));
@@ -110,9 +143,18 @@ if (invokedDirectly) {
   }
 
   const results = [];
+  // what each file held when this run started, so a restore that did not take is caught at the
+  // next mutant on that file rather than baked into it as an "original"
+  const pristine = new Map();
   for (const m of mutants) {
     const abs = path.join(root, m.file);
     const original = fs.readFileSync(abs, 'utf8');
+    if (!pristine.has(m.file)) pristine.set(m.file, original);
+    else if (pristine.get(m.file) !== original) {
+      console.error(`\n${m.file} is not what it was when this run started: an earlier mutant is still in it.`);
+      console.error(restoreByHand([m.file]));
+      process.exit(1);
+    }
     const { out, err } = apply(original, m);
     if (err) {
       console.log(`NOT APPLIED  ${m.name}\n             ${err}`);
@@ -137,8 +179,20 @@ if (invokedDirectly) {
         results.push({ name: m.name, outcome: 'survived' });
       }
     } finally {
-      fs.writeFileSync(abs, original);
+      if (!restoreFile(abs, original)) {
+        console.error(`\n${m.file} could not be put back: it still holds the mutant "${m.name}".`);
+        console.error(restoreByHand([m.file]));
+        process.exit(1);
+      }
     }
+  }
+
+  // and ask git, because the check above only sees the files this run touched on purpose
+  const leftBehind = dirty([...pristine.keys()]);
+  if (leftBehind.length) {
+    console.error(`\nthese did not come back: ${leftBehind.join(', ')}`);
+    console.error(restoreByHand(leftBehind));
+    process.exit(1);
   }
 
   const { ok, escaped } = verdict(results);

@@ -469,4 +469,12 @@ test('a move with nowhere to go moves nothing', (t) => {
   assert.equal(gamelang.moveLangFolder(null, 'russian', 'koreana'), 0);
   assert.equal(gamelang.moveLangFolder(game, 'schinese', 'koreana'), 0, 'a folder that is not there');
   assert.deepEqual(inFolder(game, 'russian'), ['pak10_dir.vpk'], 'the folder was touched anyway');
+
+  /* The same folder twice, with nothing in it, is the case that actually bites. Every file is
+     already at its destination because the destination IS the source, so the loop moves nothing
+     and reports nothing wrong - and then finds the folder empty and removes it. That is the
+     folder the game is mounting. Only the guard at the top stops it. */
+  const empty = fakeGame(t, { folders: { dota_russian: [] } });
+  assert.equal(gamelang.moveLangFolder(empty, 'russian', 'russian'), 0);
+  assert.ok(fs.existsSync(path.join(empty, 'dota_russian')), 'the folder the game mounts was removed');
 });
