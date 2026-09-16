@@ -300,11 +300,20 @@ it is open as a first issue, [#17](https://github.com/TheFleece/dota2-mod-manage
 
 ### `main.js` still holds several jobs
 
-It went from 3,102 lines to 1,311 when the IPC handlers moved into `src/ipc-*.js`. What is left
-is the window, the log, auto-update, deep links, import orchestration, cursor reconciliation and
-the language folder, which is more than one file's worth of subject.
+It went from 3,102 lines to about 1,300 when the IPC handlers moved into `src/ipc-*.js`. What is
+left is the window, the log, auto-update, deep links, import orchestration, cursor reconciliation
+and the language folder, which is more than one file's worth of subject.
 
-*Check:* `wc -l main.js`, and `ARCHITECTURE.md` for what is supposed to live where.
+It is one of five files carrying 7,155 lines between them while the median module in `src/` is
+171: `src/installer.js`, `renderer/views/catalog.js`, `renderer/views/library.js`, this one and
+`src/vpk.js`. None of them arrived that size; each grew a hundred lines at a time with nobody
+deciding to. Since 2026-09-16 each has its length written in `.github/size-budget.json`, and
+`tools/size-budget.mjs` fails a run where one grows, or where a file nobody listed crosses 800
+lines. The budget does not split anything: it stops the drift, and every split shows up in it as a
+number going down.
+
+*Check:* `npm run size`, `.github/size-budget.json`, and `ARCHITECTURE.md` for what is supposed to
+live where.
 
 ### CI clicks through one mod, and only one
 

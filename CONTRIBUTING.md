@@ -94,6 +94,21 @@ Per file, because one number hides the answer: the aggregate read 76.10% on the 
 written, while `src/presets-service.js` sat at 13.8% of its lines. Write tests, then
 `node tools/coverage.mjs --update` to raise the lines. Never lower one to make a run green.
 
+## File size
+
+```bash
+npm run size
+```
+
+Five files carry 7,155 lines between them while the median module in `src/` is 171:
+`src/installer.js`, `renderer/views/catalog.js`, `renderer/views/library.js`, `main.js` and
+`src/vpk.js`. Each is in `.github/size-budget.json` at its current length, and the check fails when
+one grows, or when a file nobody listed crosses 800 lines.
+
+If your change makes one of them longer, split something out of it rather than raising the number.
+`node tools/size-budget.mjs --update` writes measurements back and refuses to raise any of them; a
+budget only goes up by editing that file by hand, in a commit that says why.
+
 ## Types
 
 ```bash
