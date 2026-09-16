@@ -78,6 +78,22 @@ If your change touches any of them, start by finding the test that covers the be
 about to change, and make new behaviour bring its own test. A red `npm test` is not a formality
 here: every one of those tests exists because something in it broke somebody's game once.
 
+## Coverage
+
+```bash
+npm run test:coverage
+```
+
+The same suite, with two lines held: the aggregate floor on every platform, and the coverage of
+each file on the platform `.github/coverage-baseline.json` names. A file that drops more than half
+a point below its line fails the run, and so does a file that was measured and is no longer
+measured: node reports only files a test loaded, so deleting the last test that touches a module
+would otherwise pass quietly.
+
+Per file, because one number hides the answer: the aggregate read 76.10% on the day this was
+written, while `src/presets-service.js` sat at 13.8% of its lines. Write tests, then
+`node tools/coverage.mjs --update` to raise the lines. Never lower one to make a run green.
+
 ## Types
 
 ```bash

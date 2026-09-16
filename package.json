@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "typecheck": "node tools/typecheck.mjs",
     "verify": "npm run lint && npm run typecheck && npm run test:coverage",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=74 --test-coverage-branches=76 --test-coverage-functions=72 \"test/**/*.test.js\"",
+    "test:coverage": "node tools/coverage.mjs",
     "sandbox:seed": "node tools/sandbox.js seed",
     "sandbox:reset": "node tools/sandbox.js reset",
     "sandbox:status": "node tools/sandbox.js status",

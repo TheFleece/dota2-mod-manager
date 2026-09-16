@@ -250,11 +250,23 @@ the coverage gate, `windows-latest` runs the same tests for correctness, and tha
 itself on its first run by finding a libuv abort Linux cannot see.
 
 What is still one-sided is the floor. `src/steam.js` takes a different half of itself on each
-operating system, so the two platforms report different figures, and the gate is calibrated
-against the Linux one. Windows-only code can therefore lose its last test without the number
-moving.
+operating system, so the two platforms report different figures, and a number calibrated against
+one of them fails on the other.
 
-*Check:* `.github/workflows/test.yml`, and the `test:coverage` script in `package.json`.
+Since 2026-09-16 the gate is two things. `tools/coverage.mjs` reads the suite's own lcov and holds
+the aggregate floor in `.github/coverage-baseline.json` on every platform, because a floor that
+sits under both is honest everywhere. The per-file lines in the same file are held only on the
+platform it names, for the same reason: a line measured on one machine is not evidence about
+another. The file currently names the maintainer's Windows machine, so the per-file half runs
+there and in the commit hook, and CI holds the aggregate until a Linux measurement is committed
+beside it.
+
+Per file, because the aggregate hid the thing worth catching: it read 76.10% on the day this
+changed, while `src/presets-service.js` sat at 13.8% of its lines and `src/installer.js` at 48.5%,
+and a new module with no tests at all moves the aggregate by a fraction of a point.
+
+*Check:* `.github/coverage-baseline.json`, `tools/coverage.mjs`, and the `test:coverage` script in
+`package.json`.
 
 ### A mod the published hash list is wrong about is installed anyway
 
