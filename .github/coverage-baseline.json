@@ -24,7 +24,7 @@
       "lines": 100
     },
     "src/file-tx.js": {
-      "lines": 96.2
+      "lines": 100
     },
     "src/fingerprints.js": {
       "lines": 48.6
@@ -39,7 +39,7 @@
       "lines": 96.8
     },
     "src/installer.js": {
-      "lines": 52.6
+      "lines": 67.2
     },
     "src/ipc-diagnostics.js": {
       "lines": 80.8

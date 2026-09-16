@@ -57,6 +57,62 @@
       "from": "conflicts.push({ key: m.key, path: p }); continue;",
       "to": "continue;",
       "test": "test/packs.test.js"
+    },
+    {
+      "name": "importing leaves a multi-volume set as a set",
+      "file": "src/installer.js",
+      "anchor": "async importVpkFiles(paths, onStep) {",
+      "from": "if (partFiles.length && partsBytes <= MERGE_SIZE_CAP) {",
+      "to": "if (false) {",
+      "test": "test/import.test.js"
+    },
+    {
+      "name": "importing takes in a file that is not a mod",
+      "file": "src/installer.js",
+      "anchor": "async importVpkFiles(paths, onStep) {",
+      "from": "results.push({ source: fileName, error: t('не .vpk файл') });",
+      "to": "results.push({ source: fileName });",
+      "test": "test/import.test.js"
+    },
+    {
+      "name": "a folder with nothing in it is passed over in silence",
+      "file": "src/installer.js",
+      "anchor": "expandImportInputs(paths, staged) {",
+      "from": "errors.push({ source: label, error: t('в папке нет ни .vpk, ни файлов игры') });",
+      "to": ";",
+      "test": "test/import.test.js"
+    },
+    {
+      "name": "installVpkBuffer writes before it understands the bytes",
+      "file": "src/installer.js",
+      "anchor": "installVpkBuffer(buf) {",
+      "from": "if (!listVpkPaths(buf).length) throw new Error(t('Пустой VPK'));",
+      "to": ";",
+      "test": "test/import.test.js"
+    },
+    {
+      "name": "the ownership note stops matching the folder's own spelling",
+      "file": "src/installer.js",
+      "anchor": "ownsFile(relPath) {",
+      "from": ".some((f) => String(f).toLowerCase() === want)",
+      "to": ".some((f) => String(f) === want)",
+      "test": "test/import.test.js"
+    },
+    {
+      "name": "harvestSchema keeps the whole-game tables it was meant to strip",
+      "file": "src/installer.js",
+      "anchor": "harvestSchema(records, vanillaText) {",
+      "from": "const keep = entries.filter((e) => !drop(e));",
+      "to": "const keep = entries;",
+      "test": "test/import.test.js"
+    },
+    {
+      "name": "dropped bytes leave their staging folder behind",
+      "file": "src/installer.js",
+      "anchor": "async importVpkBuffers(items, onStep) {",
+      "from": "try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* noop */ }",
+      "to": ";",
+      "test": "test/import.test.js"
     }
   ]
 }
