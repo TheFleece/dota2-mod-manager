@@ -403,3 +403,17 @@ test('the download cache reports its size and can be emptied', (t) => {
   assert.ok(fs.existsSync(s.installer.downloadsDir), 'the folder itself is still there to download into');
   assert.equal(s.installer.cachedArchive('heroes', 'Axe.zip'), null);
 });
+
+test('a cursor set another program put in the game is found, folders and all, unless the app manages cursors', (t) => {
+  const s = stand(t);
+  fs.mkdirSync(path.join(s.game, ...CURSOR, 'anim'), { recursive: true });
+  fs.writeFileSync(path.join(s.game, ...CURSOR, 'cursor_default.bmp'), 'someone else');
+  fs.writeFileSync(path.join(s.game, ...CURSOR, 'anim', 'spin.ani'), 'frames');
+
+  const found = s.installer.externalFiles([]).filter((x) => x.kind === 'cursor');
+  assert.equal(found.length, 1);
+  assert.deepEqual(found[0].files.map((f) => f.relPath).sort(), ['anim/spin.ani', 'cursor_default.bmp']);
+  assert.equal(found[0].size, 'someone else'.length + 'frames'.length);
+
+  assert.deepEqual(s.installer.externalFiles([{ root: 'cursor', relPath: 'cursor_default.bmp' }]).filter((x) => x.kind === 'cursor'), []);
+});

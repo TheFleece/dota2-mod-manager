@@ -1269,11 +1269,11 @@ class Installer {
         const files = [];
         const rels = [];
         const walk = (d, pre) => {
-          for (const f of fs.readdirSync(d)) {
-            const full = path.join(d, f);
-            const rel = pre ? `${pre}/${f}` : f;
-            if (fs.statSync(full).isDirectory()) walk(full, rel);
-            else { files.push({ path: f.toLowerCase(), data: fs.readFileSync(full) }); rels.push(rel); }
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            const full = path.join(d, e.name);
+            const rel = pre ? `${pre}/${e.name}` : e.name;
+            if (e.isDirectory()) walk(full, rel);
+            else if (e.isFile()) { files.push({ path: e.name.toLowerCase(), data: fs.readFileSync(full) }); rels.push(rel); }
           }
         };
         try { walk(cursorDir, ''); } catch { /* unreadable */ }

@@ -256,11 +256,13 @@ class Overlays {
     const dir = this.liveDir('fonts');
     if (!fs.existsSync(dir)) return null;
     const out = {};
+    // the entry's type comes with the listing, so nothing is looked at twice (CodeQL
+    // js/file-system-race flagged a stat followed by a read of the same path)
     const walk = (d) => {
-      for (const f of fs.readdirSync(d)) {
-        const full = path.join(d, f);
-        if (fs.statSync(full).isDirectory()) walk(full);
-        else out[f.toLowerCase()] = sha1(fs.readFileSync(full));
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (e.isFile()) out[e.name.toLowerCase()] = sha1(fs.readFileSync(full));
       }
     };
     walk(dir);

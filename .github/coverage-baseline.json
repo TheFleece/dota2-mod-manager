@@ -240,7 +240,7 @@
           "lines": 93.9
         },
         "src/installer.js": {
-          "lines": 84.6
+          "lines": 86
         },
         "src/ipc-diagnostics.js": {
           "lines": 80.8
@@ -249,7 +249,7 @@
           "lines": 87
         },
         "src/ipc-library.js": {
-          "lines": 63.8
+          "lines": 63.6
         },
         "src/ipc-misc.js": {
           "lines": 77.2
@@ -324,7 +324,7 @@
           "lines": 98.1
         },
         "src/vpk.js": {
-          "lines": 98.4
+          "lines": 98.1
         },
         "src/vtex.js": {
           "lines": 100
