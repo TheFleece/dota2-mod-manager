@@ -136,11 +136,6 @@ export function waitingSince(issue, comments) {
 }
 
 /**
- * The whole judgement. `data` is what the IO layer gathered; nothing here reads the network or
- * the clock except through `now`. Every item says whether it is overdue (`overdue: true`), which
- * is what decides whether the maintainer gets a message.
- */
-/**
  * The issues the incident write-ups answer: the `Issue` row in each file under docs/incidents/.
  * @param {string[]} texts  the files' contents
  * @returns {number[]}
@@ -179,6 +174,30 @@ export function auditFindings(report) {
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * What the branch rule on main enforces, set against what the repository says it should.
+ * @param {Array<{type: string, parameters?: any}>} rules  GET repos/:repo/rules/branches/main
+ * @param {string[]} listed  the "branch" list in .github/required-checks.json
+ * @returns {{missing: string[], extra: string[], codeScanning: boolean}}
+ */
+export function branchRuleGaps(rules, listed) {
+  const required = rules
+    .filter((r) => r.type === 'required_status_checks')
+    .flatMap((r) => ((r.parameters && r.parameters.required_status_checks) || []).map((c) => c.context));
+  const codeScanning = rules.some((r) => r.type === 'code_scanning'
+    && ((r.parameters && r.parameters.code_scanning_tools) || []).some((tool) => tool.tool === 'CodeQL'));
+  return {
+    missing: listed.filter((name) => !required.includes(name)),
+    extra: required.filter((name) => !listed.includes(name)),
+    codeScanning,
+  };
+}
+
+/**
+ * The whole judgement. `data` is what the IO layer gathered; nothing here reads the network or
+ * the clock except through `now`. Every item says whether it is overdue (`overdue: true`), which
+ * is what decides whether the maintainer gets a message.
+ */
 export function evaluate(data, now = Date.now(), policy = POLICY) {
   const r = { decide: [], red: [], expiring: [], look: [], fine: [] };
 
@@ -282,6 +301,29 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
       r.look.push({ title: `${minor.length} low-severity advisor${minor.length === 1 ? 'y' : 'ies'} in the ${where}`, detail: minor.map((f) => f.name).join(', '), overdue: false });
     }
     if (!found.length) r.fine.push(`npm audit finds nothing in the ${where}`);
+  }
+
+  /* The branch rule is GitHub's copy of .github/required-checks.json, and nothing held the two
+     together: a check dropped from the rule stops blocking merges without a word. The rule also
+     said nothing about what CodeQL finds, only that it ran, so on 2026-09-16 pull request #62
+     merged with a new high-severity alert and its fix landed on a branch nobody would merge. */
+  if (data.branchRules === 'unreadable') {
+    r.look.push({ title: 'The branch rule on main could not be read', detail: 'GET rules/branches/main did not answer', overdue: false });
+  } else if (Array.isArray(data.branchRules)) {
+    const gaps = branchRuleGaps(data.branchRules, data.requiredChecks || []);
+    const checks = (n) => `${n} check${n === 1 ? '' : 's'}`;
+    if (gaps.missing.length) {
+      r.red.push({ title: `main merges without ${checks(gaps.missing.length)} the repository requires`, url: data.rulesUrl, detail: `${gaps.missing.join(', ')}: add them to the main ruleset`, overdue: true });
+    }
+    if (gaps.extra.length) {
+      r.red.push({ title: `main waits for ${checks(gaps.extra.length)} the repository does not list`, url: data.rulesUrl, detail: `${gaps.extra.join(', ')}: no job reports it, so no pull request can merge`, overdue: true });
+    }
+    if (!gaps.codeScanning) {
+      r.decide.push({ title: 'main merges pull requests that add high-severity code scanning alerts', url: data.rulesUrl, detail: 'add "Require code scanning results" to the main ruleset: CodeQL, security alerts High or higher', overdue: false });
+    }
+    if (!gaps.missing.length && !gaps.extra.length) {
+      r.fine.push(`main requires the ${checks((data.requiredChecks || []).length)} the repository lists${gaps.codeScanning ? ', and a CodeQL result with no new high alert' : ''}`);
+    }
   }
 
   if (data.privateReporting === false) {
@@ -475,6 +517,7 @@ async function gather(repo, token, now) {
 
   const pulls = await api(`repos/${repo}/pulls?state=open&per_page=100`, { token });
   const openIssues = (await api(`repos/${repo}/issues?state=open&per_page=100`, { token })).filter((i) => !i.pull_request);
+  const rules = await api(`repos/${repo}/rules/branches/main`, { token, allow: [403, 404] });
   const regressions = (await api(`repos/${repo}/issues?labels=regression&state=all&per_page=100`, { token })).filter((i) => !i.pull_request);
   const incidentsDir = path.join(root, 'docs', 'incidents');
   const incidentTexts = fs.readdirSync(incidentsDir).filter((f) => f.endsWith('.md')).map((f) => fs.readFileSync(path.join(incidentsDir, f), 'utf8'));
@@ -539,6 +582,9 @@ async function gather(repo, token, now) {
       issues,
       regressions,
       incidentIssues: incidentIssues(incidentTexts),
+      branchRules: Array.isArray(rules) ? rules : 'unreadable',
+      requiredChecks: JSON.parse(fs.readFileSync(path.join(root, '.github', 'required-checks.json'), 'utf8')).branch,
+      rulesUrl: `https://github.com/${repo}/settings/rules`,
       codeScanning,
       audit: { app: audit(root), site: audit(path.join(root, 'site')) },
       scorecardUrl: `https://github.com/${repo}/security/code-scanning?query=tool%3AScorecard+is%3Aopen`,

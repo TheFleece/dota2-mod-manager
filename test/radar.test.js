@@ -269,3 +269,34 @@ test('both places the radar audits have a lockfile for npm audit to read', () =>
     assert.ok(fs.existsSync(path.join(ROOT, dir, 'package-lock.json')), dir + ' has no package-lock.json');
   }
 });
+
+test('the branch rule on main is held to the checks the repository lists, and to a clean CodeQL result', async () => {
+  /* Pull request #62 merged on 2026-09-16 with a new high-severity CodeQL alert: the rule asked
+     for the analysis to run and nothing about what it found. */
+  const { evaluate, branchRuleGaps } = await load();
+  const listed = ['test', 'windows', 'Analyse JavaScript and TypeScript'];
+  const statusRule = (...names) => ({ type: 'required_status_checks', parameters: { required_status_checks: names.map((context) => ({ context })) } });
+  const codeql = { type: 'code_scanning', parameters: { code_scanning_tools: [{ tool: 'CodeQL', security_alerts_threshold: 'high_or_higher', alerts_threshold: 'errors' }] } };
+
+  assert.deepEqual(branchRuleGaps([{ type: 'deletion' }, statusRule('test', 'windows', 'Old job')], listed), {
+    missing: ['Analyse JavaScript and TypeScript'], extra: ['Old job'], codeScanning: false,
+  });
+
+  const drifted = evaluate({ branchRules: [statusRule('test', 'windows', 'Old job')], requiredChecks: listed, rulesUrl: 'u' }, NOW);
+  assert.deepEqual(drifted.red.map((x) => x.title), [
+    'main merges without 1 check the repository requires',
+    'main waits for 1 check the repository does not list',
+  ]);
+  assert.match(drifted.red[0].detail, /Analyse JavaScript and TypeScript/);
+  assert.ok(drifted.overdue.length >= 2, 'a rule that drifted is overdue the day it is seen');
+  assert.deepEqual(drifted.decide.map((x) => x.title), ['main merges pull requests that add high-severity code scanning alerts']);
+  assert.equal(drifted.decide[0].overdue, false, 'a setting only the owner can change is a decision, not an alarm');
+
+  const whole = evaluate({ branchRules: [statusRule(...listed), codeql], requiredChecks: listed, rulesUrl: 'u' }, NOW);
+  assert.deepEqual([whole.red, whole.decide], [[], []]);
+  assert.ok(whole.fine.includes('main requires the 3 checks the repository lists, and a CodeQL result with no new high alert'));
+
+  const blind = evaluate({ branchRules: 'unreadable', requiredChecks: listed }, NOW);
+  assert.deepEqual(blind.look.map((x) => x.title), ['The branch rule on main could not be read']);
+  assert.ok(!blind.fine.some((line) => line.startsWith('main requires')));
+});
