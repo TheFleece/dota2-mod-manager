@@ -39,7 +39,7 @@
       "lines": 96.8
     },
     "src/installer.js": {
-      "lines": 48.5
+      "lines": 52.6
     },
     "src/ipc-diagnostics.js": {
       "lines": 80.8
@@ -120,7 +120,7 @@
       "lines": 98.1
     },
     "src/vpk.js": {
-      "lines": 89
+      "lines": 98.4
     },
     "src/vtex.js": {
       "lines": 100
@@ -172,6 +172,9 @@
     },
     "tools/seo-state.mjs": {
       "lines": 99
+    },
+    "tools/size-budget.mjs": {
+      "lines": 72.7
     },
     "tools/sync-labels.mjs": {
       "lines": 55.1
