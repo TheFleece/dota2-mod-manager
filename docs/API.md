@@ -16,6 +16,7 @@ the code, not in this page.
 | [`src/capture.js`](#srccapturejs) |  |
 | [`src/catalog-signature.js`](#srccatalog-signaturejs) | Making the catalog's own author the only person who can change the catalog. |
 | [`src/catalog.js`](#srccatalogjs) | Catalog: fetch + cache mods.json / constants.json / guides.json from the Dota2PornFx repo |
+| [`src/cursors.js`](#srccursorsjs) | Which cursor set is live, and which look a slot is wearing. |
 | [`src/diagnostics.js`](#srcdiagnosticsjs) | A support report a user can send instead of a round of screenshots: Dota's own path and |
 | [`src/discord-auth.js`](#srcdiscord-authjs) | Sign in with Discord, without a server of our own. |
 | [`src/discord-presence.js`](#srcdiscord-presencejs) | "Playing Dota 2 Mod Manager" in Discord, via Discord's local IPC socket. |
@@ -197,6 +198,44 @@ on the mod itself. 32 mods still carry the old pair and 26 of those are previews
 whole TI battle-pass row - so a reader that knows only the array shows them with no
 preview at all. The site reads both; folding one into the other here means the rest of the
 app only ever sees the array. The cache on disk keeps whatever the author wrote.
+
+## src/cursors.js
+
+Which cursor set is live, and which look a slot is wearing.
+
+A cursor set is not a pak. It is loose files written straight over Valve's own in
+game\dota\resource\cursor, and every set writes the same names, so it cannot be switched off
+by renaming and two sets cannot be on at once. Everything here exists because of that: one
+set gives way when another comes on, the master switch has to take them off by hand because
+renaming paks leaves them untouched, and a folder that drifted from the manifest has to be
+put back at startup.
+
+Lifted out of main.js unchanged, with the services arriving as arguments the way
+src/presets-service.js takes them. It moved for a reason beyond size: main.js cannot be
+required by a test (it pulls in Electron), so the startup repair below - which decides
+whether a user's cursor comes back after a game update or a Steam verify - could not be
+tested where it was. test/cursors.test.js is what the move is for.
+
+### `createCursors`
+
+```js
+function createCursors({ installer, library, settings })
+```
+
+```
+@param {object} ctx
+@param {object} ctx.installer  the installer engine: the cursor store, deploy and undeploy
+@param {object} ctx.library    the manifest of installed records
+@param {object} ctx.settings   read for the game path, which the repair needs
+```
+
+### `isCursorRecord`
+
+```js
+function isCursorRecord(rec)
+```
+
+A record that owns cursor files, whatever else it holds.
 
 ## src/diagnostics.js
 

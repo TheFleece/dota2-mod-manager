@@ -22,6 +22,7 @@ const { Catalog } = require('./src/catalog');
 const { Installer } = require('./src/installer');
 // under one name: main.js has a wrapper of its own called importVpkBuffers
 const importer = require('./src/import');
+const { createCursors } = require('./src/cursors');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
 const { SCHEME } = require('./src/preset-link');
@@ -57,6 +58,8 @@ const { registerDiagnosticsIpc } = require('./src/ipc-diagnostics');
  * below; every call site reads it late, which is the same lifetime the bare functions had
  * when they lived in this file. */
 let presets;
+// filled in once the services exist, below; the ipc modules are handed these by name
+let isCursorRecord, disableOtherCursors, disableOtherCosmetics, applyMasterToCursors, reconcileCursors;
 const i18n = require('./src/i18n');
 const { t } = i18n;
 
@@ -457,6 +460,8 @@ app.whenReady().then(async () => {
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
   schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });
+  ({ isCursorRecord, disableOtherCursors, disableOtherCosmetics, applyMasterToCursors, reconcileCursors }
+    = createCursors({ installer, library, settings }));
   // what the app can be told after it shipped: a feature switched off with a reason, and
   // dated notices. Fire-and-forget, and everything it governs stays on until it says otherwise
   remoteConfig = createRemoteConfig({ userDataDir: userData, appVersion: () => app.getVersion(), log: diag });
@@ -958,86 +963,7 @@ function applyPresenceSetting() {
   refreshPresence();
 }
 
-// ---------- cursors ----------
 
-// A cursor set is loose files in resource\cursor, not a pak that can be renamed aside, and
-// every set writes the same names — so only one can be live and switching happens by
-// copying files back and forth (see the cursor section of src/installer.js).
-
-function isCursorRecord(rec) {
-  return !!rec && (rec.files || []).some((f) => f.root === 'cursor');
-}
-
-// switch off every cursor set except one, and report which ones gave way
-function disableOtherCursors(exceptId) {
-  const off = [];
-  for (const rec of library.list()) {
-    if (rec.id === exceptId || rec.enabled === false || !isCursorRecord(rec)) continue;
-    try {
-      installer.setEnabled(rec.files, false, rec.id);
-      library.setEnabled(rec.id, false);
-      off.push(rec.name);
-    } catch { /* noop */ }
-  }
-  return off;
-}
-
-// a slot (weather, courier, ...) only ever has one active look — same rule as cursors,
-// just without files to rename: the sibling only needs its enabled flag flipped
-function disableOtherCosmetics(rec) {
-  const off = [];
-  for (const other of library.list()) {
-    if (other.id === rec.id || other.enabled === false) continue;
-    if (other.categoryId !== 'cosmetic' || other.slot !== rec.slot) continue;
-    library.setEnabled(other.id, false);
-    off.push(other.name);
-  }
-  return off;
-}
-
-// the master switch renames paks in the language folder, which leaves cursors untouched —
-// take them off (and put them back) alongside it, so "mods off" really means vanilla
-function applyMasterToCursors(enabled) {
-  for (const rec of library.list()) {
-    if (rec.enabled === false || !isCursorRecord(rec)) continue;
-    try {
-      if (enabled) installer.deployCursor(rec.id, rec.files);
-      else installer.undeployCursor(rec.id, rec.files);
-    } catch { /* noop */ }
-  }
-}
-
-// Startup repair: the cursor folder can drift from the manifest (a game update, a Steam
-// verify, another tool), and records made before cursors could be switched off have no
-// stored copy yet. Also settles the legacy case of several sets marked on at once — only
-// the newest was ever really on disk.
-function reconcileCursors() {
-  if (!settings.get('dotaGamePath')) return;
-  const cursors = library.list().filter(isCursorRecord)
-    .sort((a, b) => (b.installedAt || 0) - (a.installedAt || 0));
-  if (!cursors.length) return;
-  let masterOff = false;
-  try { masterOff = installer.masterIsOff(); } catch { /* no language folder yet */ }
-  let liveClaimed = false;
-  for (const rec of cursors) {
-    try {
-      if (!fs.existsSync(installer.cursorStoreDir(rec.id))) {
-        const adopted = rec.enabled !== false && !liveClaimed && installer.ensureCursorStore(rec.id, rec.files);
-        if (adopted) liveClaimed = true;
-        else {
-          // nothing of this set is kept anywhere — it can only come back by reinstalling
-          if (rec.enabled !== false) library.setEnabled(rec.id, false);
-          continue;
-        }
-      }
-      if (rec.enabled === false || masterOff) installer.undeployCursor(rec.id, rec.files);
-      else installer.deployCursor(rec.id, rec.files);
-    } catch { /* best-effort */ }
-  }
-}
-
-// a library record that can go into a combined pack: a lang-folder skin/import with a
-// _dir.vpk (not a pack itself, not a loose font/cursor set, not a terrain maps file)
 // Dota reads boot.vcfg once at startup and rewrites it on exit, so language changes must be
 // made while it is closed or the game would just overwrite them.
 //

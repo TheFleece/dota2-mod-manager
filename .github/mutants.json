@@ -113,6 +113,62 @@
       "from": "try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* noop */ }",
       "to": ";",
       "test": "test/import.test.js"
+    },
+    {
+      "name": "a cursor set that was already off is reported as having given way",
+      "file": "src/cursors.js",
+      "anchor": "function disableOtherCursors(exceptId) {",
+      "from": "if (rec.id === exceptId || rec.enabled === false || !isCursorRecord(rec)) continue;",
+      "to": "if (rec.id === exceptId || !isCursorRecord(rec)) continue;",
+      "test": "test/cursors.test.js"
+    },
+    {
+      "name": "a cosmetic pick switches off every slot instead of its own",
+      "file": "src/cursors.js",
+      "anchor": "function disableOtherCosmetics(rec) {",
+      "from": "if (other.categoryId !== 'cosmetic' || other.slot !== rec.slot) continue;",
+      "to": "if (other.categoryId !== 'cosmetic') continue;",
+      "test": "test/cursors.test.js"
+    },
+    {
+      "name": "mods off leaves the cursor on screen",
+      "file": "src/cursors.js",
+      "anchor": "function applyMasterToCursors(enabled) {",
+      "from": "else installer.undeployCursor(rec.id, rec.files);",
+      "to": "else { /* mutant */ }",
+      "test": "test/cursors.test.js"
+    },
+    {
+      "name": "the repair lets more than one set claim the live files",
+      "file": "src/cursors.js",
+      "anchor": "function reconcileCursors() {",
+      "from": "const adopted = rec.enabled !== false && !liveClaimed && installer.ensureCursorStore(rec.id, rec.files);",
+      "to": "const adopted = rec.enabled !== false && installer.ensureCursorStore(rec.id, rec.files);",
+      "test": "test/cursors.test.js"
+    },
+    {
+      "name": "a set with no copy anywhere goes on claiming to be on",
+      "file": "src/cursors.js",
+      "anchor": "function reconcileCursors() {",
+      "from": "if (rec.enabled !== false) library.setEnabled(rec.id, false);",
+      "to": ";",
+      "test": "test/cursors.test.js"
+    },
+    {
+      "name": "the repair deploys cursors while the master switch is off",
+      "file": "src/cursors.js",
+      "anchor": "function reconcileCursors() {",
+      "from": "if (rec.enabled === false || masterOff) installer.undeployCursor(rec.id, rec.files);",
+      "to": "if (rec.enabled === false) installer.undeployCursor(rec.id, rec.files);",
+      "test": "test/cursors.test.js"
+    },
+    {
+      "name": "the repair runs with no game path set",
+      "file": "src/cursors.js",
+      "anchor": "function reconcileCursors() {",
+      "from": "if (!settings.get('dotaGamePath')) return;",
+      "to": ";",
+      "test": "test/cursors.test.js"
     }
   ]
 }

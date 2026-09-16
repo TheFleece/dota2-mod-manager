@@ -17,6 +17,9 @@
     "src/catalog.js": {
       "lines": 96.5
     },
+    "src/cursors.js": {
+      "lines": 100
+    },
     "src/diagnostics.js": {
       "lines": 72.4
     },
@@ -42,7 +45,7 @@
       "lines": 93.9
     },
     "src/installer.js": {
-      "lines": 63.1
+      "lines": 67.7
     },
     "src/ipc-diagnostics.js": {
       "lines": 80.8
@@ -72,7 +75,7 @@
       "lines": 91.7
     },
     "src/library.js": {
-      "lines": 98.4
+      "lines": 100
     },
     "src/minify.js": {
       "lines": 97
