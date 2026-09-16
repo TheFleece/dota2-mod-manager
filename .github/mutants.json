@@ -265,6 +265,14 @@
       "from": "return null;",
       "to": "return baseline.files || {};",
       "test": "test/coverage-ratchet.test.js"
+    },
+    {
+      "name": "the VPK reader starts needing Electron",
+      "file": "src/vpk.js",
+      "anchor": "function combineVpksToFiles(",
+      "from": "fs.mkdirSync(outDir, { recursive: true });",
+      "to": "require('electron'); fs.mkdirSync(outDir, { recursive: true });",
+      "test": "test/dependency-direction.test.js"
     }
   ]
 }
