@@ -332,7 +332,8 @@ that location is not writable.
 | `src/ipc-*.js` | The IPC handlers, one file per group of channels, each naming what it needs |
 | `src/feature-gate.js` | Whether a feature has been switched off from `config/app.json`, asked once |
 | `preload.js` | The `window.api` surface, and nothing else crosses |
-| `src/installer.js` | Download, slots, install, enable, remove, packs, imports |
+| `src/installer.js` | Download, slots, install, enable, remove, packs |
+| `src/import.js` | Taking a mod in: a `.vpk`, a `.zip`, an author's folder, or bytes off a drop |
 | `src/vpk.js` | The VPK format: read, write, merge, split, combine, fingerprint |
 | `src/file-tx.js` | One transaction per change to the game folder |
 | `src/library.js` | `manifest.json`: installed records and presets |

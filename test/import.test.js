@@ -21,6 +21,7 @@ const AdmZip = require('adm-zip');
 
 const vpk = require('../src/vpk.js');
 const { Installer } = require('../src/installer.js');
+const { importVpks, importVpkBuffers, installVpkBuffer } = require('../src/import.js');
 
 /** One inline-data entry in the shape buildVpk() wants. */
 function entry(relPath, body) {
@@ -86,7 +87,7 @@ test('a mod several folders down in what was dropped is still found', async (t) 
   const { installer, source, installed, inside } = stand(t);
   const dropped = source('pack', { 'pack/game/Dota2SkinChanger/hook_dir.vpk': mod([[HOOK, 'the hook']]) });
 
-  const [result] = await installer.importVpks([dropped]);
+  const [result] = await importVpks(installer,[dropped]);
 
   assert.equal(result.error, undefined, result.error);
   assert.equal(result.files.length, 1);
@@ -103,7 +104,7 @@ test('an author\'s folder with no archive in it is packed on the way in', async 
     'materials/models/items/pudge/hook/hook_color_png_1.vtex_c': 'the texture',
   });
 
-  const [result] = await installer.importVpks([working]);
+  const [result] = await importVpks(installer,[working]);
 
   assert.equal(result.error, undefined, result.error);
   assert.deepEqual(inside(result.files[0].relPath), [
@@ -115,7 +116,7 @@ test('a folder holding nothing the game reads is refused by name', async (t) => 
   const { installer, source, installed } = stand(t);
   const notAMod = source('holiday photos', { 'notes.txt': 'buy milk', 'cat.png': 'meow' });
 
-  const [result] = await installer.importVpks([notAMod]);
+  const [result] = await importVpks(installer,[notAMod]);
 
   assert.match(result.error, /\.vpk/);
   assert.equal(result.source, 'holiday photos');
@@ -131,7 +132,7 @@ test('a zip gives up its mods and nothing else', async (t) => {
   const file = path.join(dir, 'pack.zip');
   fs.writeFileSync(file, zip.toBuffer());
 
-  const [result] = await installer.importVpks([file]);
+  const [result] = await importVpks(installer,[file]);
 
   assert.equal(result.error, undefined, result.error);
   assert.equal(installed().length, 1, 'the archive gave up more than its mod');
@@ -146,7 +147,7 @@ test('a zip with no mod in it says so instead of quietly importing nothing', asy
   const file = path.join(dir, 'guide.zip');
   fs.writeFileSync(file, zip.toBuffer());
 
-  const [result] = await installer.importVpks([file]);
+  const [result] = await importVpks(installer,[file]);
 
   assert.match(result.error, /\.vpk/);
   assert.deepEqual(installed(), []);
@@ -160,7 +161,7 @@ test('an index and its data volumes are folded into one file', async (t) => {
   const from = source('set', {});
   vpk.combineVpksToFiles([{ key: 'a', buf: mod([[HOOK, 'the hook'], [BLADE, 'the blade']]) }], from, 'pak01');
 
-  const [result] = await installer.importVpks([from]);
+  const [result] = await importVpks(installer,[from]);
 
   assert.equal(result.error, undefined, result.error);
   assert.equal(result.merged, 2, 'the index and its one volume were not folded together');
@@ -175,7 +176,7 @@ test('data volumes with no index beside them are refused, not half-installed', a
   const from = source('orphans', {});
   fs.writeFileSync(path.join(from, 'skin_000.vpk'), 'data with no index');
 
-  const results = await installer.importVpks([from]);
+  const results = await importVpks(installer,[from]);
 
   assert.equal(results.length, 1);
   assert.match(results[0].error, /_dir\.vpk/);
@@ -192,7 +193,7 @@ test('one thing that is not a mod does not take the rest of the batch with it', 
   const bad = path.join(from, 'readme.txt');
   fs.writeFileSync(bad, 'not a mod');
 
-  const results = await installer.importVpks([bad, good]);
+  const results = await importVpks(installer,[bad, good]);
 
   assert.equal(results.filter((r) => r.error).length, 1, 'the readme was taken for a mod');
   assert.equal(results.filter((r) => !r.error).length, 1, 'the mod was lost with the readme');
@@ -205,7 +206,7 @@ test('an import takes a free slot, never one that is occupied', async (t) => {
   const from = source('mine', {});
   fs.writeFileSync(path.join(from, 'hook_dir.vpk'), mod([[HOOK, 'the hook']]));
 
-  const [result] = await installer.importVpks([path.join(from, 'hook_dir.vpk')]);
+  const [result] = await importVpks(installer,[path.join(from, 'hook_dir.vpk')]);
 
   assert.notEqual(result.files[0].relPath, 'pak10_dir.vpk', 'the import replaced a mod already there');
   assert.equal(installed().length, 2);
@@ -216,10 +217,10 @@ test('bytes that are not a VPK never reach the game folder', (t) => {
      anything is written, and the slot name is ours rather than theirs. */
   const { installer, installed } = stand(t);
 
-  assert.throws(() => installer.installVpkBuffer(Buffer.from('not an archive at all')));
+  assert.throws(() => installVpkBuffer(installer,Buffer.from('not an archive at all')));
   assert.deepEqual(installed(), [], 'something was written before the bytes were understood');
 
-  const files = installer.installVpkBuffer(mod([[HOOK, 'the hook']]));
+  const files = installVpkBuffer(installer,mod([[HOOK, 'the hook']]));
   assert.match(files[0].relPath, /^pak\d+_dir\.vpk$/);
   assert.deepEqual(installed(), [files[0].relPath]);
 });
@@ -282,7 +283,7 @@ test('bytes dropped on the window go in through the same door as files', async (
   const { dir, installer, installed, inside } = stand(t);
   const before = fs.readdirSync(os.tmpdir()).filter((f) => f.startsWith('mm-import-')).length;
 
-  const results = await installer.importVpkBuffers([
+  const results = await importVpkBuffers(installer,[
     { name: 'hook_dir.vpk', data: mod([[HOOK, 'the hook']]) },
     { name: 'notes.txt', data: Buffer.from('ignored, not an archive') },
   ]);

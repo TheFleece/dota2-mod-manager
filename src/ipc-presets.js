@@ -14,6 +14,7 @@ const { app, dialog, ipcMain } = require('electron');
 const { Library } = require('./library');
 const { readPresetFile, writePresetFile } = require('./preset-share');
 const { encodePresetLink } = require('./preset-link');
+const { installVpkBuffer } = require('./import');
 const { t } = require('./i18n');
 
 /**
@@ -242,7 +243,7 @@ function registerPresetsIpc({
           if (entry.fp && fpIndex.has(entry.fp)) return [fpIndex.get(entry.fp)]; // already on disk
           if (!bundle) { errors.push(`${entry.name}: ${t('файл пресета недоступен')}`); return []; }
           sendProgress({ type: 'stage', label: entry.name, stage: t('установка') });
-          const files = installer.installVpkBuffer(bundle.readMod(entry.file));
+          const files = installVpkBuffer(installer, bundle.readMod(entry.file));
           // exactly the treatment a dragged-in file gets: the sender's item blocks lifted
           // out, a multi-hero bundle split, a name from the content when theirs is a slot
           const { records, schema } = adoptImportedFiles({ files, name: entry.name, fileRef: null });

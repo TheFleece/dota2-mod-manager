@@ -20,6 +20,8 @@ try {
 const { Settings } = require('./src/settings');
 const { Catalog } = require('./src/catalog');
 const { Installer } = require('./src/installer');
+// under one name: main.js has a wrapper of its own called importVpkBuffers
+const importer = require('./src/import');
 const { Library } = require('./src/library');
 const { Fingerprints } = require('./src/fingerprints');
 const { SCHEME } = require('./src/preset-link');
@@ -762,7 +764,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('open-url', (e, url) => { e.preventDefault(); handleDeepLink(url); }); // macOS
 }
 
-// register installer.importVpks/importVpkBuffers results into the library
+// register what src/import.js handed back into the library
 /**
  * The changelog section for one version, in the app's language when there is a translation.
  * The same file CI puts on the release page, shipped with the build so the screen works
@@ -871,10 +873,12 @@ function importStep(stage) {
   return (done, total) => sendProgress({ type: 'count', label: stage, done, total });
 }
 
-// copy user .vpk files into the lang folder and register them in the library
-async function importVpkPaths(paths) {
+// Copy what the user handed over into the lang folder and register it in the library. The two
+// ways in differ only in which importer reads them, so they share the bar, the error and the
+// "done" that has to arrive whichever way it ends.
+async function runImport(take, input) {
   try {
-    const staged = await installer.importVpks(Array.isArray(paths) ? paths : [], importStep(t('Копирование модов')));
+    const staged = await take(installer, input, importStep(t('Копирование модов')));
     return await registerImportResults(staged, importStep(t('Разбор модов')));
   } catch (err) {
     return { error: String(err.message || err) };
@@ -883,17 +887,9 @@ async function importVpkPaths(paths) {
   }
 }
 
-// same, but from raw bytes — the drag-and-drop fallback when a real path can't be resolved
-async function importVpkBuffers(items) {
-  try {
-    const staged = await installer.importVpkBuffers(Array.isArray(items) ? items : [], importStep(t('Копирование модов')));
-    return await registerImportResults(staged, importStep(t('Разбор модов')));
-  } catch (err) {
-    return { error: String(err.message || err) };
-  } finally {
-    sendProgress({ type: 'done' });
-  }
-}
+const importVpkPaths = (paths) => runImport(importer.importVpks, Array.isArray(paths) ? paths : []);
+// from raw bytes: the drag-and-drop fallback for when a real path cannot be resolved
+const importVpkBuffers = (items) => runImport(importer.importVpkBuffers, Array.isArray(items) ? items : []);
 
 // ---------- item schema (game/dota_mods) ----------
 // The engine reads scripts/items/items_game.txt through the MOD path - the game's own dota

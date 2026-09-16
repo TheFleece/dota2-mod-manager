@@ -38,8 +38,11 @@
     "src/i18n.js": {
       "lines": 96.8
     },
+    "src/import.js": {
+      "lines": 93.9
+    },
     "src/installer.js": {
-      "lines": 67.2
+      "lines": 63.1
     },
     "src/ipc-diagnostics.js": {
       "lines": 80.8
@@ -60,7 +63,7 @@
       "lines": 44.5
     },
     "src/ipc-presets.js": {
-      "lines": 62.3
+      "lines": 62.4
     },
     "src/ipc-settings.js": {
       "lines": 89.4
@@ -120,7 +123,7 @@
       "lines": 98.1
     },
     "src/vpk.js": {
-      "lines": 98.4
+      "lines": 98.1
     },
     "src/vtex.js": {
       "lines": 100

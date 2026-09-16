@@ -26,6 +26,7 @@ the code, not in this page.
 | [`src/gamelang.js`](#srcgamelangjs) | Which dota_<lang> folder the game actually mounts. |
 | [`src/i18n.js`](#srci18njs) | Minimal i18n for the main process (main.js, installer.js, vpk.js). |
 | [`src/icons.js`](#srciconsjs) | Pictures for the cosmetics picker, and for the Library where a picture can be found for |
+| [`src/import.js`](#srcimportjs) | Taking in a mod the user already has: a .vpk, a .zip, a folder, or bytes off a drop. |
 | [`src/installer.js`](#srcinstallerjs) | Installer engine: download, extract, pak allocation, per-category install/uninstall |
 | [`src/library.js`](#srclibraryjs) | Library: manifest of installed mods + presets |
 | [`src/minify.js`](#srcminifyjs) | Living next to Minify. |
@@ -761,6 +762,103 @@ class Icons
 
 _No description in the source._
 
+## src/import.js
+
+Taking in a mod the user already has: a .vpk, a .zip, a folder, or bytes off a drop.
+
+This is the widest door in the app and the least fussy about what comes through it. A
+Skinchanger pack unzips to a whole game tree with the archive several folders down. A
+Dota2Changer mod arrives as an index plus data volumes, and the rest of the app assumes one
+file per mod, so a half-folded set is exactly how a mod ends up half-loaded. An author's
+working folder holds no archive at all, and is packed on the way in.
+
+Lifted out of src/installer.js unchanged. It was 270 lines of a 1,783-line file, reachable
+only through the class that also downloads, allocates slots, patches the schema and manages
+cursors. The bodies below are the same bodies; what changed is that the installer arrives as
+an argument instead of as `this`. Its tests (test/import.test.js) and the mutants that check
+those tests bite (.github/mutants.json) were written first, in #48, so this move had
+something to prove itself against.
+
+### `importVpks`
+
+```js
+async function importVpks(installer, paths, onStep)
+```
+
+Import whatever the user pointed at: .vpk files, a .zip, or a folder to walk.
+Returns one result per mod: { source, name, files[], merged? } or { source, error }.
+
+### `importVpkFiles`
+
+```js
+async function importVpkFiles(installer, paths, onStep)
+```
+
+```
+@param {object} installer the installer engine: the game folder, the slots and the writes
+@param {string[]} paths .vpk files to take in
+@param {(done:number,total:number)=>void} [onStep] called after each mod lands
+```
+
+### `importVpkBuffers`
+
+```js
+async function importVpkBuffers(installer, items, onStep)
+```
+
+Import dropped .vpk/.zip files given as raw bytes (used when the drop can't resolve a
+real on-disk path). Bytes are staged in a temp folder so the normal path-based importer
+handles grouping of multi-part sets, then the temp folder is removed.
+
+### `installVpkBuffer`
+
+```js
+function installVpkBuffer(installer, buf)
+```
+
+Install a VPK handed over as bytes (a mod embedded in a shared preset). The index is
+parsed first: whatever a stranger put in that archive, only something that really is a
+VPK ever reaches the game folder, and the slot name is ours, never theirs.
+
+### `expandImportInputs`
+
+```js
+function expandImportInputs(paths, staged)
+```
+
+Turn whatever the user dropped or picked into a flat list of .vpk paths: a folder is
+walked, a .zip is unpacked to a temp dir (keeping its layout so multi-part sets stay
+side by side), a plain file passes through. Temp dirs are appended to `staged` for the
+caller to delete once the import has read them.
+
+```
+@returns {{ files: string[], errors: Array<{source:string, error:string}> }}
+```
+
+### `scanVpkTree`
+
+```js
+function scanVpkTree(root, depth = 0)
+```
+
+Every .vpk under a dropped folder. Skinchanger packs unzip to a whole game tree
+(<pack>\game\Dota2SkinChanger\pak01_*.vpk), so the file we want sits a few levels in.
+
+### `stageFolderAsVpk`
+
+```js
+function stageFolderAsVpk(dir, staged)
+```
+
+Pack an author's working folder into a VPK and park it where the normal importer will
+find it. Staged rather than installed directly, so a folder goes through exactly the
+same path a dropped .vpk does - slot allocation, the schema a mod carries, the
+transaction, the naming.
+
+```
+@returns {string|null} path of the staged archive, or null if the folder holds no game files
+```
+
 ## src/installer.js
 
 Installer engine: download, extract, pak allocation, per-category install/uninstall
@@ -782,6 +880,16 @@ const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-atta
 Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
 The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
 Dota2PornFx cart zips is a merge-order hint for VPKMerge, not a valid install name.
+
+### `MERGE_SIZE_CAP`
+
+```js
+const MERGE_SIZE_CAP = 1200 * 1024 * 1024
+```
+
+Merging a multi-volume import into one file holds the whole mod in memory once. Well
+above any real skin pack (a Skinchanger export is ~70 MB), but a multi-GB set is left
+in its original volumes rather than risking the allocation.
 
 ## src/library.js
 
