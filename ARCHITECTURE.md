@@ -292,7 +292,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 70 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 71 files, run on every push and every pull request
 on Linux and on Windows. Four of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, and `DECISIONS.md`
@@ -342,7 +342,7 @@ that location is not writable.
 | `src/settings.js` | `settings.json` and its defaults |
 | `src/catalog.js`, `src/catalog-signature.js` | Catalog data and who is allowed to change it |
 | `src/net.js` | Downloads, mirrors, backoff |
-| `src/remote-config.js` | The switches and notices this project can change after a release, and the signature over them |
+| `src/remote-config.js` | The switches and notices this project can change after a release, the version ranges a switch can be held to, and the signature over them |
 | `tools/sign-catalog.js` | The signing side, for whoever holds a private key |
 | `src/safe-zip.js` | Every foreign archive comes through here |
 | `src/steam.js` | Finding Steam and the game, and proving the folder is really a game |
@@ -372,3 +372,4 @@ that location is not writable.
 | `tools/coverage.mjs` | Runs the suite and holds coverage per file and per platform against `.github/coverage-baseline.json`, plus the aggregate floor everywhere |
 | `tools/size-budget.mjs` | Holds the five largest files at the length in `.github/size-budget.json`, and stops a sixth crossing 800 lines unnoticed |
 | `tools/mutate.mjs` | Breaks one promise at a time from `.github/mutants.json` and fails where no test goes red, or where the mutant no longer applies to the code it names |
+| `tools/rollback.mjs` | Switches a feature off for the broken releases only, or everywhere, writes and signs `config/app.json`, and refuses a range old copies cannot read or a key the app does not pin |

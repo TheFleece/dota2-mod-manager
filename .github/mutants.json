@@ -273,6 +273,54 @@
       "from": "fs.mkdirSync(outDir, { recursive: true });",
       "to": "require('electron'); fs.mkdirSync(outDir, { recursive: true });",
       "test": "test/dependency-direction.test.js"
+    },
+    {
+      "name": "a block switches a feature off in every version",
+      "file": "src/remote-config.js",
+      "anchor": "function feature(name, lang = 'en') {",
+      "from": "cfg.blocks.find((b) => b.feature === name && applies(b, appVersion(), today()))",
+      "to": "cfg.blocks.find((b) => b.feature === name)",
+      "test": "test/rollback.test.js"
+    },
+    {
+      "name": "a block never lets go after its last day",
+      "file": "src/remote-config.js",
+      "anchor": "function applies(entry, version, today) {",
+      "from": "&& (!entry.until || today <= entry.until);",
+      "to": "&& true;",
+      "test": "test/rollback.test.js"
+    },
+    {
+      "name": "a block with a damaged day is held forever",
+      "file": "src/remote-config.js",
+      "anchor": "function normalize(raw) {",
+      "from": "if (!id || !SWITCHABLE.includes(b.feature) || !until) continue;",
+      "to": "if (!id || !SWITCHABLE.includes(b.feature)) continue;",
+      "test": "test/rollback.test.js"
+    },
+    {
+      "name": "a block leaks into the switches old copies act on",
+      "file": "tools/rollback.mjs",
+      "anchor": "export function addBlock(config, { feature, versions, until, en, ru, url = null }, today) {",
+      "from": "next.blocks.push({ id, feature, minVersion, maxVersion, until, en, ru });",
+      "to": "next.features = { ...(next.features || {}), [feature]: { off: true, en, ru } }; next.blocks.push({ id, feature, minVersion, maxVersion, until, en, ru });",
+      "test": "test/rollback.test.js"
+    },
+    {
+      "name": "a block is written for versions that cannot read it",
+      "file": "tools/rollback.mjs",
+      "anchor": "export function addBlock(config, { feature, versions, until, en, ru, url = null }, today) {",
+      "from": "if (cmpVersion(minVersion, BLOCKS_SINCE) < 0) {",
+      "to": "if (false) {",
+      "test": "test/rollback.test.js"
+    },
+    {
+      "name": "the config is signed with a key the app does not pin",
+      "file": "tools/rollback.mjs",
+      "anchor": "export function signFor(bytes, privatePem, pinned = CONFIG_PUBLIC_KEY) {",
+      "from": "if (!verify(bytes, sig, pinned)) {",
+      "to": "if (false) {",
+      "test": "test/rollback.test.js"
     }
   ]
 }

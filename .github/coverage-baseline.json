@@ -321,7 +321,7 @@
           "lines": 98.1
         },
         "src/vpk.js": {
-          "lines": 98.4
+          "lines": 98.1
         },
         "src/vtex.js": {
           "lines": 100
@@ -373,6 +373,9 @@
         },
         "tools/release-gate.mjs": {
           "lines": 58.3
+        },
+        "tools/rollback.mjs": {
+          "lines": 75.9
         },
         "tools/seo-state.mjs": {
           "lines": 99

@@ -1,3 +1,13 @@
+/* src/remote-config.js exactly as it shipped in v2.6.12, the last release that reads only
+ * `features` and `notices`.
+ *
+ * Kept so test/rollback.test.js can prove, with the code actually running on people's machines,
+ * that a block written for newer versions switches nothing off in these. An argument from how
+ * the old code "should" behave is not proof; running it is. The only change from the tag is the
+ * two require paths, pointed back at src/.
+ *
+ * Regenerate from: git show v2.6.12:src/remote-config.js
+ */
 // The one thing the app can be told after it has shipped.
 //
 // A Dota patch can break a whole category of mods in an afternoon, and the app in front of
@@ -17,23 +27,12 @@
 //     "features": { "install": { "off": true, "ru": "…", "en": "…" } },
 //     "notices": [ { "id": "2026-08-dota-patch", "date": "2026-08-07", "level": "warn",
 //                    "ru": "…", "en": "…", "url": "https://…",
-//                    "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ],
-//     "blocks":  [ { "id": "2026-09-16-install-2.7.0", "feature": "install",
-//                    "minVersion": "2.7.0", "maxVersion": "2.7.0", "until": "2026-09-27",
-//                    "ru": "…", "en": "…" } ]
+//                    "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ]
 //   }
-//
-// `features` switches something off in every version. That is right when the cause is outside
-// the app, a Dota patch, and wrong when one release is broken: the fixed release would be switched
-// off along with it. `blocks` are for that second case, a switch that holds for a range of
-// versions until a day. They have a key of their own because copies released before BLOCKS_SINCE
-// read only `features` and `notices`: a range written into `features` would switch the feature
-// off for every one of them, while a key they have never heard of is one they leave alone.
-// tools/rollback.mjs writes both, signs the file and refuses the mistakes.
 const fs = require('fs');
 const path = require('path');
-const { fetchText } = require('./net');
-const { verify } = require('./catalog-signature');
+const { fetchText } = require('../../src/net');
+const { verify } = require('../../src/catalog-signature');
 
 const CONFIG_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/config/app.json';
 /** The signature, always the config's own address with .sig on the end. */
@@ -62,11 +61,6 @@ const CONFIG_PUBLIC_KEY = 'MCowBQYDK2VwAyEA8M9IOVLfxK6V1n2fHAHlE9zzCsXFoUAJki8Rd
 // ignored: a typo in the config must not disable something at random, and this list is the
 // contract between the file and the code that honours it.
 const SWITCHABLE = ['install', 'cosmetics', 'voice'];
-/* The first version that reads `blocks`. Everything before it ignores the key entirely, which is
- * what makes adding it safe, and also what makes a block aimed at those versions do nothing, so
- * tools/rollback.mjs refuses one. 2.6.12 is the last release without it; whichever version
- * ships next is at least this one. */
-const BLOCKS_SINCE = '2.6.13';
 const MAX_NOTICES = 20;
 const MAX_TEXT = 500;
 
@@ -82,18 +76,8 @@ function cmpVersion(a, b) {
   return 0;
 }
 
-/** Does an entry with optional version bounds and a last day hold for this build today? */
-function applies(entry, version, today) {
-  return (!entry.minVersion || cmpVersion(version, entry.minVersion) >= 0)
-    && (!entry.maxVersion || cmpVersion(version, entry.maxVersion) <= 0)
-    && (!entry.until || today <= entry.until);
-}
-
-// the last day something applies, in UTC, or null for anything that is not a real date
-const validDay = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) ? v : null);
-
 function normalize(raw) {
-  const out = { features: {}, notices: [], blocks: [] };
+  const out = { features: {}, notices: [] };
   if (!raw || typeof raw !== 'object') return out;
 
   const features = raw.features && typeof raw.features === 'object' ? raw.features : {};
@@ -117,28 +101,8 @@ function normalize(raw) {
       url: /^https:\/\//i.test(n.url || '') ? str(n.url, 300) : null,
       minVersion: str(n.minVersion, 20) || null,
       maxVersion: str(n.maxVersion, 20) || null,
-      // anything but a real date means no end, so a typo never hides a notice
-      until: validDay(n.until),
-    });
-  }
-
-  const blocks = Array.isArray(raw.blocks) ? raw.blocks.slice(0, MAX_NOTICES) : [];
-  for (const b of blocks) {
-    if (!b || typeof b !== 'object') continue;
-    const id = str(b.id, 80);
-    const until = validDay(b.until);
-    /* A block with a damaged last day is dropped rather than held forever. For a notice a typo
-     * errs towards showing it; for a switch the same typo would err towards an outage nobody can
-     * end from the user's side, and this module fails open. */
-    if (!id || !SWITCHABLE.includes(b.feature) || !until) continue;
-    out.blocks.push({
-      id,
-      feature: b.feature,
-      ru: str(b.ru),
-      en: str(b.en),
-      minVersion: str(b.minVersion, 20) || null,
-      maxVersion: str(b.maxVersion, 20) || null,
-      until,
+      // the last day it shows, in UTC; anything but a real date means no end, so a typo never hides a notice
+      until: /^\d{4}-\d{2}-\d{2}$/.test(n.until || '') && !Number.isNaN(Date.parse(`${n.until}T00:00:00Z`)) ? n.until : null,
     });
   }
   return out;
@@ -191,22 +155,19 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey
    * @returns {{ off: boolean, note: string }}
    */
   function feature(name, lang = 'en') {
-    const cfg = read();
-    const say = (e) => (lang === 'ru' ? e.ru : e.en) || e.en || e.ru || '';
-    // off everywhere wins: it is the answer to something outside the app, like a Dota patch
-    if (cfg.features[name]) return { off: true, note: say(cfg.features[name]) };
-    const block = cfg.blocks.find((b) => b.feature === name && applies(b, appVersion(), today()));
-    return block ? { off: true, note: say(block) } : { off: false, note: '' };
+    const f = read().features[name];
+    if (!f) return { off: false, note: '' };
+    return { off: true, note: (lang === 'ru' ? f.ru : f.en) || f.en || f.ru || '' };
   }
-
-  const today = () => new Date(now()).toISOString().slice(0, 10);
 
   /** Notices meant for this build, newest first, with the text already in one language. */
   function notices(lang = 'en') {
     const version = appVersion();
-    const day = today();
+    const today = new Date(now()).toISOString().slice(0, 10);
     return read().notices
-      .filter((n) => applies(n, version, day))
+      .filter((n) => (!n.minVersion || cmpVersion(version, n.minVersion) >= 0)
+        && (!n.maxVersion || cmpVersion(version, n.maxVersion) <= 0)
+        && (!n.until || today <= n.until))
       .map((n) => ({ id: n.id, date: n.date, level: n.level, url: n.url, text: (lang === 'ru' ? n.ru : n.en) || n.en || n.ru || '' }))
       .filter((n) => n.text)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -215,7 +176,4 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey
   return { refresh, feature, notices, url: CONFIG_URL, SWITCHABLE };
 }
 
-module.exports = {
-  createRemoteConfig, normalize, cmpVersion, applies, SWITCHABLE, BLOCKS_SINCE,
-  CONFIG_URL, CONFIG_SIG_URL, CONFIG_PUBLIC_KEY,
-};
+module.exports = { createRemoteConfig, normalize, cmpVersion, SWITCHABLE, CONFIG_URL, CONFIG_SIG_URL, CONFIG_PUBLIC_KEY };

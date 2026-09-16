@@ -62,33 +62,38 @@ control how many more copies take it, and what the ones on it are told.
 **Ship a fix.** A patch release through the path above is the normal answer, and the only one that
 reaches copies already on the broken version.
 
-**Tell people while the fix is coming.** Every running copy fetches `config/app.json`, signed with a
-key that is not in this repository. The file can do two things:
-
-- switch off `install`, `cosmetics` or `voice`, with a reason in both languages:
-
-  ```json
-  "features": { "install": { "off": true, "en": "Installing is paused until 2.7.1.", "ru": "Установка на паузе до 2.7.1." } }
-  ```
-
-- show a notice to one range of versions, with `minVersion` and `maxVersion`, until a last day:
-
-  ```json
-  { "id": "2026-09-broken-2.7.0", "date": "2026-09-20", "until": "2026-09-27", "level": "warn",
-    "minVersion": "2.7.0", "maxVersion": "2.7.0", "en": "…", "ru": "…" }
-  ```
-
-  `until` is required: `test/remote-config.test.js` fails a notice without one.
-
-Sign it and put the file and its signature in one pull request:
+**Stop the broken version doing damage, and tell its users why.** Every running copy fetches
+`config/app.json`, signed with a key that is not in this repository. `tools/rollback.mjs` writes that
+file, signs it and refuses the mistakes that matter under pressure:
 
 ```bash
-CATALOG_KEY=/path/to/config-key.pem node tools/sign-catalog.js config/app.json
+npm run rollback -- list
+CATALOG_KEY=/path/to/config-key.pem npm run rollback -- block install --versions 2.7.0 --until 2026-09-27 --en "Installing is paused in 2.7.0. Update to 2.7.1." --ru "В 2.7.0 установка на паузе. Обнови до 2.7.1."
 ```
 
-`test/remote-config-signature.test.js` fails that pull request when the two disagree. Take the switch
-and the notice out again once the fix is out, the same way. A notice hides itself after its `until`
-day, but copies released before that field existed ignore it, so it still has to leave the file.
+A **block** switches `install`, `cosmetics` or `voice` off for a range of versions (`2.7.0`, or
+`2.7.0-2.7.2`) until a day, and adds a notice for exactly those versions. The release with the fix is
+not touched, and the block lets go by itself the day after `--until`. Copies before 2.6.13 do not
+read blocks at all, which is what made adding them safe, and the tool refuses a range that reaches
+them rather than write a block that does nothing there.
+
+For those older copies, or when the cause is outside the app (a Dota patch), switch the feature off
+in **every** version, and restore it once that is safe:
+
+```bash
+CATALOG_KEY=/path/to/config-key.pem npm run rollback -- everywhere install --en "…" --ru "…"
+CATALOG_KEY=/path/to/config-key.pem npm run rollback -- restore install
+```
+
+`lift <id>` takes a block out early, `prune` takes out everything past its day, and `sign` signs the
+file as it stands. A key that is not the one the app pins is refused before anything is written,
+because every copy would ignore what it signed. Without `CATALOG_KEY` the tool writes the file and
+says it is unsigned; `test/remote-config-signature.test.js` then fails the pull request, so an
+unsigned file cannot go out.
+
+`config/app.json` and `config/app.json.sig` go in one pull request, merged through the checks. A
+notice hides itself after its day, but copies released before that field existed ignore it, so run
+`prune` once the date has passed.
 
 **Stop it spreading, when the build damages game folders.** Mark the release a pre-release.
 `/releases/latest` skips pre-releases, so copies that have not updated stop being offered it, and the

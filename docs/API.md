@@ -2068,8 +2068,19 @@ Shape:
     "features": { "install": { "off": true, "ru": "…", "en": "…" } },
     "notices": [ { "id": "2026-08-dota-patch", "date": "2026-08-07", "level": "warn",
                    "ru": "…", "en": "…", "url": "https://…",
-                   "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ]
+                   "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ],
+    "blocks":  [ { "id": "2026-09-16-install-2.7.0", "feature": "install",
+                   "minVersion": "2.7.0", "maxVersion": "2.7.0", "until": "2026-09-27",
+                   "ru": "…", "en": "…" } ]
   }
+
+`features` switches something off in every version. That is right when the cause is outside
+the app, a Dota patch, and wrong when one release is broken: the fixed release would be switched
+off along with it. `blocks` are for that second case, a switch that holds for a range of
+versions until a day. They have a key of their own because copies released before BLOCKS_SINCE
+read only `features` and `notices`: a range written into `features` would switch the feature
+off for every one of them, while a key they have never heard of is one they leave alone.
+tools/rollback.mjs writes both, signs the file and refuses the mistakes.
 
 ### `createRemoteConfig`
 
@@ -2103,6 +2114,14 @@ function cmpVersion(a, b)
 
 _No description in the source._
 
+### `applies`
+
+```js
+function applies(entry, version, today)
+```
+
+Does an entry with optional version bounds and a last day hold for this build today?
+
 ### `SWITCHABLE`
 
 ```js
@@ -2112,6 +2131,17 @@ const SWITCHABLE = ['install', 'cosmetics', 'voice']
 What the app is willing to be told to switch off. A name that is not on this list is
 ignored: a typo in the config must not disable something at random, and this list is the
 contract between the file and the code that honours it.
+
+### `BLOCKS_SINCE`
+
+```js
+const BLOCKS_SINCE = '2.6.13'
+```
+
+The first version that reads `blocks`. Everything before it ignores the key entirely, which is
+what makes adding it safe, and also what makes a block aimed at those versions do nothing, so
+tools/rollback.mjs refuses one. 2.6.12 is the last release without it; whichever version
+ships next is at least this one.
 
 ### `CONFIG_URL`
 
