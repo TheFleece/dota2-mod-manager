@@ -221,36 +221,51 @@ test('the incident folder the radar reads names no issue that is not a number', 
   for (const n of incidentIssues(texts)) assert.ok(Number.isInteger(n) && n > 0);
 });
 
-test('open Dependabot alerts are decisions, open secret alerts are red, and a list it cannot read says so', async () => {
-  /* The plan the radar came from named three alert lists. It read one of them: a vulnerable
-     dependency or a leaked token sat in the Security tab and never reached this issue. */
-  const { evaluate } = await load();
-  const dependabot = {
-    number: 7, html_url: 'https://github.com/x/y/security/dependabot/7', created_at: ago(5 * 24),
-    dependency: { package: { name: 'adm-zip' }, manifest_path: 'package-lock.json' },
-    security_advisory: { ghsa_id: 'GHSA-0000-0000-0000', summary: 'Path traversal on extract', severity: 'high' },
+test('known vulnerabilities in the app and the site reach the radar, and a failed audit is not a clean one', async () => {
+  /* The plan the radar came from named three security lists and it read one. The workflow token
+     cannot read Dependabot's, so npm audit supplies the same advisories from the lockfile. */
+  const { evaluate, auditFindings } = await load();
+  const report = {
+    auditReportVersion: 2,
+    vulnerabilities: {
+      'adm-zip': {
+        name: 'adm-zip', severity: 'high', isDirect: true,
+        via: [{ source: 1, name: 'adm-zip', title: 'Path traversal on extract', url: 'https://github.com/advisories/GHSA-0000-0000-0000', severity: 'high' }],
+        fixAvailable: { name: 'adm-zip', version: '0.6.1', isSemVerMajor: false },
+      },
+      'some-wrapper': { name: 'some-wrapper', severity: 'high', isDirect: false, via: ['adm-zip'], fixAvailable: false },
+      'old-helper': { name: 'old-helper', severity: 'low', isDirect: false, via: [{ title: 'Prototype pollution', url: 'u' }], fixAvailable: true },
+    },
   };
-  const fresh = { ...dependabot, number: 8, created_at: ago(2) };
-  const secret = { number: 2, html_url: 'https://github.com/x/y/security/secret-scanning/2', created_at: ago(1), secret_type_display_name: 'Discord Bot Token' };
 
-  const r = evaluate({ dependabotAlerts: [fresh, dependabot], secretAlerts: [secret] }, NOW);
-  assert.deepEqual(r.decide.map((x) => x.title), [
-    'Dependabot #7: adm-zip, Path traversal on extract',
-    'Dependabot #8: adm-zip, Path traversal on extract',
+  const found = auditFindings(report);
+  assert.deepEqual(found.map((f) => [f.name, f.severity, f.fix]), [
+    ['adm-zip', 'high', 'adm-zip 0.6.1'],
+    ['old-helper', 'low', 'npm audit fix'],
+    ['some-wrapper', 'high', null],
   ]);
-  assert.equal(r.decide[0].detail, 'high in package-lock.json, open 5 days');
-  assert.deepEqual(r.red.map((x) => x.title), ['Secret scanning #2: Discord Bot Token']);
-  assert.deepEqual(r.overdue.map((x) => x.title), [
-    'Dependabot #7: adm-zip, Path traversal on extract',
-    'Secret scanning #2: Discord Bot Token',
-  ], 'a leaked secret is overdue the hour it is found; an alert is overdue after three days');
+  assert.deepEqual(found[2].through, ['adm-zip']);
 
-  const quiet = evaluate({ dependabotAlerts: [], secretAlerts: [] }, NOW);
-  assert.ok(quiet.fine.includes('No open Dependabot alerts'));
-  assert.ok(quiet.fine.includes('No open secret scanning alerts'));
+  const r = evaluate({ audit: { app: report, site: { auditReportVersion: 2, vulnerabilities: {} } } }, NOW);
+  assert.deepEqual(r.decide.map((x) => x.title), [
+    'adm-zip has a high vulnerability (app)',
+    'some-wrapper has a high vulnerability (app)',
+  ]);
+  assert.equal(r.decide[0].detail, 'Path traversal on extract; a direct dependency; fixed by adm-zip 0.6.1');
+  assert.equal(r.decide[0].url, 'https://github.com/advisories/GHSA-0000-0000-0000');
+  assert.equal(r.decide[1].detail, 'through adm-zip; pulled in by another package; no fixed version yet');
+  assert.equal(r.overdue.length, 0, 'a report has no dates; the security pull request carries the clock');
+  assert.deepEqual(r.look.map((x) => [x.title, x.detail]), [['1 low-severity advisory in the app', 'old-helper']]);
+  assert.ok(r.fine.includes('npm audit finds nothing in the site'));
+  assert.ok(!r.fine.includes('npm audit finds nothing in the app'));
 
-  const blind = evaluate({ dependabotAlerts: 'unreadable', secretAlerts: 'unreadable' }, NOW);
-  assert.deepEqual(blind.look.map((x) => x.title), ['Dependabot alerts could not be read', 'Secret scanning alerts could not be read']);
-  assert.equal(blind.overdue.length, 0);
-  assert.ok(!blind.fine.some((line) => /Dependabot|secret scanning/.test(line)), 'a list nobody read is not reported as empty');
+  const blind = evaluate({ audit: { app: 'unreadable', site: { vulnerabilities: {} } } }, NOW);
+  assert.deepEqual(blind.look.map((x) => x.title), ['npm audit could not run for the app']);
+  assert.ok(!blind.fine.includes('npm audit finds nothing in the app'), 'an audit that did not run is not a clean one');
+});
+
+test('both places the radar audits have a lockfile for npm audit to read', () => {
+  for (const dir of ['.', 'site']) {
+    assert.ok(fs.existsSync(path.join(ROOT, dir, 'package-lock.json')), dir + ' has no package-lock.json');
+  }
 });

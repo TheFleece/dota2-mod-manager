@@ -2,7 +2,8 @@ name: Radar
 
 # Once a day, everything that is waiting on a person, in one pinned issue called "Project status".
 #
-# Pull requests and issues nobody has answered, open security alerts, workflows that are red or
+# Pull requests and issues nobody has answered, open code scanning alerts, known vulnerabilities in
+# what the app and the site install (npm audit, from the lockfiles), workflows that are red or
 # have gone quiet, secrets about to expire, a weekly report that did not arrive. The issue body is
 # rewritten each run rather than commented on, so it always reads as today and never piles up.
 # When something has waited longer than CONTRIBUTING.md and SECURITY.md promise, the maintainer

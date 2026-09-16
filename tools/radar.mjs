@@ -18,6 +18,12 @@
  * The decisions are pure functions over plain data (evaluate, renderIssue, renderDiscord) and are
  * tested against fixtures in test/radar.test.js. The part that talks to GitHub is thin on purpose.
  *
+ * Two security lists stay out of reach. The workflow token cannot read Dependabot or secret
+ * scanning alerts: a dry run on 2026-09-16 got neither, and the credential registry refuses
+ * personal tokens. Vulnerable dependencies come from `npm audit` instead, which reads the same
+ * advisory database from the lockfile and needs no token. Leaked secrets have no substitute here:
+ * push protection refuses the known kinds at the door, and GitHub emails the owner about the rest.
+ *
  * Usage:
  *   GH_TOKEN=... node tools/radar.mjs            # update the issue, alert when overdue
  *   GH_TOKEN=... node tools/radar.mjs --dry      # print both, write nothing
@@ -25,6 +31,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -147,6 +154,31 @@ export function incidentIssues(texts) {
   return [...named].sort((a, b) => a - b);
 }
 
+/**
+ * One entry per vulnerable package in an `npm audit --json` report (format 2), by name.
+ * @param {{vulnerabilities?: Record<string, any>}} report
+ * @returns {Array<{name: string, severity: string, direct: boolean, title: string|null, url: string|undefined, through: string[], fix: string|null}>}
+ */
+export function auditFindings(report) {
+  return Object.values((report && report.vulnerabilities) || {}).map((v) => {
+    const via = v.via || [];
+    // an advisory of its own is an object; a package that is only vulnerable through another names it
+    const advisory = via.find((x) => x && typeof x === 'object') || null;
+    const fix = v.fixAvailable;
+    return {
+      name: v.name,
+      severity: v.severity || 'unrated',
+      direct: Boolean(v.isDirect),
+      title: advisory ? advisory.title : null,
+      url: advisory ? advisory.url : undefined,
+      through: via.filter((x) => typeof x === 'string'),
+      fix: fix === true ? 'npm audit fix'
+        : fix && typeof fix === 'object' ? `${fix.name} ${fix.version}${fix.isSemVerMajor ? ', a major update' : ''}`
+          : null,
+    };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function evaluate(data, now = Date.now(), policy = POLICY) {
   const r = { decide: [], red: [], expiring: [], look: [], fine: [] };
 
@@ -226,40 +258,30 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
     }
   }
 
-  /* Dependabot keeps its own list of vulnerable dependencies. The security update it opens is a
-     pull request and is counted above; the alert is what says every build carries the hole until
-     that update is merged or turned down. */
-  if (data.dependabotAlerts === 'unreadable') {
-    r.look.push({ title: 'Dependabot alerts could not be read', detail: 'the workflow token needs security-events: read', overdue: false });
-  } else if (Array.isArray(data.dependabotAlerts)) {
-    for (const a of data.dependabotAlerts) {
-      const h = hoursSince(a.created_at, now);
-      const dep = a.dependency || {};
-      const advisory = a.security_advisory || {};
+  /* Known vulnerabilities in what the app and the site install, from npm audit (the top of this
+     file says why not from Dependabot's list). A report carries no dates, so nothing here goes
+     overdue on its own: Dependabot opens a pull request for anything with a fixed version, and
+     that pull request is listed above with its own clock. What stays here is a decision. */
+  for (const [where, report] of Object.entries(data.audit || {})) {
+    if (report === 'unreadable') {
+      r.look.push({ title: `npm audit could not run for the ${where}`, detail: 'the registry did not answer, or the lockfile is missing', overdue: false });
+      continue;
+    }
+    const found = auditFindings(report);
+    const minor = found.filter((f) => f.severity === 'low' || f.severity === 'info');
+    for (const f of found.filter((x) => !minor.includes(x))) {
+      const what = f.title || `through ${f.through.join(', ')}`;
       r.decide.push({
-        title: `Dependabot #${a.number}: ${(dep.package && dep.package.name) || 'a dependency'}, ${advisory.summary || advisory.ghsa_id || 'advisory'}`,
-        url: a.html_url,
-        detail: `${advisory.severity || 'unrated'} in ${dep.manifest_path || 'an unknown manifest'}, open ${fmtAge(h)}`,
-        overdue: h > policy.waitingDays * 24,
+        title: `${f.name} has a ${f.severity} vulnerability (${where})`,
+        url: f.url,
+        detail: `${what}; ${f.direct ? 'a direct dependency' : 'pulled in by another package'}; ${f.fix ? `fixed by ${f.fix}` : 'no fixed version yet'}`,
+        overdue: false,
       });
     }
-    if (!data.dependabotAlerts.length) r.fine.push('No open Dependabot alerts');
-  }
-
-  /* A secret committed to the repository works for whoever copied it until somebody revokes it,
-     so an open alert is red the day it appears. */
-  if (data.secretAlerts === 'unreadable') {
-    r.look.push({ title: 'Secret scanning alerts could not be read', detail: 'the token the radar runs with has no access to them', overdue: false });
-  } else if (Array.isArray(data.secretAlerts)) {
-    for (const a of data.secretAlerts) {
-      r.red.push({
-        title: `Secret scanning #${a.number}: ${a.secret_type_display_name || a.secret_type || 'a secret'}`,
-        url: a.html_url,
-        detail: `found ${String(a.created_at).slice(0, 10)}; revoke it at the service first, then close the alert`,
-        overdue: true,
-      });
+    if (minor.length) {
+      r.look.push({ title: `${minor.length} low-severity advisor${minor.length === 1 ? 'y' : 'ies'} in the ${where}`, detail: minor.map((f) => f.name).join(', '), overdue: false });
     }
-    if (!data.secretAlerts.length) r.fine.push('No open secret scanning alerts');
+    if (!found.length) r.fine.push(`npm audit finds nothing in the ${where}`);
   }
 
   if (data.privateReporting === false) {
@@ -430,6 +452,21 @@ async function api(pathname, { method = 'GET', body, token, allow = [] } = {}) {
   return res.status === 204 ? {} : res.json();
 }
 
+/** npm audit from the lockfile alone: nothing installed, no token. 'unreadable' when npm could not answer. */
+function audit(dir) {
+  const args = ['audit', '--json', '--package-lock-only'];
+  // npm is npm.cmd on Windows, which Node starts only through a shell, and a shell takes one string
+  const run = process.platform === 'win32'
+    ? spawnSync(`npm ${args.join(' ')}`, { cwd: dir, encoding: 'utf8', shell: true })
+    : spawnSync('npm', args, { cwd: dir, encoding: 'utf8' });
+  try {
+    const report = JSON.parse(run.stdout);
+    return report && report.vulnerabilities ? report : 'unreadable';
+  } catch {
+    return 'unreadable';
+  }
+}
+
 async function gather(repo, token, now) {
   const files = fs.readdirSync(path.join(root, '.github', 'workflows'))
     .filter((f) => /\.ya?ml$/.test(f))
@@ -461,8 +498,6 @@ async function gather(repo, token, now) {
 
   const scanning = await api(`repos/${repo}/code-scanning/alerts?state=open&per_page=100`, { token, allow: [403, 404] });
   const codeScanning = Array.isArray(scanning) ? scanning : 'unreadable';
-  const dependabot = await api(`repos/${repo}/dependabot/alerts?state=open&per_page=100`, { token, allow: [403, 404] });
-  const secrets = await api(`repos/${repo}/secret-scanning/alerts?state=open&per_page=100`, { token, allow: [403, 404] });
 
   const pvr = await api(`repos/${repo}/private-vulnerability-reporting`, { token, allow: [403, 404] });
   const community = await api(`repos/${repo}/community/profile`, { token, allow: [403, 404] });
@@ -505,8 +540,7 @@ async function gather(repo, token, now) {
       regressions,
       incidentIssues: incidentIssues(incidentTexts),
       codeScanning,
-      dependabotAlerts: Array.isArray(dependabot) ? dependabot : 'unreadable',
-      secretAlerts: Array.isArray(secrets) ? secrets : 'unreadable',
+      audit: { app: audit(root), site: audit(path.join(root, 'site')) },
       scorecardUrl: `https://github.com/${repo}/security/code-scanning?query=tool%3AScorecard+is%3Aopen`,
       privateReporting: typeof pvr.enabled === 'boolean' ? pvr.enabled : undefined,
       securitySettingsUrl: `https://github.com/${repo}/settings/security_analysis`,
