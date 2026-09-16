@@ -133,6 +133,20 @@ export function waitingSince(issue, comments) {
  * the clock except through `now`. Every item says whether it is overdue (`overdue: true`), which
  * is what decides whether the maintainer gets a message.
  */
+/**
+ * The issues the incident write-ups answer: the `Issue` row in each file under docs/incidents/.
+ * @param {string[]} texts  the files' contents
+ * @returns {number[]}
+ */
+export function incidentIssues(texts) {
+  const named = new Set();
+  for (const text of texts) {
+    const row = text.match(/^\| Issue \| (.+) \|\s*$/m);
+    if (row) for (const m of row[1].matchAll(/#(\d+)/g)) named.add(Number(m[1]));
+  }
+  return [...named].sort((a, b) => a - b);
+}
+
 export function evaluate(data, now = Date.now(), policy = POLICY) {
   const r = { decide: [], red: [], expiring: [], look: [], fine: [] };
 
@@ -160,6 +174,24 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
     });
   }
   if (!waiting) r.fine.push('No issue is waiting on a reply');
+
+  /* A regression is something that worked and stopped. Closing the issue fixes it once; the write-up
+     in docs/incidents/ says why nothing caught it and names what does now, and test/incidents.test.js
+     keeps those names true. A closed regression that no write-up names is a job left half done. */
+  const written = new Set(data.incidentIssues || []);
+  let unwritten = 0;
+  for (const issue of data.regressions || []) {
+    if (issue.state !== 'closed' || written.has(issue.number)) continue;
+    unwritten++;
+    const h = hoursSince(issue.closed_at, now);
+    r.decide.push({
+      title: `Regression #${issue.number} has no incident write-up: ${issue.title}`,
+      url: issue.html_url,
+      detail: `closed ${fmtAge(h)} ago; add a file to docs/incidents/ with #${issue.number} in its Issue row`,
+      overdue: h > policy.waitingDays * 24,
+    });
+  }
+  if ((data.regressions || []).length && !unwritten) r.fine.push('Every closed regression has an incident write-up');
 
   if (data.codeScanning === 'unreadable') {
     r.look.push({ title: 'Code scanning alerts could not be read', detail: 'the workflow token needs security-events: read', overdue: false });
@@ -370,6 +402,9 @@ async function gather(repo, token, now) {
 
   const pulls = await api(`repos/${repo}/pulls?state=open&per_page=100`, { token });
   const openIssues = (await api(`repos/${repo}/issues?state=open&per_page=100`, { token })).filter((i) => !i.pull_request);
+  const regressions = (await api(`repos/${repo}/issues?labels=regression&state=all&per_page=100`, { token })).filter((i) => !i.pull_request);
+  const incidentsDir = path.join(root, 'docs', 'incidents');
+  const incidentTexts = fs.readdirSync(incidentsDir).filter((f) => f.endsWith('.md')).map((f) => fs.readFileSync(path.join(incidentsDir, f), 'utf8'));
 
   const issues = [];
   let searchIssue = null;
@@ -429,6 +464,8 @@ async function gather(repo, token, now) {
     data: {
       pulls,
       issues,
+      regressions,
+      incidentIssues: incidentIssues(incidentTexts),
       codeScanning,
       scorecardUrl: `https://github.com/${repo}/security/code-scanning?query=tool%3AScorecard+is%3Aopen`,
       privateReporting: typeof pvr.enabled === 'boolean' ? pvr.enabled : undefined,

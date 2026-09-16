@@ -190,6 +190,17 @@ any pull request that changes the mutants, the tool or that workflow; the radar 
 workflow if it goes red or quiet. Write the test for something a user would notice losing, then add the mutant that
 would have caught its absence.
 
+## When something broke for players
+
+Fix it the way you fix anything else, with a test. Then add a file to
+[docs/incidents/](docs/incidents/README.md): what happened, why, why nothing caught it, and what
+catches it now. The last section names the tests, workflow steps and files that stand guard.
+`test/incidents.test.js` fails when one of them is renamed or deleted and the write-up still
+points at it, so removing a guard means saying in the same change what replaced it.
+
+An issue labelled `regression` gets a write-up with its number in the `Issue` row. The radar lists
+a closed one that no write-up names.
+
 ## Every user-facing string exists twice
 
 The interface ships in Russian and English. Russian text is the key and English is looked up from

@@ -185,3 +185,38 @@ test('a scheduled workflow added today is new, not silent', async () => {
   assert.equal(r.red.length, 1);
   assert.match(r.red[0].title, /has not run once in the 5 days since it was added/);
 });
+
+test('a closed regression wants an incident write-up, and one that names it settles it', async () => {
+  /* docs/incidents/ says why each break got past every check and what catches it now. A fix that
+     closes the issue and writes none of that down leaves the next one to get past the same way. */
+  const { evaluate, incidentIssues } = await load();
+  const regression = (number, state, closedHours) => ({
+    number, state, title: `Broke in release ${number}`, html_url: `https://github.com/x/y/issues/${number}`,
+    closed_at: closedHours === undefined ? null : ago(closedHours),
+  });
+  const written = incidentIssues([
+    '# One\n\n| Field | Value |\n| --- | --- |\n| Date | 2026-09-20 |\n| Issue | #41, #43 |\n',
+    '# Two\n\n| Field | Value |\n| --- | --- |\n| Date | 2026-09-21 |\n',
+    'An `Issue` row is described here, and this line is not one.',
+  ]);
+  assert.deepEqual(written, [41, 43]);
+
+  const r = evaluate({ regressions: [regression(40, 'open'), regression(41, 'closed', 200), regression(42, 'closed', 100), regression(44, 'closed', 5)], incidentIssues: written }, NOW);
+  const titles = r.decide.map((x) => x.title);
+  assert.deepEqual(titles, ['Regression #42 has no incident write-up: Broke in release 42', 'Regression #44 has no incident write-up: Broke in release 44']);
+  assert.deepEqual(r.overdue.map((x) => x.title), ['Regression #42 has no incident write-up: Broke in release 42'], 'more than three days without a write-up is overdue, less is not');
+  assert.match(r.decide[0].detail, /#42 in its Issue row/);
+
+  const settled = evaluate({ regressions: [regression(41, 'closed', 200), regression(40, 'open')], incidentIssues: written }, NOW);
+  assert.equal(settled.decide.length, 0, 'an open regression is still being fixed, and a written one is done');
+  assert.ok(settled.fine.includes('Every closed regression has an incident write-up'));
+  assert.ok(!evaluate({}, NOW).fine.includes('Every closed regression has an incident write-up'), 'no regressions at all is not worth a line');
+});
+
+test('the incident folder the radar reads names no issue that is not a number', async () => {
+  const { incidentIssues } = await load();
+  const dir = path.join(ROOT, 'docs', 'incidents');
+  const texts = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8'));
+  assert.ok(texts.length > 1, 'the radar would read an empty folder');
+  for (const n of incidentIssues(texts)) assert.ok(Number.isInteger(n) && n > 0);
+});

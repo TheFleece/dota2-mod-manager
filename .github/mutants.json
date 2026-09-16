@@ -553,6 +553,22 @@
       "from": "err.offline = !/HTTP \\d/.test(String(err.message || ''));",
       "to": "err.offline = true;",
       "test": "test/net.test.js"
+    },
+    {
+      "name": "a guard an incident names is renamed and the write-up still points at it",
+      "file": "test/release-gate.test.js",
+      "anchor": "test('the 2.6.11 case",
+      "from": "the 2.6.11 case",
+      "to": "the red commit case",
+      "test": "test/incidents.test.js"
+    },
+    {
+      "name": "a workflow step an incident names is renamed",
+      "file": ".github/workflows/release.yml",
+      "anchor": "- name: Check the mirror carries both platforms",
+      "from": "both platforms",
+      "to": "every platform",
+      "test": "test/incidents.test.js"
     }
   ]
 }
