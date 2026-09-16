@@ -12,6 +12,7 @@ incident, named by the day it was found.
 | 2026-09-11 | [Matchmaking refused after a Dota update](2026-09-11-matchmaking-after-update.md) | 1.12.0 to 2.6.9 | 2.6.10 |
 | 2026-09-15 | [2.6.11 was built from a commit with a failing test](2026-09-15-release-from-red-commit.md) | 2.6.11 | #21 |
 | 2026-09-15 | [The site built as version 0.0.0](2026-09-15-site-built-as-0.0.0.md) (near miss) | site | 53416db |
+| 2026-09-17 | [Fonts and cursors put back at every start](2026-09-17-restored-after-every-start.md) | 2.0.0 to 2.6.12 | #62 |
 
 ## Writing one
 

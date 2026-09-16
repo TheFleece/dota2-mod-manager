@@ -35,6 +35,7 @@ the code, not in this page.
 | [`src/mod-id.js`](#srcmod-idjs) | What a mod actually replaces, asked of the game instead of guessed from folder names. |
 | [`src/mod-preview.js`](#srcmod-previewjs) | A picture for a mod that came with none, taken out of the mod itself. |
 | [`src/net.js`](#srcnetjs) | Getting bytes from the internet, on a connection that may not want to cooperate. |
+| [`src/overlays.js`](#srcoverlaysjs) | Fonts and cursors: loose files written over the game's own. |
 | [`src/patch-watch.js`](#srcpatch-watchjs) | Noticing that Dota was patched, while the app is open. |
 | [`src/patcher.js`](#srcpatcherjs) | Search-path patch: registers an extra content folder ahead of the game's own, which |
 | [`src/portable-update.js`](#srcportable-updatejs) | Updating a copy that was never installed. |
@@ -503,6 +504,22 @@ class FileTx
 ```
 
 _No description in the source._
+
+### `copyInto`
+
+```js
+function copyInto(src, dest, tx = null)
+```
+
+Copy a file into place: through the transaction when there is one, directly when not.
+
+### `writeInto`
+
+```js
+function writeInto(buf, dest, tx = null)
+```
+
+Write bytes into place: through the transaction when there is one, directly when not.
 
 ## src/fingerprints.js
 
@@ -1499,6 +1516,53 @@ function setMirrors(list)
 ```
 
 Point the chain at local servers for a test. Pass nothing to put the real list back.
+
+## src/overlays.js
+
+Fonts and cursors: loose files written over the game's own.
+
+A mod in the language folder is a file Valve does not ship, so taking it out means deleting
+it. A font or a cursor set is different. It replaces files in dota\panorama\fonts and
+dota\resource\cursor that the game needs, so the first write keeps the game's copy under
+backups\, and removing the mod puts that copy back. Steam's "Verify integrity of game files"
+puts those copies back too, without telling anyone, so this module also works out which
+installed mods a verify undid, and redeploys them.
+
+That check used to compare the file on disk with the kept original. Some mods ship a few of
+Valve's files unchanged: Nothing Font does, byte for byte, and one real install's cursor set
+matched its backup in 66 of 110 files. Such a mod looked undone the moment it went in, and the
+app wrote it out again at every start: 29 times between 2 and 21 August on that install. The
+same repair then found the mod's own extra files on disk, kept them as the game's originals,
+and a later removal put them back. So every write here is recorded by hash in
+backups\written.json, and a file that holds what this app wrote is this app's file, whatever
+else it happens to match.
+
+Moved out of src/installer.js on 2026-09-17; test/installer.test.js and test/cursors.test.js
+cover it through the installer.
+
+### `Overlays`
+
+```js
+class Overlays
+```
+
+The font and cursor files of one install: writing them, keeping the originals, putting them back.
+
+### `FONTS_SUBDIR`
+
+```js
+const FONTS_SUBDIR = ['dota', 'panorama', 'fonts']
+```
+
+Where font mods go, under the game folder.
+
+### `CURSOR_SUBDIR`
+
+```js
+const CURSOR_SUBDIR = ['dota', 'resource', 'cursor']
+```
+
+Where cursor sets go, under the game folder.
 
 ## src/patch-watch.js
 

@@ -153,4 +153,18 @@ class FileTx {
   }
 }
 
-module.exports = { FileTx };
+/** Copy a file into place: through the transaction when there is one, directly when not. */
+function copyInto(src, dest, tx = null) {
+  if (tx) { tx.copy(src, dest); return; }
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(src, dest);
+}
+
+/** Write bytes into place: through the transaction when there is one, directly when not. */
+function writeInto(buf, dest, tx = null) {
+  if (tx) { tx.write(dest, buf); return; }
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, buf);
+}
+
+module.exports = { FileTx, copyInto, writeInto };

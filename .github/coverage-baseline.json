@@ -231,7 +231,7 @@
           "lines": 48.1
         },
         "src/gamelang.js": {
-          "lines": 99.3
+          "lines": 99.4
         },
         "src/i18n.js": {
           "lines": 96.8
@@ -240,7 +240,7 @@
           "lines": 93.9
         },
         "src/installer.js": {
-          "lines": 67.7
+          "lines": 84.6
         },
         "src/ipc-diagnostics.js": {
           "lines": 80.8
@@ -284,6 +284,9 @@
         "src/net.js": {
           "lines": 99.2
         },
+        "src/overlays.js": {
+          "lines": 99.4
+        },
         "src/patch-watch.js": {
           "lines": 93.9
         },
@@ -321,7 +324,7 @@
           "lines": 98.1
         },
         "src/vpk.js": {
-          "lines": 98.1
+          "lines": 98.4
         },
         "src/vtex.js": {
           "lines": 100

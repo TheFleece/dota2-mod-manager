@@ -1,8 +1,6 @@
 // Installer engine: download, extract, pak allocation, per-category install/uninstall
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
-const AdmZip = require('adm-zip');
 const { RAW_BASE } = require('./catalog');
 const { listVpkPaths, listVpkPathsFile, listVpkPathCrcs, readVpkIndexFile, readVpkEntries, entryPath, buildVpk, mergeVpkToSingle, splitVpkByHero, combineVpksToFiles, analyzeVpkPaths, describeAnalysis, nameFromAnalysis, subjectHeroes, fingerprintVpk, fingerprintFiles,
   } = require('./vpk');
@@ -23,7 +21,8 @@ const GLOBAL_TABLE_RE = new RegExp('^(?:' + [
 const { ensureLangFolder } = require('./gamelang');
 const { openZip, safeJoin } = require('./safe-zip');
 const { validateGamePath } = require('./steam');
-const { FileTx } = require('./file-tx');
+const { FileTx, copyInto, writeInto } = require('./file-tx');
+const { Overlays, FONTS_SUBDIR, CURSOR_SUBDIR } = require('./overlays');
 const { RESERVED_PAKS, isMinifyFile, isMinifyPak } = require('./minify');
 const { downloadFile } = require('./net');
 const { t } = require('./i18n');
@@ -41,9 +40,6 @@ const MERGE_SIZE_CAP = 1200 * 1024 * 1024;
 // Above this a resource/localization file is the game's whole table rather than a mod's own
 // few lines: Dota's own dota_english.txt is ~4 MB, a deliberate edit is a few KB.
 const LOC_COPY_MIN = 256 * 1024;
-
-const FONTS_SUBDIR = ['dota', 'panorama', 'fonts'];
-const CURSOR_SUBDIR = ['dota', 'resource', 'cursor'];
 
 // Master "mods off" switch: every active mod pak is renamed <file>.moff so the game
 // ignores it (it only mounts pakNN_dir.vpk). Distinct from the per-mod ".off" state so
@@ -134,6 +130,11 @@ class Installer {
     fs.mkdirSync(this.packsDir, { recursive: true });
     fs.mkdirSync(this.cursorsDir, { recursive: true });
     this.getGamePath = getGamePath;
+    // fonts and cursors, the files written over the game's own: src/overlays.js
+    this.overlays = new Overlays({
+      getGamePath, backupsDir: this.backupsDir, cursorsDir: this.cursorsDir,
+      cachedArchive: (categoryId, fileRef) => this.cachedArchive(categoryId, fileRef),
+    });
     this.getLangSuffix = getLangSuffix;
     this.onProgress = onProgress || (() => {});
     // asks the game which of its own items a path list replaces (src/mod-id.js); optional,
@@ -534,15 +535,11 @@ class Installer {
   // Both take an optional transaction: the operations that touch several files at once run
   // inside one (see FileTx), the odd single write does not need it.
   copyInto(src, destAbs, tx = null) {
-    if (tx) { tx.copy(src, destAbs); return; }
-    fs.mkdirSync(path.dirname(destAbs), { recursive: true });
-    fs.copyFileSync(src, destAbs);
+    copyInto(src, destAbs, tx);
   }
 
   writeInto(buf, destAbs, tx = null) {
-    if (tx) { tx.write(destAbs, buf); return; }
-    fs.mkdirSync(path.dirname(destAbs), { recursive: true });
-    fs.writeFileSync(destAbs, buf);
+    writeInto(buf, destAbs, tx);
   }
 
   // ---------- install ----------
@@ -566,8 +563,8 @@ class Installer {
 
   installInto(tx, { categoryId, modName, local }) {
     const isPriority = PRIORITY_CATEGORIES.includes(categoryId);
-    if (categoryId === 'fonts') return this.installFonts(local, modName, tx);
-    if (categoryId === 'cursors') return this.installCursor(local, modName, tx);
+    if (categoryId === 'fonts') return this.overlays.installFonts(local, modName, tx);
+    if (categoryId === 'cursors') return this.overlays.installCursor(local, modName, tx);
     if (categoryId === 'tools') return this.installTool(local, modName, tx);
 
     const lang = this.langFolder();
@@ -635,60 +632,6 @@ class Installer {
     return records;
   }
 
-  // Fonts: zip has <Name>/assets/custom (the mod) and <Name>/assets/default (vanilla files).
-  // Custom files go to game\dota\panorama\fonts. Vanilla originals are backed up once.
-  installFonts(localZip, modName, tx = null) {
-    const game = this.getGamePath();
-    if (!game) throw new Error(t('Путь к Dota 2 не задан'));
-    const target = path.join(game, ...FONTS_SUBDIR);
-    fs.mkdirSync(target, { recursive: true });
-    const archive = openZip(localZip, { label: modName });
-    const records = [];
-    const backupRoot = path.join(this.backupsDir, 'fonts');
-    for (const file of archive.files) {
-      const m = file.path.match(/assets\/custom\/(.+)$/i);
-      if (!m) continue;
-      const fname = m[1];
-      const destAbs = safeJoin(target, fname);
-      // backup vanilla file once (first font mod that touches it)
-      const backupAbs = safeJoin(backupRoot, fname);
-      if (fs.existsSync(destAbs) && !fs.existsSync(backupAbs)) {
-        fs.mkdirSync(path.dirname(backupAbs), { recursive: true });
-        fs.copyFileSync(destAbs, backupAbs);
-      }
-      this.writeInto(file.read(), destAbs, tx);
-      records.push({ root: 'fonts', relPath: fname });
-    }
-    if (!records.length) throw new Error(t('{0}: в архиве не найдено assets/custom', modName));
-    return records;
-  }
-
-  // Cursors: zip has <Name>/cursor/* → game\dota\resource\cursor (vanilla backed up once)
-  installCursor(localZip, modName, tx = null) {
-    const game = this.getGamePath();
-    if (!game) throw new Error(t('Путь к Dota 2 не задан'));
-    const target = path.join(game, ...CURSOR_SUBDIR);
-    fs.mkdirSync(target, { recursive: true });
-    const archive = openZip(localZip, { label: modName });
-    const records = [];
-    const backupRoot = path.join(this.backupsDir, 'cursor');
-    for (const file of archive.files) {
-      const m = file.path.match(/(?:^|\/)cursor\/(.+)$/i);
-      if (!m) continue;
-      const fname = m[1];
-      const destAbs = safeJoin(target, fname);
-      const backupAbs = safeJoin(backupRoot, fname);
-      if (fs.existsSync(destAbs) && !fs.existsSync(backupAbs)) {
-        fs.mkdirSync(path.dirname(backupAbs), { recursive: true });
-        fs.copyFileSync(destAbs, backupAbs);
-      }
-      this.writeInto(file.read(), destAbs, tx);
-      records.push({ root: 'cursor', relPath: fname });
-    }
-    if (!records.length) throw new Error(t('{0}: в архиве не найдена папка cursor', modName));
-    return records;
-  }
-
   installTool(localZip, modName, tx = null) {
     const dest = path.join(this.toolsDir, modName.replace(/[<>:"/\\|?*]/g, '_'));
     fs.mkdirSync(dest, { recursive: true });
@@ -700,102 +643,18 @@ class Installer {
     return [{ root: 'tools', relPath: path.basename(dest) }];
   }
 
-  // ---------- cursors ----------
+  // ---------- fonts and cursors ----------
 
-  /*
-   * A cursor set is not a pak: it is loose files written straight over Valve's own in
-   * game\dota\resource\cursor, and every set overwrites the same names. So it cannot be
-   * switched off by renaming (nothing would be left to draw the cursor) and two sets
-   * cannot be on at once. Instead each installed set keeps its own copy here, and
-   * on/off means: write those files over the vanilla ones, or put the vanilla ones back.
-   */
-
-  cursorStoreDir(recId) {
-    return path.join(this.cursorsDir, String(recId).replace(/[^A-Za-z0-9_-]/g, ''));
-  }
-
-  cursorFiles(files) {
-    return (files || []).filter((f) => f.root === 'cursor');
-  }
-
-  // Keep a copy of the set that is live right now. Only ever call this for the record that
-  // actually owns what is on disk (the one being installed, adopted, or switched off) —
-  // otherwise the copy would be some other mod's cursor.
-  ensureCursorStore(recId, files) {
-    const own = this.cursorFiles(files);
-    if (!recId || !own.length) return false;
-    const store = this.cursorStoreDir(recId);
-    try {
-      if (fs.existsSync(store) && fs.readdirSync(store).length) return true; // already stashed
-    } catch { /* unreadable — restash */ }
-    const live = this.rootAbs('cursor');
-    let n = 0;
-    for (const f of own) {
-      const src = path.join(live, f.relPath);
-      if (!fs.existsSync(src)) continue;
-      this.copyInto(src, path.join(store, f.relPath));
-      n++;
-    }
-    return n > 0;
-  }
-
-  // write the set over the game's cursor folder (vanilla files backed up once)
-  deployCursor(recId, files) {
-    const store = this.cursorStoreDir(recId);
-    const live = this.rootAbs('cursor');
-    const backupRoot = path.join(this.backupsDir, 'cursor');
-    let n = 0;
-    for (const f of this.cursorFiles(files)) {
-      const src = path.join(store, f.relPath);
-      if (!fs.existsSync(src)) continue;
-      n++;
-      const dest = path.join(live, f.relPath);
-      // already ours (a re-deploy after a restart): backing it up now would record the mod
-      // itself as the vanilla file and there would be nothing left to switch back to
-      if (fs.existsSync(dest) && fs.readFileSync(dest).equals(fs.readFileSync(src))) continue;
-      const backup = path.join(backupRoot, f.relPath);
-      if (fs.existsSync(dest) && !fs.existsSync(backup)) this.copyInto(dest, backup);
-      this.copyInto(src, dest);
-    }
-    if (!n) throw new Error(t('Файлы курсора не сохранены — переустанови мод'));
-    return n;
-  }
-
-  // put the vanilla cursor back (or drop the file, if the set added one Valve has no copy of)
-  undeployCursor(recId, files) {
-    this.ensureCursorStore(recId, files);
-    const live = this.rootAbs('cursor');
-    const backupRoot = path.join(this.backupsDir, 'cursor');
-    for (const f of this.cursorFiles(files)) {
-      const dest = path.join(live, f.relPath);
-      const backup = path.join(backupRoot, f.relPath);
-      if (fs.existsSync(backup)) this.copyInto(backup, dest);
-      else if (fs.existsSync(dest)) fs.rmSync(dest, { force: true });
-    }
-  }
-
-  // Pack the set back into the layout the catalog ships cursors in (<Name>/cursor/<file>),
-  // so it can be handed to someone else or kept as a backup.
-  cursorZip(rec) {
-    const store = this.cursorStoreDir(rec.id);
-    const live = this.rootAbs('cursor');
-    const folder = (rec.name || 'cursor').replace(/[<>:"/\\|?*]/g, '_');
-    const zip = new AdmZip();
-    let n = 0;
-    for (const f of this.cursorFiles(rec.files)) {
-      const src = [path.join(store, f.relPath), path.join(live, f.relPath)].find((p) => fs.existsSync(p));
-      if (!src) continue;
-      zip.addFile(`${folder}/cursor/${f.relPath}`, fs.readFileSync(src));
-      n++;
-    }
-    if (!n) throw new Error(t('Файлы курсора не сохранены — переустанови мод'));
-    return zip.toBuffer();
-  }
-
-  dropCursorStore(recId) {
-    if (!recId) return;
-    try { fs.rmSync(this.cursorStoreDir(recId), { recursive: true, force: true }); } catch { /* ignore */ }
-  }
+  // Loose files over the game's own live in src/overlays.js; these are the calls the rest of
+  // the app makes.
+  cursorStoreDir(recId) { return this.overlays.cursorStoreDir(recId); }
+  ensureCursorStore(recId, files) { return this.overlays.ensureCursorStore(recId, files); }
+  deployCursor(recId, files) { return this.overlays.deployCursor(recId, files); }
+  undeployCursor(recId, files) { return this.overlays.undeployCursor(recId, files); }
+  cursorZip(rec) { return this.overlays.cursorZip(rec); }
+  fontFolderHashes() { return this.overlays.fontFolderHashes(); }
+  lostToVerify(records) { return this.overlays.lostToVerify(records); }
+  restoreDeployed(rec) { return this.overlays.restoreDeployed(rec); }
 
   // ---------- enable / disable / remove ----------
 
@@ -816,9 +675,9 @@ class Installer {
   // their name and loads a mod that is missing pieces. So the renames are one transaction -
   // if Dota grabs the third file, the first two go back to how they were.
   setEnabled(files, enabled, recId = null) {
-    if (recId && this.cursorFiles(files).length) {
-      if (enabled) this.deployCursor(recId, files);
-      else this.undeployCursor(recId, files);
+    if (recId && this.overlays.cursorFiles(files).length) {
+      if (enabled) this.overlays.deployCursor(recId, files);
+      else this.overlays.undeployCursor(recId, files);
       return;
     }
     FileTx.run((tx) => {
@@ -838,7 +697,7 @@ class Installer {
   // over whatever cursor took its place.
   remove(files, opts = {}) {
     const { recId = null, deployed = true } = opts;
-    this.dropCursorStore(recId);
+    this.overlays.dropCursorStore(recId);
     if (!deployed) files = files.filter((f) => f.root !== 'cursor');
     // Removing is deleting files AND putting Valve's own back where a font or cursor sat on
     // top of one. Half of that leaves a mod that is gone from the library but still on disk,
@@ -863,6 +722,7 @@ class Installer {
         }
       }
     });
+    this.overlays.forgetWritten(files);
   }
 
   /**
@@ -1429,56 +1289,6 @@ class Installer {
     return out;
   }
 
-  // basename -> sha1 of every file currently in panorama\fonts, for font subset matching
-  fontFolderHashes() {
-    const game = this.getGamePath();
-    if (!game) return null;
-    const dir = path.join(game, ...FONTS_SUBDIR);
-    if (!fs.existsSync(dir)) return null;
-    const out = {};
-    const walk = (d) => {
-      for (const f of fs.readdirSync(d)) {
-        const full = path.join(d, f);
-        if (fs.statSync(full).isDirectory()) walk(full);
-        else out[f.toLowerCase()] = crypto.createHash('sha1').update(fs.readFileSync(full)).digest('hex');
-      }
-    };
-    walk(dir);
-    return out;
-  }
-
-  /* ---------- after Steam's file check ----------
-   *
-   * Mods in the language folder are files Steam knows nothing about, so verifying the game
-   * files leaves them alone. Fonts and cursors are different: they overwrite files Valve
-   * ships, and a verify puts the originals back without telling anyone. The record still
-   * says the mod is on, the game says otherwise, and nothing in between says a word.
-   *
-   * A restored file is recognised by the backup taken when the mod was installed: if what is
-   * deployed is byte for byte the copy we set aside, the game's own file is back. A font
-   * file Valve does not ship has no backup and cannot be confused for one - and a verify
-   * would not have touched it either.
-   */
-  vanillaIsBack(f) {
-    if (f.root !== 'fonts' && f.root !== 'cursor') return false;
-    const deployed = path.join(this.rootAbs(f.root), f.relPath);
-    if (!fs.existsSync(deployed)) return true;
-    const backup = path.join(this.backupsDir, f.root, f.relPath);
-    if (!fs.existsSync(backup)) return false;
-    try {
-      return fs.readFileSync(deployed).equals(fs.readFileSync(backup));
-    } catch {
-      return false;
-    }
-  }
-
-  /** Installed records whose files the game has taken back. */
-  lostToVerify(records) {
-    if (!this.getGamePath()) return [];
-    return (records || []).filter((rec) => rec.enabled !== false
-      && (rec.files || []).some((f) => this.vanillaIsBack(f)));
-  }
-
   /** The archive this mod was installed from, if it is still in the download cache. */
   cachedArchive(categoryId, fileRef) {
     if (!categoryId || !fileRef) return null;
@@ -1489,26 +1299,6 @@ class Installer {
     } catch {
       return null;
     }
-  }
-
-  /**
-   * Put one back without asking. A cursor set is kept in userData, so it goes straight back;
-   * a font has to come from the archive it arrived in, and if the download cache has been
-   * cleared there is nothing here to restore from - that one needs the network, which is
-   * not something to start behind the user's back at launch.
-   * @returns {'store'|'cache'|null} where it came from, or null if it could not be done
-   */
-  restoreDeployed(rec) {
-    const isCursor = (rec.files || []).some((f) => f.root === 'cursor');
-    if (isCursor && this.cursorFiles(rec.files).length && fs.existsSync(this.cursorStoreDir(rec.id))) {
-      this.deployCursor(rec.id, rec.files);
-      return 'store';
-    }
-    const local = this.cachedArchive(rec.categoryId, rec.fileRef);
-    if (!local) return null;
-    if (isCursor) this.installCursor(local, rec.name);
-    else this.installFonts(local, rec.name);
-    return 'cache';
   }
 
   downloadCacheSize() {
