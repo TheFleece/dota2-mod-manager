@@ -25,8 +25,6 @@
  *   node tools/r2-sync.mjs --budget 9    stop at nine gigabytes in the bucket
  *   node tools/r2-sync.mjs --dry         say what it would do and touch nothing
  */
-import crypto from 'node:crypto';
-
 const ACCOUNT = process.env.R2_ACCOUNT_ID || '';
 const KEY = process.env.R2_ACCESS_KEY_ID || '';
 const SECRET = process.env.R2_SECRET_ACCESS_KEY || '';
@@ -56,6 +54,7 @@ const FIRST = ['heroes', 'terrains', 'shaders', 'trees', 'river', 'backgrounds',
 
 import { iterMods } from './catalog-mods.js';
 import { createR2, purgeCache } from './r2-client.js';
+import { staleCopies, publishedHash, checkBody } from './mirror-plan.js';
 
 /* The bucket, and SigV4 with it, live in tools/r2-client.js: the release assets need the same
    signing and a second copy of eighty lines of crypto is how the catalog walk in this very file
@@ -178,9 +177,7 @@ async function sourceSizes(items) {
 
 const present = wanted.filter((item) => have.has(item.path));
 const upstream = await sourceSizes(present);
-const changed = new Set(present
-  .filter((item) => upstream.has(item.path) && upstream.get(item.path) !== have.get(item.path))
-  .map((item) => item.path));
+const changed = staleCopies(present, upstream, have);
 console.log(`upstream: ${changed.size} of ${present.length} objects here are a copy of something older`);
 
 /* The checksums the app measures a download against. A copy that does not match one is not
@@ -190,11 +187,7 @@ try {
   const res = await fetch(`${RAW}/assets/data/mod-hashes.json`);
   if (res.ok) published = await res.json();
 } catch { /* without it the copy is still a copy, just unverified */ }
-const publishedFor = (objectPath) => {
-  const m = /^assets\/files\/(.+?)\/([^/]+)$/.exec(objectPath);
-  const value = m && published[`${m[1]}/${m[2]}`];
-  return typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
-};
+const publishedFor = (objectPath) => publishedHash(published, objectPath);
 
 /* The public address of the bucket, which is what the cache is keyed on and what the app
    downloads from. It used to come from an R2_PUBLIC_BASE secret, and on 2026-09-15 the daily
@@ -230,14 +223,12 @@ for (const item of wanted) {
        carries bytes the app will refuse is worse than a mirror that carries nothing: the app
        spends the whole download to find out. */
     const want = publishedFor(item.path);
-    if (want) {
-      const got = crypto.createHash('sha256').update(body).digest('hex');
-      if (got !== want) {
-        refused++;
-        console.log(`not copied ${item.path}: source hashes to ${got.slice(0, 12)}, the catalog publishes ${want.slice(0, 12)}`);
-        if (have.has(item.path)) index.push(item.path);
-        continue;
-      }
+    const { ok, got } = checkBody(body, want);
+    if (!ok) {
+      refused++;
+      console.log(`not copied ${item.path}: source hashes to ${got.slice(0, 12)}, the catalog publishes ${want.slice(0, 12)}`);
+      if (have.has(item.path)) index.push(item.path);
+      continue;
     }
 
     const mb = (body.length / 1024 ** 2).toFixed(1);

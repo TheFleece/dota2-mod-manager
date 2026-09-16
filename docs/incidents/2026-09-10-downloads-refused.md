@@ -32,9 +32,12 @@ serves, and that the published list described either of them.
 
 ## What catches it now
 
-- `tools/r2-sync.mjs` "source hashes to": the mirror job measures each file against the published
-  hash before copying it, and replaces a copy whose size no longer matches the source. This runs
-  in the job, not in a test.
+- `tools/mirror-plan.js`: the two decisions the mirror job was missing. It measures each file
+  against the published hash before copying it, and copies again an object whose size no longer
+  matches the source.
+- `test/mirror-plan.test.js` "a mod its author replaced is copied again, and one that did not
+  change is left alone"
+- `test/mirror-plan.test.js` "bytes that do not match the published hash are not uploaded"
 - `test/r2-purge.test.js` "the replaced urls go to the zone, once each": a replaced copy is also
   dropped from the cache in front of the mirror.
 - `test/net.test.js` "a mirror serving a stale copy costs that mirror its turn, not the mod"

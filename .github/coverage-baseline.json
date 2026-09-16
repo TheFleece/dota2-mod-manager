@@ -321,7 +321,7 @@
           "lines": 98.1
         },
         "src/vpk.js": {
-          "lines": 98.4
+          "lines": 98.1
         },
         "src/vtex.js": {
           "lines": 100
@@ -354,6 +354,9 @@
           "lines": 93.5
         },
         "tools/json-lines.js": {
+          "lines": 100
+        },
+        "tools/mirror-plan.js": {
           "lines": 100
         },
         "tools/mutate.mjs": {

@@ -569,6 +569,22 @@
       "from": "both platforms",
       "to": "every platform",
       "test": "test/incidents.test.js"
+    },
+    {
+      "name": "the mirror keeps a copy its author replaced",
+      "file": "tools/mirror-plan.js",
+      "anchor": "function staleCopies(present, upstream, have) {",
+      "from": "upstream.get(item.path) !== have.get(item.path)",
+      "to": "false",
+      "test": "test/mirror-plan.test.js"
+    },
+    {
+      "name": "the mirror uploads bytes the app will refuse",
+      "file": "tools/mirror-plan.js",
+      "anchor": "function checkBody(body, want) {",
+      "from": "return { ok: got === want, got };",
+      "to": "return { ok: true, got };",
+      "test": "test/mirror-plan.test.js"
     }
   ]
 }

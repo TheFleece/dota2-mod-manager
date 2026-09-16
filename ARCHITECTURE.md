@@ -292,7 +292,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 73 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 74 files, run on every push and every pull request
 on Linux and on Windows. Five of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, `DECISIONS.md`
@@ -359,7 +359,7 @@ that location is not writable.
 | `renderer/ui/*` | Dialogs, toasts, the media player, the install queue, shared chrome |
 | `tools/sandbox.js` | The throwaway game tree |
 | `tools/e2e.mjs`, `test/fixtures/e2e/*` | Installing, switching and removing a mod by clicking through the real window, offline, in the sandbox |
-| `tools/r2-sync.mjs`, `tools/r2-release.mjs`, `tools/r2-client.js` | The archive mirror, the update mirror, and the signing they share |
+| `tools/r2-sync.mjs`, `tools/r2-release.mjs`, `tools/r2-client.js`, `tools/mirror-plan.js` | The archive mirror, the update mirror, the signing they share, and which archives the mirror copies again or refuses |
 | `tools/gen-fingerprints.js` | Regenerating the published fingerprint map |
 | `tools/seo-report.mjs`, `tools/seo-state.mjs` | The weekly reach and search report posted to [issue #3](https://github.com/TheFleece/dota2-mod-manager/issues/3), and the numbers it carries from one week to the next inside the comment |
 | `tools/release-gate.mjs` | First job of every release: waits until the tagged commit has passed the checks in `.github/required-checks.json`, and refuses it otherwise |
