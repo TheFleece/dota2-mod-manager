@@ -226,6 +226,42 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
     }
   }
 
+  /* Dependabot keeps its own list of vulnerable dependencies. The security update it opens is a
+     pull request and is counted above; the alert is what says every build carries the hole until
+     that update is merged or turned down. */
+  if (data.dependabotAlerts === 'unreadable') {
+    r.look.push({ title: 'Dependabot alerts could not be read', detail: 'the workflow token needs security-events: read', overdue: false });
+  } else if (Array.isArray(data.dependabotAlerts)) {
+    for (const a of data.dependabotAlerts) {
+      const h = hoursSince(a.created_at, now);
+      const dep = a.dependency || {};
+      const advisory = a.security_advisory || {};
+      r.decide.push({
+        title: `Dependabot #${a.number}: ${(dep.package && dep.package.name) || 'a dependency'}, ${advisory.summary || advisory.ghsa_id || 'advisory'}`,
+        url: a.html_url,
+        detail: `${advisory.severity || 'unrated'} in ${dep.manifest_path || 'an unknown manifest'}, open ${fmtAge(h)}`,
+        overdue: h > policy.waitingDays * 24,
+      });
+    }
+    if (!data.dependabotAlerts.length) r.fine.push('No open Dependabot alerts');
+  }
+
+  /* A secret committed to the repository works for whoever copied it until somebody revokes it,
+     so an open alert is red the day it appears. */
+  if (data.secretAlerts === 'unreadable') {
+    r.look.push({ title: 'Secret scanning alerts could not be read', detail: 'the token the radar runs with has no access to them', overdue: false });
+  } else if (Array.isArray(data.secretAlerts)) {
+    for (const a of data.secretAlerts) {
+      r.red.push({
+        title: `Secret scanning #${a.number}: ${a.secret_type_display_name || a.secret_type || 'a secret'}`,
+        url: a.html_url,
+        detail: `found ${String(a.created_at).slice(0, 10)}; revoke it at the service first, then close the alert`,
+        overdue: true,
+      });
+    }
+    if (!data.secretAlerts.length) r.fine.push('No open secret scanning alerts');
+  }
+
   if (data.privateReporting === false) {
     r.red.push({ title: 'Private vulnerability reporting is switched off', detail: 'SECURITY.md sends reporters to it', url: data.securitySettingsUrl, overdue: true });
   } else if (data.privateReporting === true) {
@@ -425,6 +461,8 @@ async function gather(repo, token, now) {
 
   const scanning = await api(`repos/${repo}/code-scanning/alerts?state=open&per_page=100`, { token, allow: [403, 404] });
   const codeScanning = Array.isArray(scanning) ? scanning : 'unreadable';
+  const dependabot = await api(`repos/${repo}/dependabot/alerts?state=open&per_page=100`, { token, allow: [403, 404] });
+  const secrets = await api(`repos/${repo}/secret-scanning/alerts?state=open&per_page=100`, { token, allow: [403, 404] });
 
   const pvr = await api(`repos/${repo}/private-vulnerability-reporting`, { token, allow: [403, 404] });
   const community = await api(`repos/${repo}/community/profile`, { token, allow: [403, 404] });
@@ -467,6 +505,8 @@ async function gather(repo, token, now) {
       regressions,
       incidentIssues: incidentIssues(incidentTexts),
       codeScanning,
+      dependabotAlerts: Array.isArray(dependabot) ? dependabot : 'unreadable',
+      secretAlerts: Array.isArray(secrets) ? secrets : 'unreadable',
       scorecardUrl: `https://github.com/${repo}/security/code-scanning?query=tool%3AScorecard+is%3Aopen`,
       privateReporting: typeof pvr.enabled === 'boolean' ? pvr.enabled : undefined,
       securitySettingsUrl: `https://github.com/${repo}/settings/security_analysis`,

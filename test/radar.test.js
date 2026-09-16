@@ -220,3 +220,37 @@ test('the incident folder the radar reads names no issue that is not a number', 
   assert.ok(texts.length > 1, 'the radar would read an empty folder');
   for (const n of incidentIssues(texts)) assert.ok(Number.isInteger(n) && n > 0);
 });
+
+test('open Dependabot alerts are decisions, open secret alerts are red, and a list it cannot read says so', async () => {
+  /* The plan the radar came from named three alert lists. It read one of them: a vulnerable
+     dependency or a leaked token sat in the Security tab and never reached this issue. */
+  const { evaluate } = await load();
+  const dependabot = {
+    number: 7, html_url: 'https://github.com/x/y/security/dependabot/7', created_at: ago(5 * 24),
+    dependency: { package: { name: 'adm-zip' }, manifest_path: 'package-lock.json' },
+    security_advisory: { ghsa_id: 'GHSA-0000-0000-0000', summary: 'Path traversal on extract', severity: 'high' },
+  };
+  const fresh = { ...dependabot, number: 8, created_at: ago(2) };
+  const secret = { number: 2, html_url: 'https://github.com/x/y/security/secret-scanning/2', created_at: ago(1), secret_type_display_name: 'Discord Bot Token' };
+
+  const r = evaluate({ dependabotAlerts: [fresh, dependabot], secretAlerts: [secret] }, NOW);
+  assert.deepEqual(r.decide.map((x) => x.title), [
+    'Dependabot #7: adm-zip, Path traversal on extract',
+    'Dependabot #8: adm-zip, Path traversal on extract',
+  ]);
+  assert.equal(r.decide[0].detail, 'high in package-lock.json, open 5 days');
+  assert.deepEqual(r.red.map((x) => x.title), ['Secret scanning #2: Discord Bot Token']);
+  assert.deepEqual(r.overdue.map((x) => x.title), [
+    'Dependabot #7: adm-zip, Path traversal on extract',
+    'Secret scanning #2: Discord Bot Token',
+  ], 'a leaked secret is overdue the hour it is found; an alert is overdue after three days');
+
+  const quiet = evaluate({ dependabotAlerts: [], secretAlerts: [] }, NOW);
+  assert.ok(quiet.fine.includes('No open Dependabot alerts'));
+  assert.ok(quiet.fine.includes('No open secret scanning alerts'));
+
+  const blind = evaluate({ dependabotAlerts: 'unreadable', secretAlerts: 'unreadable' }, NOW);
+  assert.deepEqual(blind.look.map((x) => x.title), ['Dependabot alerts could not be read', 'Secret scanning alerts could not be read']);
+  assert.equal(blind.overdue.length, 0);
+  assert.ok(!blind.fine.some((line) => /Dependabot|secret scanning/.test(line)), 'a list nobody read is not reported as empty');
+});
