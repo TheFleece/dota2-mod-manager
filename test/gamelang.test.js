@@ -478,3 +478,29 @@ test('a move with nowhere to go moves nothing', (t) => {
   assert.equal(gamelang.moveLangFolder(empty, 'russian', 'russian'), 0);
   assert.ok(fs.existsSync(path.join(empty, 'dota_russian')), 'the folder the game mounts was removed');
 });
+
+test('a gameinfo another program writes just before ours is not written over', (t) => {
+  /* CodeQL js/file-system-race (#115): looking for gameinfo.gi and writing it were two calls, so
+     a file another program put there in between was replaced by our stub. The write itself now
+     refuses a file that exists. Here the other program always wins that gap. */
+  const game = fakeGame(t, {});
+  const theirs = 'written by another program';
+  const realWrite = fs.writeFileSync;
+  t.mock.method(fs, 'writeFileSync', (file, data, opts) => {
+    if (path.basename(String(file)) === 'gameinfo.gi' && data !== theirs) realWrite(file, theirs);
+    return realWrite(file, data, opts);
+  });
+
+  const dir = gamelang.ensureLangFolder(game, 'russian');
+  assert.equal(fs.readFileSync(path.join(dir, 'gameinfo.gi'), 'utf-8'), theirs);
+});
+
+test('a gameinfo that cannot be written is still an error, not taken for one already there', (t) => {
+  const game = fakeGame(t, {});
+  const realWrite = fs.writeFileSync;
+  t.mock.method(fs, 'writeFileSync', (file, data, opts) => {
+    if (path.basename(String(file)) === 'gameinfo.gi') throw Object.assign(new Error('access denied'), { code: 'EACCES' });
+    return realWrite(file, data, opts);
+  });
+  assert.throws(() => gamelang.ensureLangFolder(game, 'russian'), /access denied/);
+});

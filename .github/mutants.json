@@ -585,6 +585,14 @@
       "from": "return { ok: got === want, got };",
       "to": "return { ok: true, got };",
       "test": "test/mirror-plan.test.js"
+    },
+    {
+      "name": "a new language folder writes its gameinfo over one that appeared meanwhile",
+      "file": "src/gamelang.js",
+      "anchor": "function ensureLangFolder(gamePath, suffix) {",
+      "from": "{ flag: 'wx' }",
+      "to": "{}",
+      "test": "test/gamelang.test.js"
     }
   ]
 }

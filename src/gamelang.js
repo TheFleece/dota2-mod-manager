@@ -392,8 +392,17 @@ function ensureLangFolder(gamePath, suffix) {
   const gi = path.join(dir, 'gameinfo.gi');
   /* Only into a folder we are creating. A folder that was already here belongs to whoever
    * made it - another mod manager, or Valve - and it plainly works without anything from us,
-   * so adding a file to it would be littering in somebody else's room. */
-  if (!existed && !fs.existsSync(gi)) fs.writeFileSync(gi, gameinfoStub(suffix));
+   * so adding a file to it would be littering in somebody else's room.
+   *
+   * 'wx' creates the file or fails because one is there, in a single call. Looking first and
+   * writing second left a gap in which another program's gameinfo.gi was replaced by ours. */
+  if (!existed) {
+    try {
+      fs.writeFileSync(gi, gameinfoStub(suffix), { flag: 'wx' });
+    } catch (err) {
+      if (err.code !== 'EEXIST') throw err;
+    }
+  }
   return dir;
 }
 
