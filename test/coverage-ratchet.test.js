@@ -118,15 +118,59 @@ test('the aggregate floor is held on every platform, per-file only where it was 
   assert.ok(here.worse.some((w) => w.startsWith('src/a.js')), 'and per-file holds where it was measured');
 });
 
+test('each platform is held against its own numbers, and one nobody measured against none', async () => {
+  /* A line measured on one machine is not evidence about another, but it is evidence about that
+     machine, and until 2026-09-16 only one of them was held to anything. */
+  const { filesFor } = await load();
+  const baseline = { global: {}, platforms: { win32: { files: { 'src/a.js': { lines: 80 } } } } };
+
+  assert.deepEqual(filesFor(baseline, 'win32'), { 'src/a.js': { lines: 80 } });
+  assert.equal(filesFor(baseline, 'linux'), null,
+    'a platform nobody has measured would be held to somebody else\'s lines');
+  // the shape the file had first: one platform's numbers at the top level
+  assert.deepEqual(
+    filesFor({ platform: 'linux', files: { 'src/b.js': { lines: 50 } } }, 'linux'),
+    { 'src/b.js': { lines: 50 } },
+  );
+});
+
+test('measuring on one machine leaves every other machine\'s numbers alone', async () => {
+  /* Otherwise one --update on a laptop disarms the per-file half of the ratchet on CI, and the
+     file still looks like a full measurement afterwards. */
+  const { nextBaseline } = await load();
+  const previous = {
+    global: { lines: 74 },
+    platforms: { linux: { measured: '2026-09-01', files: { 'src/a.js': { lines: 90 } } } },
+  };
+
+  const next = nextBaseline(previous, {
+    platform: 'win32', measured: '2026-09-16', files: { 'src/a.js': { lines: 70 } }, global: { lines: 74 },
+  });
+
+  assert.deepEqual(next.platforms.linux, previous.platforms.linux, 'the other platform was rewritten');
+  assert.deepEqual(next.platforms.win32.files, { 'src/a.js': { lines: 70 } });
+  assert.deepEqual(Object.keys(next.platforms), ['linux', 'win32'], 'the order is stable, so a diff is readable');
+
+  // a file still in the first shape is carried into the map rather than dropped on the floor
+  const migrated = nextBaseline(
+    { platform: 'linux', measured: '2026-09-01', files: { 'src/b.js': { lines: 60 } }, global: {} },
+    { platform: 'win32', measured: '2026-09-16', files: {}, global: {} },
+  );
+  assert.deepEqual(migrated.platforms.linux.files, { 'src/b.js': { lines: 60 } });
+});
+
 test('the committed baseline is a measurement, not a wish', async () => {
   const b = JSON.parse(fs.readFileSync(path.join(ROOT, '.github', 'coverage-baseline.json'), 'utf8'));
-  assert.match(b.measured, /^\d{4}-\d{2}-\d{2}$/, 'the baseline does not say when it was measured');
-  assert.ok(b.platform, 'the baseline does not say which platform it was measured on');
   for (const kind of ['lines', 'functions', 'branches']) {
     assert.ok(typeof b.global[kind] === 'number', `the floor has no ${kind}`);
   }
-  for (const [file, entry] of Object.entries(b.files)) {
-    assert.ok(typeof entry.lines === 'number' && entry.lines >= 0 && entry.lines <= 100, `${file}: ${entry.lines} is not a percentage`);
-    assert.ok(fs.existsSync(path.join(ROOT, file)), `${file} is in the baseline and not in the repository`);
+  assert.ok(b.platforms && Object.keys(b.platforms).length, 'the baseline names no platform it was measured on');
+  for (const [platform, entry] of Object.entries(b.platforms)) {
+    assert.match(entry.measured, /^\d{4}-\d{2}-\d{2}$/, `${platform} does not say when it was measured`);
+    for (const [file, line] of Object.entries(entry.files)) {
+      assert.ok(typeof line.lines === 'number' && line.lines >= 0 && line.lines <= 100,
+        `${platform} ${file}: ${line.lines} is not a percentage`);
+      assert.ok(fs.existsSync(path.join(ROOT, file)), `${file} is in the ${platform} baseline and not in the repository`);
+    }
   }
 });

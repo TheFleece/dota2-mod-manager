@@ -46,9 +46,11 @@ jobs:
       # there is no point reading anything below it.
       # Coverage is a floor, not a target, and since 2026-09-16 it is two things rather than one.
       # tools/coverage.mjs runs the suite and reads its lcov: the aggregate floor in
-      # .github/coverage-baseline.json is held on every platform, and the per-file lines in the
-      # same file are held on the platform that baseline names. Raise a line by writing tests and
-      # running `node tools/coverage.mjs --update`; never lower one to make a run green.
+      # .github/coverage-baseline.json is held on every platform, and the per-file lines are held
+      # per platform, from a map keyed by the operating system each was measured on. A platform
+      # with no measurement yet is held to the aggregate and says so; take one with the manual
+      # coverage-baseline job below. Raise a line by writing tests and running
+      # `node tools/coverage.mjs --update`; never lower one to make a run green.
       #
       # Per file, because an aggregate hides the thing worth catching: it read 76.10% on the day
       # this changed, while src/presets-service.js sat at 13.8%, and a new module with no tests
@@ -102,3 +104,30 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  # The per-file lines for this runner, measured when somebody asks for them.
+  #
+  # The ratchet holds each platform against its own numbers, so Linux needs a measurement of its
+  # own before CI can hold anything more than the aggregate floor. This takes one: run the
+  # workflow by hand, download the artifact, put its `linux` block into
+  # .github/coverage-baseline.json and commit it. Manual on purpose - a baseline that rewrote
+  # itself on every push would be a record of what the code does, not a line it has to clear.
+  coverage-baseline:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Measure this runner
+        run: node tools/coverage.mjs --update
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-baseline
+          path: .github/coverage-baseline.json

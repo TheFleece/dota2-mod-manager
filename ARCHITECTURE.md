@@ -369,6 +369,6 @@ that location is not writable.
 | `tools/sync-labels.mjs` | Makes the repository's labels match `.github/labels.json` |
 | `tools/typecheck.mjs` | Runs `tsc --checkJs` over the JSDoc and holds the error count per file at or below `.github/typecheck-baseline.json` |
 | `tools/fuzz-parsers.mjs` | Throws truncated and mutated VPK indexes at the tree walkers for as long as you let it, from a seed, and keeps anything they mishandle |
-| `tools/coverage.mjs` | Runs the suite and holds coverage per file against `.github/coverage-baseline.json`, plus the aggregate floor on every platform |
+| `tools/coverage.mjs` | Runs the suite and holds coverage per file and per platform against `.github/coverage-baseline.json`, plus the aggregate floor everywhere |
 | `tools/size-budget.mjs` | Holds the five largest files at the length in `.github/size-budget.json`, and stops a sixth crossing 800 lines unnoticed |
 | `tools/mutate.mjs` | Breaks one promise at a time from `.github/mutants.json` and fails where no test goes red, or where the mutant no longer applies to the code it names |

@@ -249,6 +249,22 @@
       "from": "if (!gamePath || !fromSuffix || !toSuffix || fromSuffix === toSuffix) return 0;",
       "to": "if (!gamePath || !fromSuffix || !toSuffix) return 0;",
       "test": "test/gamelang.test.js"
+    },
+    {
+      "name": "measuring coverage on one machine throws away every other machine's numbers",
+      "file": "tools/coverage.mjs",
+      "anchor": "export function nextBaseline(previous, { platform, measured, files, global }) {",
+      "from": "const platforms = { ...((previous || {}).platforms || {}) };",
+      "to": "const platforms = {};",
+      "test": "test/coverage-ratchet.test.js"
+    },
+    {
+      "name": "a platform nobody measured is held to another platform's lines",
+      "file": "tools/coverage.mjs",
+      "anchor": "export function filesFor(baseline, platform) {",
+      "from": "return null;",
+      "to": "return baseline.files || {};",
+      "test": "test/coverage-ratchet.test.js"
     }
   ]
 }

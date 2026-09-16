@@ -255,11 +255,13 @@ one of them fails on the other.
 
 Since 2026-09-16 the gate is two things. `tools/coverage.mjs` reads the suite's own lcov and holds
 the aggregate floor in `.github/coverage-baseline.json` on every platform, because a floor that
-sits under both is honest everywhere. The per-file lines in the same file are held only on the
-platform it names, for the same reason: a line measured on one machine is not evidence about
-another. The file currently names the maintainer's Windows machine, so the per-file half runs
-there and in the commit hook, and CI holds the aggregate until a Linux measurement is committed
-beside it.
+sits under both is honest everywhere. The per-file lines are held per platform, in a map keyed by
+the operating system they were measured on: a line measured on one machine is not evidence about
+another, but it is evidence about that machine, and holding only one of them left the per-file
+half of the ratchet unenforced everywhere in CI. A platform with no measurement of its own is held
+to the aggregate and nothing else, and says so. The Linux numbers are taken by running the
+`coverage-baseline` job in `.github/workflows/test.yml` by hand and committing what it uploads;
+that is manual because a baseline that rewrites itself on every push is not a ratchet.
 
 Per file, because the aggregate hid the thing worth catching: it read 76.10% on the day this
 changed, while `src/presets-service.js` sat at 13.8% of its lines and `src/installer.js` at 48.5%,

@@ -85,7 +85,10 @@ npm run test:coverage
 ```
 
 The same suite, with two lines held: the aggregate floor on every platform, and the coverage of
-each file on the platform `.github/coverage-baseline.json` names. A file that drops more than half
+each file against the numbers `.github/coverage-baseline.json` holds for the platform you are on.
+A platform with no measurement of its own is held to the aggregate and says so; the Linux numbers
+come from running the manual `coverage-baseline` job in `.github/workflows/test.yml` and
+committing what it uploads. A file that drops more than half
 a point below its line fails the run, and so does a file that was measured and is no longer
 measured: node reports only files a test loaded, so deleting the last test that touches a module
 would otherwise pass quietly.

@@ -17,10 +17,13 @@
  * file honestly reports 53% on one and something else on the other; measured on 2026-09-10, Linux
  * read 75.2% of lines against Windows' 74.8%, and the two swapped places on branches.
  *
- * So the baseline says which platform it was measured on, and the per-file lines are enforced
- * there. Everywhere else the comparison is printed and the run passes, because a line measured on
- * one machine is not evidence about another. The aggregate floor is enforced everywhere: it sits
- * below both platforms on purpose, which makes it a floor rather than a fingerprint.
+ * So the baseline keeps a map of measurements, one per platform, and each machine is held to its
+ * own. A line measured on one machine is not evidence about another, but it is evidence about
+ * that machine: holding only the one it happened to be measured on left the per-file half
+ * unenforced in CI on both runners, which is where it matters most. A platform with no
+ * measurement yet is held to the aggregate alone and says so, and --update rewrites only the
+ * platform it ran on. The aggregate floor is enforced everywhere: it sits below both platforms on
+ * purpose, which makes it a floor rather than a fingerprint.
  *
  *   node tools/coverage.mjs            run the suite, then hold the line
  *   node tools/coverage.mjs --update   write what was measured as the new baseline
@@ -33,6 +36,14 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINE = path.join(root, '.github', 'coverage-baseline.json');
+/** What the committed file says about itself, for whoever opens it before opening this. */
+const WHY = 'How much of each file the suite covers, and the aggregate floor. tools/coverage.mjs '
+  + 'refuses a run where a file drops more than half a point below its line, or where a measured '
+  + 'file stops being measured. The per-file lines are held per platform, from the map below, '
+  + 'because the two platforms measure differently; a platform with no entry here is held to the '
+  + 'aggregate floor alone, which holds everywhere and sits under both. Raise a line by writing '
+  + 'tests and running: node tools/coverage.mjs --update, which rewrites only the platform it ran '
+  + 'on and leaves the others exactly as they were. Never lower one to make a run pass.';
 /** Rounding noise, not a licence to slip: half a point is about one line in a 200-line file. */
 const TOLERANCE = 0.5;
 const SEP = String.fromCharCode(92);
@@ -129,6 +140,41 @@ export function worthUpdating(better) {
   return better.some((line) => !line.startsWith('all files: '));
 }
 
+/**
+ * The per-file lines measured on one platform, read from either shape this file has had: the
+ * first one carried a single platform's numbers at the top level, and this one carries a map of
+ * them, so the ratchet can hold per-file lines on the machine a developer uses AND on CI.
+ *
+ * @returns {Record<string, {lines: number}>|null} null when nothing has been measured there
+ */
+export function filesFor(baseline, platform) {
+  const named = ((baseline || {}).platforms || {})[platform];
+  if (named) return named.files || {};
+  if (baseline && baseline.platform === platform) return baseline.files || {};
+  return null;
+}
+
+/**
+ * The baseline to write after measuring on one platform: this platform's numbers replaced, every
+ * other platform's kept exactly as they were.
+ *
+ * Keeping them is the whole point. An --update that wrote only the machine it ran on would take
+ * one run on a developer's laptop to silently disarm the per-file half of the ratchet on CI, and
+ * nothing would say so: the file would still look like a full measurement.
+ */
+export function nextBaseline(previous, { platform, measured, files, global }) {
+  const platforms = { ...((previous || {}).platforms || {}) };
+  // the first shape kept one platform's numbers at the top level; carry them in rather than lose them
+  if (previous && previous.platform && !platforms[previous.platform]) {
+    platforms[previous.platform] = { measured: previous.measured, files: previous.files || {} };
+  }
+  platforms[platform] = { measured, files };
+  return {
+    global,
+    platforms: Object.fromEntries(Object.keys(platforms).sort().map((p) => [p, platforms[p]])),
+  };
+}
+
 /** The aggregate floor as it stands, or the one the command line carried before this tool. */
 function readGlobalFloor() {
   try {
@@ -182,37 +228,38 @@ if (invokedDirectly) {
     for (const name of Object.keys(now.files).sort()) {
       files[name] = { lines: Number(pct(...now.files[name].lines).toFixed(1)) };
     }
-    fs.writeFileSync(BASELINE, `${JSON.stringify({
-      _why: 'How much of each file the suite covers, and the aggregate floor. tools/coverage.mjs '
-        + 'refuses a run where a file drops more than half a point below its line, or where a measured '
-        + 'file stops being measured. The per-file lines hold on the platform named below, because the '
-        + 'two platforms measure differently; the aggregate floor holds everywhere and sits under both. '
-        + 'Raise a line by writing tests and running: node tools/coverage.mjs --update. Never lower one '
-        + 'to make a run pass.',
-      measured: new Date().toISOString().slice(0, 10),
+    let previous = null;
+    try { previous = JSON.parse(fs.readFileSync(BASELINE, 'utf8')); } catch { /* the first run writes it */ }
+    const next = nextBaseline(previous, {
       platform: process.platform,
+      measured: new Date().toISOString().slice(0, 10),
+      files,
       // The floor does not move because somebody re-measured: it moves when somebody decides to
       // move it. On the first run it is the three numbers the command line used to carry.
       global: readGlobalFloor(),
-      files,
-    }, null, 2)}\n`);
-    console.log(`\nbaseline written: ${Object.keys(files).length} files, lines ${agg.lines.toFixed(2)}%`);
+    });
+    fs.writeFileSync(BASELINE, `${JSON.stringify({ _why: WHY, ...next }, null, 2)}\n`);
+    const kept = Object.keys(next.platforms).filter((p) => p !== process.platform);
+    console.log(`\nbaseline written for ${process.platform}: ${Object.keys(files).length} files, lines ${agg.lines.toFixed(2)}%`);
+    if (kept.length) console.log(`left as they were: ${kept.join(', ')}`);
     if (now.suiteFailed) console.log('the suite was red while this was measured: read what failed above');
     process.exit(0);
   }
 
   const baseline = JSON.parse(fs.readFileSync(BASELINE, 'utf8'));
-  // A line measured on one machine is not evidence about another, so the per-file half runs only
-  // where the baseline says it was measured. Everywhere else this prints and the aggregate holds.
-  const measuredHere = process.platform === baseline.platform;
-  const { worse, better, gone, aggregate: agg } = compare(baseline, now, { perFile: measuredHere });
+  // A line measured on one machine is not evidence about another, so each platform holds its own
+  // numbers and a platform nobody has measured yet gets the aggregate floor and nothing else.
+  const mine = filesFor(baseline, process.platform);
+  const { worse, better, gone, aggregate: agg } = compare(
+    { global: baseline.global, files: mine || {} }, now, { perFile: !!mine },
+  );
 
   for (const line of better) console.log(`better  ${line}`);
   for (const line of gone) console.log(`GONE    ${line}`);
   for (const line of worse) console.log(`WORSE   ${line}`);
 
   console.log(`\ncoverage: lines ${agg.lines.toFixed(2)}%, branches ${agg.branches.toFixed(2)}%, functions ${agg.functions.toFixed(2)}%`
-    + `${measuredHere ? '' : ` (per-file lines were measured on ${baseline.platform}; this is ${process.platform}, so they are printed, not held)`}`);
+    + `${mine ? '' : ` (nothing has been measured on ${process.platform} yet, so its per-file lines are printed and not held: node tools/coverage.mjs --update)`}`);
 
   if (now.suiteFailed) {
     console.error('\nthe suite failed; coverage is beside the point until it passes');
