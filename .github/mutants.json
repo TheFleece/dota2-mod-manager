@@ -617,6 +617,38 @@
       "from": "this.noteWritten('cursor', hashes);",
       "to": "",
       "test": "test/installer.test.js"
+    },
+    {
+      "name": "a base item keeps the paid style gates of the item it is dressed as",
+      "file": "src/schema.js",
+      "anchor": "function baseItemPatch(baseText, targetId, sourceId) {",
+      "from": "visuals = stripKeyBlocks(visuals, 'unlock');",
+      "to": "",
+      "test": "test/schema.test.js"
+    },
+    {
+      "name": "the free-cosmetics picker offers the base item itself",
+      "file": "src/schema.js",
+      "anchor": "function cosmeticOptions(text, slot) {",
+      "from": "!i.baseitem && ",
+      "to": "",
+      "test": "test/schema.test.js"
+    },
+    {
+      "name": "taking the schema away deletes a folder that holds somebody else's file",
+      "file": "src/schema.js",
+      "anchor": "function undeploy({ gamePath, folder }) {",
+      "from": "if (fs.existsSync(dir) && !hasFiles(dir))",
+      "to": "if (fs.existsSync(dir))",
+      "test": "test/schema.test.js"
+    },
+    {
+      "name": "a table that would crash the client is written into the game anyway",
+      "file": "src/schema.js",
+      "anchor": "function deploy({ gamePath, folder, patches, base = readGameSchema(gamePath) }) {",
+      "from": "const checked = validateSchema(merged.text, base.text);",
+      "to": "const checked = { bytes: merged.text.length, items: 0 };",
+      "test": "test/schema.test.js"
     }
   ]
 }

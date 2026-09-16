@@ -234,3 +234,214 @@ test('the item list stays right when two tables are read in turn', () => {
   assert.equal(schema.findItem(merged, '1').text.includes('renamed_in_merged'), true);
   assert.equal(schema.findItem(game, '404'), null);
 });
+
+// ---------- the rest of the reader ----------
+// Added 2026-09-17: a fifth of src/schema.js had no test, including the free-cosmetics
+// picker, the block that dresses a base item, and writing the built table into the game.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const vpk = require('../src/vpk.js');
+
+test('comments and bare words are read the way the game reads them', () => {
+  const text = [
+    '// written by a tool',
+    '"items_game"',
+    '{',
+    '\t// the items',
+    '\t"items"',
+    '\t{',
+    '\t\t"7"',
+    '\t\t{',
+    '\t\t\tname\tBare\t\t// a bare key and value',
+    '\t\t\t"prefab"\t"default_item"',
+    '\t\t}',
+    '\t}',
+    '}',
+    '',
+  ].join('\n');
+  const [only] = schema.listItems(text);
+  assert.equal(only.name, 'Bare');
+  assert.deepEqual([...schema.itemFields(text, schema.findItem(text, '7'))], [['name', 'Bare'], ['prefab', 'default_item']]);
+
+  // a comment that runs to the end of the file ends the walk instead of reading past it
+  const cut = '"items_game"\n{\n"items"\n{\n"1"\n{\n"name" "x" // no newline after this}}}';
+  assert.equal(schema.listItems(cut)[0].name, 'x');
+});
+
+test('a block that never closes is refused by name', () => {
+  assert.throws(() => schema.listItems('"items_game"\n{\n\t"items"\n\t{\n\t\t"1"\n\t\t{\n'), /items_game/);
+});
+
+const WEATHER = [
+  '"items_game"',
+  '{',
+  '\t"items"',
+  '\t{',
+  '\t\t"555"',
+  '\t\t{',
+  '\t\t\t"name"\t\t"Default Weather"',
+  '\t\t\t"prefab"\t\t"weather"',
+  '\t\t\t"baseitem"\t\t"1"',
+  '\t\t}',
+  '\t\t"4000"',
+  '\t\t{',
+  '\t\t\t"name"\t\t"Weather Snow"',
+  '\t\t\t"prefab"\t\t"weather"',
+  '\t\t\t"visuals"',
+  '\t\t\t{',
+  '\t\t\t\t"asset_modifier"',
+  '\t\t\t\t{',
+  '\t\t\t\t\t"type"\t\t"particle_snapshot"',
+  '\t\t\t\t}',
+  '\t\t\t\t"styles"',
+  '\t\t\t\t{',
+  '\t\t\t\t\t"1"',
+  '\t\t\t\t\t{',
+  '\t\t\t\t\t\t"unlock"',
+  '\t\t\t\t\t\t{',
+  '\t\t\t\t\t\t\t"price"\t\t"100"',
+  '\t\t\t\t\t\t}',
+  '\t\t\t\t\t}',
+  '\t\t\t\t}',
+  '\t\t\t}',
+  '\t\t}',
+  '\t\t"4002"',
+  '\t\t{',
+  // the table is read as latin1, so a UTF-8 name arrives as its raw bytes
+  `\t\t\t"name"\t\t"${Buffer.from('Weather Café', 'utf8').toString('latin1')}"`,
+  '\t\t\t"prefab"\t\t"weather"',
+  '\t\t\t"visuals"',
+  '\t\t\t{',
+  '\t\t\t\t"skin"\t\t"2"',
+  '\t\t\t}',
+  '\t\t}',
+  '\t\t"4003"',
+  '\t\t{',
+  '\t\t\t"name"\t\t"Weather Without Looks"',
+  '\t\t\t"prefab"\t\t"weather"',
+  '\t\t}',
+  '\t\t"5000"',
+  '\t\t{',
+  '\t\t\t"name"\t\t"A Hat"',
+  '\t\t\t"prefab"\t\t"wearable"',
+  '\t\t\t"item_slot"\t\t"head"',
+  '\t\t\t"visuals"',
+  '\t\t\t{',
+  '\t\t\t}',
+  '\t\t}',
+  '\t}',
+  '}',
+  '',
+].join('\r\n');
+
+test('the free-cosmetics picker offers what the installed game has for that slot', () => {
+  assert.equal(schema.baseItemFor(WEATHER, 'weather').id, '555');
+  assert.equal(schema.baseItemFor(WEATHER, 'head'), null, 'no base item, no picker');
+  assert.deepEqual(schema.cosmeticOptions(WEATHER, 'weather'), [
+    { id: '4002', name: 'Weather Café' },
+    { id: '4000', name: 'Weather Snow' },
+  ], 'the base item and an item with no visuals are not options; names are shown as UTF-8');
+  assert.deepEqual(schema.cosmeticOptions(WEATHER, 'head'), [{ id: '5000', name: 'A Hat' }]);
+});
+
+test("a base item is dressed in another item's visuals, without the paid style gates", () => {
+  const block = schema.baseItemPatch(WEATHER, '555', '4000');
+  assert.ok(block.startsWith('"555"'));
+  assert.ok(block.includes('"asset_modifier"'));
+  assert.ok(!block.includes('"unlock"'), 'a locked style on a base item is a button that does nothing');
+  assert.ok(!block.includes('"price"'));
+
+  const dressed = schema.mergeSchema(WEATHER, [{ id: '555', block }]).text;
+  assert.equal(schema.listItems(dressed).find((i) => i.id === '555').hasVisuals, true);
+
+  // dressing it again replaces the visuals rather than stacking a second block
+  const again = schema.baseItemPatch(dressed, '555', '4002');
+  assert.equal(again.split('"visuals"').length, 2, 'one visuals block');
+  assert.ok(again.includes('"skin"') && !again.includes('"asset_modifier"'));
+});
+
+test('dressing a base item names what is missing', () => {
+  assert.throws(() => schema.baseItemPatch(WEATHER, '9', '4000'), /9/);
+  assert.throws(() => schema.baseItemPatch(WEATHER, '555', '9'), /9/);
+  assert.throws(() => schema.baseItemPatch(WEATHER, '555', '4003'), /4003/);
+});
+
+test('a block belongs to a mod only when it names a file that mod ships', () => {
+  const block = '"visuals" { "model_player" "models/heroes/axe/axe_arcana.vmdl" }';
+  assert.equal(schema.blockUsesAssets(block, ['models/heroes/axe/axe_arcana.vmdl_c']), true);
+  assert.equal(schema.blockUsesAssets(block, ['models/heroes/lina/lina_arcana.vmdl_c']), false);
+});
+
+test("a mod's lifted blocks travel as a table the game can read back", () => {
+  const table = schema.deltaTable([
+    { id: '1', block: '"1"\r\n\t\t{\r\n\t\t\t"name"\t\t"Lifted"\r\n\t\t}' },
+    { id: '2', block: '"2"\r\n\t\t{\r\n\t\t\t"name"\t\t"Also lifted"\r\n\t\t}' },
+  ]);
+  assert.deepEqual(schema.listItems(table).map((i) => [i.id, i.name]), [['1', 'Lifted'], ['2', 'Also lifted']]);
+  assert.deepEqual(schema.listItems(schema.deltaTable([])), []);
+});
+
+// ---------- into the game ----------
+
+/** A game folder whose pak01 carries this items_game.txt. */
+function gameWith(t, text) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-schema-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(dir, 'dota'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'dota', 'pak01_dir.vpk'), schema.buildSchemaVpk(text));
+  return dir;
+}
+
+test('the built table is written into the mod folder, read back the same, and taken away again', (t) => {
+  const base = large(1200);
+  const game = gameWith(t, base);
+  const block = '"2"\r\n{\r\n\t"name"\t\t"Patched"\r\n\t"prefab"\t\t"default_item"\r\n}';
+
+  const out = schema.deploy({ gamePath: game, folder: 'dota_mods', patches: [{ id: '2', block, source: 'a mod' }] });
+  assert.deepEqual(out.applied, [{ id: '2', source: 'a mod' }]);
+  assert.equal(out.items, 1200);
+  assert.equal(out.stamp, schema.readGameSchema(game).stamp);
+  assert.equal(schema.isDeployed(game, 'dota_mods'), true);
+
+  const written = vpk.readVpkEntryFile(path.join(game, 'dota_mods', schema.SCHEMA_VPK), schema.SCHEMA_REL);
+  const text = written.data.toString('latin1');
+  assert.ok(text.includes('"Patched"'));
+  assert.equal(schema.listItems(text).length, 1200);
+  assert.deepEqual(fs.readdirSync(path.join(game, 'dota_mods')), [schema.SCHEMA_VPK], 'no temporary file left behind');
+
+  // the engine drops empty folders into every path it mounts; those do not keep ours alive
+  fs.mkdirSync(path.join(game, 'dota_mods', 'rpt', 'server'), { recursive: true });
+  schema.undeploy({ gamePath: game, folder: 'dota_mods' });
+  assert.equal(schema.isDeployed(game, 'dota_mods'), false);
+  assert.equal(fs.existsSync(path.join(game, 'dota_mods')), false);
+  schema.undeploy({ gamePath: game, folder: 'dota_mods' }); // nothing there: nothing to do
+});
+
+test("taking the table away leaves a folder that holds somebody else's file", (t) => {
+  const game = gameWith(t, large(1200));
+  schema.deploy({ gamePath: game, folder: 'dota_mods', patches: [] });
+  fs.writeFileSync(path.join(game, 'dota_mods', 'notes.txt'), 'not ours');
+  schema.undeploy({ gamePath: game, folder: 'dota_mods' });
+  assert.deepEqual(fs.readdirSync(path.join(game, 'dota_mods')), ['notes.txt']);
+});
+
+test('a table that would not load is never written into the game', (t) => {
+  const game = gameWith(t, small());
+  assert.throws(() => schema.deploy({ gamePath: game, folder: 'dota_mods', patches: [] }), /items_game/);
+  assert.equal(fs.existsSync(path.join(game, 'dota_mods', schema.SCHEMA_VPK)), false);
+});
+
+test("the game's own table must be where the game keeps it", (t) => {
+  const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-schema-'));
+  t.after(() => fs.rmSync(empty, { recursive: true, force: true }));
+  assert.throws(() => schema.readGameSchema(empty), /pak01_dir\.vpk/);
+
+  fs.mkdirSync(path.join(empty, 'dota'));
+  const other = Buffer.from('not the item table');
+  fs.writeFileSync(path.join(empty, 'dota', 'pak01_dir.vpk'), vpk.buildVpk([
+    { ext: 'txt', folder: 'scripts', name: 'other', crc: schema.crc32(other), preload: Buffer.alloc(0), data: other },
+  ]));
+  assert.throws(() => schema.readGameSchema(empty), /items_game/);
+});
