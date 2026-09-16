@@ -92,6 +92,24 @@ test('unpacking writes under the target folder and nothing outside it', (t) => {
   assert.equal(fs.existsSync(path.join(root, 'escaped.exe')), false);
 });
 
+test('unpacking inside a transaction can be taken back whole', (t) => {
+  /* Installs and tool downloads unpack through a FileTx, so a failure halfway leaves nothing
+     behind. The plain unpack above never takes that path. */
+  const { FileTx } = require('../src/file-tx.js');
+  const dest = path.join(tempDir(t), 'SomeTool');
+  fs.mkdirSync(dest, { recursive: true });
+  fs.writeFileSync(path.join(dest, 'readme.txt'), 'old');
+
+  const tx = new FileTx();
+  const written = openZip(rawZip([file('bin/tool.exe', 'yes'), file('readme.txt', 'new')])).extractTo(dest, tx);
+  assert.equal(written, 2);
+  assert.equal(fs.readFileSync(path.join(dest, 'readme.txt'), 'utf-8'), 'new');
+
+  tx.rollback();
+  assert.equal(fs.readFileSync(path.join(dest, 'readme.txt'), 'utf-8'), 'old');
+  assert.equal(fs.existsSync(path.join(dest, 'bin', 'tool.exe')), false);
+});
+
 test('safeJoin keeps a path inside its root and refuses one that climbs out', (t) => {
   const root = tempDir(t);
   assert.equal(safeJoin(root, 'a/b/c.vpk'), path.join(root, 'a', 'b', 'c.vpk'));
@@ -115,6 +133,10 @@ test('each budget refuses on its own', (t) => {
   const onDisk = path.join(dir, 'big.zip');
   fs.writeFileSync(onDisk, three);
   assert.throws(() => openZip(onDisk, { limits: { archiveBytes: 10 } }), refusal);
+
+  // bytes already in memory (a download, a dropped file) are weighed the same way
+  assert.throws(() => openZip(three, { limits: { archiveBytes: 10 } }), refusal);
+  assert.doesNotThrow(() => openZip(three, { limits: { archiveBytes: three.length } }));
 });
 
 test('safeJoin refuses the folder next door whose name starts the same way', (t) => {
