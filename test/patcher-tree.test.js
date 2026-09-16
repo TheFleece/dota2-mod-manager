@@ -208,3 +208,25 @@ test('signing twice does not pile our line up in the list', (t) => {
   assert.equal(after.split('gameinfo_branchspecific').length - 1, 2, 'one Valve entry, one of ours');
   assert.equal(exeHash(after), 'A'.repeat(40), "and Valve's own lines are untouched");
 });
+
+test('a backup from an older build is replaced, or reverting would put the old build back', (t) => {
+  /* backupOnce keeps the copy it took before patching, and revert() restores from that copy. A
+     copy that no longer matches the list the game ships is worse than none: it loads, so nothing
+     looks wrong until the client stops matchmaking. The check that replaces such a copy had no
+     test - a mutation run on 2026-09-16 took it out and nothing noticed. */
+  const { game, backupDir, sig } = tree(t, true);
+  const { sha1, crc } = patcher.fileHashes(Buffer.from(BRANCH, 'latin1'));
+  const listed = `...\\..\\..\\dota\\gameinfo_branchspecific.gi~SHA1:${sha1};CRC:${crc}\r\nDIGEST:${'C'.repeat(40)}\r\n`;
+  fs.writeFileSync(sig, Buffer.from(listed, 'latin1'));
+
+  patcher.apply({ gamePath: game, folder: FOLDER, backupDir });
+  // the copy taken before an update: the same file, with a line Valve has since changed
+  fs.writeFileSync(path.join(backupDir, 'gameinfo_branchspecific.gi.orig'), Buffer.from(BRANCH.replace('570', '569'), 'latin1'));
+
+  patcher.apply({ gamePath: game, folder: FOLDER, backupDir });
+  assert.ok(branchOf(game).includes('570'), 'the patch was rebuilt on top of the old build');
+  patcher.revert({ gamePath: game, folder: FOLDER, backupDir });
+
+  assert.equal(branchOf(game), BRANCH, 'reverting put the old build back');
+  assert.equal(patcher.state(game, FOLDER).vanillaOk, true);
+});

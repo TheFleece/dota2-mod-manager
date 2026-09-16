@@ -152,8 +152,16 @@ test('the vanilla hashes come from before DIGEST, never from our appended line',
 });
 
 test('a signature line is the path, SHA1 and little-endian CRC the game expects', () => {
-  const line = patcher.signatureLine(Buffer.from('probe', 'latin1'));
-  assert.match(line, /gameinfo_branchspecific\.gi~SHA1:[0-9A-F]{40};CRC:[0-9A-F]{8}$/);
+  /* The expectation comes from outside this code. "123456789" is the standard check input: its
+     CRC-32 is 0xCBF43926, which the list stores low byte first, as 2639F4CB. Checked against an
+     installed game on 2026-09-16: its list names gameinfo.gi with CRC C42BAA0F, and that file's
+     CRC-32 is 0x0FAA2BC4. The earlier version of this test matched only the shape of the line,
+     and the helpers here compute hashes through the same function, so it passed with the bytes
+     the wrong way round - which is a list the client rejects. */
+  assert.equal(
+    patcher.signatureLine(Buffer.from('123456789', 'latin1')),
+    '...\\..\\..\\dota\\gameinfo_branchspecific.gi~SHA1:F7C3BC1D808E04732ADF679965CCC34CA7AE3441;CRC:2639F4CB',
+  );
 });
 
 test('withModFolder puts our folder ahead of the game as both Game and Mod', () => {

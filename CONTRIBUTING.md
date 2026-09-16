@@ -175,7 +175,9 @@ against nothing, so both fail the run.
 
 Running them costs a suite run each, which is why this is not part of `npm run verify`. What runs
 on every push is `test/mutate.test.js`, holding every mutant against today's source without running
-any of them. Write the test for something a user would notice losing, then add the mutant that
+any of them. The whole set runs on Linux every Wednesday (`.github/workflows/mutation.yml`), and on
+any pull request that changes the mutants, the tool or that workflow; the radar reports the
+workflow if it goes red or quiet. Write the test for something a user would notice losing, then add the mutant that
 would have caught its absence.
 
 ## Every user-facing string exists twice
