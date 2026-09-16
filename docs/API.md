@@ -13,6 +13,7 @@ the code, not in this page.
 
 | Module | What it owns |
 |---|---|
+| [`src/adopt.js`](#srcadoptjs) | What a VPK has to go through before it counts as a mod. |
 | [`src/capture.js`](#srccapturejs) |  |
 | [`src/catalog-signature.js`](#srccatalog-signaturejs) | Making the catalog's own author the only person who can change the catalog. |
 | [`src/catalog.js`](#srccatalogjs) | Catalog: fetch + cache mods.json / constants.json / guides.json from the Dota2PornFx repo |
@@ -49,6 +50,39 @@ the code, not in this page.
 | [`src/toolchain.js`](#srctoolchainjs) | Tools the app can borrow, fetched only when something actually needs them. |
 | [`src/vpk.js`](#srcvpkjs) | Minimal reader for the index of Source-engine VPK "_dir" files (v1/v2). |
 | [`src/vtex.js`](#srcvtexjs) | The picture inside a compiled Source 2 texture, when it is already a picture. |
+
+## src/adopt.js
+
+What a VPK has to go through before it counts as a mod.
+
+A file that just landed in the game folder is not yet a mod: it has no name anybody would
+recognise, it may carry the whole game's item table, and it may hold four heroes in one
+archive. Everything here is the difference between a row saying "pak42" and a row saying
+what the thing actually is.
+
+Every route into the library comes through this: the import button, drag and drop, and the
+mods that arrive inside a shared preset. That last one used to land as a bare record
+instead, which is why a received build showed up unnamed, unrecognised and still needing
+"split" by hand, while the same file dragged in by the user came out clean. One door, so
+that cannot happen again.
+
+Lifted out of main.js unchanged, with the services arriving as arguments the way
+src/cursors.js and src/presets-service.js take them. It moved for the same reason the
+cursors did: main.js cannot be required by a test, so none of this could be tested where it
+was, and it decides what a user sees in their library.
+
+### `createAdopt`
+
+```js
+function createAdopt({ installer, library, schemaService })
+```
+
+```
+@param {object} ctx
+@param {object} ctx.installer      reads the file to name and analyse it, and the master switch
+@param {object} ctx.library        the manifest the record is written into
+@param {object} ctx.schemaService  lifts the item blocks out, and splits a multi-hero pack
+```
 
 ## src/capture.js
 

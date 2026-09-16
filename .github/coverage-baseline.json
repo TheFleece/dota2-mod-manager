@@ -8,6 +8,9 @@
     "functions": 72
   },
   "files": {
+    "src/adopt.js": {
+      "lines": 100
+    },
     "src/capture.js": {
       "lines": 100
     },
@@ -126,7 +129,7 @@
       "lines": 98.1
     },
     "src/vpk.js": {
-      "lines": 98.1
+      "lines": 98.4
     },
     "src/vtex.js": {
       "lines": 100
