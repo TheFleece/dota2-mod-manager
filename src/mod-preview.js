@@ -45,6 +45,7 @@ const TEX = 'modtex:';
 // decoder, and the app is one - Electron carries ffmpeg inside, which is why no copy of it is
 // downloaded here. The decoding happens in the window (see renderer/ui/cosmetic-icons.js);
 // this file hands over the bytes and judges and keeps what comes back.
+/** @type {Array<[RegExp, number]>} */
 const VIDEO_RANKS = [
   [/^panorama\/videos\/heroes\/[^/]+\.webm$/, 100],
   [/^panorama\/videos\/.+\.webm$/, 80],
@@ -59,6 +60,7 @@ const SAFE_REL = /^[A-Za-z0-9][A-Za-z0-9_.\-]*(\/[A-Za-z0-9][A-Za-z0-9_.\-]*)*$/
 
 // Pictures drawn to be looked at, best first. The game draws each of these somewhere in its
 // own UI, so whatever the mod put there is what the mod wants shown.
+/** @type {Array<[RegExp, number]>} */
 const ART_RANKS = [
   [/^panorama\/images\/heroes\/selection\/[^/]+\.vtex_c$/, 100], // full-body selection art
   [/^panorama\/images\/heroes\/[^/]+\.vtex_c$/, 95],             // the hero's own portrait
@@ -70,10 +72,10 @@ const ART_RANKS = [
 ];
 
 /**
- * Which file inside a mod to show, for one of the two kinds.
+ * Which file inside a mod to show, for one of the three kinds.
  * Pure, so the ranking can be held by tests against real path lists.
  * @param {Iterable<string>} paths lowercased inner paths of the mod's VPK
- * @param {'art'|'texture'} kind
+ * @param {'art'|'texture'|'video'} kind  video is a hero's animated portrait, a .webm
  * @returns {string|null}
  */
 function pickCandidate(paths, kind) {

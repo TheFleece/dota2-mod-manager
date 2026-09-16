@@ -292,7 +292,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 60 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 61 files, run on every push and every pull request
 on Linux and on Windows. Four of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, and `DECISIONS.md`
@@ -364,3 +364,4 @@ that location is not writable.
 | `tools/pr-test-rule.mjs` | The pull request check that a fix changes a test or says why it cannot |
 | `tools/gen-doc-facts.js` | Writes the sentences in the READMEs that come from `package.json`, between `facts:` markers |
 | `tools/sync-labels.mjs` | Makes the repository's labels match `.github/labels.json` |
+| `tools/typecheck.mjs` | Runs `tsc --checkJs` over the JSDoc and holds the error count per file at or below `.github/typecheck-baseline.json` |

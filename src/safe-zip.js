@@ -73,7 +73,8 @@ function safeJoin(rootAbs, rel) {
  * @param {string} [opts.label]         what to call the archive in an error the user reads
  * @param {object} [opts.limits]        override the budgets (tests)
  * @returns {{ label: string, files: Array<{path: string, size: number, read: () => Buffer}>,
- *            get: (rel: string) => object|null, extractTo: (destRoot: string) => number }}
+ *            get: (rel: string) => object|null,
+ *            extractTo: (destRoot: string, tx?: object|null) => number }}
  */
 function openZip(source, { label, limits } = {}) {
   const lim = { ...LIMITS, ...(limits || {}) };

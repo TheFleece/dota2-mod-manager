@@ -46,8 +46,8 @@ where it runs before the suite.
 
 ### The app ships two dependencies
 
-`adm-zip` and `electron-updater` ship inside it; `electron`, `electron-builder` and `eslint`
-only build and check it, and never reach a user's machine. The VPK reader and writer, the
+`adm-zip` and `electron-updater` ship inside it; `electron`, `electron-builder`, `eslint` and
+`typescript` only build and check it, and never reach a user's machine. The VPK reader and writer, the
 KeyValues parser, the zip guards, the mirror logic and the update checks are written here,
 because every dependency is a stranger with write access to a game folder on tens of thousands
 of machines. That is a bias rather than a ban: a pull request adding one has to say what it
@@ -60,7 +60,17 @@ the files as text, or never loaded a module that needs Electron. `no-undef` name
 a second, and a scope analyser is exactly the kind of thing not to write by hand - the version
 attempted here first reported 240 problems, of which one was real.
 
+`typescript` was added on 2026-09-16 for the same kind of reason, and the app is still plain
+JavaScript: nothing is compiled and nothing is emitted. It reads the JSDoc already written here
+and says where the code and its own documentation disagree. Its first run found a `require` that
+had never resolved, which had been answering two features with "Cannot find module" for as long as
+they existed, and three functions whose JSDoc described a different signature than the code below
+it. Inferring types across thirty thousand lines is not something to write by hand either. What is
+left is counted per file in `.github/typecheck-baseline.json`, and `tools/typecheck.mjs` refuses a
+run where that count grows.
+
 *Check:* `node -e "const p=require('./package.json');console.log(p.dependencies,p.devDependencies)"`
+and `npm run typecheck`
 
 ### Valve's `vpk.exe` is deliberately absent
 

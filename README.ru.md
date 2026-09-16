@@ -280,7 +280,7 @@ Node 24, Electron 44, без сборщика: рендерер — обычны
 | [Astro](https://github.com/withastro/astro) | Сайт документации, не приложение | MIT |
 
 <!-- facts:deps-ru -->
-В `package.json` их пять: `adm-zip` и `electron-updater` едут внутри приложения, `electron`, `electron-builder` и `eslint` только собирают или проверяют его.
+В `package.json` их шесть: `adm-zip` и `electron-updater` едут внутри приложения, `electron`, `electron-builder`, `eslint` и `typescript` только собирают или проверяют его.
 <!-- /facts:deps-ru -->
 Тесты и всё в `tools/` не зависят ни от чего. Чтение и запись VPK, разбор KeyValues, защита от zip-бомб и логика обновления написаны
 здесь, потому что каждая зависимость — это чужак с правом записи в папку игры на десятках тысяч

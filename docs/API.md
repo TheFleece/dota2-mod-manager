@@ -1096,12 +1096,12 @@ function createModPreviews({ userDataDir, toolchain, langFileOf, images = null, 
 function pickCandidate(paths, kind)
 ```
 
-Which file inside a mod to show, for one of the two kinds.
+Which file inside a mod to show, for one of the three kinds.
 Pure, so the ranking can be held by tests against real path lists.
 
 ```
 @param {Iterable<string>} paths lowercased inner paths of the mod's VPK
-@param {'art'|'texture'} kind
+@param {'art'|'texture'|'video'} kind  video is a hero's animated portrait, a .webm
 @returns {string|null}
 ```
 
@@ -1983,7 +1983,8 @@ Open a foreign archive with every claim in it checked first.
 @param {string} [opts.label]         what to call the archive in an error the user reads
 @param {object} [opts.limits]        override the budgets (tests)
 @returns {{ label: string, files: Array<{path: string, size: number, read: () => Buffer}>,
-get: (rel: string) => object|null, extractTo: (destRoot: string) => number }}
+get: (rel: string) => object|null,
+extractTo: (destRoot: string, tx?: object|null) => number }}
 ```
 
 ### `safeJoin`
@@ -2089,7 +2090,11 @@ a VPK and reading it twice for one deploy was most of what removing a mod cost. 
 it is read here as before.
 
 ```
-@param {{ text: string, stamp: string }} [base]
+@param {object} opts
+@param {string} opts.gamePath
+@param {string} opts.folder            the mod folder the schema VPK is written into
+@param {Array} opts.patches
+@param {{ text: string, stamp: string }} [opts.base]  the game's own table, if already read
 @returns {{ applied: Array, missing: string[], conflicts: Array, stamp: string, bytes: number }}
 ```
 

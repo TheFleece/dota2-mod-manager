@@ -78,6 +78,26 @@ If your change touches any of them, start by finding the test that covers the be
 about to change, and make new behaviour bring its own test. A red `npm test` is not a formality
 here: every one of those tests exists because something in it broke somebody's game once.
 
+## Types
+
+```bash
+npm run typecheck
+```
+
+The app is plain JavaScript and stays that way. Its JSDoc is checked against it: `tsc --checkJs`
+reads the annotations already in `main.js`, `preload.js` and `src/` and reports where the code and
+its own documentation disagree. The first run found a `require` that had never resolved, and three
+functions whose JSDoc described a different signature than the one underneath it.
+
+Sixty-odd places are still wrong, mostly a factory's `@param` listing half of what it is handed.
+They are counted per file in `.github/typecheck-baseline.json`, and the check fails when a file
+goes above its line or when a file that was clean starts reporting. Fewer is always fine: fix some,
+then run `node tools/typecheck.mjs --update` to lower the line. Never raise one to make a run pass.
+
+`renderer/` and `tools/` are not covered yet. The renderer is ES modules against the DOM and the
+tools are a mix of both; each needs settings of its own, and one configuration that fits neither
+would report noise instead of mistakes.
+
 ## Every user-facing string exists twice
 
 The interface ships in Russian and English. Russian text is the key and English is looked up from

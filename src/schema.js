@@ -499,7 +499,11 @@ function buildSchemaVpk(text) {
  * `base` is the game's own table, which the caller has usually just read: it is 50 MB out of
  * a VPK and reading it twice for one deploy was most of what removing a mod cost. Left out,
  * it is read here as before.
- * @param {{ text: string, stamp: string }} [base]
+ * @param {object} opts
+ * @param {string} opts.gamePath
+ * @param {string} opts.folder            the mod folder the schema VPK is written into
+ * @param {Array} opts.patches
+ * @param {{ text: string, stamp: string }} [opts.base]  the game's own table, if already read
  * @returns {{ applied: Array, missing: string[], conflicts: Array, stamp: string, bytes: number }}
  */
 function deploy({ gamePath, folder, patches, base = readGameSchema(gamePath) }) {

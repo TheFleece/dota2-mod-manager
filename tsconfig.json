@@ -1,0 +1,35 @@
+// Type checking for JavaScript, from the JSDoc that is already here.
+//
+// Nothing is compiled and nothing is emitted: this reads main.js, preload.js and src/ with the
+// annotations they already carry (293 of them across 41 files when this was added) and says where
+// the code and its own documentation disagree. The first run found a require that had never
+// resolved, two handlers that answered every call with "Cannot find module", and three pieces of
+// JSDoc that described a different function than the one below them.
+//
+// Why these settings:
+//   checkJs with strict off - the point is to catch what is wrong today, not to fail on every
+//     value that could be null. A strict pass over thirty thousand lines written without types
+//     reports hundreds of theoretical nulls and teaches everyone to ignore the tool. Tighten it
+//     when the easy errors are gone, one flag at a time.
+//   module CommonJS, moduleResolution node10 - what the app actually is: require, not import.
+//   resolveJsonModule - src/icons.js reads package.json for the version, which is real.
+//   skipLibCheck - Electron's own .d.ts is not this project's to fix.
+//
+// Not covered: renderer/ and tools/. The renderer is ES modules against the DOM, the tools are a
+// mix of both, and each needs its own settings. Worth doing, one at a time, rather than one
+// configuration that fits none of them.
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node10",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "types": ["node"]
+  },
+  "include": ["main.js", "preload.js", "preload-uninstall.js", "src/**/*.js"]
+}
