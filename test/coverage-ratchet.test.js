@@ -65,6 +65,21 @@ test('a file that loses coverage fails, and one that gains asks for its line to 
   assert.ok(r.better.includes('src/b.js: 50.0% of lines, was 40.0%'), r.better.join(' | '));
 });
 
+test('re-measuring is only advised when re-measuring would change something', async () => {
+  /* --update writes the per-file lines back and leaves the aggregate floor where it is, which
+     is the design: the floor sits under both platforms so it stays a floor. Advising --update
+     because the aggregate is above that floor asked for a command that changes nothing, and
+     the same advice came back on the next run and every run after it. */
+  const { worthUpdating } = await load();
+  assert.equal(worthUpdating(['all files: lines 77.07%, was 74.00%']), false);
+  assert.equal(worthUpdating([]), false);
+  assert.equal(
+    worthUpdating(['all files: lines 77.07%, was 74.00%', 'src/b.js: 50.0% of lines, was 40.0%']),
+    true,
+    'a file that gained coverage is exactly what --update is for',
+  );
+});
+
 test('a file that stops being measured is a failure, not a pass', async () => {
   /* Node reports only files a test loaded. Deleting the last test that touches a module would
      otherwise make it disappear from the report and look like nothing happened. */

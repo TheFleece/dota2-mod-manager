@@ -117,6 +117,18 @@ export function compare(baseline, now, { perFile = true } = {}) {
   return { worse, better, gone, aggregate: nowAgg };
 }
 
+/**
+ * Would an --update record any of this? The per-file lines are written back; the aggregate
+ * floor is not, on purpose (it moves when somebody decides to move it, not because a run
+ * re-measured). So an aggregate sitting above its floor is news, not a chore, and asking for
+ * --update on account of it asked for a command that changes nothing and then printed the same
+ * advice on the next run, and every run after that. A ratchet whose advice does nothing is a
+ * ratchet people learn to scroll past.
+ */
+export function worthUpdating(better) {
+  return better.some((line) => !line.startsWith('all files: '));
+}
+
 /** The aggregate floor as it stands, or the one the command line carried before this tool. */
 function readGlobalFloor() {
   try {
@@ -210,5 +222,5 @@ if (invokedDirectly) {
     console.error(`\ncoverage fell in ${worse.length + gone.length} place(s). Write the test, do not lower the line.`);
     process.exit(1);
   }
-  if (better.length) console.log('Better than the baseline. Lock it in: node tools/coverage.mjs --update');
+  if (worthUpdating(better)) console.log('Better than the baseline. Lock it in: node tools/coverage.mjs --update');
 }
