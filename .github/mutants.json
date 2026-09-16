@@ -1,0 +1,62 @@
+{
+  "_why": "Deliberate breakages, each of a promise the code makes, with the test file that has to go red. tools/mutate.mjs applies one at a time and puts the file back; a mutant that survives means the test guarding that promise proves nothing, and a mutant that no longer applies means the code moved out from under the check. Both fail a run. test/mutate.test.js holds every entry here against today's source on every push without running any of them. Add a mutant when a test is written for something a user would notice losing; never delete one to make a run green.",
+  "measured": "2026-09-16",
+  "mutants": [
+    {
+      "name": "removePackDeployed forgets .off and .moff copies",
+      "file": "src/installer.js",
+      "anchor": "removePackDeployed(pack) {",
+      "lineStartsWith": "    const re = new RegExp(",
+      "to": "    const re = new RegExp('^' + base + '(_dir|_[0-9]{3})[.]vpk$', 'i');",
+      "test": "test/packs.test.js"
+    },
+    {
+      "name": "deployPack ignores the enabled flag",
+      "file": "src/installer.js",
+      "anchor": "deployPack(pack) {",
+      "from": "(pack.members || []).filter((m) => m.enabled)",
+      "to": "(pack.members || [])",
+      "test": "test/packs.test.js"
+    },
+    {
+      "name": "deployPack allocates a slot instead of reusing its own",
+      "file": "src/installer.js",
+      "anchor": "deployPack(pack) {",
+      "from": "let base = this.packBase(pack);",
+      "to": "let base = null;",
+      "test": "test/packs.test.js"
+    },
+    {
+      "name": "deployPack ignores slots that are occupied",
+      "file": "src/installer.js",
+      "anchor": "deployPack(pack) {",
+      "from": "this.allocatePak(this.usedPakNames(), false).replace",
+      "to": "this.allocatePak(new Set(), false).replace",
+      "test": "test/packs.test.js"
+    },
+    {
+      "name": "removePackFully keeps the member store",
+      "file": "src/installer.js",
+      "anchor": "removePackFully(pack) {",
+      "from": "fs.rmSync(this.packFolder(pack.id), { recursive: true, force: true });",
+      "to": ";",
+      "test": "test/packs.test.js"
+    },
+    {
+      "name": "deployMemberAsMod writes over the pack it came from",
+      "file": "src/installer.js",
+      "anchor": "deployMemberAsMod(pack, member) {",
+      "from": "this.allocatePak(this.usedPakNames(), false)",
+      "to": "(this.packBase(pack) + '_dir.vpk')",
+      "test": "test/packs.test.js"
+    },
+    {
+      "name": "combining drops a contested file without saying so",
+      "file": "src/vpk.js",
+      "anchor": "function combineVpksToFiles(",
+      "from": "conflicts.push({ key: m.key, path: p }); continue;",
+      "to": "continue;",
+      "test": "test/packs.test.js"
+    }
+  ]
+}

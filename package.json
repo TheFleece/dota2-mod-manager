@@ -20,6 +20,7 @@
     "start:sandbox": "electron . --user-data-dir=sandbox/userdata",
     "e2e": "node tools/e2e.mjs",
     "fuzz": "node tools/fuzz-parsers.mjs",
+    "mutate": "node tools/mutate.mjs",
     "docs": "node tools/gen-api-docs.js && node tools/gen-doc-facts.js",
     "docs:check": "node tools/gen-api-docs.js --check",
     "aur": "node tools/gen-aur.js"

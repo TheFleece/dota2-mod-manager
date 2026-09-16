@@ -145,6 +145,29 @@ generator for as long as you like.
 A finding is written to `fuzz-output/` together with the seed that made it. Add it to the test
 before touching the parser, so the fix has proof.
 
+## Checking that the tests would catch anything
+
+```bash
+npm run mutate
+npm run mutate -- deployPack
+```
+
+A green suite says the tests ran, not that they would notice a fault. The test asserting that a
+rebuilt pack keeps its pak slot passed against code that allocated a new slot every time:
+`removePackDeployed` frees the old slot before the allocator runs, so re-allocating handed back the
+same number and the assertion held either way.
+
+Each promise worth keeping has a mutant in `.github/mutants.json`: an edit that breaks it, anchored
+to the function it belongs to, and the test file that has to go red. The command applies them one
+at a time and puts the file back afterwards. A mutant that survives is a test that proves nothing.
+A mutant that no longer applies is worse, because the code moved and the check has been passing
+against nothing, so both fail the run.
+
+Running them costs a suite run each, which is why this is not part of `npm run verify`. What runs
+on every push is `test/mutate.test.js`, holding every mutant against today's source without running
+any of them. Write the test for something a user would notice losing, then add the mutant that
+would have caught its absence.
+
 ## Every user-facing string exists twice
 
 The interface ships in Russian and English. Russian text is the key and English is looked up from
