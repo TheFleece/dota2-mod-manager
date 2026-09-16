@@ -6,6 +6,197 @@
     "functions": 72
   },
   "platforms": {
+    "linux": {
+      "measured": "2026-09-16",
+      "files": {
+        "src/adopt.js": {
+          "lines": 100
+        },
+        "src/capture.js": {
+          "lines": 100
+        },
+        "src/catalog-signature.js": {
+          "lines": 100
+        },
+        "src/catalog.js": {
+          "lines": 96.5
+        },
+        "src/cursors.js": {
+          "lines": 100
+        },
+        "src/diagnostics.js": {
+          "lines": 72.4
+        },
+        "src/feature-gate.js": {
+          "lines": 100
+        },
+        "src/file-tx.js": {
+          "lines": 100
+        },
+        "src/fingerprints.js": {
+          "lines": 48.6
+        },
+        "src/game-icons.js": {
+          "lines": 48.1
+        },
+        "src/gamelang.js": {
+          "lines": 98.5
+        },
+        "src/i18n.js": {
+          "lines": 96.8
+        },
+        "src/import.js": {
+          "lines": 93.9
+        },
+        "src/installer.js": {
+          "lines": 67.7
+        },
+        "src/ipc-diagnostics.js": {
+          "lines": 80.8
+        },
+        "src/ipc-game.js": {
+          "lines": 87
+        },
+        "src/ipc-library.js": {
+          "lines": 63.8
+        },
+        "src/ipc-misc.js": {
+          "lines": 77.2
+        },
+        "src/ipc-mods.js": {
+          "lines": 56.6
+        },
+        "src/ipc-packs.js": {
+          "lines": 44.5
+        },
+        "src/ipc-presets.js": {
+          "lines": 62.4
+        },
+        "src/ipc-settings.js": {
+          "lines": 89.4
+        },
+        "src/ipc-window.js": {
+          "lines": 91.7
+        },
+        "src/library.js": {
+          "lines": 100
+        },
+        "src/minify.js": {
+          "lines": 97.9
+        },
+        "src/mod-id.js": {
+          "lines": 100
+        },
+        "src/mod-preview.js": {
+          "lines": 75.3
+        },
+        "src/net.js": {
+          "lines": 99.2
+        },
+        "src/patch-watch.js": {
+          "lines": 93.9
+        },
+        "src/patcher.js": {
+          "lines": 97.2
+        },
+        "src/portable-update.js": {
+          "lines": 97.8
+        },
+        "src/preset-link.js": {
+          "lines": 100
+        },
+        "src/preset-share.js": {
+          "lines": 88.7
+        },
+        "src/presets-service.js": {
+          "lines": 13.8
+        },
+        "src/remote-config.js": {
+          "lines": 100
+        },
+        "src/safe-zip.js": {
+          "lines": 100
+        },
+        "src/schema.js": {
+          "lines": 78.7
+        },
+        "src/settings.js": {
+          "lines": 100
+        },
+        "src/steam.js": {
+          "lines": 79.7
+        },
+        "src/toolchain.js": {
+          "lines": 98.1
+        },
+        "src/vpk.js": {
+          "lines": 98.4
+        },
+        "src/vtex.js": {
+          "lines": 100
+        },
+        "tools/catalog-mods.js": {
+          "lines": 100
+        },
+        "tools/check-credentials.mjs": {
+          "lines": 73.3
+        },
+        "tools/check-i18n.js": {
+          "lines": 93.8
+        },
+        "tools/coverage.mjs": {
+          "lines": 70
+        },
+        "tools/e2e.mjs": {
+          "lines": 65.1
+        },
+        "tools/gen-api-docs.js": {
+          "lines": 91.1
+        },
+        "tools/gen-doc-facts.js": {
+          "lines": 78.6
+        },
+        "tools/google-auth.mjs": {
+          "lines": 27.9
+        },
+        "tools/index-delta.js": {
+          "lines": 93.5
+        },
+        "tools/json-lines.js": {
+          "lines": 100
+        },
+        "tools/mutate.mjs": {
+          "lines": 57.3
+        },
+        "tools/portable-manifest.js": {
+          "lines": 87.5
+        },
+        "tools/pr-test-rule.mjs": {
+          "lines": 77.1
+        },
+        "tools/r2-client.js": {
+          "lines": 79.2
+        },
+        "tools/radar.mjs": {
+          "lines": 70.1
+        },
+        "tools/release-gate.mjs": {
+          "lines": 58.3
+        },
+        "tools/seo-state.mjs": {
+          "lines": 99
+        },
+        "tools/size-budget.mjs": {
+          "lines": 72.7
+        },
+        "tools/sync-labels.mjs": {
+          "lines": 55.1
+        },
+        "tools/typecheck.mjs": {
+          "lines": 63.9
+        }
+      }
+    },
     "win32": {
       "measured": "2026-09-16",
       "files": {
