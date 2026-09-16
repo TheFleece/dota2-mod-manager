@@ -40,6 +40,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { isMinifyFile, isMinifyPak } = require('./minify');
 
 /* Languages Dota records VOICE in - four of them, and that is the list that matters here.
  *
@@ -396,6 +397,42 @@ function ensureLangFolder(gamePath, suffix) {
   return dir;
 }
 
+/**
+ * Move installed mod files from one language folder to another, which is what has to happen
+ * when the game's audio language changes: the folder the engine mounts changes with it, and
+ * mods left behind are invisible with no error anywhere.
+ *
+ * Three kinds of file are left where they are. Valve's own - `pak01_*` voice paks and the
+ * `gameinfo.gi` that defines the layer - belong to the folder rather than to anybody's mods.
+ * Another program's work is not ours to relocate, whatever folder it is sitting in. And a name
+ * already taken in the destination is not overwritten, because the file there is somebody's
+ * current mod and this one is a leftover.
+ *
+ * @returns {number} how many files were actually moved
+ */
+function moveLangFolder(gamePath, fromSuffix, toSuffix) {
+  if (!gamePath || !fromSuffix || !toSuffix || fromSuffix === toSuffix) return 0;
+  const oldDir = path.join(gamePath, `dota_${fromSuffix}`);
+  let moved = 0;
+  try {
+    if (!fs.existsSync(oldDir)) return 0;
+    const newDir = ensureLangFolder(gamePath, toSuffix);
+    for (const f of fs.readdirSync(oldDir)) {
+      if (/^pak01_/i.test(f) || f.toLowerCase() === 'gameinfo.gi') continue;
+      if (isMinifyFile(f.toLowerCase()) || isMinifyPak(path.join(oldDir, f))) continue;
+      const dst = path.join(newDir, f);
+      if (fs.existsSync(dst)) continue;
+      fs.renameSync(path.join(oldDir, f), dst);
+      moved++;
+    }
+    // a folder we no longer use and that holds nothing else goes away
+    if (!fs.readdirSync(oldDir).length) fs.rmdirSync(oldDir);
+  } catch (err) {
+    console.error('lang folder migration failed:', err);
+  }
+  return moved;
+}
+
 module.exports = {
   VOICE_LANGUAGES,
   DOTA_LANGUAGES,
@@ -412,4 +449,5 @@ module.exports = {
   writeBootLanguages,
   voiceInstalled,
   ensureLangFolder,
+  moveLangFolder,
 };

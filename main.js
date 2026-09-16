@@ -40,7 +40,8 @@ const portableUpdater = require('./src/portable-update');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const gamelang = require('./src/gamelang');
-const { isMinifyPak, isMinifyFile } = require('./src/minify');
+// handed to src/ipc-settings.js by name, the same one it has always been passed under
+const { moveLangFolder } = gamelang;
 const { uninstallFlow } = require('./src/uninstall-window');
 const { presetsService } = require('./src/presets-service');
 const { registerPresetsIpc } = require('./src/ipc-presets');
@@ -904,32 +905,6 @@ function dotaIsRunning() {
       resolve(!err && hit.test(stdout || ''));
     });
   });
-}
-
-// Move installed mod files between language folders. The game's own files stay put:
-// pak01_* are Valve's voice paks and gameinfo.gi is the folder's layer definition.
-function moveLangFolder(game, fromSuffix, toSuffix) {
-  if (!game || !fromSuffix || !toSuffix || fromSuffix === toSuffix) return 0;
-  const oldDir = path.join(game, `dota_${fromSuffix}`);
-  let moved = 0;
-  try {
-    if (!fs.existsSync(oldDir)) return 0;
-    const newDir = gamelang.ensureLangFolder(game, toSuffix);
-    for (const f of fs.readdirSync(oldDir)) {
-      if (/^pak01_/i.test(f) || f.toLowerCase() === 'gameinfo.gi') continue;
-      // another program's work is not ours to relocate, whatever folder it is sitting in
-      if (isMinifyFile(f.toLowerCase()) || isMinifyPak(path.join(oldDir, f))) continue;
-      const dst = path.join(newDir, f);
-      if (fs.existsSync(dst)) continue;
-      fs.renameSync(path.join(oldDir, f), dst);
-      moved++;
-    }
-    // a folder we no longer use and that holds nothing else goes away
-    if (!fs.readdirSync(oldDir).length) fs.rmdirSync(oldDir);
-  } catch (err) {
-    console.error('lang folder migration failed:', err);
-  }
-  return moved;
 }
 
 /* Mods follow the game's audio language instead of the game following us.

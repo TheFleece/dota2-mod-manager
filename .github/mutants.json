@@ -217,6 +217,38 @@
       "from": "if (needSchema) schemaService.refresh();",
       "to": ";",
       "test": "test/adopt.test.js"
+    },
+    {
+      "name": "the language move carries off the game's own files",
+      "file": "src/gamelang.js",
+      "anchor": "function moveLangFolder(gamePath, fromSuffix, toSuffix) {",
+      "from": "if (/^pak01_/i.test(f) || f.toLowerCase() === 'gameinfo.gi') continue;",
+      "to": "if (false) continue;",
+      "test": "test/gamelang.test.js"
+    },
+    {
+      "name": "the language move relocates another program's mods",
+      "file": "src/gamelang.js",
+      "anchor": "function moveLangFolder(gamePath, fromSuffix, toSuffix) {",
+      "from": "if (isMinifyFile(f.toLowerCase()) || isMinifyPak(path.join(oldDir, f))) continue;",
+      "to": ";",
+      "test": "test/gamelang.test.js"
+    },
+    {
+      "name": "the language move writes over a mod already in the destination",
+      "file": "src/gamelang.js",
+      "anchor": "function moveLangFolder(gamePath, fromSuffix, toSuffix) {",
+      "from": "if (fs.existsSync(dst)) continue;",
+      "to": ";",
+      "test": "test/gamelang.test.js"
+    },
+    {
+      "name": "the language move runs even when there is nowhere to move to",
+      "file": "src/gamelang.js",
+      "anchor": "function moveLangFolder(gamePath, fromSuffix, toSuffix) {",
+      "from": "if (!gamePath || !fromSuffix || !toSuffix || fromSuffix === toSuffix) return 0;",
+      "to": "if (!gamePath || !fromSuffix || !toSuffix) return 0;",
+      "test": "test/gamelang.test.js"
     }
   ]
 }

@@ -779,6 +779,26 @@ Make sure the mod folder exists. English is the one language Valve ships no fold
 (English voice lives in dota/pak01), so for it we create the layer ourselves, shaped
 exactly like Valve's own — never touching a gameinfo.gi that is already there.
 
+### `moveLangFolder`
+
+```js
+function moveLangFolder(gamePath, fromSuffix, toSuffix)
+```
+
+Move installed mod files from one language folder to another, which is what has to happen
+when the game's audio language changes: the folder the engine mounts changes with it, and
+mods left behind are invisible with no error anywhere.
+
+Three kinds of file are left where they are. Valve's own - `pak01_*` voice paks and the
+`gameinfo.gi` that defines the layer - belong to the folder rather than to anybody's mods.
+Another program's work is not ours to relocate, whatever folder it is sitting in. And a name
+already taken in the destination is not overwritten, because the file there is somebody's
+current mod and this one is a leftover.
+
+```
+@returns {number} how many files were actually moved
+```
+
 ## src/i18n.js
 
 Minimal i18n for the main process (main.js, installer.js, vpk.js).

@@ -346,7 +346,7 @@ that location is not writable.
 | `tools/sign-catalog.js` | The signing side, for whoever holds a private key |
 | `src/safe-zip.js` | Every foreign archive comes through here |
 | `src/steam.js` | Finding Steam and the game, and proving the folder is really a game |
-| `src/gamelang.js` | Which folder Dota will mount |
+| `src/gamelang.js` | Which folder Dota will mount, and moving mods across when that changes |
 | `src/patcher.js`, `src/schema.js`, `src/schema-service.js` | Search-path patch, signatures, item schema |
 | `src/patch-watch.js` | Noticing a game update and repairing after it |
 | `src/fingerprints.js` | Recognising a file somebody else installed |

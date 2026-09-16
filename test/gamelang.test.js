@@ -398,3 +398,75 @@ test('a language folder that already exists is not written into', (t) => {
   gamelang.ensureLangFolder(game, 'koreana');
   assert.equal(fs.existsSync(path.join(game, 'dota_koreana', 'gameinfo.gi')), true);
 });
+
+/* Moving mods when the folder the game mounts changes.
+ *
+ * This runs at startup, unasked, over files the user installed. Everything it gets wrong is
+ * expensive: a mod left behind is invisible, a mod written over is gone, and a file carried off
+ * that was never ours belongs to Valve or to another program. Lived in main.js until 2026-09-16,
+ * where nothing could test it.
+ */
+const inFolder = (game, suffix) => fs.readdirSync(path.join(game, `dota_${suffix}`)).sort();
+
+test('mods follow the folder the game mounts, and the game\'s own files stay where they are', (t) => {
+  const game = fakeGame(t, {
+    folders: { dota_russian: ['pak10_dir.vpk', 'pak11_dir.vpk', 'pak01_000.vpk', 'gameinfo.gi'] },
+  });
+
+  const moved = gamelang.moveLangFolder(game, 'russian', 'koreana');
+
+  assert.equal(moved, 2, 'the count is the mods, not everything in the folder');
+  assert.deepEqual(inFolder(game, 'koreana').filter((f) => f !== 'gameinfo.gi'),
+    ['pak10_dir.vpk', 'pak11_dir.vpk']);
+  assert.deepEqual(inFolder(game, 'russian'), ['gameinfo.gi', 'pak01_000.vpk'],
+    'Valve\'s voice pak or the layer definition was carried off');
+});
+
+test('another program\'s mods are left where that program put them', (t) => {
+  /* Minify writes pak65 to pak67 into whichever language folder it is set to, and sharing one
+     folder is the arrangement we tell people to make. Relocating its work would break it
+     silently in a folder it is still looking at. */
+  const game = fakeGame(t, { folders: { dota_russian: ['pak10_dir.vpk', 'pak66_dir.vpk', 'pak66_000.vpk'] } });
+
+  const moved = gamelang.moveLangFolder(game, 'russian', 'koreana');
+
+  assert.equal(moved, 1);
+  assert.deepEqual(inFolder(game, 'russian'), ['pak66_000.vpk', 'pak66_dir.vpk']);
+});
+
+test('a mod already in the new folder is not written over by a leftover', (t) => {
+  /* Same slot name in both folders means two different mods: the one in the destination is what
+     the game is mounting now, and the one being moved is a leftover from a folder it stopped
+     reading. Overwriting loses the live one. */
+  const game = fakeGame(t, {
+    folders: { dota_russian: ['pak10_dir.vpk'], dota_koreana: ['pak10_dir.vpk'] },
+  });
+  fs.writeFileSync(path.join(game, 'dota_koreana', 'pak10_dir.vpk'), 'the mod in use');
+  fs.writeFileSync(path.join(game, 'dota_russian', 'pak10_dir.vpk'), 'the leftover');
+
+  const moved = gamelang.moveLangFolder(game, 'russian', 'koreana');
+
+  assert.equal(moved, 0);
+  assert.equal(fs.readFileSync(path.join(game, 'dota_koreana', 'pak10_dir.vpk'), 'utf-8'), 'the mod in use');
+  assert.ok(fs.existsSync(path.join(game, 'dota_russian', 'pak10_dir.vpk')), 'the leftover was deleted instead');
+});
+
+test('an emptied folder goes away, one that still holds something stays', (t) => {
+  const game = fakeGame(t, { folders: { dota_russian: ['pak10_dir.vpk'] } });
+  assert.equal(gamelang.moveLangFolder(game, 'russian', 'koreana'), 1);
+  assert.equal(fs.existsSync(path.join(game, 'dota_russian')), false);
+
+  const other = fakeGame(t, { folders: { dota_schinese: ['pak10_dir.vpk', 'pak01_dir.vpk'] } });
+  assert.equal(gamelang.moveLangFolder(other, 'schinese', 'koreana'), 1);
+  assert.deepEqual(inFolder(other, 'schinese'), ['pak01_dir.vpk'], 'a folder with Valve\'s files in it was removed');
+});
+
+test('a move with nowhere to go moves nothing', (t) => {
+  const game = fakeGame(t, { folders: { dota_russian: ['pak10_dir.vpk'] } });
+
+  assert.equal(gamelang.moveLangFolder(game, 'russian', 'russian'), 0, 'a folder was moved onto itself');
+  assert.equal(gamelang.moveLangFolder(game, '', 'koreana'), 0);
+  assert.equal(gamelang.moveLangFolder(null, 'russian', 'koreana'), 0);
+  assert.equal(gamelang.moveLangFolder(game, 'schinese', 'koreana'), 0, 'a folder that is not there');
+  assert.deepEqual(inFolder(game, 'russian'), ['pak10_dir.vpk'], 'the folder was touched anyway');
+});
