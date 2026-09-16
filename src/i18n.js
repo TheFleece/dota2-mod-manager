@@ -162,6 +162,7 @@ const EN = {
   // ---- vpk.js (parse errors + content labels) ----
   'VPK: незакрытая строка в дереве': 'VPK: unterminated string in the tree',
   'VPK: неверная сигнатура': 'VPK: bad signature',
+  'VPK: повреждённое дерево': 'VPK: damaged tree',
   // slot labels
   'голова': 'head', 'оружие': 'weapon', 'оружие (2)': 'weapon (2)', 'щит': 'shield', 'броня': 'armor',
   'плечи': 'shoulders', 'пояс': 'belt', 'руки': 'arms', 'спина': 'back', 'крылья': 'wings', 'хвост': 'tail',

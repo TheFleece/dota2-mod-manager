@@ -13,6 +13,34 @@ function readCString(buf, pos) {
   return { str: buf.toString('utf-8', pos, end), next: end + 1 };
 }
 
+/* One entry of the tree, read only when all of it is there.
+ *
+ * Layout: crc(4) preloadBytes(2) archiveIndex(2) offset(4) length(4) terminator(2), then the
+ * preload block. The six walkers below used to read those fields straight out of the buffer at
+ * whatever offset the tree claimed, and a file cut short - or one whose preload length was a
+ * fiction - came back as a RangeError from Buffer. That is not a refusal this app makes, and the
+ * callers do not catch it: src/installer.js walks the mod folder on every start and
+ * src/minify.js reads another tool's files, neither inside a try. Measured on a three-entry VPK:
+ * 54 of its truncations escaped that way (test/vpk-fuzz.test.js).
+ *
+ * `next` is always at least 18 bytes past `pos`, so a tree cannot stall a walker either.
+ */
+function readEntryRecord(buf, pos) {
+  if (pos < 0 || pos + 18 > buf.length) throw new Error(t('VPK: повреждённое дерево'));
+  const preloadBytes = buf.readUInt16LE(pos + 4);
+  const preloadAt = pos + 18;
+  if (preloadAt + preloadBytes > buf.length) throw new Error(t('VPK: повреждённое дерево'));
+  return {
+    crc: buf.readUInt32LE(pos),
+    preloadBytes,
+    archiveIndex: buf.readUInt16LE(pos + 6),
+    offset: buf.readUInt32LE(pos + 8),
+    length: buf.readUInt32LE(pos + 12),
+    preloadAt,
+    next: preloadAt + preloadBytes,
+  };
+}
+
 // A VPK tree stores "empty" as a single space, for the folder AND for the extension.
 // Only the folder case used to be handled, so an extension-less entry came out as
 // "name. " — Dota 2 Skinchanger writes a whole decoy tree of those, and every one of
@@ -75,9 +103,7 @@ function listVpkPaths(buf) {
         const name = readCString(buf, pos);
         pos = name.next;
         if (!name.str) break;
-        // entry: crc(4) preloadBytes(2) archiveIndex(2) offset(4) length(4) terminator(2)
-        const preloadBytes = buf.readUInt16LE(pos + 4);
-        pos += 18 + preloadBytes;
+        pos = readEntryRecord(buf, pos).next;
         paths.push(joinPath(folder.str, name.str, ext.str));
       }
     }
@@ -115,10 +141,9 @@ function listVpkPathCrcs(buf) {
         const name = readCString(buf, pos);
         pos = name.next;
         if (!name.str) break;
-        const crc = buf.readUInt32LE(pos); // entry: crc(4) preloadBytes(2) archiveIndex(2) offset(4) length(4) terminator(2)
-        const preloadBytes = buf.readUInt16LE(pos + 4);
-        pos += 18 + preloadBytes;
-        map.set(joinPath(folder.str, name.str, ext.str), crc);
+        const rec = readEntryRecord(buf, pos);
+        pos = rec.next;
+        map.set(joinPath(folder.str, name.str, ext.str), rec.crc);
       }
     }
   }
@@ -150,13 +175,8 @@ function readVpkEntryFile(dirPath, wanted) {
       const folder = readCString(buf, pos); pos = folder.next; if (!folder.str) break;
       for (;;) {
         const name = readCString(buf, pos); pos = name.next; if (!name.str) break;
-        const crc = buf.readUInt32LE(pos);
-        const preloadBytes = buf.readUInt16LE(pos + 4);
-        const archiveIndex = buf.readUInt16LE(pos + 6);
-        const offset = buf.readUInt32LE(pos + 8);
-        const length = buf.readUInt32LE(pos + 12);
-        const preloadAt = pos + 18;
-        pos = preloadAt + preloadBytes;
+        const { crc, preloadBytes, archiveIndex, offset, length, preloadAt, next } = readEntryRecord(buf, pos);
+        pos = next;
         if (joinPath(folder.str, name.str, ext.str) !== want) continue;
 
         const preload = preloadBytes ? Buffer.from(buf.subarray(preloadAt, preloadAt + preloadBytes)) : EMPTY;
@@ -207,12 +227,8 @@ function openVpkIndex(dirPath) {
       const folder = readCString(buf, pos); pos = folder.next; if (!folder.str) break;
       for (;;) {
         const name = readCString(buf, pos); pos = name.next; if (!name.str) break;
-        const preloadBytes = buf.readUInt16LE(pos + 4);
-        const archiveIndex = buf.readUInt16LE(pos + 6);
-        const offset = buf.readUInt32LE(pos + 8);
-        const length = buf.readUInt32LE(pos + 12);
-        const preloadAt = pos + 18;
-        pos = preloadAt + preloadBytes;
+        const { preloadBytes, archiveIndex, offset, length, preloadAt, next } = readEntryRecord(buf, pos);
+        pos = next;
         entries.set(joinPath(folder.str, name.str, ext.str), { preloadAt, preloadBytes, archiveIndex, offset, length });
       }
     }
@@ -554,14 +570,12 @@ function readVpkEntries(dirBuf, dirPath, archivePathFor) {
       const folder = readCString(dirBuf, pos); pos = folder.next; if (!folder.str) break;
       for (;;) {
         const name = readCString(dirBuf, pos); pos = name.next; if (!name.str) break;
-        const crc = dirBuf.readUInt32LE(pos);
-        const preloadBytes = dirBuf.readUInt16LE(pos + 4);
-        const archiveIndex = dirBuf.readUInt16LE(pos + 6);
-        const entryOffset = dirBuf.readUInt32LE(pos + 8);
-        const entryLength = dirBuf.readUInt32LE(pos + 12);
-        pos += 18;
-        const preload = preloadBytes ? Buffer.from(dirBuf.subarray(pos, pos + preloadBytes)) : EMPTY;
-        pos += preloadBytes;
+        const rec = readEntryRecord(dirBuf, pos);
+        const { crc, preloadBytes, archiveIndex, preloadAt } = rec;
+        const entryOffset = rec.offset;
+        const entryLength = rec.length;
+        pos = rec.next;
+        const preload = preloadBytes ? Buffer.from(dirBuf.subarray(preloadAt, preloadAt + preloadBytes)) : EMPTY;
         let data = EMPTY;
         if (entryLength > 0) {
           const src = readArchive(archiveIndex);
@@ -934,10 +948,9 @@ function listVpkEntries(buf) {
       const folder = readCString(buf, pos); pos = folder.next; if (!folder.str) break;
       for (;;) {
         const name = readCString(buf, pos); pos = name.next; if (!name.str) break;
-        const crc = buf.readUInt32LE(pos);
-        const preloadBytes = buf.readUInt16LE(pos + 4);
-        pos += 18 + preloadBytes;
-        out.push({ path: joinPath(folder.str, name.str, ext.str), crc: crc >>> 0 });
+        const rec = readEntryRecord(buf, pos);
+        pos = rec.next;
+        out.push({ path: joinPath(folder.str, name.str, ext.str), crc: rec.crc >>> 0 });
       }
     }
   }

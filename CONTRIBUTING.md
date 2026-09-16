@@ -98,6 +98,22 @@ then run `node tools/typecheck.mjs --update` to lower the line. Never raise one 
 tools are a mix of both; each needs settings of its own, and one configuration that fits neither
 would report noise instead of mistakes.
 
+## Fuzzing the parsers
+
+```bash
+npm run fuzz
+npm run fuzz -- --seed 20260916 --iterations 500000
+```
+
+A mod's VPK index is written by whoever made the mod, and the app reads it on every start. The
+walkers used to trust it: a file cut short came back as a `RangeError` from Buffer rather than a
+refusal, in paths that do not catch one. `test/vpk-fuzz.test.js` runs a few hundred cases on every
+push (truncations, a forged preload length, seeded byte noise) and the command above runs the same
+generator for as long as you like.
+
+A finding is written to `fuzz-output/` together with the seed that made it. Add it to the test
+before touching the parser, so the fix has proof.
+
 ## Every user-facing string exists twice
 
 The interface ships in Russian and English. Russian text is the key and English is looked up from
