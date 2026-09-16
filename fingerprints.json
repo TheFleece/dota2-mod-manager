@@ -1,5 +1,5 @@
 {
-  "count": 1315,
+  "count": 1316,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -836,6 +836,7 @@
     "a828ab73da467bc5c12c489276dc27f151e53a4d": [{"name":"Monkey King Arcana","categoryId":"heroes","styleLabel":"Water","type":"vpk"}],
     "a8499424cfaa13ce18b954540ff50d1df17ff7af": [{"name":"Bear Medals","categoryId":"ranks","styleLabel":null,"type":"vpk"}],
     "a84a5adc312f0dc2b8186cc1c8de6a739f1f6e5b": [{"name":"Winter Versus Screen","categoryId":"versus-screens","styleLabel":null,"type":"vpk"}],
+    "a85806d6066ac8710004b531b6cb10deba1076fe": [{"name":"Terraria Music","categoryId":"music","styleLabel":null,"type":"vpk"}],
     "a870bee54193dc8e132e9cdbbcb0a4cb86c0ce6b": [{"name":"Spirit Breaker Savage Mettle","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
     "a898876520a9418165c6bfcbd72f4a6e7647c474": [{"name":"Centaur Infernal Cavalcade","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
     "a8b5dea0ff2c19417580e862e3e432fcf4ddc4c4": [{"name":"Techies Alien","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
