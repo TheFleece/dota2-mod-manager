@@ -155,6 +155,9 @@
     "tools/json-lines.js": {
       "lines": 100
     },
+    "tools/mutate.mjs": {
+      "lines": 57.9
+    },
     "tools/portable-manifest.js": {
       "lines": 87.5
     },
