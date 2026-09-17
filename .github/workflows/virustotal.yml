@@ -1,0 +1,63 @@
+# What the antivirus engines say about a release, in the release notes.
+#
+# An unsigned installer gets flagged, and twice a user asked whether the app was safe before
+# anybody here knew there was anything to answer. This looks each published file up on VirusTotal
+# by the SHA-256 the release already carries, uploads it when VirusTotal has never seen it, and
+# writes the verdict into the notes with a link per file. tools/virustotal.mjs says the rest.
+#
+# Without VIRUSTOTAL_API_KEY the job says so and stops. A release is not held up by a check
+# nobody has set up yet, and the daily credential run reports the key as not set.
+name: VirusTotal
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Which release to check (e.g. v2.6.13)'
+        required: true
+
+concurrency:
+  group: virustotal-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+# The token reads the repository and nothing more. The job below asks for what it writes.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # the release notes are the one thing this writes
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      # A secret cannot be read in a job-level `if`, so the skip is a step of its own and every
+      # step below asks it whether there is a key.
+      - name: Is there a key
+        id: key
+        env:
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+        run: |
+          if [ -n "$VIRUSTOTAL_API_KEY" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VIRUSTOTAL_API_KEY is not set, so nothing was checked. See .github/credentials.json."
+          fi
+
+      - name: Read the engines and write the report
+        if: steps.key.outputs.have == 'true'
+        env:
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node tools/virustotal.mjs "${{ github.event.release.tag_name || inputs.tag }}"

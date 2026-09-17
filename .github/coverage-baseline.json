@@ -198,7 +198,7 @@
       }
     },
     "win32": {
-      "measured": "2026-09-16",
+      "measured": "2026-09-17",
       "files": {
         "src/adopt.js": {
           "lines": 100
@@ -324,7 +324,7 @@
           "lines": 98.1
         },
         "src/vpk.js": {
-          "lines": 98.2
+          "lines": 98.6
         },
         "src/vtex.js": {
           "lines": 100
@@ -333,7 +333,7 @@
           "lines": 100
         },
         "tools/check-credentials.mjs": {
-          "lines": 73.3
+          "lines": 74.1
         },
         "tools/check-i18n.js": {
           "lines": 93.8
@@ -375,7 +375,7 @@
           "lines": 79.2
         },
         "tools/radar.mjs": {
-          "lines": 72.5
+          "lines": 74
         },
         "tools/release-gate.mjs": {
           "lines": 58.3
@@ -394,6 +394,9 @@
         },
         "tools/typecheck.mjs": {
           "lines": 63.9
+        },
+        "tools/virustotal.mjs": {
+          "lines": 59.1
         }
       }
     }

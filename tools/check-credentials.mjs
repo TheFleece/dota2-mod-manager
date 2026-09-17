@@ -162,6 +162,18 @@ export const CHECKS = {
     return res.status === 200 ? ok('Yandex accepts the token') : failed(`Yandex rejects the token (HTTP ${res.status})`);
   },
 
+  /* Optional: without it virustotal.yml says so and skips, so "not set" is a decision waiting on
+     whoever can create the key rather than something broken. The cheapest call that needs the key
+     is the report on a file everybody has seen: the EICAR test string, which costs one of the free
+     tier's 500 lookups a day. */
+  async VIRUSTOTAL_API_KEY(env, { http }) {
+    if (!env.VIRUSTOTAL_API_KEY) return missing('VIRUSTOTAL_API_KEY');
+    const res = await http('https://www.virustotal.com/api/v3/files/44d88612fea8a8f36de82e1278abb02f', { headers: { 'x-apikey': env.VIRUSTOTAL_API_KEY } });
+    if (res.status === 200) return ok('VirusTotal accepts the key');
+    if (res.status === 401 || res.status === 403) return failed('VirusTotal rejects the key: it was revoked, or the secret holds something else');
+    return failed(`VirusTotal answers HTTP ${res.status}`);
+  },
+
   async FINGERPRINTS_DEPLOY_KEY(env, { ssh }) {
     if (!env.FINGERPRINTS_DEPLOY_KEY) return missing('FINGERPRINTS_DEPLOY_KEY');
     const said = await ssh(env.FINGERPRINTS_DEPLOY_KEY);

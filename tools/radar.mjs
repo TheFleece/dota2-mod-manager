@@ -375,7 +375,12 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
       continue;
     }
     if (check && check.state === 'missing') {
-      r.red.push({ title: `${name} is not set`, detail: `${s.what}. To set it: ${s.rotate}`, overdue: true });
+      /* A secret marked optional in the registry is one the job that reads it can do without: it
+         says so and skips. That is a decision for whoever can create the key, not a breakage to
+         be messaged about every morning until they do. */
+      const line = { title: `${name} is not set`, detail: `${s.what}. To set it: ${s.rotate}`, overdue: !s.optional };
+      if (s.optional) r.decide.push({ ...line, title: `${name} is not set, and the job that reads it skips` });
+      else r.red.push(line);
       continue;
     }
     if (check && check.state === 'ok') working++;

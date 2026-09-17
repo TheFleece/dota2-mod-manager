@@ -292,7 +292,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 75 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 76 files, run on every push and every pull request
 on Linux and on Windows. Five of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, `DECISIONS.md`
@@ -365,6 +365,7 @@ that location is not writable.
 | `tools/seo-report.mjs`, `tools/seo-state.mjs` | The weekly reach and search report posted to [issue #3](https://github.com/TheFleece/dota2-mod-manager/issues/3), and the numbers it carries from one week to the next inside the comment |
 | `tools/release-gate.mjs` | First job of every release: waits until the tagged commit has passed the checks in `.github/required-checks.json`, and refuses it otherwise |
 | `tools/check-credentials.mjs`, `tools/google-auth.mjs` | Every morning before the radar: tries each secret against its service and writes what works, what fails and when each expires, for the radar to report |
+| `tools/virustotal.mjs` | Reads what the antivirus engines say about each published release and writes the report into its notes; skipped when no key is set |
 | `tools/radar.mjs` | The daily "Project status" issue and the maintainer's overdue alerts; reads expiry dates from `.github/credentials.json` and lists a closed `regression` issue that no file in `docs/incidents/` names |
 | `tools/pr-test-rule.mjs` | The pull request check that a fix changes a test or says why it cannot |
 | `tools/gen-doc-facts.js` | Writes the sentences in the READMEs that come from `package.json`, between `facts:` markers |

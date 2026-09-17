@@ -149,3 +149,36 @@ test('a working R2 key is ok whatever shape its listing comes back in, and a ref
   assert.match(refused.detail, /HTTP 403/);
   assert.equal((await checkR2({}, () => ({ configured: false }))).state, 'failed');
 });
+
+test('the VirusTotal key is read against a report only a key can read, and "not set" is not a failure', async () => {
+  const { CHECKS } = await load();
+  const vt = service([[/files\/44d88612fea8a8f36de82e1278abb02f$/, { status: 200, json: { data: {} } }]]);
+  const good = await CHECKS.VIRUSTOTAL_API_KEY({ VIRUSTOTAL_API_KEY: 'vt-key' }, { http: vt.http });
+  assert.equal(good.state, 'ok');
+  assert.equal(vt.calls[0].headers['x-apikey'], 'vt-key');
+  assert.equal(vt.calls[0].key.includes('vt-key'), false, 'the key stays in the header, never in the address');
+
+  const revoked = service([[/files\//, { status: 401, json: null }]]);
+  const bad = await CHECKS.VIRUSTOTAL_API_KEY({ VIRUSTOTAL_API_KEY: 'old' }, { http: revoked.http });
+  assert.equal(bad.state, 'failed');
+  assert.match(bad.detail, /revoked/);
+
+  const none = await CHECKS.VIRUSTOTAL_API_KEY({}, { http: vt.http });
+  assert.equal(none.state, 'missing');
+});
+
+test('a secret marked optional is a decision when it is not set, and a red line when it is not', async () => {
+  /* The workflow that reads an optional key says so and skips, so a key nobody has created yet
+     must not message the maintainer every morning. */
+  const { evaluate } = await radar();
+  const both = {
+    VIRUSTOTAL_API_KEY: { what: 'the release report', kind: 'api-key', expires: 'never', optional: true, rotate: 'virustotal.com' },
+    R2_ACCESS_KEY_ID: { what: 'the mirror', kind: 'api-key', expires: 'unknown', rotate: 'cloudflare' },
+  };
+  const status = { VIRUSTOTAL_API_KEY: { state: 'missing', detail: 'not set' }, R2_ACCESS_KEY_ID: { state: 'missing', detail: 'not set' } };
+  const r = evaluate({ credentials: both, credentialStatus: status }, Date.parse('2026-09-22T06:30:00Z'));
+
+  assert.deepEqual(r.decide.map((x) => x.title), ['VIRUSTOTAL_API_KEY is not set, and the job that reads it skips']);
+  assert.deepEqual(r.red.map((x) => x.title), ['R2_ACCESS_KEY_ID is not set']);
+  assert.deepEqual(r.overdue.map((x) => x.title), ['R2_ACCESS_KEY_ID is not set'], 'only the one nothing can work without');
+});
