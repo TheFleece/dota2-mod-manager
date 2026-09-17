@@ -116,17 +116,20 @@ async function reportFor(sha256) {
   return res.json.data.attributes.last_analysis_stats;
 }
 
-/** Hand VirusTotal a file it has not seen. Above 32 MB it wants an address of its own. */
-async function upload(file) {
-  const big = fs.statSync(file).size > 32 * 1024 * 1024;
+/**
+ * Hand VirusTotal a file it has not seen. Above 32 MB it wants an address of its own.
+ * The bytes are passed in rather than read here: a size from a stat and a read of the same path
+ * are two answers about a file that can change in between (CodeQL js/file-system-race).
+ */
+async function upload(name, bytes) {
   let url = `${API}/files`;
-  if (big) {
+  if (bytes.length > 32 * 1024 * 1024) {
     const where = await vt(`${API}/files/upload_url`);
     if (where.status !== 200) throw new Error(`VirusTotal would not give an upload address: HTTP ${where.status}`);
     url = where.json.data;
   }
   const form = new FormData();
-  form.append('file', new Blob([fs.readFileSync(file)]), path.basename(file));
+  form.append('file', new Blob([bytes]), name);
   const res = await fetch(url, { method: 'POST', headers: { 'x-apikey': process.env.VIRUSTOTAL_API_KEY }, body: form });
   if (res.status !== 200) throw new Error(`VirusTotal refused the upload: HTTP ${res.status}`);
   return (await res.json()).data.id;
@@ -164,11 +167,10 @@ async function main() {
     let stats = await reportFor(file.sha256);
     if (!stats) {
       const asset = assets.assets.find((a) => a.name === file.name);
-      const local = path.join(process.cwd(), file.name);
-      fs.writeFileSync(local, Buffer.from(gh(['api', '-H', 'Accept: application/octet-stream', `repos/${REPO}/releases/assets/${asset.id}`]), 'binary'));
-      console.log(`${file.name}: new to VirusTotal, uploading ${(fs.statSync(local).size / 1024 ** 2).toFixed(0)} MB`);
-      stats = await waitFor(await upload(local));
-      fs.rmSync(local, { force: true });
+      // as bytes, never as text: an installer read through a string encoding is not the installer
+      const bytes = execFileSync('gh', ['api', '-H', 'Accept: application/octet-stream', `repos/${REPO}/releases/assets/${asset.id}`], { maxBuffer: 512 * 1024 * 1024 });
+      console.log(`${file.name}: new to VirusTotal, uploading ${(bytes.length / 1024 ** 2).toFixed(0)} MB`);
+      stats = await waitFor(await upload(file.name, bytes));
     }
     const v = verdict(stats);
     worst = Math.max(worst, v.malicious);
