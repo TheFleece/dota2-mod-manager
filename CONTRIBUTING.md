@@ -296,7 +296,8 @@ dialog nobody can act on.
 
 Through a pull request, the maintainer's own changes included. It merges when the required checks
 are green: the suite on Linux and on Windows, CodeQL, the Linux build and its start-up run,
-installing a mod through the window on Linux and on Windows, and one rule of its own. A pull
+installing a mod through the window on Linux and on Windows, and one rule of its own. CodeQL has
+to come back clean as well: a pull request that adds an alert at High or higher does not merge. A pull
 request that fixes something changes a test as well, or carries a line `No-Test-Because: <reason>`
 in a commit message or in its description. `npm run verify` runs the same lint and suite on your
 machine before you push.

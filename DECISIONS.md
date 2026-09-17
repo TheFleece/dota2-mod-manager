@@ -149,15 +149,23 @@ every question worth asking after that one is answered elsewhere in this file wi
 *Check:* `git log --grep='Co-Authored-By' --format='%h %ad %s' --date=short`, the "Written with
 Claude Code" section of `README.md`, and **Attribution** in `AGENTS.md`.
 
-### The maintainer pushes to `main` without opening a pull request
+### Every change reaches `main` through a pull request, the maintainer's own included
 
-A solo project does not gain anything from reviewing itself in a web form. The gate is a
-repository ruleset: the required `test` check has to pass, `main` cannot be deleted and cannot
-be force-pushed. Anyone else's change arrives as a pull request and lands on `CODEOWNERS`.
+Until 15 September the maintainer pushed straight to `main`, on the grounds that a solo project
+gains nothing from reviewing itself in a web form. What it gains is the gate. Four releases went
+out in one evening on 10 September, and 2.6.11 was built from a commit whose suite was red. The
+ruleset now requires a pull request and every check in `.github/required-checks.json`.
 
-*Check:* `gh api repos/TheFleece/dota2-mod-manager/rulesets`. Note that
-`gh api repos/TheFleece/dota2-mod-manager/branches/main/protection` answers **404 Branch not
-protected**, because this is a ruleset and not classic branch protection. Reviewers have read
+Since 17 September it also requires a CodeQL result with no new alert at High or higher. Pull
+request #62 had merged itself the day before with one, because the rule asked for the analysis to
+run and nothing about what it found. The deploy key the catalog bot pushes its index with is the
+one bypass: those commits are data, and they never touch code.
+
+*Check:* `curl https://api.github.com/repos/TheFleece/dota2-mod-manager/rules/branches/main`, which
+needs no token, or `gh api repos/TheFleece/dota2-mod-manager/rulesets`. `tools/radar.mjs` compares
+that answer with `.github/required-checks.json` every morning and reports a rule that drifted.
+Note that `gh api repos/TheFleece/dota2-mod-manager/branches/main/protection` answers **404 Branch
+not protected**, because this is a ruleset and not classic branch protection. Reviewers have read
 that 404 as an unguarded branch.
 
 ### The coverage numbers are a floor, not a target
