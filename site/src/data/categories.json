@@ -1164,6 +1164,14 @@
       "id": "music",
       "mods": [
         {
+          "name": "Rory in early 20s Music",
+          "styleLabel": null,
+          "image": {"src":"/mods/rory-in-early-20s-music.webp","width":854,"height":480},
+          "author": "мс яйцо",
+          "authorUrl": "https://steamcommunity.com/id/mcegg/",
+          "date": 1789754338
+        },
+        {
           "name": "Terraria Music",
           "styleLabel": null,
           "image": {"src":"/mods/terraria-music.webp","width":854,"height":480},

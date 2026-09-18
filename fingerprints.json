@@ -1,5 +1,5 @@
 {
-  "count": 1328,
+  "count": 1329,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -11,6 +11,7 @@
     "01f70b2d743b3ec03ba90fadf8f303bbb7d5acc1": [{"name":"Aghanim Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"type":"vpk"}],
     "02415d6ffd7f302d062cccdab3f910e17eae129b": [{"name":"Purple Quarteros Curios","categoryId":"ti-bp-effects","styleLabel":null,"type":"vpk"}],
     "024adc75da063bdafad16847cbf212cc7be98191": [{"name":"Anti-Mage Illidan v2","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "0260c1f8a3b461465010df70743b2c27fc823292": [{"name":"Rory in early 20s Music","categoryId":"music","styleLabel":null,"type":"vpk"}],
     "026c6e43ea338fd0c9d98544e090b2fbeaf42ad9": [{"name":"Young Invoker Dark Artistry","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "02823e8c5ec2989e9b3177fbfd945ebcb589671a": [{"name":"Scarlet Keeper of the Light","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "02c15cc895e14816267a3258a319bf780798d908": [{"name":"Centaur Cunning Counterfeit","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
