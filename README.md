@@ -48,9 +48,9 @@
 > entirely; the one feature that changes them asks first and reverts byte for byte.
 
 > **Why not just copy the files yourself?** You can, and people do. What the app adds is
-> everything after that: switching a mod off before a match without deleting it, free cosmetics
-> read from the game's own item table, a setup you send as one link, and a game that still works
-> after a Dota patch.
+> everything after that: switching a mod off before a match without deleting it, a weather effect
+> or a courier your account never bought drawn on your own screen, a setup you send as one link,
+> and a game that still works after a Dota patch.
 
 <br>
 
@@ -60,7 +60,7 @@
 <tr><td width="210"><b>The whole catalog</b></td><td>1000+ mods in 41 categories, read live from the <a href="https://github.com/h6rd/Dota2PornFxWeb">D2PFX</a> repository, so a mod added today installs today</td></tr>
 <tr><td><b>One click in, one click out</b></td><td>The app downloads it, picks a free pak slot and cleans up after itself. Categories that must load early get low slots by themselves</td></tr>
 <tr><td><b>Switch off, don't delete</b></td><td>Turn a mod off before a match and back on after. Your library stays, the game folder stays clean</td></tr>
-<tr><td><b>Free cosmetics</b></td><td>Weather, couriers, wards, loading screens, announcers, mega-kills, read from the game's own item table, so anything Valve adds appears by itself</td></tr>
+<tr><td><b>Looks for the default items</b></td><td>Weather, couriers, wards, loading screens, announcers, mega-kills: the default item every account has is drawn as any other item in the game, on your screen and nobody else's. The list comes from the game's own item table, so anything Valve adds appears by itself</td></tr>
 <tr><td><b>It says when mods collide</b></td><td>Two mods carrying the same file cannot both win. The app names the file, says which mod the game loads it from, and lets you reorder</td></tr>
 <tr><td><b>Setups by link</b></td><td>Save what you run as a preset and send it in one message. The other side opens it and gets the same look</td></tr>
 <tr><td><b>It survives Dota patches</b></td><td>The app notices a game update when it lands and puts back what the patch wiped, without ever writing while Dota is running</td></tr>

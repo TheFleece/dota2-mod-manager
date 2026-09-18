@@ -216,7 +216,7 @@ function normalRowHtml(rec, i, masterOff) {
       <div class="lib-actions">
         ${isFontRec(rec)
           ? `<span class="text-meta">${L`всегда активен`}</span>`
-          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : cosmetic ? `title="${L`На один слот — только одна активная косметика`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
+          : `<button class="toggle ${rec.enabled ? 'on' : ''}" data-id="${esc(rec.id)}" role="switch" aria-checked="${rec.enabled}" aria-label="${L`Включить/выключить`}" ${isCursorRec(rec) ? `title="${L`Курсор в игре может быть только один — этот выключит остальные`}"` : cosmetic ? `title="${L`На один слот — только один активный вид`}"` : ''} ${masterOff ? 'disabled' : ''}></button>`}
         ${rec.match ? `<button class="btn btn-sm btn-primary" data-adopt="${esc(rec.id)}" title="${L`Привязать к каталогу`}"><span class="ms">library_add_check</span>${L`Привязать`}</button>` : ''}
         <button class="btn btn-sm btn-danger" data-del="${esc(rec.id)}">${L`Удалить`}</button>
       </div>

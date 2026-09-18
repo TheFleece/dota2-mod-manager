@@ -250,7 +250,7 @@ function sharedPresetCardHtml(p) {
   if (s.installed) bits.push(L`${s.installed} уже стоят`);
   if (s.download) bits.push(L`${s.download} скачать из каталога`);
   if (s.embedded) bits.push(L`${s.embedded} внутри файла`);
-  if (s.free) bits.push(L`${s.free} косметика из игры`);
+  if (s.free) bits.push(L`виды из игры: ${s.free}`);
   return `
     <div class="preset-head">
       <div class="preset-name">${esc(p.name)}</div>
@@ -272,7 +272,7 @@ export async function renderPresets() {
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Пресеты`}</h1></div>
-    <div class="view-intro">${L`Пресет хранит моды. Бесплатная косметика в него не входит: она живёт своей жизнью в «Моих модах» и не выключается вместе с пресетом.`}</div>
+    <div class="view-intro">${L`Пресет хранит моды. Виды для стандартных предметов в него не входят: они живут своей жизнью в «Моих модах» и не выключаются вместе с пресетом.`}</div>
     <div class="preset-new">
       <input class="input" id="presetName" placeholder="${L`Название пресета (напр. «Анимешный», «Минимал»)`}">
       <button class="btn btn-primary" id="savePresetBtn"><span class="ms">save</span>${L`Сохранить текущее состояние`}</button>

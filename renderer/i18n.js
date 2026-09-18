@@ -101,8 +101,8 @@ const EN = {
     'The app saves a copy of each before the first edit. Switch safe mode back on and both return byte for byte, with nothing left behind.',
   'Дота стирает эту правку каждым обновлением. Приложение впишет её заново само, пока безопасный режим выключен.':
     'Dota wipes the edit with every update. The app writes it back on its own for as long as safe mode is off.',
-  'Взамен заработают моды с эффектами, а в каталоге откроется бесплатная косметика: погода, ландшафт, курьеры, варды и ещё десяток слотов.':
-    'In return, mods with effects start working and free cosmetics open up in the catalog: weather, terrain, couriers, wards and a dozen more slots.',
+  'Взамен заработают моды с эффектами, а в каталоге откроются виды для стандартных предметов: погода, ландшафт, курьеры, варды и ещё десяток слотов. Стандартный предмет начинает выглядеть как любой другой из игры, и видно это только тебе.':
+    'In return, mods with effects start working, and the catalog opens looks for the default items every account has: weather, terrain, couriers, wards and a dozen more slots. Your default item is drawn as any other item in the game, and only you see it.',
   'Правку файлов игры в моддинге Dota считают небезопасной. За 8+ лет мы не знаем ни одного бана за это. Гарантий всё равно не даём.':
     'Dota modders count editing game files as unsafe. In 8+ years we know of no ban for it. We still give no guarantees.',
   'Безопасный режим выключен — эффекты и косметика доступны': 'Safe mode off — effects and cosmetics are available',
@@ -123,7 +123,7 @@ const EN = {
   'Ничего не найдено — сбрось фильтры': 'Nothing found — clear the filters',
   'Выбрано: {0}': 'Picked: {0}',
   'Вернули как в игре': 'Back to the game default',
-  'На один слот — только одна активная косметика': 'One slot, one active look at a time',
+  'На один слот — только один активный вид': 'One slot, one active look at a time',
   'эффекты': 'effects',
   'нужны правки': 'needs the patch',
   'Мод меняет схему предметов: его эффекты и иконки собраны в общую таблицу':
@@ -135,11 +135,11 @@ const EN = {
     'Files overruled: {0} — {1}. The mod that loads earlier supplies them; right-click to change the order.',
   'Косметика': 'Cosmetics',
   'Моды': 'Mods',
-  'бесплатная косметика': 'free cosmetic',
+  'вид для стандартного предмета': 'a look for a default item',
   'Выбрать всю косметику': 'Select every look',
   'Вернуть все слоты к тому, что даёт игра': 'Put every slot back to what the game gives',
   'Косметика выключена — слоты снова как в игре': 'Cosmetics off — the slots are the game’s own again',
-  'Косметика подставляется в схему предметов игры — файлы модов она не трогает, и её видно только тебе.':
+  'Вид подставляется в схему предметов игры — стандартный предмет просто рисуется как выбранный. Файлы модов это не трогает, и видно только тебе.':
     'A look is spliced into the game’s item schema — it touches no mod files, and only you can see it.',
   '…и ещё {0} — уточни запрос': '…and {0} more — narrow the search',
   // cosmetic slot labels
@@ -371,8 +371,8 @@ const EN = {
   // ---------- presets ----------
   '{0} не установлено': '{0} not installed',
   'не установлен': 'not installed',
-  'Пресет хранит моды. Бесплатная косметика в него не входит: она живёт своей жизнью в «Моих модах» и не выключается вместе с пресетом.':
-    'A preset holds mods. Free cosmetics are not part of one: they live in My mods on their own and are not switched off along with a preset.',
+  'Пресет хранит моды. Виды для стандартных предметов в него не входят: они живут своей жизнью в «Моих модах» и не выключаются вместе с пресетом.':
+    'A preset holds mods. Looks for default items are not part of one: they live in My mods on their own and are not switched off along with a preset.',
   'Пресет запоминает, какие моды включены. Применение пресета включает его моды и выключает остальные. Готовым пресетом можно поделиться файлом — перетащи полученный .d2mm сюда.':
     'A preset remembers which mods are on. Applying a preset enables its mods and disables the rest. A finished preset can be shared as a file — drop a .d2mm you received here.',
 
@@ -399,7 +399,7 @@ const EN = {
   'Не найдены ни у тебя, ни в файле:': 'Found neither here nor in the file:',
   'Пресет «{0}» добавлен — нажми «Установить»': 'Preset «{0}» added — press «Install»',
   'Установлено и применено: {0} {1}': 'Installed and applied: {0} {1}',
-  '{0} косметика из игры': '{0} cosmetic from the game',
+  'виды из игры: {0}': 'looks from the game: {0}',
   'Не удалось прочитать файл пресета': 'Could not read the preset file',
   'Сюда можно бросить моды (.vpk, .zip, папку) или пресет .d2mm':
     'You can drop mods here (.vpk, .zip, a folder) or a .d2mm preset',
@@ -515,7 +515,7 @@ const EN = {
     'The cursor is installed into game\\dota\\resource\\cursor — no launch option needed. Originals are backed up automatically. You can switch it on and off in My mods, but only one cursor can be active: a new one turns the previous one off.',
   'Этот вид сейчас стоит в слоте «{0}». Убрать — вернуть то, что даёт игра; включить обратно можно в «Моих модах».':
     'This look currently fills the «{0}» slot. Removing it puts back what the game gives; you can switch it on again in My mods.',
-  'На один слот — только одна активная косметика: этот вид заменит «{0}». Прошлый выбор останется в «Моих модах» выключенным.':
+  'На один слот — только один вид: этот заменит «{0}». Прошлый выбор останется в «Моих модах» выключенным.':
     'One slot, one active look: this one replaces «{0}». The previous pick stays in My mods, switched off.',
 
   // ---------- settings ----------
