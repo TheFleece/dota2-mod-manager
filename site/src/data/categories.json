@@ -1244,29 +1244,9 @@
       ]
     },
     {
-      "id": "ti-bp-effects",
-      "mods": [
-        {"name":"Aghanims Labyrinth Battle Pass","styleLabel":null,"image":{"src":"/mods/aghanims-labyrinth-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Battle Pass 2022","styleLabel":null,"image":{"src":"/mods/battle-pass-2022.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Darkness Pack","styleLabel":null,"image":{"src":"/mods/darkness-pack.webp","width":854,"height":480},"author":"Darkness","authorUrl":"https://t.me/Darkness_Logovo","date":1789310506},
-        {"name":"Nemestice 2021 Battle Pass","styleLabel":null,"image":{"src":"/mods/nemestice-2021-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Purple Quarteros Curios","styleLabel":null,"image":{"src":"/mods/purple-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Quarteros Curios","styleLabel":null,"image":{"src":"/mods/quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Spring Quarteros Curios","styleLabel":null,"image":{"src":"/mods/spring-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Summer Quarteros Curios","styleLabel":null,"image":{"src":"/mods/summer-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"TI 2010 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2010-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"TI 2016 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2016-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"TI 2017 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2017-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"TI 2018 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2018-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"TI 2019 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2019-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Winter Quarteros Curios","styleLabel":null,"image":{"src":"/mods/winter-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
-        {"name":"Remove Seasonal Effects","styleLabel":null,"image":{"src":"/mods/remove-seasonal-effects.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788999662},
-        {"name":"Winter 2016 Battle Pass","styleLabel":null,"image":{"src":"/mods/winter-2016-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788999662}
-      ]
-    },
-    {
       "id": "sounds",
       "mods": [
+        {"name":"Dagon Cobra Kick","styleLabel":null,"image":{"src":"/mods/dagon-cobra-kick.webp","width":854,"height":480},"author":"Новомодный","authorUrl":null,"date":1789727816},
         {"name":"Dagon Revolver","styleLabel":null,"image":{"src":"/mods/dagon-revolver.webp","width":854,"height":480},"author":"keeper","authorUrl":"https://t.me/eternalsadism","date":1789192305},
         {
           "name": "1st September Horn",
@@ -1345,6 +1325,27 @@
           "authorUrl": "https://t.me/fr0dech_vpk",
           "date": null
         }
+      ]
+    },
+    {
+      "id": "ti-bp-effects",
+      "mods": [
+        {"name":"Aghanims Labyrinth Battle Pass","styleLabel":null,"image":{"src":"/mods/aghanims-labyrinth-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Battle Pass 2022","styleLabel":null,"image":{"src":"/mods/battle-pass-2022.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Darkness Pack","styleLabel":null,"image":{"src":"/mods/darkness-pack.webp","width":854,"height":480},"author":"Darkness","authorUrl":"https://t.me/Darkness_Logovo","date":1789310506},
+        {"name":"Nemestice 2021 Battle Pass","styleLabel":null,"image":{"src":"/mods/nemestice-2021-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Purple Quarteros Curios","styleLabel":null,"image":{"src":"/mods/purple-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Quarteros Curios","styleLabel":null,"image":{"src":"/mods/quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Spring Quarteros Curios","styleLabel":null,"image":{"src":"/mods/spring-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Summer Quarteros Curios","styleLabel":null,"image":{"src":"/mods/summer-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"TI 2010 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2010-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"TI 2016 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2016-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"TI 2017 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2017-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"TI 2018 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2018-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"TI 2019 Battle Pass","styleLabel":null,"image":{"src":"/mods/ti-2019-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Winter Quarteros Curios","styleLabel":null,"image":{"src":"/mods/winter-quarteros-curios.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789310506},
+        {"name":"Remove Seasonal Effects","styleLabel":null,"image":{"src":"/mods/remove-seasonal-effects.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788999662},
+        {"name":"Winter 2016 Battle Pass","styleLabel":null,"image":{"src":"/mods/winter-2016-battle-pass.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788999662}
       ]
     },
     {

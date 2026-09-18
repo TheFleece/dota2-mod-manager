@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1319,
+  "mods": 1324,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -243,6 +243,7 @@
       "mods": [
         {"name":"Aghanim Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Clinkz Black & White","categoryId":"heroes","styleLabel":null,"slots":["misc","back","weapon","arms","head"]},
         {"name":"Clinkz Leader of the Molten Army","categoryId":"heroes","styleLabel":null,"slots":["misc","back","weapon","arms","head"]},
         {"name":"Clinkz Maraxiforms Fate","categoryId":"hero-items","styleLabel":null,"slots":["weapon","misc"]},
         {"name":"Clinkz Maraxiforms Ire","categoryId":"hero-items","styleLabel":null,"slots":["misc","back"]},
@@ -859,6 +860,7 @@
         {"name":"Lone Druid Immortal","categoryId":"heroes","styleLabel":null,"slots":["arms","head","shoulder","misc","weapon"]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Reverse Lone Druid","categoryId":"heroes","styleLabel":null,"slots":["arms","head","shoulder","misc","weapon"]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI9 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -1489,7 +1491,10 @@
         {"name":"Ghosty Slark","categoryId":"heroes","styleLabel":null,"slots":["arms","back","head","shoulder","weapon"]},
         {"name":"Immortal Slark","categoryId":"heroes","styleLabel":null,"slots":["arms","back","head","shoulder","weapon"]},
         {"name":"Slark Barracuda Re","categoryId":"heroes","styleLabel":null,"slots":["arms","back","head","shoulder","weapon"]},
-        {"name":"Slark Shadow in the Deep","categoryId":"heroes","styleLabel":null,"slots":["arms","back","head","shoulder","weapon"]}
+        {"name":"Slark Shadow in the Deep","categoryId":"heroes","styleLabel":null,"slots":["arms","back","head","shoulder","weapon"]},
+        {"name":"Slark Tellurian Trespass","categoryId":"heroes","styleLabel":"Style I","slots":["arms","back","head","shoulder","weapon"]},
+        {"name":"Slark Tellurian Trespass","categoryId":"heroes","styleLabel":"Style II","slots":["arms","back","head","shoulder","weapon"]},
+        {"name":"Slark Tellurian Trespass","categoryId":"heroes","styleLabel":"Style III","slots":["arms","back","head","shoulder","weapon"]}
       ]
     },
     "snapfire": {
