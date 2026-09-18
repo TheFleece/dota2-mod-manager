@@ -196,7 +196,7 @@ const en: Record<CoreSlug, Doc> = {
         t: 'If you did download that voice pack and want the English speech back, rename Valve\'s <code>pak01_dir.vpk</code> inside the folder. Only the index has to move: the numbered volumes beside it are unreadable without it, so you rename a few hundred kilobytes and leave the gigabytes where they are. Rename it back to undo, or verify the game files in Steam.',
       },
 
-      { k: 'h2', t: 'Free cosmetics take one more step', id: 'schema' },
+      { k: 'h2', t: 'A look on a default item takes one more step', id: 'schema' },
       {
         k: 'p',
         t: 'A mod in a language folder can replace any ordinary asset and never the item list. Dota resolves its MOD search path to <code>game\\dota</code> alone, so <code>scripts/items/items_game.txt</code> stays out of reach from there. Unlocking couriers, wards or announcers means registering a second content folder in <code>gameinfo_branchspecific.gi</code> and writing the patched file\'s hash into <code>dota.signatures</code>, which the client verifies when it starts. <a href="~/docs/cosmetics/">How the item table works</a>.',
@@ -363,7 +363,7 @@ const en: Record<CoreSlug, Doc> = {
       },
       {
         k: 'p',
-        t: 'Where this app sits: skins never need the second mechanism, and the app installs them without it. The schema patch runs only for free cosmetics, it copies both Valve files before its first write and puts them back byte for byte when you undo it, and the code that does it is <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">one file of four hundred lines</a> that you can read end to end, rather than something you have to take on faith. Whether that is enough is your call to make, and the rest of the app works with it switched off.',
+        t: 'Where this app sits: skins never need the second mechanism, and the app installs them without it. The schema patch runs only for putting a look on a default item, it copies both Valve files before its first write and puts them back byte for byte when you undo it, and the code that does it is <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">one file of four hundred lines</a> that you can read end to end, rather than something you have to take on faith. Whether that is enough is your call to make, and the rest of the app works with it switched off.',
       },
 
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
@@ -526,7 +526,7 @@ const en: Record<CoreSlug, Doc> = {
       { k: 'h2', t: 'Everything vanished after a game update', id: 'patch' },
       {
         k: 'p',
-        t: 'A Dota patch can rewrite <code>gameinfo_branchspecific.gi</code> and <code>dota.signatures</code>, and it can clear files out of the language folder. Free cosmetics go first, because they depend on both of those files, and skins follow when the folder gets swept.',
+        t: 'A Dota patch can rewrite <code>gameinfo_branchspecific.gi</code> and <code>dota.signatures</code>, and it can clear files out of the language folder. The looks on default items go first, because they depend on both of those files, and skins follow when the folder gets swept.',
       },
       {
         k: 'p',
@@ -692,7 +692,7 @@ const ru: Record<CoreSlug, Doc> = {
         t: 'Если озвучка всё-таки скачана, а английская речь нужна, переименуй валвовский <code>pak01_dir.vpk</code> внутри папки. Двигать надо только индекс: нумерованные тома рядом без него не читаются, так что ты переименовываешь несколько сотен килобайт и не трогаешь гигабайты. Обратно - тем же переименованием или проверкой целостности файлов в Steam.',
       },
 
-      { k: 'h2', t: 'Бесплатной косметике нужен ещё один шаг', id: 'schema' },
+      { k: 'h2', t: 'Виду для стандартного предмета нужен ещё один шаг', id: 'schema' },
       {
         k: 'p',
         t: 'Мод в языковой папке заменит любой обычный ассет и никогда - список предметов. Дота разрешает свой путь поиска MOD только в <code>game\\dota</code>, поэтому <code>scripts/items/items_game.txt</code> оттуда недосягаем. Чтобы открыть курьеров, варды или комментаторов, надо зарегистрировать вторую папку контента в <code>gameinfo_branchspecific.gi</code> и вписать хеш пропатченного файла в <code>dota.signatures</code>, который клиент проверяет при запуске. <a href="~/docs/cosmetics/">Как устроена таблица предметов</a>.',
@@ -859,7 +859,7 @@ const ru: Record<CoreSlug, Doc> = {
       },
       {
         k: 'p',
-        t: 'Где в этой картине приложение: скинам второй механизм не нужен вообще, и оно ставит их без него. Патч схемы работает только ради бесплатной косметики, оба валвовских файла копируются до первой записи и возвращаются побайтово при откате, а код, который это делает, - <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">один файл на четыреста строк</a>, который читается целиком, а не то, что приходится принимать на веру. Достаточно этого или нет, решаешь ты, и всё остальное работает с выключенным патчем.',
+        t: 'Где в этой картине приложение: скинам второй механизм не нужен вообще, и оно ставит их без него. Патч схемы работает только ради видов для стандартных предметов, оба валвовских файла копируются до первой записи и возвращаются побайтово при откате, а код, который это делает, - <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">один файл на четыреста строк</a>, который читается целиком, а не то, что приходится принимать на веру. Достаточно этого или нет, решаешь ты, и всё остальное работает с выключенным патчем.',
       },
 
       { k: 'h2', t: 'Забанят ли за моды в Доте 2', id: 'ban' },
@@ -1022,7 +1022,7 @@ const ru: Record<CoreSlug, Doc> = {
       { k: 'h2', t: 'Моды пропали после патча Доты', id: 'patch' },
       {
         k: 'p',
-        t: 'Патч Доты может переписать <code>gameinfo_branchspecific.gi</code> и <code>dota.signatures</code>, а ещё вычистить файлы из языковой папки. Первой отваливается бесплатная косметика, потому что держится на обоих этих файлах, а следом скины, когда подметают папку.',
+        t: 'Патч Доты может переписать <code>gameinfo_branchspecific.gi</code> и <code>dota.signatures</code>, а ещё вычистить файлы из языковой папки. Первыми отваливаются виды для стандартных предметов, потому что держатся на обоих этих файлах, а следом скины, когда подметают папку.',
       },
       {
         k: 'p',

@@ -86,7 +86,7 @@ const en: Record<Slug, Doc> = {
       {
         k: 'list',
         items: [
-          'Turn the free-cosmetics feature off. The app restores <code>gameinfo_branchspecific.gi</code> and <code>dota.signatures</code> from the copies it made before the first write.',
+          'Switch safe mode back on, which takes the looks off the default items. The app restores <code>gameinfo_branchspecific.gi</code> and <code>dota.signatures</code> from the copies it made before the first write.',
           'Delete everything in My mods.',
           'If you ever installed anything by hand, look in the language folder for pakNN_dir.vpk files still sitting there.',
           'In Steam, open the game properties, then Installed Files, then verify integrity. That returns everything that belongs to Valve.',
@@ -838,7 +838,7 @@ const ru: Record<Slug, Doc> = {
       {
         k: 'list',
         items: [
-          'Выключи бесплатную косметику. Программа вернёт <code>gameinfo_branchspecific.gi</code> и <code>dota.signatures</code> из копий, снятых до первой записи.',
+          'Включи безопасный режим обратно: виды со стандартных предметов снимутся. Программа вернёт <code>gameinfo_branchspecific.gi</code> и <code>dota.signatures</code> из копий, снятых до первой записи.',
           'Удали всё в «Моих модах».',
           'Если что-то ставил руками, загляни в языковую папку: там могли остаться pakNN_dir.vpk.',
           'В Steam: свойства игры, «Установленные файлы», проверить целостность. Это вернёт всё, что принадлежит Valve.',

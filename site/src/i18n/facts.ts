@@ -163,7 +163,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       },
       {
         k: 'p',
-        t: 'The free-cosmetics feature is the one exception, and it is optional and off until you turn it on. Unlocking cosmetics means overriding the item table, which the engine only reads through one path, so the app registers an extra content folder in <code>gameinfo_branchspecific.gi</code> and records the patched file in <code>dota.signatures</code>. Both are backed up before the first write and put back when you turn the feature off. <a href="~/docs/cosmetics/#patch">Why that patch is needed</a>.',
+        t: 'Putting a look on a default item is the one exception, and it is optional and off until you turn it on. It means overriding the item table, which the engine only reads through one path, so the app registers an extra content folder in <code>gameinfo_branchspecific.gi</code> and records the patched file in <code>dota.signatures</code>. Both are backed up before the first write and put back when you turn the feature off. <a href="~/docs/cosmetics/#patch">Why that patch is needed</a>.',
       },
 
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
@@ -333,7 +333,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       },
       {
         k: 'p',
-        t: 'Единственное исключение - бесплатная косметика, и она выключена, пока ты сам её не включишь. Открыть косметику значит перекрыть таблицу предметов, а её движок читает ровно одним путём, поэтому программа регистрирует дополнительную папку контента в <code>gameinfo_branchspecific.gi</code> и вписывает изменённый файл в <code>dota.signatures</code>. Оба файла копируются до первой записи и возвращаются, когда функцию выключаешь. <a href="~/docs/cosmetics/#patch">Зачем нужен этот патч</a>.',
+        t: 'Единственное исключение - виды для стандартных предметов, и они выключены, пока ты сам их не включишь. Подставить вид значит перекрыть таблицу предметов, а её движок читает ровно одним путём, поэтому программа регистрирует дополнительную папку контента в <code>gameinfo_branchspecific.gi</code> и вписывает изменённый файл в <code>dota.signatures</code>. Оба файла копируются до первой записи и возвращаются, когда функцию выключаешь. <a href="~/docs/cosmetics/#patch">Зачем нужен этот патч</a>.',
       },
 
       { k: 'h2', t: 'Забанят ли', id: 'ban' },

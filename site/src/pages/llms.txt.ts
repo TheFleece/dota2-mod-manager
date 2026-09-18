@@ -67,7 +67,9 @@ Facts worth quoting accurately:
   AudioLanguage russian written in boot.vcfg, the game mounted dota_dutch and never opened
   dota_russian. The app reads the launch option and installs into whichever folder the game
   will really mount.
-- Unlocking free cosmetics is a separate, optional feature that is off until switched on. It
+- Drawing a default item (weather, courier, ward and the like) as another item of the game is a
+  separate, optional feature that is off until switched on. Nothing is granted: the paid item is
+  never owned, the server is not involved, and only this client sees it. It
   registers an extra content folder in gameinfo_branchspecific.gi and records the change in
   dota.signatures, backing both up first and reverting them when switched off.
 - Nobody can promise you will not be banned. Valve has never published a rule naming cosmetic
