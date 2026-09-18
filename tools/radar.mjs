@@ -114,6 +114,21 @@ export function schedulesFrom(files) {
   return out;
 }
 
+/**
+ * Workflows that only start when a release is published. They never run on main, so the radar has
+ * to look at their last run wherever it happened, or a red one is invisible.
+ * @param {Array<{file: string, text: string}>} files
+ * @returns {string[]} the workflow paths
+ */
+export function releaseTriggered(files) {
+  return files
+    .filter(({ text }) => {
+      const on = String(text).split(/\n(?=[a-z])/).find((block) => block.startsWith('on:')) || '';
+      return /^ {2}release:/m.test(on);
+    })
+    .map(({ file }) => file);
+}
+
 export function lastGoneOver(decisionsText) {
   const m = /Last gone over on (\d{4}-\d{2}-\d{2})/.exec(decisionsText || '');
   return m ? m[1] : null;
@@ -339,7 +354,8 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
       continue;
     }
     if (w.lastRun && w.lastRun.conclusion === 'failure') {
-      r.red.push({ title: `${w.name} failed on main`, url: w.lastRun.url, detail: `last run ${String(w.lastRun.created_at).slice(0, 10)}`, overdue: true });
+      const where = w.lastRun.branch && w.lastRun.branch !== 'main' ? ` on ${w.lastRun.branch}` : ' on main';
+      r.red.push({ title: `${w.name} failed${where}`, url: w.lastRun.url, detail: `last run ${String(w.lastRun.created_at).slice(0, 10)}`, overdue: true });
     }
     if (w.intervalHours) {
       /* GitHub starts scheduled runs when it can, not when the cron says: in September 2026 the
@@ -519,6 +535,7 @@ async function gather(repo, token, now) {
     .filter((f) => /\.ya?ml$/.test(f))
     .map((f) => ({ file: `.github/workflows/${f}`, text: fs.readFileSync(path.join(root, '.github', 'workflows', f), 'utf8') }));
   const schedules = new Map(schedulesFrom(files).map((s) => [s.file, s.intervalHours]));
+  const onRelease = new Set(releaseTriggered(files));
 
   const pulls = await api(`repos/${repo}/pulls?state=open&per_page=100`, { token });
   const openIssues = (await api(`repos/${repo}/issues?state=open&per_page=100`, { token })).filter((i) => !i.pull_request);
@@ -555,14 +572,19 @@ async function gather(repo, token, now) {
   for (const w of listed.workflows || []) {
     if (!w.path || !w.path.startsWith('.github/workflows/')) continue; // Dependabot and Pages run as dynamic workflows
     const runs = await api(`repos/${repo}/actions/workflows/${w.id}/runs?branch=main&status=completed&per_page=1`, { token });
-    const last = (runs.workflow_runs || [])[0];
+    let last = (runs.workflow_runs || [])[0];
+    if (!last && onRelease.has(w.path)) {
+      // published from a tag, so nothing of it is ever on main
+      const any = await api(`repos/${repo}/actions/workflows/${w.id}/runs?status=completed&per_page=1`, { token });
+      last = (any.workflow_runs || [])[0];
+    }
     workflows.push({
       name: w.name,
       state: w.state,
       url: w.html_url,
       intervalHours: schedules.get(w.path) || null,
       created_at: w.created_at,
-      lastRun: last ? { conclusion: last.conclusion, created_at: last.created_at, url: last.html_url } : null,
+      lastRun: last ? { conclusion: last.conclusion, created_at: last.created_at, url: last.html_url, branch: last.head_branch } : null,
     });
   }
 

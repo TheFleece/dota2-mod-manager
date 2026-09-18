@@ -300,3 +300,26 @@ test('the branch rule on main is held to the checks the repository lists, and to
   assert.deepEqual(blind.look.map((x) => x.title), ['The branch rule on main could not be read']);
   assert.ok(!blind.fine.some((line) => line.startsWith('main requires')));
 });
+
+test('a workflow that only runs when a release is published is watched wherever it ran', async () => {
+  /* The radar reads each workflow's last run on main. virustotal.yml starts on a published
+     release, so it has no run on main at all, and a red one was invisible here. */
+  const { evaluate, releaseTriggered } = await load();
+  const files = fs.readdirSync(path.join(ROOT, '.github', 'workflows'))
+    .filter((f) => /\.ya?ml$/.test(f))
+    .map((f) => ({ file: `.github/workflows/${f}`, text: fs.readFileSync(path.join(ROOT, '.github', 'workflows', f), 'utf8') }));
+  assert.deepEqual(releaseTriggered(files), ['.github/workflows/virustotal.yml']);
+  assert.deepEqual(releaseTriggered([{ file: 'x.yml', text: 'on:\n  push:\n    branches: [main]\njobs:\n  a:\n    release: no\n' }]), [],
+    'the word release somewhere in a job is not a trigger');
+
+  const red = evaluate({
+    workflows: [{ name: 'VirusTotal', state: 'active', url: 'u', intervalHours: null, lastRun: { conclusion: 'failure', created_at: ago(10), url: 'r', branch: 'v2.6.13' } }],
+  }, NOW);
+  assert.deepEqual(red.red.map((x) => x.title), ['VirusTotal failed on v2.6.13'], 'the tag it ran on is named, so it can be found');
+  assert.equal(red.red[0].overdue, true);
+
+  const onMain = evaluate({
+    workflows: [{ name: 'Tests', state: 'active', url: 'u', intervalHours: null, lastRun: { conclusion: 'failure', created_at: ago(10), url: 'r', branch: 'main' } }],
+  }, NOW);
+  assert.deepEqual(onMain.red.map((x) => x.title), ['Tests failed on main']);
+});
