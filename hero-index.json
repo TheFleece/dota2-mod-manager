@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1324,
+  "mods": 1329,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -109,6 +109,7 @@
       "mods": [
         {"name":"Aghanim Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Batrider Chubzarik Prime","categoryId":"heroes","styleLabel":null,"slots":["belt","back","head","mount","misc","shoulder"]},
+        {"name":"Batrider Night Marauder","categoryId":"heroes","styleLabel":null,"slots":["belt","back","head","mount"]},
         {"name":"Batrider Night Snotty","categoryId":"heroes","styleLabel":null,"slots":["belt","back","head","mount"]},
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -327,6 +328,7 @@
         {"name":"Dazzle Darkclaw","categoryId":"heroes","styleLabel":null,"slots":["misc","shoulder","weapon","back"]},
         {"name":"Dazzle Gates of Nothl","categoryId":"hero-items","styleLabel":"Crimson","slots":["misc"]},
         {"name":"Dazzle Gates of Nothl","categoryId":"hero-items","styleLabel":null,"slots":["misc"]},
+        {"name":"Dazzle Graveman","categoryId":"heroes","styleLabel":null,"slots":["misc","shoulder","weapon","back","arms","legs"]},
         {"name":"Dazzle Lifeless Devotion","categoryId":"heroes","styleLabel":null,"slots":["misc","shoulder","weapon"]},
         {"name":"Dazzle Needlepoint Necromance","categoryId":"heroes","styleLabel":null,"slots":["misc","shoulder","weapon"]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -627,6 +629,7 @@
         {"name":"Invoker Magus Mimicry","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder"]},
         {"name":"Invoker MaryDay","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder"]},
         {"name":"Invoker Patchouli","categoryId":"heroes","styleLabel":null,"slots":["arms","back","misc","head","shoulder","shield","belt","legs"]},
+        {"name":"Japan Invoker","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder","legs"]},
         {"name":"Sakura Pink Invoker","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder"]},
         {"name":"Sasuke Invoker","categoryId":"heroes","styleLabel":null,"slots":["arms","back","head","shoulder","misc","belt","shield","legs"]},
         {"name":"Young Invoker","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","shoulder","shield","belt","legs"]},
@@ -858,6 +861,7 @@
         {"name":"Lone Druid Cauldron of Xahryx","categoryId":"hero-items","styleLabel":"Retro v2","slots":["weapon"]},
         {"name":"Lone Druid Claws of Nuranu","categoryId":"hero-items","styleLabel":null,"slots":["arms"]},
         {"name":"Lone Druid Immortal","categoryId":"heroes","styleLabel":null,"slots":["arms","head","shoulder","misc","weapon"]},
+        {"name":"Mops Lone Druid Bear","categoryId":"hero-items","styleLabel":null,"slots":["misc"]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Reverse Lone Druid","categoryId":"heroes","styleLabel":null,"slots":["arms","head","shoulder","misc","weapon"]},
@@ -1205,6 +1209,7 @@
         {"name":"Ice Phoenix","categoryId":"heroes","styleLabel":null,"slots":[]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Star Sage Phoenix","categoryId":"heroes","styleLabel":null,"slots":["misc","head","wings"]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI9 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},

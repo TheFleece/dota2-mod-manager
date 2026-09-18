@@ -228,6 +228,7 @@
     {
       "id": "hero-items",
       "mods": [
+        {"name":"Mops Lone Druid Bear","styleLabel":null,"image":{"src":"/mods/mops-lone-druid-bear.webp","width":854,"height":480},"author":"depex","authorUrl":"https://t.me/depexfx","date":1789745325},
         {"name":"Chen Green Infernal","styleLabel":null,"image":{"src":"/mods/chen-green-infernal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789398422},
         {
           "name": "Keeper of the Light Wings of Daybreak",
@@ -1160,6 +1161,42 @@
       ]
     },
     {
+      "id": "music",
+      "mods": [
+        {
+          "name": "Terraria Music",
+          "styleLabel": null,
+          "image": {"src":"/mods/terraria-music.webp","width":854,"height":480},
+          "author": "buba43",
+          "authorUrl": "https://steamcommunity.com/profiles/76561199220865017",
+          "date": 1789547063
+        },
+        {"name":"Magic Sticks of Dynamite","styleLabel":null,"image":{"src":"/mods/magic-sticks-of-dynamite.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1785236208},
+        {"name":"Northern Winds","styleLabel":null,"image":{"src":"/mods/northern-winds.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1781266231},
+        {
+          "name": "The International 10",
+          "styleLabel": null,
+          "image": {"src":"/mods/the-international-10.webp","width":854,"height":480},
+          "author": "SkippingHades",
+          "authorUrl": "https://www.youtube.com/@skippinghadesofficialmc",
+          "date": 1780648482
+        },
+        {"name":"The International 2014","styleLabel":null,"image":{"src":"/mods/the-international-2014.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
+        {"name":"The International 2015","styleLabel":null,"image":{"src":"/mods/the-international-2015.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
+        {"name":"The International 2016","styleLabel":null,"image":{"src":"/mods/the-international-2016.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
+        {"name":"The International 2017","styleLabel":null,"image":{"src":"/mods/the-international-2017.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
+        {"name":"The International 2019","styleLabel":null,"image":{"src":"/mods/the-international-2019.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765926561},
+        {"name":"Dire Shred","styleLabel":null,"image":{"src":"/mods/dire-shred.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764954164},
+        {"name":"deadmau5 dieback","styleLabel":null,"image":{"src":"/mods/deadmau5-dieback.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
+        {"name":"Elemental Fury","styleLabel":null,"image":{"src":"/mods/elemental-fury.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
+        {"name":"Heroes Within","styleLabel":null,"image":{"src":"/mods/heroes-within.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
+        {"name":"Humanity Last Breath","styleLabel":null,"image":{"src":"/mods/humanity-last-breath.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
+        {"name":"JJ Lin Timekeeper","styleLabel":null,"image":{"src":"/mods/jj-lin-timekeeper.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
+        {"name":"TheFatRat Warrior","styleLabel":null,"image":{"src":"/mods/thefatrat-warrior.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764459882},
+        {"name":"Sewerslvt Music","styleLabel":null,"image":{"src":"/mods/sewerslvt-music.webp","width":854,"height":480},"author":"мс яйцо","authorUrl":"https://steamcommunity.com/id/mcegg/","date":null}
+      ]
+    },
+    {
       "id": "creep-deny",
       "mods": [
         {"name":"Drow Ranger Deny","styleLabel":null,"image":{"src":"/mods/drow-ranger-deny.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1783594076},
@@ -1206,41 +1243,6 @@
         {"name":"Nemestice Emblem","styleLabel":null,"image":{"src":"/mods/nemestice-emblem.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1756459282},
         {"name":"Overgrown Emblem","styleLabel":null,"image":{"src":"/mods/overgrown-emblem.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1756459282},
         {"name":"Sunken Emblem","styleLabel":null,"image":{"src":"/mods/sunken-emblem.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1756459282}
-      ]
-    },
-    {
-      "id": "music",
-      "mods": [
-        {
-          "name": "Terraria Music",
-          "styleLabel": null,
-          "image": {"src":"/mods/terraria-music.webp","width":854,"height":480},
-          "author": "buba43",
-          "authorUrl": "https://steamcommunity.com/profiles/76561199220865017",
-          "date": 1789547063
-        },
-        {"name":"Magic Sticks of Dynamite","styleLabel":null,"image":{"src":"/mods/magic-sticks-of-dynamite.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1785236208},
-        {"name":"Northern Winds","styleLabel":null,"image":{"src":"/mods/northern-winds.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1781266231},
-        {
-          "name": "The International 10",
-          "styleLabel": null,
-          "image": {"src":"/mods/the-international-10.webp","width":854,"height":480},
-          "author": "SkippingHades",
-          "authorUrl": "https://www.youtube.com/@skippinghadesofficialmc",
-          "date": 1780648482
-        },
-        {"name":"The International 2014","styleLabel":null,"image":{"src":"/mods/the-international-2014.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
-        {"name":"The International 2015","styleLabel":null,"image":{"src":"/mods/the-international-2015.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
-        {"name":"The International 2016","styleLabel":null,"image":{"src":"/mods/the-international-2016.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
-        {"name":"The International 2017","styleLabel":null,"image":{"src":"/mods/the-international-2017.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765999001},
-        {"name":"The International 2019","styleLabel":null,"image":{"src":"/mods/the-international-2019.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765926561},
-        {"name":"Dire Shred","styleLabel":null,"image":{"src":"/mods/dire-shred.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764954164},
-        {"name":"deadmau5 dieback","styleLabel":null,"image":{"src":"/mods/deadmau5-dieback.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
-        {"name":"Elemental Fury","styleLabel":null,"image":{"src":"/mods/elemental-fury.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
-        {"name":"Heroes Within","styleLabel":null,"image":{"src":"/mods/heroes-within.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
-        {"name":"Humanity Last Breath","styleLabel":null,"image":{"src":"/mods/humanity-last-breath.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
-        {"name":"JJ Lin Timekeeper","styleLabel":null,"image":{"src":"/mods/jj-lin-timekeeper.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764486398},
-        {"name":"TheFatRat Warrior","styleLabel":null,"image":{"src":"/mods/thefatrat-warrior.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1764459882}
       ]
     },
     {
