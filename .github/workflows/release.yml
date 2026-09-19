@@ -20,7 +20,23 @@ jobs:
     permissions:
       contents: read
       checks: read
+    outputs:
+      beta: ${{ steps.kind.outputs.beta }}
     steps:
+      # A beta is a tag with a prerelease part: v2.7.0-beta.1. Everything above the publish step
+      # treats it exactly like a release, because a build nobody has installed is not worth
+      # handing to a tester either.
+      - name: Beta or release
+        id: kind
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          case "$TAG" in
+            *-beta.*) echo 'beta=true' >> "$GITHUB_OUTPUT"; echo "$TAG is a beta" ;;
+            *) echo 'beta=false' >> "$GITHUB_OUTPUT"; echo "$TAG is a release" ;;
+          esac
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -67,6 +83,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
+          EXTRA: ${{ needs.gate.outputs.beta == 'true' && '--prerelease' || '' }}
         run: |
           awk -v v="${TAG#v}" '
             $0 ~ "^## " v "([^0-9.]|$)" { on = 1; next }
@@ -80,7 +97,7 @@ jobs:
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             echo "release already exists, leaving it alone"
           else
-            gh release create "$TAG" --repo "$REPO" --title "${TAG#v}" --notes-file notes.md --draft
+            gh release create "$TAG" --repo "$REPO" --title "${TAG#v}" --notes-file notes.md --draft $EXTRA
           fi
 
       # EP_DRAFT keeps electron-builder uploading into the draft above. Without it, a release it
@@ -392,7 +409,7 @@ jobs:
   # A failure above leaves the draft where only the maintainer can see it. RELEASING.md says what
   # to do with it, and what to do when a release that did go out turns out to be broken.
   publish:
-    needs: [build, linux, checksums, try-windows, try-linux]
+    needs: [gate, build, linux, checksums, try-windows, try-linux]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -405,12 +422,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
+          BETA: ${{ needs.gate.outputs.beta }}
         run: |
           set -euo pipefail
           id=$(gh api "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\" and .draft) | .id")
           [ -n "$id" ] || { echo "::error::no draft release carries $TAG"; exit 1; }
-          gh api --method PATCH "repos/$REPO/releases/$id" -F draft=false -f make_latest=true > /dev/null
-          echo "release $id ($TAG) is public"
+          if [ "$BETA" = "true" ]; then
+            # a prerelease, and never /releases/latest: an installed copy on the stable channel
+            # follows that endpoint, and a tester follows beta.yml instead
+            gh api --method PATCH "repos/$REPO/releases/$id" -F draft=false -F prerelease=true -f make_latest=false > /dev/null
+            echo "beta $id ($TAG) is out, for the testers on the list"
+          else
+            gh api --method PATCH "repos/$REPO/releases/$id" -F draft=false -f make_latest=true > /dev/null
+            echo "release $id ($TAG) is public"
+          fi
 
       # What broke on 2.2.0 was invisible until somebody looked at the API by hand: the workflow was
       # green, the installer was on a page, and the app could not update. This is that look, taken
@@ -420,12 +445,31 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
+          BETA: ${{ needs.gate.outputs.beta }}
         run: |
           set -euo pipefail
           count=$(gh api "repos/$REPO/releases" --jq "[.[] | select(.tag_name == \"$TAG\")] | length")
           if [ "$count" != "1" ]; then
             echo "::error::$count releases carry the tag $TAG - GitHub will answer /releases/latest with the wrong one"
             exit 1
+          fi
+          if [ "$BETA" = "true" ]; then
+            # the stable endpoint must still answer with the last release, or every copy on the
+            # stable channel would be offered a build meant for a handful of testers
+            latest=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
+            if [ "$latest" = "$TAG" ]; then
+              echo "::error::/releases/latest says $TAG, which is a beta - installed copies follow that endpoint"
+              exit 1
+            fi
+            names=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.assets[].name')
+            for want in beta.yml beta-linux.yml portable.yml \
+                        Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe Dota-2-Mod-Manager.AppImage \
+                        SHA256SUMS SHA256SUMS.intoto.jsonl dota2-mod-manager.cdx.json; do
+              echo "$names" | grep -qx "$want" \
+                || { echo "::error::$want is missing from the beta the testers read"; exit 1; }
+            done
+            echo "beta $TAG carries its feed, and the stable endpoint still answers $latest"
+            exit 0
           fi
           latest=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
           if [ "$latest" != "$TAG" ]; then
@@ -459,11 +503,42 @@ jobs:
   # 320 MB per release for ever. Old versions stay on GitHub, which is where anybody looking for
   # one goes. A failure here still does not fail the release: the update is published, and a
   # mirror that is a version behind is a worse mirror rather than a broken release.
+  # A tester follows beta.yml. When a release goes out, the newest thing on the beta channel has
+  # to be that release, or somebody who tried a beta would sit on it while everybody else moved on
+  # and would never be offered the version that replaced it. So the stable feed is uploaded to its
+  # own release a second time, under the name the beta channel reads. The files it points at are
+  # the ones already on that release.
+  beta-feed:
+    needs: [gate, publish]
+    if: startsWith(github.ref, 'refs/tags/') && needs.gate.outputs.beta != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Point the beta channel at this release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          for pair in "latest.yml beta.yml" "latest-linux.yml beta-linux.yml"; do
+            set -- $pair
+            gh release download "$TAG" --repo "$REPO" --pattern "$1" --output "$2" --clobber
+            gh release upload "$TAG" "$2" --repo "$REPO" --clobber
+            echo "$1 is also on the release as $2"
+          done
+
   mirror-update:
     # After publish, and so after both builds were tried: installed copies read the mirror when
     # GitHub does not answer, so a file there is as public as the release itself.
-    needs: publish
-    if: startsWith(github.ref, 'refs/tags/')
+    #
+    # Never for a beta. The mirror keeps one version, under file names that do not carry it, so a
+    # beta copied there would sit where the stable installer sits while latest.yml still described
+    # the stable one: every copy that cannot reach GitHub would download a build it was never
+    # offered, fail its checksum, and stop updating. Testers are a handful of people with GitHub.
+    needs: [gate, publish]
+    if: startsWith(github.ref, 'refs/tags/') && needs.gate.outputs.beta != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -505,9 +580,11 @@ jobs:
   # Notify Discord after the release is published. This lives in the same workflow as the
   # build because a release published by the default GITHUB_TOKEN does NOT trigger a separate
   # "on: release" workflow (GitHub blocks token-triggered workflows to avoid recursion).
+  # A beta is not announced: the people it is for were picked by name and the app offers it to
+  # them. A post in the public channel about a build nobody else can install is noise at best.
   notify:
-    needs: [publish, mirror-update]
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [gate, publish, mirror-update]
+    if: startsWith(github.ref, 'refs/tags/') && needs.gate.outputs.beta != 'true'
     runs-on: ubuntu-latest
     # editing the release body needs write; the default for a job is the repo's own
     # setting, which is read-only here (v1.12.0 shipped with an empty page because of it)

@@ -21,12 +21,36 @@ The tag starts `.github/workflows/release.yml`:
 | `try-windows` | Downloads the installer from the draft, checks it against `SHA256SUMS`, installs it, and runs `tools/e2e.mjs` against the installed app | the maintainer |
 | `try-linux` | Downloads the AppImage from the draft, checks it against `SHA256SUMS`, unpacks it, and runs `tools/e2e.mjs` against it | the maintainer |
 | `publish` | Takes the release out of draft, then checks it is the latest and carries every file the updater reads | everybody |
+| `beta-feed` | Uploads the release's own `latest.yml` and `latest-linux.yml` a second time as `beta.yml` and `beta-linux.yml`, so the beta channel points at this release too | everybody |
 | `mirror-update` | Copies the release to the update mirror | everybody |
 | `notify` | Posts the changelog section to Discord | everybody |
 
 Installed copies look for updates at `/releases/latest`, and a draft never shows up there. So nobody
 receives a version before both builds of it installed a mod and removed it, and after `publish`
 everybody receives it together.
+
+## Betas
+
+A beta is a tag with a prerelease part: `v2.7.0-beta.1`. It goes through the same `gate`, the same
+builds and the same `try-windows` and `try-linux` install runs, because a build nobody has
+installed is not worth handing to a tester either. After that it parts company with a release:
+
+- it stays a **prerelease** and never becomes `/releases/latest`, which is the endpoint every copy
+  on the stable channel follows;
+- it carries `beta.yml` and `beta-linux.yml` instead of the `latest` pair, and that is what the
+  app reads for somebody on the beta channel;
+- `mirror-update` is skipped. The mirror keeps one version under file names that do not carry it,
+  so a beta copied there would sit where the stable installer sits while `latest.yml` still
+  described the stable one, and every copy that cannot reach GitHub would fail its checksum;
+- `notify` is skipped: the people it is for were picked by name, and the app offers it to them.
+
+Who is offered a beta is a list of Discord accounts in the signed `config/app.json`, as hashes.
+`src/beta.js` reads it; `npm run rollback` is what writes and signs that file. A tester taken off
+the list, or signed out of Discord, is back on the stable channel at the next check without anybody
+touching their machine.
+
+When a release goes out, `beta-feed` points the beta channel at it, so a tester who tried a beta
+moves on to the released version rather than sitting on the build it replaced.
 
 ## A job before `publish` failed
 

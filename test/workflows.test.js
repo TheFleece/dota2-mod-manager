@@ -159,6 +159,36 @@ test('release.yml shows a release to nobody until both builds on it installed a 
   assert.ok(!/repos\/\$REPO\/releases\/latest/.test(text.split(/\n {2}publish:\n/)[0]), 'a job before publish asks /releases/latest, which cannot show a draft');
 });
 
+test('a beta tag is published as a prerelease, and never as the latest release', () => {
+  /* Everybody on the stable channel follows /releases/latest. A beta that took that endpoint would
+     be handed to every installed copy, which is the opposite of a beta. */
+  const yml = read('release.yml');
+  assert.match(yml, /\*-beta\.\*\) echo 'beta=true'/, 'nothing decides what a beta tag looks like');
+  assert.match(yml, /-F prerelease=true -f make_latest=false/, 'a beta is published like a release');
+  assert.match(yml, /beta\.yml beta-linux\.yml portable\.yml/, 'the beta feed is not checked after publishing');
+  assert.match(yml, /is a beta - installed copies follow that endpoint/, 'nothing checks that the stable endpoint was left alone');
+});
+
+test('a beta reaches neither the update mirror nor the announcement', () => {
+  /* The mirror keeps one version under names that do not carry it: a beta there would sit where
+     the stable installer sits while latest.yml still described the stable one. */
+  const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
+  for (const name of ['mirror-update', 'notify']) {
+    const job = jobs.find((j) => j.startsWith(`${name}:`)) || '';
+    assert.ok(job, `no ${name} job`);
+    assert.match(job, /needs\.gate\.outputs\.beta != 'true'/, `${name} runs for a beta too`);
+  }
+});
+
+test('a release points the beta channel at itself, so a tester is not left behind it', () => {
+  const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
+  const job = jobs.find((j) => j.startsWith('beta-feed:')) || '';
+  assert.ok(job, 'no beta-feed job');
+  assert.match(job, /needs\.gate\.outputs\.beta != 'true'/, 'a beta would republish itself as the beta feed');
+  assert.match(job, /latest\.yml beta\.yml/);
+  assert.match(job, /latest-linux\.yml beta-linux\.yml/, 'Linux testers would stay on the beta for ever');
+});
+
 test('RELEASING.md names every job release.yml runs', () => {
   /* The runbook gets read on the day a release went wrong, which is the worst day to find it
      describing a workflow that has changed since. */
