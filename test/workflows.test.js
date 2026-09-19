@@ -83,6 +83,18 @@ test('every secret a workflow reads is in the registry, and the registry lists n
   assert.deepEqual(unused, [], `listed in .github/credentials.json but no workflow reads it: ${unused.join(', ')}`);
 });
 
+test('every secret in the registry reaches the daily check, so none is reported missing while it is set', () => {
+  /* VIRUSTOTAL_API_KEY was added to the registry and to tools/check-credentials.mjs, the secret was
+     created, and the morning check still called it missing: radar.yml passes each secret into that
+     step by hand, and this one had not been added to the list. A secret nobody hands over cannot
+     be checked, and the radar says "not set" about a key that is set. */
+  const step = read('radar.yml').split('run: node tools/check-credentials.mjs')[0];
+  const env = step.slice(step.lastIndexOf('env:'));
+  const registry = Object.keys(json('.github/credentials.json').secrets);
+  const absent = registry.filter((name) => !env.includes(`${name}: \${{ secrets.${name} }}`));
+  assert.deepEqual(absent, [], `listed in .github/credentials.json but not handed to check-credentials.mjs in radar.yml: ${absent.join(', ')}`);
+});
+
 test('the registry says what each secret is, when it expires and how to replace it', () => {
   const registry = json('.github/credentials.json').secrets;
   const bad = [];
