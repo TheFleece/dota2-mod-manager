@@ -44,10 +44,20 @@ installed is not worth handing to a tester either. After that it parts company w
   `latest.yml` describes. A tester whose GitHub is down reads `beta.yml` there;
 - `notify` is skipped: the people it is for were picked by name, and the app offers it to them.
 
-Who is offered a beta is a list of Discord accounts in the signed `config/app.json`, as hashes.
-`src/beta.js` reads it; `npm run rollback` is what writes and signs that file. A tester taken off
-the list, or signed out of Discord, is back on the stable channel at the next check without anybody
-touching their machine.
+Who is offered a beta is a list of Discord accounts in the signed `config/app.json`, as hashes:
+
+```bash
+CATALOG_KEY=/path/to/config-key.pem npm run rollback -- invite 123456789012345678
+CATALOG_KEY=/path/to/config-key.pem npm run rollback -- uninvite 123456789012345678
+npm run rollback -- list
+```
+
+The id comes from Discord itself: Developer Mode on, right-click the person, Copy User ID. It is
+hashed on the way in, because this file is published here and a list of a dozen people's accounts
+is not ours to publish. The file and its `.sig` go in one pull request, like any other change to it.
+
+A tester taken off the list, or signed out of Discord, is back on the stable channel at the next
+check without anybody touching their machine, and the switch in their settings disappears.
 
 When a release goes out, `beta-feed` points the beta channel at it on GitHub, and `mirror-update`
 writes `beta.yml` beside it on the mirror, pointing at the release's own files, so a tester moves

@@ -183,3 +183,82 @@ test('the list says what the file is doing today', async () => {
   assert.ok(lines.some((l) => l.startsWith('OFF EVERYWHERE') && l.includes('voice')));
   assert.ok(lines.some((l) => l.startsWith('expired') && l.includes('install in 2.7.0')));
 });
+
+/* ---------- who is offered the beta ---------- */
+
+const TESTER = '123456789012345678';
+
+test('an account goes on the list as a hash, and never as itself', async () => {
+  /* The file is published in a public repository. A list of a dozen people's Discord accounts is
+     not ours to publish, and an id is the thing somebody else can act on. */
+  const { invite, serialize } = await load();
+  const { config, already } = invite(EMPTY, TESTER);
+
+  assert.equal(already, false);
+  assert.equal(config.beta.ids.length, 1);
+  assert.match(config.beta.ids[0], /^[0-9a-f]{64}$/);
+  assert.ok(config.beta.salt.length >= 16, 'a salt is made the first time and written with the list');
+  assert.equal(serialize(config).includes(TESTER), false, 'the id itself is nowhere in the bytes');
+});
+
+test('the salt is made once: a second invitation does not throw the first one off the list', async () => {
+  const { invite } = await load();
+  const one = invite(EMPTY, TESTER).config;
+  const two = invite(one, '234567890123456789').config;
+
+  assert.equal(two.beta.salt, one.beta.salt, 'a new salt would silently invalidate every line above it');
+  assert.equal(two.beta.ids.length, 2);
+  assert.equal(two.beta.ids[0], one.beta.ids[0]);
+
+  const again = invite(two, TESTER);
+  assert.equal(again.already, true);
+  assert.equal(again.config.beta.ids.length, 2, 'the same account twice is one line');
+});
+
+test('what the tool writes is what the app lets in', async () => {
+  // the whole point of the file: hashed here, hashed the same way in src/beta.js
+  const { invite, serialize } = await load();
+  const { isTester } = require('../src/beta.js');
+  const written = JSON.parse(serialize(invite(EMPTY, TESTER).config));
+  const read = current.normalize(written).beta;
+
+  assert.equal(isTester(TESTER, read), true);
+  assert.equal(isTester('234567890123456789', read), false, 'and nobody else');
+});
+
+test('a typo is refused rather than written as somebody who will never match', async () => {
+  const { invite } = await load();
+  for (const bad of ['fleece', '12345', '', '1234567890123456789012345', `${TESTER} `]) {
+    if (bad === `${TESTER} `) continue; // surrounding space is trimmed, not a typo
+    assert.throws(() => invite(EMPTY, bad), /Discord account id/, `"${bad}" should be refused`);
+  }
+  assert.equal(invite(EMPTY, ` ${TESTER} `).config.beta.ids.length, 1, 'a stray space is not a typo');
+});
+
+test('the tool stops where the app stops reading', async () => {
+  /* src/remote-config.js keeps the first MAX_TESTERS and drops the rest without a word, so a list
+     past that point would leave somebody on it who is never offered anything. */
+  const { invite } = await load();
+  let config = EMPTY;
+  for (let i = 0; i < current.MAX_TESTERS; i++) config = invite(config, String(100000000000000000n + BigInt(i))).config;
+
+  assert.equal(config.beta.ids.length, current.MAX_TESTERS);
+  assert.throws(() => invite(config, '999999999999999999'), /take somebody off/);
+});
+
+test('taking somebody off needs their id, and an empty list leaves no block behind', async () => {
+  const { invite, uninvite, describe } = await load();
+  let config = invite(EMPTY, TESTER).config;
+  config = invite(config, '234567890123456789').config;
+
+  const gone = uninvite(config, TESTER);
+  assert.equal(gone.found, true);
+  assert.equal(gone.config.beta.ids.length, 1);
+  assert.deepEqual(describe(gone.config, TODAY), ['beta            1 account(s) offered the unreleased build']);
+
+  const none = uninvite(gone.config, '234567890123456789');
+  assert.equal('beta' in none.config, false, 'no list and an empty one mean the same thing to the app');
+  assert.equal(uninvite(config, '345678901234567890').found, false, 'somebody who was never on it is not an error');
+  assert.throws(() => uninvite(EMPTY, TESTER), /nobody is on the list/);
+});
+

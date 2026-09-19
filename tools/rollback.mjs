@@ -15,12 +15,16 @@
  *   node tools/rollback.mjs everywhere install --en "…" --ru "…"     every version, old ones too
  *   node tools/rollback.mjs restore install
  *   node tools/rollback.mjs prune                                     drop what is past its day
+ *   node tools/rollback.mjs invite 123456789012345678               offer this account the beta
+ *   node tools/rollback.mjs uninvite 123456789012345678             take it back off the list
  *   node tools/rollback.mjs sign                                      sign the file as it stands
  *
  * A block goes under `blocks`, which copies before BLOCKS_SINCE never read (see
  * src/remote-config.js), and comes with a notice for the same versions and days, so the people
- * it affects are told why. Anything that writes the file signs it when CATALOG_KEY points at the
- * private key, and refuses a key the app does not pin.
+ * it affects are told why. The beta list goes under `beta` and holds hashes rather than ids,
+ * because this file is public and a list of a dozen people's Discord accounts is not ours to
+ * publish. Anything that writes the file signs it when CATALOG_KEY points at the private key,
+ * and refuses a key the app does not pin.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -29,7 +33,10 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const { normalize, cmpVersion, SWITCHABLE, BLOCKS_SINCE, CONFIG_PUBLIC_KEY } = require('../src/remote-config.js');
+const {
+  normalize, cmpVersion, SWITCHABLE, BLOCKS_SINCE, MAX_TESTERS, CONFIG_PUBLIC_KEY,
+} = require('../src/remote-config.js');
+const { idHash } = require('../src/beta.js');
 const { verify } = require('../src/catalog-signature.js');
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -146,6 +153,62 @@ export function pruneExpired(config, today) {
   return { config: next, gone: [...gone] };
 }
 
+/* ---------- who is offered the beta ---------- */
+
+/** A Discord account id is a snowflake: 17-20 digits. Anything else is a typo, not an account. */
+const SNOWFLAKE = /^\d{17,20}$/;
+
+function requireAccount(discordId) {
+  const id = String(discordId || '').trim();
+  if (!SNOWFLAKE.test(id)) {
+    throw new Error(`"${id}" is not a Discord account id. It is 17-20 digits, from Discord's own `
+      + 'Developer Mode: right-click the person, Copy User ID.');
+  }
+  return id;
+}
+
+/**
+ * Put an account on the beta list.
+ *
+ * The file is public, so it holds sha256(salt:id) and never the id. The salt is made once and kept:
+ * it does not hide an id from somebody who already has that id in mind, and it does stop the file
+ * being a ready-made list to look up. Adding somebody twice is not an error - the same id hashes to
+ * the same line, and the answer to "is this person on the list" is yes either way.
+ */
+export function invite(config, discordId) {
+  const id = requireAccount(discordId);
+  const next = structuredClone(config);
+  const beta = next.beta && typeof next.beta === 'object' ? { ...next.beta } : {};
+  beta.salt = String(beta.salt || '') || crypto.randomBytes(16).toString('hex');
+  const ids = Array.isArray(beta.ids) ? [...beta.ids] : [];
+  const hash = idHash(id, beta.salt);
+  const already = ids.includes(hash);
+  if (!already) ids.push(hash);
+  if (ids.length > MAX_TESTERS) {
+    throw new Error(`the app reads the first ${MAX_TESTERS} on the list and ignores the rest; `
+      + 'take somebody off before adding another');
+  }
+  next.beta = { ...beta, ids };
+  return { config: next, already };
+}
+
+/**
+ * Take an account back off. The hash is worked out the same way, so an id is enough; a list that
+ * empties loses the block entirely, because no list and an empty one mean the same thing to the app.
+ */
+export function uninvite(config, discordId) {
+  const id = requireAccount(discordId);
+  const salt = config.beta && config.beta.salt;
+  if (!salt) throw new Error('nobody is on the list yet');
+  const next = structuredClone(config);
+  const hash = idHash(id, salt);
+  const ids = (next.beta.ids || []).filter((x) => x !== hash);
+  const found = ids.length !== (next.beta.ids || []).length;
+  if (ids.length) next.beta = { ...next.beta, ids };
+  else delete next.beta;
+  return { config: next, found };
+}
+
 /** What the file is doing today, one line each. */
 export function describe(config, today) {
   const lines = [];
@@ -162,6 +225,8 @@ export function describe(config, today) {
     if (blockIds.has(n.id)) continue;
     lines.push(`${n.until && n.until < today ? 'expired ' : 'notice  '}        ${n.id} until ${n.until || 'no end'}`);
   }
+  const testers = ((config.beta || {}).ids || []).length;
+  if (testers) lines.push(`beta            ${testers} account(s) offered the unreleased build`);
   return lines.length ? lines : ['nothing is switched off and nobody is told anything'];
 }
 
@@ -239,6 +304,14 @@ if (invokedDirectly) {
       write(switchOff(config, { feature: subject, en: flags.en, ru: flags.ru }), today);
     } else if (command === 'restore') {
       write(switchOn(config, subject), today);
+    } else if (command === 'invite') {
+      const { config: next, already } = invite(config, subject);
+      console.log(already ? 'already on the list; the file is unchanged in what it says' : 'on the list');
+      write(next, today);
+    } else if (command === 'uninvite') {
+      const { config: next, found } = uninvite(config, subject);
+      if (!found) console.log('that account was not on the list; writing the file anyway, so it is signed as it stands');
+      write(next, today);
     } else if (command === 'prune') {
       const { config: next, gone } = pruneExpired(config, today);
       if (!gone.length) console.log('nothing is past its day');

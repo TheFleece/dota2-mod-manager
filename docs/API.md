@@ -2314,6 +2314,15 @@ what makes adding it safe, and also what makes a block aimed at those versions d
 tools/rollback.mjs refuses one. 2.6.12 is the last release without it; whichever version
 ships next is at least this one.
 
+### `MAX_TESTERS`
+
+```js
+const MAX_TESTERS = 100
+```
+
+A beta is a handful of people the maintainer picked, not a rollout: a list longer than this is
+a sign the file was edited by something other than a person.
+
 ### `CONFIG_URL`
 
 ```js

@@ -239,6 +239,6 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey
 }
 
 module.exports = {
-  createRemoteConfig, normalize, cmpVersion, applies, SWITCHABLE, BLOCKS_SINCE,
+  createRemoteConfig, normalize, cmpVersion, applies, SWITCHABLE, BLOCKS_SINCE, MAX_TESTERS,
   CONFIG_URL, CONFIG_SIG_URL, CONFIG_PUBLIC_KEY,
 };
