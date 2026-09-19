@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1329,
+  "mods": 1331,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -442,6 +442,7 @@
         {"name":"Darkness Crimson Naga Siren","categoryId":"heroes","styleLabel":null,"slots":[]},
         {"name":"Earthshaker Arcana","categoryId":"heroes","styleLabel":null,"slots":["arms","head","misc"]},
         {"name":"Earthshaker Blink Dagger","categoryId":"item-effects","styleLabel":null,"slots":[]},
+        {"name":"Earthshaker Burning Arcana","categoryId":"heroes","styleLabel":null,"slots":["arms","head","misc"]},
         {"name":"Earthshaker Carrot","categoryId":"hero-items","styleLabel":null,"slots":["misc"]},
         {"name":"Earthshaker Deep Magma","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","misc","head","weapon"]},
         {"name":"Earthshaker Gold Blink Dagger","categoryId":"item-effects","styleLabel":null,"slots":[]},
@@ -1952,6 +1953,7 @@
         {"name":"Wraith King Blistering Crimson","categoryId":"hero-items","styleLabel":null,"slots":["misc"]},
         {"name":"Wraith King Grim Destiny","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder","weapon"]},
         {"name":"Wraith King Itsuka Kotori","categoryId":"heroes","styleLabel":null,"slots":["misc","back","head","shoulder","weapon","arms"]},
+        {"name":"Wraith King Papizi","categoryId":"heroes","styleLabel":null,"slots":["arms","back","misc","head","shoulder","weapon"]},
         {"name":"Wraith King Pizdec","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder","weapon"]},
         {"name":"Wraith King Radiance","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Wraith King Skeleton","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder","weapon","arms"]},

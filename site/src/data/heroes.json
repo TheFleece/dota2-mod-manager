@@ -8669,6 +8669,133 @@
       ]
     },
     {
+      "id": "wraith_king",
+      "name": "Wraith King",
+      "slug": "wraith-king",
+      "mods": [
+        {
+          "name": "Wraith King Itsuka Kotori",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","back","head","shoulder","weapon","arms"],
+          "image": {"src":"/mods/wraith-king-itsuka-kotori.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1767093656
+        },
+        {
+          "name": "Wraith King Papizi",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/wraith-king-papizi.webp","width":854,"height":480},
+          "author": "Arthas",
+          "authorUrl": "https://t.me/ArthasModMaker",
+          "date": 1789805764
+        },
+        {
+          "name": "Wraith King Skeleton",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon","arms"],
+          "image": {"src":"/mods/wraith-king-skeleton.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1779092133
+        },
+        {
+          "name": "Wraith King Arcana",
+          "categoryId": "heroes",
+          "styleLabel": "Style I",
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/wraith-king-arcana-style-i.webp","width":854,"height":480},
+          "author": "Pinkie",
+          "authorUrl": "https://steamcommunity.com/profiles/76561198142595363",
+          "date": 1775274474
+        },
+        {
+          "name": "Wraith King Arcana",
+          "categoryId": "heroes",
+          "styleLabel": "Style II",
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/wraith-king-arcana-style-ii.webp","width":854,"height":480},
+          "author": "Pinkie",
+          "authorUrl": "https://steamcommunity.com/profiles/76561198142595363",
+          "date": 1775274474
+        },
+        {
+          "name": "Wraith King Grim Destiny",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/wraith-king-grim-destiny.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1780226470
+        },
+        {
+          "name": "Wraith King Pizdec",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/wraith-king-pizdec.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1765384615
+        },
+        {
+          "name": "Wraith King Unbroken Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/wraith-king-unbroken-arcana.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1775274474
+        },
+        {
+          "name": "Wraith King Veil Tyrant",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/wraith-king-veil-tyrant.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1780226470
+        },
+        {
+          "name": "Wraith King Blistering Crimson",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["misc"],
+          "image": {"src":"/mods/wraith-king-blistering-crimson.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1787040057
+        },
+        {
+          "name": "Wraith King Radiance",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["weapon"],
+          "image": {"src":"/mods/wraith-king-radiance.webp","width":854,"height":480},
+          "author": "Ромчик",
+          "authorUrl": "https://watchmy.bio/shidehara",
+          "date": 1786760922
+        },
+        {
+          "name": "Wraith King Winterblight",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["weapon"],
+          "image": {"src":"/mods/wraith-king-winterblight.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1780226470
+        }
+      ]
+    },
+    {
       "id": "zeus",
       "name": "Zeus",
       "slug": "zeus",
@@ -10083,123 +10210,6 @@
       ]
     },
     {
-      "id": "wraith_king",
-      "name": "Wraith King",
-      "slug": "wraith-king",
-      "mods": [
-        {
-          "name": "Wraith King Itsuka Kotori",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","back","head","shoulder","weapon","arms"],
-          "image": {"src":"/mods/wraith-king-itsuka-kotori.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1767093656
-        },
-        {
-          "name": "Wraith King Skeleton",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder","weapon","arms"],
-          "image": {"src":"/mods/wraith-king-skeleton.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1779092133
-        },
-        {
-          "name": "Wraith King Arcana",
-          "categoryId": "heroes",
-          "styleLabel": "Style I",
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/wraith-king-arcana-style-i.webp","width":854,"height":480},
-          "author": "Pinkie",
-          "authorUrl": "https://steamcommunity.com/profiles/76561198142595363",
-          "date": 1775274474
-        },
-        {
-          "name": "Wraith King Arcana",
-          "categoryId": "heroes",
-          "styleLabel": "Style II",
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/wraith-king-arcana-style-ii.webp","width":854,"height":480},
-          "author": "Pinkie",
-          "authorUrl": "https://steamcommunity.com/profiles/76561198142595363",
-          "date": 1775274474
-        },
-        {
-          "name": "Wraith King Grim Destiny",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/wraith-king-grim-destiny.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1780226470
-        },
-        {
-          "name": "Wraith King Pizdec",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/wraith-king-pizdec.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1765384615
-        },
-        {
-          "name": "Wraith King Unbroken Arcana",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/wraith-king-unbroken-arcana.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1775274474
-        },
-        {
-          "name": "Wraith King Veil Tyrant",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/wraith-king-veil-tyrant.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1780226470
-        },
-        {
-          "name": "Wraith King Blistering Crimson",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["misc"],
-          "image": {"src":"/mods/wraith-king-blistering-crimson.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1787040057
-        },
-        {
-          "name": "Wraith King Radiance",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["weapon"],
-          "image": {"src":"/mods/wraith-king-radiance.webp","width":854,"height":480},
-          "author": "Ромчик",
-          "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1786760922
-        },
-        {
-          "name": "Wraith King Winterblight",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["weapon"],
-          "image": {"src":"/mods/wraith-king-winterblight.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1780226470
-        }
-      ]
-    },
-    {
       "id": "broodmother",
       "name": "Broodmother",
       "slug": "broodmother",
@@ -10303,6 +10313,113 @@
           "author": "laskotdota",
           "authorUrl": "https://t.me/laskotdota",
           "date": 1768065827
+        }
+      ]
+    },
+    {
+      "id": "earthshaker",
+      "name": "Earthshaker",
+      "slug": "earthshaker",
+      "mods": [
+        {
+          "name": "Earthshaker Deep Magma",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","arms","misc","head","weapon"],
+          "image": {"src":"/mods/earthshaker-deep-magma.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1775124421
+        },
+        {
+          "name": "Cosmic Earthshaker",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","arms","misc"],
+          "image": {"src":"/mods/cosmic-earthshaker.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1777007944
+        },
+        {
+          "name": "Earthshaker Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","head","misc"],
+          "image": {"src":"/mods/earthshaker-arcana.webp","width":854,"height":480},
+          "author": "lansory",
+          "authorUrl": "https://discord.com/users/1108248721768071210",
+          "date": 1787937599
+        },
+        {
+          "name": "Earthshaker Burning Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","head","misc"],
+          "image": {"src":"/mods/earthshaker-burning-arcana.webp","width":854,"height":480},
+          "author": "J0nathan550",
+          "authorUrl": "https://github.com/J0nathan550",
+          "date": 1789805764
+        },
+        {
+          "name": "Earthshaker Purple Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","arms","misc"],
+          "image": {"src":"/mods/earthshaker-purple-arcana.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1774882421
+        },
+        {
+          "name": "Earthshaker Red Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","arms","belt"],
+          "image": {"src":"/mods/earthshaker-red-arcana.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1756539017
+        },
+        {
+          "name": "Darkness Crimson Naga Siren",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": [],
+          "image": {"src":"/mods/darkness-crimson-naga-siren.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1776456530
+        },
+        {
+          "name": "Earthshaker Carrot",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["misc"],
+          "image": {"src":"/mods/earthshaker-carrot.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1768637892
+        },
+        {
+          "name": "Earthshaker Blink Dagger",
+          "categoryId": "item-effects",
+          "styleLabel": null,
+          "slots": [],
+          "image": {"src":"/mods/earthshaker-blink-dagger.webp","width":854,"height":480},
+          "author": "Ромчик",
+          "authorUrl": "https://watchmy.bio/shidehara",
+          "date": 1789310506
+        },
+        {
+          "name": "Earthshaker Gold Blink Dagger",
+          "categoryId": "item-effects",
+          "styleLabel": null,
+          "slots": [],
+          "image": {"src":"/mods/earthshaker-gold-blink-dagger.webp","width":854,"height":480},
+          "author": "Ромчик",
+          "authorUrl": "https://watchmy.bio/shidehara",
+          "date": 1789310506
         }
       ]
     },
@@ -11373,103 +11490,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1764003644
-        }
-      ]
-    },
-    {
-      "id": "earthshaker",
-      "name": "Earthshaker",
-      "slug": "earthshaker",
-      "mods": [
-        {
-          "name": "Earthshaker Deep Magma",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","arms","misc","head","weapon"],
-          "image": {"src":"/mods/earthshaker-deep-magma.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1775124421
-        },
-        {
-          "name": "Cosmic Earthshaker",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","arms","misc"],
-          "image": {"src":"/mods/cosmic-earthshaker.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1777007944
-        },
-        {
-          "name": "Earthshaker Arcana",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","head","misc"],
-          "image": {"src":"/mods/earthshaker-arcana.webp","width":854,"height":480},
-          "author": "lansory",
-          "authorUrl": "https://discord.com/users/1108248721768071210",
-          "date": 1787937599
-        },
-        {
-          "name": "Earthshaker Purple Arcana",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","arms","misc"],
-          "image": {"src":"/mods/earthshaker-purple-arcana.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1774882421
-        },
-        {
-          "name": "Earthshaker Red Arcana",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","arms","belt"],
-          "image": {"src":"/mods/earthshaker-red-arcana.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1756539017
-        },
-        {
-          "name": "Darkness Crimson Naga Siren",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": [],
-          "image": {"src":"/mods/darkness-crimson-naga-siren.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1776456530
-        },
-        {
-          "name": "Earthshaker Carrot",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["misc"],
-          "image": {"src":"/mods/earthshaker-carrot.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1768637892
-        },
-        {
-          "name": "Earthshaker Blink Dagger",
-          "categoryId": "item-effects",
-          "styleLabel": null,
-          "slots": [],
-          "image": {"src":"/mods/earthshaker-blink-dagger.webp","width":854,"height":480},
-          "author": "Ромчик",
-          "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1789310506
-        },
-        {
-          "name": "Earthshaker Gold Blink Dagger",
-          "categoryId": "item-effects",
-          "styleLabel": null,
-          "slots": [],
-          "image": {"src":"/mods/earthshaker-gold-blink-dagger.webp","width":854,"height":480},
-          "author": "Ромчик",
-          "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1789310506
         }
       ]
     },

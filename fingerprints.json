@@ -1,9 +1,10 @@
 {
-  "count": 1329,
+  "count": 1332,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
     "00c05c93db840fd59f08653b0c0c35fb483a6a07": [{"name":"Monkey King Arcana","categoryId":"heroes","styleLabel":"Fire","type":"vpk"}],
+    "00ccb2ff2a180272167a4be0453d2d5c8f71b2a8": [{"name":"Earthshaker Burning Pedestal","categoryId":"pedestal","styleLabel":null,"type":"vpk"}],
     "00e363b6cc3a6e13de5685e0cef678645e796fcb": [{"name":"Lion Mulctant Pall","categoryId":"hero-items","styleLabel":"Crimson","type":"vpk"}],
     "01483d2750340e8b06bbf38d99343945dc6fbf00": [{"name":"Juggernaut Samurai of Wind","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "01aeed68946ef1febd7596d4573afde6f3648182": [{"name":"Cyrene Song","categoryId":"backgrounds","styleLabel":null,"type":"vpk"}],
@@ -984,6 +985,7 @@
     "c21bf81d414b027897210ceaf51c51bb2cd3347f": [{"name":"Black Hud","categoryId":"huds","styleLabel":null,"type":"vpk"}],
     "c229a2aa7f314a5c04dd4dbf1fd039eaa7854dc9": [{"name":"Shadow Fiend King of Vipers","categoryId":"heroes","styleLabel":"Style III","type":"vpk"}],
     "c264562ddcc220e7d4e2280705156f7e166eca01": [{"name":"Kez Zangetsu","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "c27b4b3c9b68fb809744d921c1394db9f22895b5": [{"name":"Wraith King Papizi","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "c305f8cf0c560e170006baf30ffe027f43e63b47": [{"name":"Invoker Dark Divine","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "c324b931eb96b8726289ea2570be4c0b55ab505d": [{"name":"Soul Deny","categoryId":"creep-deny","styleLabel":null,"type":"vpk"}],
     "c33e16660645fb963dfa922b1b05b7388a01232b": [{"name":"Sniper Full-Bore Bonanza","categoryId":"hero-items","styleLabel":"Golden","type":"vpk"}],
@@ -1009,6 +1011,7 @@
     "c77767e30c923961b126dd03071bd4d28e8e53b7": [{"name":"Aghanim Green Lite","categoryId":"shaders","styleLabel":null,"type":"vpk"}],
     "c7eade7937c280a53d4b9883f56a9eecff5fc55c": [{"name":"Cartoon Trees","categoryId":"trees","styleLabel":null,"type":"vpk"}],
     "c8096283f6fc65e01d4ac6465e771b14901eb8b2": [{"name":"Cursed Shadow Fiend","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "c85dc9f19aefd9a699b209981072243f5760740c": [{"name":"Earthshaker Burning Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "c8793d6d86a82774987078b3d69b849731586e8b": [{"name":"Immortal Medusa","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "c87c5fc33f8e0144cb061730548677f89cdf67b7": [{"name":"Bloodseeker Harvest Hound","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "c88514ca51268307e0f1c3392012767a0a545ccd": [{"name":"Tinker Immortal","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
