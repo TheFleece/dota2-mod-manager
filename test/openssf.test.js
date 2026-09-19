@@ -57,6 +57,17 @@ test('every file a reason names is in the repository', () => {
   assert.deepEqual(missing, []);
 });
 
+/* Eight criteria are marked met_url_required in the badge's own criteria.yml: an answer without a
+   link does not count, and the entry sits at 99% with nothing saying which one is short. That is
+   how vulnerability_report_private held the badge back on 2026-09-19. */
+const NEEDS_URL = ['contribution', 'contribution_requirements', 'license_location', 'release_notes',
+  'report_process', 'report_archive', 'vulnerability_report_process', 'vulnerability_report_private'];
+
+test('every criterion that has to carry a link carries one', () => {
+  const short = NEEDS_URL.filter((id) => !/https?:\/\//.test(why(id)));
+  assert.deepEqual(short, [], `answered without the link the badge requires: ${short.join(', ')}`);
+});
+
 test('the prose and the machine-readable answers cover the same criteria', () => {
   const inDoc = new Set([...doc.matchAll(/^\| `([a-z][a-z0-9_]*)` \|/gm)].map((m) => m[1]));
   const onlyDoc = [...inDoc].filter((id) => !criteria.includes(id));
