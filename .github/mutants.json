@@ -1,6 +1,6 @@
 {
   "_why": "Deliberate breakages, each of a promise the code makes, with the test file that has to go red. tools/mutate.mjs applies one at a time and puts the file back; a mutant that survives means the test guarding that promise proves nothing, and a mutant that no longer applies means the code moved out from under the check. Both fail a run. test/mutate.test.js holds every entry here against today's source on every push without running any of them. Add a mutant when a test is written for something a user would notice losing; never delete one to make a run green.",
-  "measured": "2026-09-16",
+  "measured": "2026-09-20",
   "mutants": [
     {
       "name": "removePackDeployed forgets .off and .moff copies",
@@ -689,6 +689,30 @@
       "from": "return beta ? key.includes(BETA_MARK) : true;",
       "to": "return true;",
       "test": "test/mirror-plan.test.js"
+    },
+    {
+      "name": "a copy on the stable channel is offered the unreleased build",
+      "file": "src/updater.js",
+      "anchor": "autoUpdater.channel = name;",
+      "from": "autoUpdater.allowPrerelease = name === BETA_CHANNEL;",
+      "to": "autoUpdater.allowPrerelease = true;",
+      "test": "test/updater.test.js"
+    },
+    {
+      "name": "an installed copy settles on the mirror instead of going back to GitHub",
+      "file": "src/updater.js",
+      "anchor": "  function recheck() {",
+      "from": "onMirror = false;",
+      "to": "/* stays on the mirror */",
+      "test": "test/updater.test.js"
+    },
+    {
+      "name": "the portable Download button is handed a version nobody looked up",
+      "file": "src/ipc-window.js",
+      "anchor": "ipcMain.handle('update:fetchPortable', async () => {",
+      "from": "const version = portableUpdate();",
+      "to": "const version = portableUpdate;",
+      "test": "test/ipc-window.test.js"
     }
   ]
 }
