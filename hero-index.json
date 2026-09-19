@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1331,
+  "mods": 1332,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -144,6 +144,7 @@
     "bounty_hunter": {
       "name": "Bounty Hunter",
       "mods": [
+        {"name":"Bounty Hunter Golden Rat","categoryId":"heroes","styleLabel":null,"slots":["back","misc","weapon","head","arms","shoulder"]},
         {"name":"Bounty Hunter Hei","categoryId":"heroes","styleLabel":null,"slots":["back","misc","weapon","arms","head","shoulder","offhand"]},
         {"name":"Bounty Hunter Hunters Hoard","categoryId":"hero-items","styleLabel":"Crimson","slots":["back","weapon"]},
         {"name":"Bounty Hunter Hunters Hoard","categoryId":"hero-items","styleLabel":null,"slots":["back","weapon"]},

@@ -2739,7 +2739,7 @@
           "slots": ["misc","arms","back","head","weapon"],
           "image": {"src":"/mods/fire-natures-prophet.webp","width":854,"height":480},
           "author": "wannakissyou",
-          "authorUrl": "https://t.me/Ilya0sipov",
+          "authorUrl": "https://t.me/wannakissyouuu",
           "date": 1788293360
         },
         {
@@ -4972,7 +4972,7 @@
           "slots": ["misc","weapon","head","tail"],
           "image": {"src":"/mods/hoodwink-immortal-fire.webp","width":854,"height":480},
           "author": "wannakissyou",
-          "authorUrl": "https://t.me/Ilya0sipov",
+          "authorUrl": "https://t.me/wannakissyouuu",
           "date": 1788293360
         },
         {
@@ -10347,9 +10347,9 @@
           "styleLabel": null,
           "slots": ["arms","head","misc"],
           "image": {"src":"/mods/earthshaker-arcana.webp","width":854,"height":480},
-          "author": "lansory",
-          "authorUrl": "https://discord.com/users/1108248721768071210",
-          "date": 1787937599
+          "author": "J0nathan550",
+          "authorUrl": "https://github.com/J0nathan550",
+          "date": 1789836072
         },
         {
           "name": "Earthshaker Burning Arcana",
@@ -10359,7 +10359,7 @@
           "image": {"src":"/mods/earthshaker-burning-arcana.webp","width":854,"height":480},
           "author": "J0nathan550",
           "authorUrl": "https://github.com/J0nathan550",
-          "date": 1789805764
+          "date": 1789836072
         },
         {
           "name": "Earthshaker Purple Arcana",
@@ -11494,6 +11494,103 @@
       ]
     },
     {
+      "id": "bounty_hunter",
+      "name": "Bounty Hunter",
+      "slug": "bounty-hunter",
+      "mods": [
+        {
+          "name": "Bounty Hunter Hei",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","weapon","arms","head","shoulder","offhand"],
+          "image": {"src":"/mods/bounty-hunter-hei.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771195327
+        },
+        {
+          "name": "Bounty Hunter M1A2 Abrams",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["weapon","shoulder","offhand","head","back","arms","misc"],
+          "image": {"src":"/mods/bounty-hunter-m1a2-abrams.webp","width":854,"height":480},
+          "author": "Pinkpapa",
+          "authorUrl": "https://www.patreon.com/Pinkpapa",
+          "date": 1780160766
+        },
+        {
+          "name": "Bounty Hunter Golden Rat",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","weapon","head","arms","shoulder"],
+          "image": {"src":"/mods/bounty-hunter-golden-rat.webp","width":854,"height":480},
+          "author": "wannakissyou",
+          "authorUrl": "https://t.me/wannakissyouuu",
+          "date": 1789836072
+        },
+        {
+          "name": "Bounty Hunter Old Man",
+          "categoryId": "heroes",
+          "styleLabel": "Night",
+          "slots": ["back","misc","weapon"],
+          "image": {"src":"/mods/bounty-hunter-old-man-night.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1779535888
+        },
+        {
+          "name": "Bounty Hunter Old Man",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","weapon"],
+          "image": {"src":"/mods/bounty-hunter-old-man.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1779535888
+        },
+        {
+          "name": "Bounty Hunter Old Verminator",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","weapon"],
+          "image": {"src":"/mods/bounty-hunter-old-verminator.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1766382657
+        },
+        {
+          "name": "Bounty Hunter Hunters Hoard",
+          "categoryId": "hero-items",
+          "styleLabel": "Crimson",
+          "slots": ["back","weapon"],
+          "image": {"src":"/mods/bounty-hunter-hunters-hoard-crimson.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1779535888
+        },
+        {
+          "name": "Bounty Hunter Hunters Hoard",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["back","weapon"],
+          "image": {"src":"/mods/bounty-hunter-hunters-hoard.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1779535888
+        },
+        {
+          "name": "Bounty Hunter Tines of Tybara",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["weapon"],
+          "image": {"src":"/mods/bounty-hunter-tines-of-tybara.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1779535888
+        }
+      ]
+    },
+    {
       "id": "juggernaut",
       "name": "Juggernaut",
       "slug": "juggernaut",
@@ -11975,93 +12072,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1777037538
-        }
-      ]
-    },
-    {
-      "id": "bounty_hunter",
-      "name": "Bounty Hunter",
-      "slug": "bounty-hunter",
-      "mods": [
-        {
-          "name": "Bounty Hunter Hei",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","weapon","arms","head","shoulder","offhand"],
-          "image": {"src":"/mods/bounty-hunter-hei.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771195327
-        },
-        {
-          "name": "Bounty Hunter M1A2 Abrams",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["weapon","shoulder","offhand","head","back","arms","misc"],
-          "image": {"src":"/mods/bounty-hunter-m1a2-abrams.webp","width":854,"height":480},
-          "author": "Pinkpapa",
-          "authorUrl": "https://www.patreon.com/Pinkpapa",
-          "date": 1780160766
-        },
-        {
-          "name": "Bounty Hunter Old Man",
-          "categoryId": "heroes",
-          "styleLabel": "Night",
-          "slots": ["back","misc","weapon"],
-          "image": {"src":"/mods/bounty-hunter-old-man-night.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1779535888
-        },
-        {
-          "name": "Bounty Hunter Old Man",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","weapon"],
-          "image": {"src":"/mods/bounty-hunter-old-man.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1779535888
-        },
-        {
-          "name": "Bounty Hunter Old Verminator",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","weapon"],
-          "image": {"src":"/mods/bounty-hunter-old-verminator.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1766382657
-        },
-        {
-          "name": "Bounty Hunter Hunters Hoard",
-          "categoryId": "hero-items",
-          "styleLabel": "Crimson",
-          "slots": ["back","weapon"],
-          "image": {"src":"/mods/bounty-hunter-hunters-hoard-crimson.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1779535888
-        },
-        {
-          "name": "Bounty Hunter Hunters Hoard",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["back","weapon"],
-          "image": {"src":"/mods/bounty-hunter-hunters-hoard.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1779535888
-        },
-        {
-          "name": "Bounty Hunter Tines of Tybara",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["weapon"],
-          "image": {"src":"/mods/bounty-hunter-tines-of-tybara.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1779535888
         }
       ]
     },
