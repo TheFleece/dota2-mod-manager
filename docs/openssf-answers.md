@@ -1,12 +1,15 @@
-# OpenSSF Best Practices: the answers, ready to paste
+# OpenSSF Best Practices: the answers
 
 The passing badge is a self-assessment on [bestpractices.dev](https://www.bestpractices.dev). This
 file holds an answer for every criterion at that level, with the link the form asks for, so filling
 it in is copying rather than remembering. The criteria ids match the anchors in the form.
 
-Register the project first: sign in with GitHub, add
-`https://github.com/TheFleece/dota2-mod-manager`, and the form appears with these ids in the same
-order.
+The same answers live in `.bestpractices.json` at the root of this repository, which the badge
+site reads by itself: opening the questionnaire and pressing "Save (and continue)" with the robot
+icon fills the form with them, to accept or change. This file is that list in prose, and
+test/openssf.test.js fails when the two stop naming the same criteria.
+
+The project entry is https://www.bestpractices.dev/en/projects/14721.
 
 Keep this file honest. A criterion answered here and no longer true in the repository is worse than
 an unanswered one, and the badge is rechecked at every release.
@@ -91,7 +94,7 @@ Shorthand used below: **repo** is `https://github.com/TheFleece/dota2-mod-manage
 | `build` | Met: `npm ci` then `npm run dist` (electron-builder); CI builds the installer, the portable build and the AppImage for every release | repo .github/workflows/release.yml |
 | `build_common_tools` | Met: npm, electron-builder, GitHub Actions | repo package.json |
 | `build_floss_tools` | Met: Node.js, npm and electron-builder are FLOSS | repo package.json |
-| `test` | Met: `npm test`, 76 test files on node:test, released under the project's own licence | repo test/ |
+| `test` | Met: `npm test`, 78 test files on node:test, released under the project's own licence | repo test/ |
 | `test_invocation` | Met: `npm test` | repo package.json |
 | `test_most` | Met | repo .github/coverage-baseline.json |
 | `test_continuous_integration` | Met: the suite runs on Linux and Windows for every push and every pull request | repo .github/workflows/test.yml |
@@ -104,10 +107,10 @@ Shorthand used below: **repo** is `https://github.com/TheFleece/dota2-mod-manage
 
 **Justification for `test_most`**: 
 
-> Line coverage is measured on every run and held by a ratchet that can only go up: the aggregate
-> and each file's own number live in .github/coverage-baseline.json, and a run that drops below
-> them fails. At the time of writing that is about 83% of lines and 80% of branches, with the four
-> modules that write into the player's game folder above 85%.
+> Coverage is measured on every run and held two ways: an aggregate floor of 74% of lines in the
+> gate, and each file's own number per platform in .github/coverage-baseline.json, which a run
+> below them fails. Measured today it is about 83% of lines and 80% of branches, with the modules
+> that write into the player's game folder above 85%.
 
 **Justification for `test_policy` and `tests_are_added`**:
 
