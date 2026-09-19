@@ -81,7 +81,7 @@ export async function renderSettings() {
       </div>
       <div class="settings-hint">${L`В самом Discord для этого включено «Отображать текущую активность как статус».`}</div>
       ${beta.eligible ? `
-      <div class="settings-row">
+      <div class="settings-row spaced">
         <span class="settings-label">${L`Бета-версии`}</span>
         <button class="toggle ${beta.on ? 'on' : ''}" id="betaToggle" role="switch"
                 aria-checked="${beta.on}" aria-label="${L`Бета-версии`}"></button>
