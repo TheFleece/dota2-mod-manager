@@ -16,35 +16,34 @@
  * there before, so the bucket carries about 320 MB for updates rather than 320 MB per release
  * for ever. Old versions stay on GitHub, which is where anybody looking for one goes.
  *
- * Usage: node tools/r2-release.mjs <version>        e.g. 2.6.5
+ * A beta gets a folder of its own, updates/beta/, because the file names carry no version: a beta
+ * beside the release would sit where the stable installer sits while latest.yml still described
+ * the stable one. A release writes both folders, so a tester whose GitHub is unreachable moves on
+ * to the release rather than sitting on the beta it replaced. tools/mirror-plan.js decides all of
+ * that and is tested; this fetches and uploads.
+ *
+ * Usage: node tools/r2-release.mjs <version>        e.g. 2.6.5 or 2.7.0-beta.1
  *        node tools/r2-release.mjs <version> --dry
  */
 import { createR2 } from './r2-client.js';
+import { releasePlan, staleReleaseFiles, UPDATES } from './mirror-plan.js';
 
 const version = (process.argv[2] || '').replace(/^v/, '');
 const dry = process.argv.includes('--dry');
 const REPO = 'TheFleece/dota2-mod-manager';
-const PREFIX = 'updates/';
+const PREFIX = UPDATES;
 
-if (!/^\d+\.\d+\.\d+$/.test(version)) {
-  console.error('usage: node tools/r2-release.mjs <version> [--dry]');
+if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version)) {
+  console.error('usage: node tools/r2-release.mjs <version> [--dry]   (2.6.5 or 2.7.0-beta.1)');
   process.exit(1);
 }
+const plan = releasePlan(version);
 
-/* What an updater needs, and nothing else.
- *
- * The two .yml files are what electron-updater reads to learn a version exists; portable.yml is
- * what src/portable-update.js reads for the same reason. The binaries are what they point at.
- * The blockmap is for differential downloads against a previous installer, which a mirror that
- * only ever holds one release cannot serve, so it is left on GitHub. */
-const WANTED = [
-  ['latest.yml', 'text/yaml'],
-  ['latest-linux.yml', 'text/yaml'],
-  ['portable.yml', 'text/yaml'],
-  ['Dota-2-Mod-Manager-Setup.exe', 'application/octet-stream'],
-  ['Dota-2-Mod-Manager-Portable.exe', 'application/octet-stream'],
-  ['Dota-2-Mod-Manager.AppImage', 'application/octet-stream'],
-];
+/* What an updater needs, and nothing else. The .yml files are what electron-updater reads to
+ * learn a version exists; portable.yml is what src/portable-update.js reads for the same reason.
+ * The binaries are what they point at. The blockmap is for differential downloads against a
+ * previous installer, which a mirror holding one release cannot serve, so it stays on GitHub. */
+const WANTED = plan.uploads;
 
 const r2 = createR2();
 if (!r2.configured) {
@@ -66,10 +65,10 @@ console.log(`updates/ holds ${before.size} object(s), ${(([...before.values()].r
 const uploaded = new Set();
 let failed = 0;
 
-for (const [name, type] of WANTED) {
-  const key = `${PREFIX}${name}`;
+for (const { prefix, asset, name, type } of WANTED) {
+  const key = `${prefix}${name}`;
   try {
-    const body = await fetchAsset(name);
+    const body = await fetchAsset(asset);
     // The manifests are small and change every release; the binaries are large and a matching
     // size means the same file, since a release tag never gets two different builds.
     if (before.get(key) === body.length && !name.endsWith('.yml')) {
@@ -79,7 +78,7 @@ for (const [name, type] of WANTED) {
     }
     if (!dry) await r2.put(key, body, type);
     uploaded.add(key);
-    console.log(`${dry ? 'would upload' : 'uploaded'} ${name} (${(body.length / 1024 ** 2).toFixed(1)} MB)`);
+    console.log(`${dry ? 'would upload' : 'uploaded'} ${key} (${(body.length / 1024 ** 2).toFixed(1)} MB)`);
   } catch (err) {
     // A release that never carried this asset is not a failure: Linux builds do not produce
     // portable.yml, and a version published before a file existed will not have it.
@@ -88,12 +87,12 @@ for (const [name, type] of WANTED) {
   }
 }
 
-// Whatever the last release left behind, so the bucket holds one version rather than all of them
-for (const key of before.keys()) {
-  if (uploaded.has(key)) continue;
+// Whatever the last run of this kind left behind, so each folder holds one version rather than
+// all of them - and a beta never clears out the release everybody else updates from.
+for (const key of staleReleaseFiles([...before.keys()], uploaded, plan.beta)) {
   if (!dry) await r2.remove(key);
-  console.log(`${dry ? 'would remove' : 'removed'} ${key.slice(PREFIX.length)} (from an older release)`);
+  console.log(`${dry ? 'would remove' : 'removed'} ${key} (from an older ${plan.beta ? 'beta' : 'release'})`);
 }
 
-console.log(`\n${uploaded.size} of ${WANTED.length} assets published for ${version}${failed ? `, ${failed} not found` : ''}`);
+console.log(`\n${uploaded.size} of ${WANTED.length} files published for ${version}${plan.beta ? ' (beta)' : ''}${failed ? `, ${failed} not found` : ''}`);
 if (uploaded.size === 0) process.exit(1);

@@ -57,4 +57,67 @@ function checkBody(body, want) {
   return { ok: got === want, got };
 }
 
-module.exports = { staleCopies, publishedHash, checkBody };
+/* ---------- the release mirror ---------- */
+
+/** What an updater reads, and the binaries those files point at. */
+const BINARIES = [
+  ['Dota-2-Mod-Manager-Setup.exe', 'application/octet-stream'],
+  ['Dota-2-Mod-Manager-Portable.exe', 'application/octet-stream'],
+  ['Dota-2-Mod-Manager.AppImage', 'application/octet-stream'],
+];
+
+const UPDATES = 'updates/';
+const BETA_FOLDER = `${UPDATES}beta/`;
+
+/**
+ * Where a release goes on the mirror and which files go with it.
+ *
+ * A beta lives in a folder of its own. The file names carry no version, so a beta uploaded beside
+ * a release would sit where the stable installer sits while latest.yml still described the stable
+ * one: every copy that cannot reach GitHub would fetch a build it was never offered and fail its
+ * checksum. Its own folder costs another copy of the binaries and nothing else.
+ *
+ * A release writes both: its own files under updates/, and the same files again under
+ * updates/beta/ with the feed named the way the beta channel reads it. Without that, a tester
+ * whose GitHub is unreachable would sit on the beta after the release that replaced it.
+ *
+ * @param {string} version  2.7.0 or 2.7.0-beta.1
+ * @returns {{beta: boolean, uploads: Array<{prefix: string, asset: string, name: string, type: string}>}}
+ */
+function releasePlan(version) {
+  const beta = /-/.test(version);
+  const yml = (feed) => [[`${feed}.yml`, 'text/yaml'], [`${feed}-linux.yml`, 'text/yaml'], ['portable.yml', 'text/yaml']];
+  const at = (prefix, files, rename = {}) => files.concat(BINARIES)
+    .map(([asset, type]) => ({ prefix, asset, name: rename[asset] || asset, type }));
+
+  if (beta) return { beta, uploads: at(BETA_FOLDER, yml('beta')) };
+  return {
+    beta,
+    uploads: [
+      ...at(UPDATES, yml('latest')),
+      // the release, named the way the beta channel reads it
+      ...at(BETA_FOLDER, yml('latest'), { 'latest.yml': 'beta.yml', 'latest-linux.yml': 'beta-linux.yml' }),
+    ],
+  };
+}
+
+/**
+ * Which of the objects already there this run is responsible for clearing out. A run only ever
+ * touches its own folder, so a beta cannot delete the release everybody else updates from, and a
+ * release cannot delete a beta it knows nothing about.
+ * @param {string[]} keys      everything under updates/
+ * @param {Set<string>} kept   keys this run uploaded
+ * @param {boolean} beta
+ */
+function staleReleaseFiles(keys, kept, beta) {
+  return keys.filter((key) => {
+    if (kept.has(key)) return false;
+    const inBeta = key.startsWith(BETA_FOLDER);
+    // a release owns both folders: it publishes into each of them
+    return beta ? inBeta : true;
+  });
+}
+
+module.exports = {
+  staleCopies, publishedHash, checkBody, releasePlan, staleReleaseFiles, UPDATES, BETA_FOLDER,
+};

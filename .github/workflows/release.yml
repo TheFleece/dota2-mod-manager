@@ -533,12 +533,11 @@ jobs:
     # After publish, and so after both builds were tried: installed copies read the mirror when
     # GitHub does not answer, so a file there is as public as the release itself.
     #
-    # Never for a beta. The mirror keeps one version, under file names that do not carry it, so a
-    # beta copied there would sit where the stable installer sits while latest.yml still described
-    # the stable one: every copy that cannot reach GitHub would download a build it was never
-    # offered, fail its checksum, and stop updating. Testers are a handful of people with GitHub.
+    # A beta goes there too, in a folder of its own: a tester whose GitHub is down needs a second
+    # route as much as anybody else. What it must never do is land beside the release, because the
+    # file names carry no version - see tools/mirror-plan.js.
     needs: [gate, publish]
-    if: startsWith(github.ref, 'refs/tags/') && needs.gate.outputs.beta != 'true'
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -561,10 +560,17 @@ jobs:
       - name: Check the mirror carries both platforms
         env:
           BASE: https://cdn.dota2modmanager.com/updates
+          BETA: ${{ needs.gate.outputs.beta }}
         run: |
           set -euo pipefail
           missing=0
-          for want in latest.yml latest-linux.yml portable.yml \
+          if [ "$BETA" = "true" ]; then
+            BASE="$BASE/beta"
+            FEEDS="beta.yml beta-linux.yml"
+          else
+            FEEDS="latest.yml latest-linux.yml"
+          fi
+          for want in $FEEDS portable.yml \
                       Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe \
                       Dota-2-Mod-Manager.AppImage; do
             code=$(curl -s -o /dev/null -w '%{http_code}' -I "$BASE/$want")

@@ -169,15 +169,19 @@ test('a beta tag is published as a prerelease, and never as the latest release',
   assert.match(yml, /is a beta - installed copies follow that endpoint/, 'nothing checks that the stable endpoint was left alone');
 });
 
-test('a beta reaches neither the update mirror nor the announcement', () => {
-  /* The mirror keeps one version under names that do not carry it: a beta there would sit where
-     the stable installer sits while latest.yml still described the stable one. */
+test('a beta reaches the mirror in its own folder, and is not announced', () => {
+  /* A tester whose GitHub is down needs the second route as much as anybody. What a beta must
+     never do is land beside the release: the file names carry no version, so it would replace the
+     installer latest.yml describes. */
   const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
-  for (const name of ['mirror-update', 'notify']) {
-    const job = jobs.find((j) => j.startsWith(`${name}:`)) || '';
-    assert.ok(job, `no ${name} job`);
-    assert.match(job, /needs\.gate\.outputs\.beta != 'true'/, `${name} runs for a beta too`);
-  }
+  const mirror = jobs.find((j) => j.startsWith('mirror-update:')) || '';
+  assert.ok(mirror, 'no mirror-update job');
+  assert.equal(/needs\.gate\.outputs\.beta != 'true'/.test(mirror), false, 'a beta has no second route');
+  assert.match(mirror, /BASE="\$BASE\/beta"/, 'the check looks in the release folder for a beta');
+  assert.match(mirror, /FEEDS="beta\.yml beta-linux\.yml"/);
+
+  const notify = jobs.find((j) => j.startsWith('notify:')) || '';
+  assert.match(notify, /needs\.gate\.outputs\.beta != 'true'/, 'a beta would be announced to everybody');
 });
 
 test('a release points the beta channel at itself, so a tester is not left behind it', () => {

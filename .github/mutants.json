@@ -673,6 +673,22 @@
       "from": "typeof id === 'string' && /^[0-9a-f]{64}$/i.test(id.trim())",
       "to": "typeof id === 'string'",
       "test": "test/beta.test.js"
+    },
+    {
+      "name": "a beta is mirrored beside the release instead of in its own folder",
+      "file": "tools/mirror-plan.js",
+      "anchor": "function releasePlan(version) {",
+      "from": "if (beta) return { beta, uploads: at(BETA_FOLDER, yml('beta')) };",
+      "to": "if (beta) return { beta, uploads: at(UPDATES, yml('beta')) };",
+      "test": "test/mirror-plan.test.js"
+    },
+    {
+      "name": "a beta clears out the release everybody updates from",
+      "file": "tools/mirror-plan.js",
+      "anchor": "function staleReleaseFiles(keys, kept, beta) {",
+      "from": "return beta ? inBeta : true;",
+      "to": "return true;",
+      "test": "test/mirror-plan.test.js"
     }
   ]
 }
