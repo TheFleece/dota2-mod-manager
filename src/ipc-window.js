@@ -31,17 +31,21 @@ function registerWindowIpc({
   // window and double-clicks that instead of visiting the site.
   ipcMain.handle('update:fetchPortable', async () => {
     if (!IS_PORTABLE) return { error: t('Это не портативная сборка') };
-    if (!portableUpdate) return { error: t('Обновления нет') };
+    /* A getter, like `win` above and for the same reason. The version is learned when the update
+       check finds one, which is minutes after these handlers are registered, so a value captured
+       here is null for the life of the process and this button answered "no update" every time. */
+    const version = portableUpdate();
+    if (!version) return { error: t('Обновления нет') };
     try {
-      const got = await portableUpdater.fetchBeside(portableUpdate, {
-        onProgress: (loaded, total) => sendProgress({ type: 'download', label: `v${portableUpdate}`, loaded, total }),
+      const got = await portableUpdater.fetchBeside(version, {
+        onProgress: (loaded, total) => sendProgress({ type: 'download', label: `v${version}`, loaded, total }),
         log: diag,
       });
-      sendProgress({ type: 'done', label: `v${portableUpdate}` });
+      sendProgress({ type: 'done', label: `v${version}` });
       diag(`portable update fetched: ${got.name}`);
       return { ok: true, name: got.name, path: got.path, already: !!got.already };
     } catch (err) {
-      sendProgress({ type: 'error', label: `v${portableUpdate}`, message: String(err.message || err) });
+      sendProgress({ type: 'error', label: `v${version}`, message: String(err.message || err) });
       return { error: String(err.message || err) };
     }
   });

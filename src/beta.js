@@ -25,6 +25,7 @@ const crypto = require('crypto');
 
 /** The channel name electron-updater reads, and the file it looks for: beta.yml. */
 const BETA_CHANNEL = 'beta';
+/** What everybody else reads: latest.yml, the release channel. */
 const STABLE_CHANNEL = 'latest';
 
 /**

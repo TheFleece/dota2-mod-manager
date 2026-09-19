@@ -675,18 +675,18 @@
       "test": "test/beta.test.js"
     },
     {
-      "name": "a beta is mirrored beside the release instead of in its own folder",
+      "name": "a beta's binaries are mirrored under the release's own names",
       "file": "tools/mirror-plan.js",
-      "anchor": "function releasePlan(version) {",
-      "from": "if (beta) return { beta, uploads: at(BETA_FOLDER, yml('beta')) };",
-      "to": "if (beta) return { beta, uploads: at(UPDATES, yml('beta')) };",
+      "anchor": "const BETA_MARK = ",
+      "from": "const betaName = (name) => name.replace(/(\\.[^.]+)$/, `${BETA_MARK}$1`);",
+      "to": "const betaName = (name) => name;",
       "test": "test/mirror-plan.test.js"
     },
     {
       "name": "a beta clears out the release everybody updates from",
       "file": "tools/mirror-plan.js",
       "anchor": "function staleReleaseFiles(keys, kept, beta) {",
-      "from": "return beta ? inBeta : true;",
+      "from": "return beta ? key.includes(BETA_MARK) : true;",
       "to": "return true;",
       "test": "test/mirror-plan.test.js"
     }

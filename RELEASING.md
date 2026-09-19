@@ -39,9 +39,9 @@ installed is not worth handing to a tester either. After that it parts company w
   on the stable channel follows;
 - it carries `beta.yml` and `beta-linux.yml` instead of the `latest` pair, and that is what the
   app reads for somebody on the beta channel;
-- it goes to the update mirror in a folder of its own, `updates/beta/`, because the file names
-  carry no version and a beta beside the release would replace the installer `latest.yml`
-  describes. A tester whose GitHub is down reads that folder;
+- it goes to the update mirror beside the release, with `-beta` in the name of every binary and
+  its two manifests rewritten to ask for those, so it can never stand where the installer
+  `latest.yml` describes. A tester whose GitHub is down reads `beta.yml` there;
 - `notify` is skipped: the people it is for were picked by name, and the app offers it to them.
 
 Who is offered a beta is a list of Discord accounts in the signed `config/app.json`, as hashes.
@@ -50,8 +50,9 @@ the list, or signed out of Discord, is back on the stable channel at the next ch
 touching their machine.
 
 When a release goes out, `beta-feed` points the beta channel at it on GitHub, and `mirror-update`
-writes the same release into `updates/beta/` as well, so a tester moves on to the released version
-whether they reach GitHub or the mirror.
+writes `beta.yml` beside it on the mirror, pointing at the release's own files, so a tester moves
+on to the released version whether they reach GitHub or the mirror. The same run clears the beta's
+binaries out of the bucket.
 
 ## A job before `publish` failed
 

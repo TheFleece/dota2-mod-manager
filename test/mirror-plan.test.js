@@ -58,59 +58,85 @@ test('with no published hash, a copy is still a copy', () => {
 
 // ---------- the release mirror ----------
 
-test('a beta goes to a folder of its own, so it cannot sit where the stable installer sits', async () => {
-  /* The file names carry no version. A beta uploaded beside the release would replace the
-     installer latest.yml still describes, and every copy that cannot reach GitHub would fetch a
-     build it was never offered and fail its checksum. */
+test('a beta shares the folder with the release, and never its file names', () => {
+  /* The manifests have names of their own; the binaries do not. A beta uploaded under the
+     ordinary names would stand where the installer latest.yml describes, and every copy that
+     cannot reach GitHub would fetch a build it was never offered and fail its checksum. */
   const { releasePlan } = require('../tools/mirror-plan.js');
   const beta = releasePlan('2.7.0-beta.1');
 
   assert.equal(beta.beta, true);
-  assert.deepEqual(beta.uploads.map((u) => u.prefix + u.name), [
-    'updates/beta/beta.yml',
-    'updates/beta/beta-linux.yml',
-    'updates/beta/portable.yml',
-    'updates/beta/Dota-2-Mod-Manager-Setup.exe',
-    'updates/beta/Dota-2-Mod-Manager-Portable.exe',
-    'updates/beta/Dota-2-Mod-Manager.AppImage',
+  assert.deepEqual(beta.uploads.map((u) => u.name), [
+    'beta.yml',
+    'beta-linux.yml',
+    'Dota-2-Mod-Manager-Setup-beta.exe',
+    'Dota-2-Mod-Manager-Portable-beta.exe',
+    'Dota-2-Mod-Manager-beta.AppImage',
   ]);
-  assert.equal(beta.uploads.every((u) => u.asset === u.name), true, 'a beta release carries the beta names already');
+  assert.equal(beta.uploads.filter((u) => u.retarget).length, 2, 'both feeds have to ask for the -beta copies');
+  assert.equal(beta.uploads.some((u) => u.name === 'latest.yml'), false, 'a beta never writes the release feed');
 });
 
-test('a release fills both folders, so a tester with no GitHub is not left on the beta', () => {
+test('a release carries the beta feed too, and it costs two files rather than a second copy', () => {
+  /* The bucket also holds the mod mirror and was at 8.77 GB of the free 10 GB, so the beta
+     channel points at the release's own binaries instead of a duplicate set. */
   const { releasePlan } = require('../tools/mirror-plan.js');
   const out = releasePlan('2.7.0');
-  const at = (prefix) => out.uploads.filter((u) => u.prefix === prefix).map((u) => `${u.asset} -> ${u.name}`);
+  const named = out.uploads.map((u) => `${u.asset} -> ${u.name}`);
 
   assert.equal(out.beta, false);
-  assert.deepEqual(at('updates/'), [
+  assert.deepEqual(named, [
     'latest.yml -> latest.yml',
     'latest-linux.yml -> latest-linux.yml',
     'portable.yml -> portable.yml',
     'Dota-2-Mod-Manager-Setup.exe -> Dota-2-Mod-Manager-Setup.exe',
     'Dota-2-Mod-Manager-Portable.exe -> Dota-2-Mod-Manager-Portable.exe',
     'Dota-2-Mod-Manager.AppImage -> Dota-2-Mod-Manager.AppImage',
+    'latest.yml -> beta.yml',
+    'latest-linux.yml -> beta-linux.yml',
   ]);
-  assert.deepEqual(at('updates/beta/').slice(0, 2), ['latest.yml -> beta.yml', 'latest-linux.yml -> beta-linux.yml'],
-    "the release's own feed, under the name the beta channel reads");
-  assert.equal(at('updates/beta/').length, 6, 'and the binaries it points at, or the feed leads nowhere');
+  assert.equal(out.uploads.filter((u) => /\.(exe|AppImage)$/.test(u.name)).length, 3, 'one copy of each binary, not two');
 });
 
-test('clearing out the last version never reaches across the two folders', () => {
+test("a beta's feed asks for the beta's own files, and the checksums are left alone", () => {
+  const { retargetFeed } = require('../tools/mirror-plan.js');
+  const yml = [
+    'version: 2.7.0-beta.1',
+    'files:',
+    '  - url: Dota-2-Mod-Manager-Setup.exe',
+    '    sha512: LONGHASH==',
+    '    size: 98765432',
+    'path: Dota-2-Mod-Manager-Setup.exe',
+    'sha512: LONGHASH==',
+    'releaseDate: 2026-09-20T00:00:00.000Z',
+  ].join('\n');
+
+  const out = retargetFeed(yml);
+  assert.match(out, /url: Dota-2-Mod-Manager-Setup-beta\.exe/);
+  assert.match(out, /path: Dota-2-Mod-Manager-Setup-beta\.exe/);
+  assert.match(out, /sha512: LONGHASH==/, 'the bytes did not change, so neither does what describes them');
+  assert.equal(retargetFeed(out), out, 'running it twice does not produce -beta-beta');
+});
+
+test('clearing out the last version: a beta touches only its own copies', () => {
   const { staleReleaseFiles } = require('../tools/mirror-plan.js');
   const there = [
-    'updates/latest.yml', 'updates/Dota-2-Mod-Manager-Setup.exe',
-    'updates/beta/beta.yml', 'updates/beta/Dota-2-Mod-Manager-Setup.exe',
+    'updates/latest.yml', 'updates/beta.yml',
+    'updates/Dota-2-Mod-Manager-Setup.exe', 'updates/Dota-2-Mod-Manager-Setup-beta.exe',
   ];
 
-  const afterBeta = staleReleaseFiles(there, new Set(['updates/beta/beta.yml', 'updates/beta/Dota-2-Mod-Manager-Setup.exe']), true);
-  assert.deepEqual(afterBeta, [], 'a beta leaves the release alone, whatever else is there');
   assert.deepEqual(
-    staleReleaseFiles([...there, 'updates/beta/old.yml'], new Set(['updates/beta/beta.yml', 'updates/beta/Dota-2-Mod-Manager-Setup.exe']), true),
-    ['updates/beta/old.yml'], 'and clears out only what the previous beta left',
+    staleReleaseFiles(there, new Set(['updates/beta.yml', 'updates/Dota-2-Mod-Manager-Setup-beta.exe']), true),
+    [], 'a beta leaves the release and its feed alone',
   );
-
-  const afterRelease = staleReleaseFiles(there, new Set(['updates/latest.yml', 'updates/beta/beta.yml']), false);
-  assert.deepEqual(afterRelease, ['updates/Dota-2-Mod-Manager-Setup.exe', 'updates/beta/Dota-2-Mod-Manager-Setup.exe'],
-    'a release owns both folders, because it publishes into both');
+  assert.deepEqual(
+    staleReleaseFiles([...there, 'updates/Dota-2-Mod-Manager-Portable-beta.exe'], new Set(['updates/beta.yml']), true),
+    ['updates/Dota-2-Mod-Manager-Setup-beta.exe', 'updates/Dota-2-Mod-Manager-Portable-beta.exe'],
+    'and clears what the previous beta left',
+  );
+  assert.deepEqual(
+    staleReleaseFiles(there, new Set(['updates/latest.yml', 'updates/beta.yml', 'updates/Dota-2-Mod-Manager-Setup.exe']), false),
+    ['updates/Dota-2-Mod-Manager-Setup-beta.exe'],
+    'a release frees the beta binaries, which is where the bucket gets its space back',
+  );
 });

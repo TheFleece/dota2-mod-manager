@@ -292,7 +292,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 78 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 80 files, run on every push and every pull request
 on Linux and on Windows. Five of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, `DECISIONS.md`
@@ -339,6 +339,7 @@ that location is not writable.
 | `src/import.js` | Taking a mod in: a `.vpk`, a `.zip`, an author's folder, or bytes off a drop |
 | `src/cursors.js` | Which cursor set is live, which look a slot wears, and the repair at startup |
 | `src/adopt.js` | What a VPK goes through before it counts as a mod: named, harvested, split |
+| `src/updater.js` | Where an installed copy looks for a new version: the two feeds, and the channel it reads |
 | `src/vpk.js` | The VPK format: read, write, merge, split, combine, fingerprint |
 | `src/file-tx.js` | One transaction per change to the game folder |
 | `src/library.js` | `manifest.json`: installed records and presets |

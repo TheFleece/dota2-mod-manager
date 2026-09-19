@@ -109,6 +109,13 @@ const EN = {
   'Безопасный режим включён, файлы игры восстановлены. Эффекты и косметика ждут, пока не выключишь его снова.':
     'Safe mode on, game files restored. Effects and cosmetics wait until you turn it off again.',
 
+  // ---------- the beta channel (settings, for the accounts the signed list names) ----------
+  'Бета-версии': 'Beta builds',
+  'Твой аккаунт в списке тестеров: приложение будет обновляться до сборок, которых ещё нет у остальных. Выйдешь из Discord, и оно вернётся на обычные.':
+    'Your account is on the testers list: the app will update to builds nobody else has yet. Sign out of Discord and it goes back to the ordinary ones.',
+  'Бета-версии включены': 'Beta builds on',
+  'Бета-версии выключены': 'Beta builds off',
+
   // ---------- item schema: catalog cards, library tag, conflict banners ----------
   'Моды спорят за один предмет': 'Mods disagree about the same item',
   '. В таблицу попадёт правка того мода, что установлен последним — выключи лишний.':

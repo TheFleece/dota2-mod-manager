@@ -40,6 +40,10 @@ export async function renderSettings() {
   // the Source 2 toolchain: shown as a size and a button, never downloaded on its own
   let vrf = null;
   try { vrf = (await window.api.tools.state()).tools.find((x) => x.name === 'vrf') || null; } catch { /* older build */ }
+  // the beta channel, offered only to an account the signed list names: somebody who is not on it
+  // is not told there is a list, because a switch you cannot use is noise
+  let beta = { eligible: false, on: false };
+  try { beta = await window.api.beta.state(); } catch { /* older build */ }
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Настройки`}</h1></div>
@@ -76,6 +80,13 @@ export async function renderSettings() {
                 aria-checked="${s.discordPresence !== false}" aria-label="${L`Показывать в Discord, что ты в Mod Manager`}"></button>
       </div>
       <div class="settings-hint">${L`В самом Discord для этого включено «Отображать текущую активность как статус».`}</div>
+      ${beta.eligible ? `
+      <div class="settings-row">
+        <span class="settings-label">${L`Бета-версии`}</span>
+        <button class="toggle ${beta.on ? 'on' : ''}" id="betaToggle" role="switch"
+                aria-checked="${beta.on}" aria-label="${L`Бета-версии`}"></button>
+      </div>
+      <div class="settings-hint">${L`Твой аккаунт в списке тестеров: приложение будет обновляться до сборок, которых ещё нет у остальных. Выйдешь из Discord, и оно вернётся на обычные.`}</div>` : ''}
     </div>
 
     <div class="settings-block" style="--i:2">
@@ -224,6 +235,13 @@ export async function renderSettings() {
     e.currentTarget.classList.toggle('on', on);
     e.currentTarget.setAttribute('aria-checked', String(on));
     state.settings = await window.api.settings.set('discordPresence', on);
+  });
+  $('#betaToggle')?.addEventListener('click', async (e) => {
+    const on = !e.currentTarget.classList.contains('on');
+    e.currentTarget.classList.toggle('on', on);
+    e.currentTarget.setAttribute('aria-checked', String(on));
+    const now = await window.api.beta.set(on);
+    toast(now.on ? L`Бета-версии включены` : L`Бета-версии выключены`);
   });
   $('#clearCacheBtn').addEventListener('click', async () => {
     await window.api.misc.clearCache();

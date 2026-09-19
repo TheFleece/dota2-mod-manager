@@ -37,6 +37,8 @@ const { createGameIcons } = require('./src/game-icons');
 const { createModPreviews } = require('./src/mod-preview');
 const { createModIdentity } = require('./src/mod-id');
 const portableUpdater = require('./src/portable-update');
+const { createUpdater } = require('./src/updater');
+const { channelFor } = require('./src/beta');
 const { gameStamp, createPatchWatcher } = require('./src/patch-watch');
 const { Icons } = require('./src/icons');
 const gamelang = require('./src/gamelang');
@@ -429,9 +431,6 @@ function appendLog(line) {
 // The last few things the interface said went wrong, so a report can list them separately
 // from two thousand lines of ordinary log (see diag:rendererError).
 const rendererErrors = [];
-let lastUpdateError = null;
-// version a portable copy was told about, so the renderer can ask for it by name later
-let portableUpdate = null;
 
 const DIAG = process.env.MM_DIAG;
 function diag(msg) {
@@ -629,67 +628,27 @@ app.whenReady().then(async () => {
   patchWatcher.start(settings.get('gameStamp'));
 }).catch((e) => diag('whenReady FAIL: ' + (e.stack || e)));
 
-// ---- auto-update via GitHub Releases (packaged builds only) ----
+/* ---- auto-update (packaged builds only) ----
+ *
+ * src/updater.js holds it, including which channel this copy reads: the stable one, or the beta
+ * for an account the signed config names. The channel is a function rather than a value, so a
+ * tester taken off that list is back on stable at the next check.
+ */
+let updater = null;
 function setupAutoUpdate() {
   if (!autoUpdater || !app.isPackaged) return;
-  // A portable exe cannot replace itself. electron-updater installs by handing the download
-  // to the NSIS installer, and a portable build has none, so it would download 100 MB and
-  // then fail quietly. It still looks, and says where the new copy lives.
-  autoUpdater.autoDownload = !IS_PORTABLE;
-  autoUpdater.on('update-available', (info) => {
-    if (IS_PORTABLE) portableUpdate = info.version;
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('update', { type: IS_PORTABLE ? 'portable' : 'available', version: info.version });
-    }
+  updater = createUpdater({
+    autoUpdater,
+    isPortable: IS_PORTABLE,
+    channel: () => channelFor({
+      discordId: (settings.get('account') || {}).id || null,
+      beta: remoteConfig.beta(),
+      wanted: settings.get('betaChannel') === true,
+    }),
+    send: (evt) => { if (win && !win.isDestroyed()) win.webContents.send('update', evt); },
+    log: diag,
   });
-  autoUpdater.on('update-downloaded', (info) => {
-    if (win && !win.isDestroyed()) win.webContents.send('update', { type: 'downloaded', version: info.version });
-  });
-  /* When GitHub is not answering, ask our own copy.
-   *
-   * electron-updater is told one feed at build time and this one is GitHub. On 2026-08-17
-   * GitHub was down for three hours, which meant no installed copy could check for an update
-   * or fetch one, and nobody noticed, because an app that fails to update looks like an app.
-   * It is the release that fixes something urgent where that stops being survivable. The same
-   * goes for the part of the userbase that cannot reach GitHub on an ordinary day.
-   *
-   * tools/r2-release.mjs puts each release's manifests and binaries in the bucket the mods
-   * already live in, so the fallback is a generic feed pointed at it. Tried second and only
-   * after a failure: GitHub is the origin, this is a copy, and a copy that is a version behind
-   * should not be what people update from while the origin works.
-   *
-   * Not a proxy. Both feeds are hosts this project controls, which is what makes it safe to
-   * install what they hand over - the same reason src/portable-update.js refuses mirrors for
-   * its manifest.
-   */
-  const MIRROR_FEED = 'https://cdn.dota2modmanager.com/updates/';
-  let triedMirror = false;
-
-  // Silent for the user - being offline is not something to interrupt anybody about - but
-  // remembered, because "it never updates" is a support question and this is the answer to it.
-  autoUpdater.on('error', (err) => {
-    lastUpdateError = String(err?.message || err).slice(0, 500);
-    if (triedMirror) return;
-    triedMirror = true;
-    diag(`update check failed on GitHub, trying the mirror: ${lastUpdateError}`);
-    try {
-      autoUpdater.setFeedURL({ provider: 'generic', url: MIRROR_FEED });
-      autoUpdater.checkForUpdates().catch(() => {});
-    } catch (e) {
-      diag(`update mirror unusable: ${e.message || e}`);
-    }
-  });
-  autoUpdater.checkForUpdates().catch(() => {});
-  // re-check every 4 hours while the app is open
-  // Four-hourly, and each round starts at GitHub again: the mirror is for the hours it is down,
-  // not a place to settle into.
-  setInterval(() => {
-    if (triedMirror) {
-      triedMirror = false;
-      try { autoUpdater.setFeedURL({ provider: 'github', owner: 'TheFleece', repo: 'dota2-mod-manager' }); } catch { /* keep whatever it has */ }
-    }
-    autoUpdater.checkForUpdates().catch(() => {});
-  }, 4 * 60 * 60 * 1000);
+  updater.start();
 }
 
 app.on('window-all-closed', () => app.quit());
@@ -1044,7 +1003,8 @@ async function repairAfterPatch(reason) {
 function registerIpc() {
   // ----- window controls ----- (src/ipc-window.js)
   registerWindowIpc({
-    IS_PORTABLE, autoUpdater, clampZoom, diag, portableUpdate, portableUpdater,
+    IS_PORTABLE, autoUpdater, clampZoom, diag, portableUpdater,
+    portableUpdate: () => (updater ? updater.portableVersion() : null),
     releaseNotes, sendProgress, settings, win: () => win,
   });
 
@@ -1062,7 +1022,8 @@ function registerIpc() {
   // ----- settings ----- (src/ipc-settings.js)
   registerSettingsIpc({
     applyPresenceSetting, catalog, discordAuth, findDotaGamePath, library, moveLangFolder,
-    presence, refreshPresence, settings, settingsView, validateGamePath,
+    presence, refreshPresence, remoteConfig, settings, settingsView, validateGamePath,
+    updater: () => updater,
     langFolder: () => langFolder,
     patchWatcher: () => patchWatcher,
     setPresenceView: (v) => { presenceView = v; },
@@ -1128,6 +1089,6 @@ function registerIpc() {
     schemaService, settings, toolchain,
     win: () => win,
     rendererErrors: () => rendererErrors,
-    lastUpdateError: () => lastUpdateError,
+    lastUpdateError: () => (updater ? updater.lastError() : null),
   });
 }

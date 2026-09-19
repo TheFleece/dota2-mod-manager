@@ -177,8 +177,9 @@ test('a beta reaches the mirror in its own folder, and is not announced', () => 
   const mirror = jobs.find((j) => j.startsWith('mirror-update:')) || '';
   assert.ok(mirror, 'no mirror-update job');
   assert.equal(/needs\.gate\.outputs\.beta != 'true'/.test(mirror), false, 'a beta has no second route');
-  assert.match(mirror, /BASE="\$BASE\/beta"/, 'the check looks in the release folder for a beta');
-  assert.match(mirror, /FEEDS="beta\.yml beta-linux\.yml"/);
+  assert.match(mirror, /Dota-2-Mod-Manager-Setup-beta\.exe/, 'the check does not know the beta carries its own names');
+  assert.match(mirror, /WANT="latest\.yml latest-linux\.yml portable\.yml beta\.yml beta-linux\.yml/,
+    'a release has to leave the beta feed pointing at itself');
 
   const notify = jobs.find((j) => j.startsWith('notify:')) || '';
   assert.match(notify, /needs\.gate\.outputs\.beta != 'true'/, 'a beta would be announced to everybody');

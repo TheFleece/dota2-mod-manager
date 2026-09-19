@@ -232,7 +232,10 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
   }
 
-  return { refresh, feature, notices, url: CONFIG_URL, SWITCHABLE };
+  /** The beta list as the signed file gives it, or null when it says nothing about one. */
+  const beta = () => read().beta;
+
+  return { refresh, feature, notices, beta, url: CONFIG_URL, SWITCHABLE };
 }
 
 module.exports = {

@@ -533,9 +533,9 @@ jobs:
     # After publish, and so after both builds were tried: installed copies read the mirror when
     # GitHub does not answer, so a file there is as public as the release itself.
     #
-    # A beta goes there too, in a folder of its own: a tester whose GitHub is down needs a second
-    # route as much as anybody else. What it must never do is land beside the release, because the
-    # file names carry no version - see tools/mirror-plan.js.
+    # A beta goes there too: a tester whose GitHub is down needs a second route as much as anybody
+    # else. It shares the folder and carries -beta in its file names, so it can never stand where
+    # the installer latest.yml describes - see tools/mirror-plan.js.
     needs: [gate, publish]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
@@ -565,14 +565,16 @@ jobs:
           set -euo pipefail
           missing=0
           if [ "$BETA" = "true" ]; then
-            BASE="$BASE/beta"
-            FEEDS="beta.yml beta-linux.yml"
+            # a beta shares the folder with the release and carries -beta in its file names, so
+            # that it can never stand where the installer latest.yml describes
+            WANT="beta.yml beta-linux.yml Dota-2-Mod-Manager-Setup-beta.exe \
+                  Dota-2-Mod-Manager-Portable-beta.exe Dota-2-Mod-Manager-beta.AppImage"
           else
-            FEEDS="latest.yml latest-linux.yml"
+            WANT="latest.yml latest-linux.yml portable.yml beta.yml beta-linux.yml \
+                  Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe \
+                  Dota-2-Mod-Manager.AppImage"
           fi
-          for want in $FEEDS portable.yml \
-                      Dota-2-Mod-Manager-Setup.exe Dota-2-Mod-Manager-Portable.exe \
-                      Dota-2-Mod-Manager.AppImage; do
+          for want in $WANT; do
             code=$(curl -s -o /dev/null -w '%{http_code}' -I "$BASE/$want")
             if [ "$code" = "200" ]; then
               echo "ok      $want"

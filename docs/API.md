@@ -50,6 +50,7 @@ the code, not in this page.
 | [`src/settings.js`](#srcsettingsjs) | Simple JSON settings store in userData |
 | [`src/steam.js`](#srcsteamjs) | Finding Steam, and then finding Dota inside it. |
 | [`src/toolchain.js`](#srctoolchainjs) | Tools the app can borrow, fetched only when something actually needs them. |
+| [`src/updater.js`](#srcupdaterjs) | Where an installed copy looks for a new version, and on which channel. |
 | [`src/vpk.js`](#srcvpkjs) | Minimal reader for the index of Source-engine VPK "_dir" files (v1/v2). |
 | [`src/vtex.js`](#srcvtexjs) | The picture inside a compiled Source 2 texture, when it is already a picture. |
 
@@ -125,7 +126,7 @@ The channel name electron-updater reads, and the file it looks for: beta.yml.
 const STABLE_CHANNEL = 'latest'
 ```
 
-_No description in the source._
+What everybody else reads: latest.yml, the release channel.
 
 ### `idHash`
 
@@ -2866,6 +2867,70 @@ const fallbackUrl = (name, version) => `${FALLBACK_BASE}${name}-${version}.zip`
 ```
 
 Where the copy of a pinned archive lives, keyed by the tool and the version pinned to it.
+
+## src/updater.js
+
+Where an installed copy looks for a new version, and on which channel.
+
+Moved out of main.js on 2026-09-19, unchanged in what it does, so the beta channel had
+somewhere to live and so this could be tested against a stand-in for electron-updater rather
+than only by releasing something.
+
+Two feeds. GitHub is the origin; https://cdn.dota2modmanager.com/updates/ is a copy this
+project also owns, tried only after GitHub fails. On 2026-08-17 GitHub was down for three
+hours, which meant no installed copy could check for or fetch an update, and nobody noticed,
+because an app that fails to update looks exactly like an app. Each four-hourly round starts at
+GitHub again: the mirror is for the hours it is down, not a place to settle into.
+
+Two channels. Everybody reads `latest`; the testers the maintainer picked read `beta`, which is
+a different manifest (beta.yml) in the same place. src/beta.js decides who is on which, and the
+decision is re-read rather than remembered: a tester taken off the list is back on the stable
+channel at the next check, without anybody touching their machine.
+
+A portable copy cannot replace itself: electron-updater installs by handing the download to the
+NSIS installer, and a portable build has none, so it would download 100 MB and then fail
+quietly. It still looks, and says where the new copy lives.
+
+### `createUpdater`
+
+```js
+function createUpdater({ autoUpdater, isPortable = false, channel = () => 'latest', send = () => {}, log = () => {}, // ms first, to read as "every four hours, do this"; setInterval takes them the other way round every = (ms, fn) => setInterval(fn, ms), })
+```
+
+```
+@param {object} deps
+@param {object} deps.autoUpdater          electron-updater's, or a stand-in in the tests
+@param {boolean} deps.isPortable
+@param {() => string} deps.channel        'latest' or 'beta', read fresh on every check
+@param {(evt: object) => void} deps.send   tells the window an update exists
+@param {(msg: string) => void} deps.log
+@param {(ms: number, fn: () => void) => any} [deps.every]  so a test does not wait four hours
+```
+
+### `mirrorFor`
+
+```js
+const mirrorFor = () => MIRROR
+```
+
+One address for both channels: electron-updater asks for latest.yml or beta.yml by itself, and
+   the mirror carries both (tools/mirror-plan.js).
+
+### `MIRROR`
+
+```js
+const MIRROR = 'https://cdn.dota2modmanager.com/updates/'
+```
+
+The copy of each release this project keeps, for the hours GitHub is not answering.
+
+### `EVERY`
+
+```js
+const EVERY = 4 * 60 * 60 * 1000
+```
+
+How often an open window looks again.
 
 ## src/vpk.js
 

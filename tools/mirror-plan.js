@@ -67,44 +67,71 @@ const BINARIES = [
 ];
 
 const UPDATES = 'updates/';
-const BETA_FOLDER = `${UPDATES}beta/`;
+/** A beta's binaries, so they can sit beside a release's without replacing them. */
+const BETA_MARK = '-beta';
+const betaName = (name) => name.replace(/(\.[^.]+)$/, `${BETA_MARK}$1`);
 
 /**
  * Where a release goes on the mirror and which files go with it.
  *
- * A beta lives in a folder of its own. The file names carry no version, so a beta uploaded beside
- * a release would sit where the stable installer sits while latest.yml still described the stable
- * one: every copy that cannot reach GitHub would fetch a build it was never offered and fail its
- * checksum. Its own folder costs another copy of the binaries and nothing else.
+ * Everything lives in one folder. The manifests have names of their own - latest.yml for the
+ * release channel, beta.yml for the testers - but the binaries they point at do not, so a beta
+ * uploaded under the ordinary names would replace the installer latest.yml describes and every
+ * copy that cannot reach GitHub would fail its checksum. A beta's binaries therefore carry -beta
+ * in the name, and its manifests are rewritten to ask for them.
  *
- * A release writes both: its own files under updates/, and the same files again under
- * updates/beta/ with the feed named the way the beta channel reads it. Without that, a tester
- * whose GitHub is unreachable would sit on the beta after the release that replaced it.
+ * The bucket is the reason it is done this way rather than with a folder of its own: it holds the
+ * mod mirror as well and was at 8.77 GB of the free 10 GB in September 2026. A second copy of
+ * every release would have been another 320 MB for ever, for a beta that is out a few days.
+ *
+ * A release also writes beta.yml and beta-linux.yml, pointing at its own files, so a tester whose
+ * GitHub is unreachable moves on to the release rather than sitting on the beta it replaced.
  *
  * @param {string} version  2.7.0 or 2.7.0-beta.1
- * @returns {{beta: boolean, uploads: Array<{prefix: string, asset: string, name: string, type: string}>}}
+ * @returns {{beta: boolean, uploads: Array<{asset: string, name: string, type: string, retarget?: boolean}>}}
  */
 function releasePlan(version) {
   const beta = /-/.test(version);
-  const yml = (feed) => [[`${feed}.yml`, 'text/yaml'], [`${feed}-linux.yml`, 'text/yaml'], ['portable.yml', 'text/yaml']];
-  const at = (prefix, files, rename = {}) => files.concat(BINARIES)
-    .map(([asset, type]) => ({ prefix, asset, name: rename[asset] || asset, type }));
-
-  if (beta) return { beta, uploads: at(BETA_FOLDER, yml('beta')) };
+  if (beta) {
+    return {
+      beta,
+      uploads: [
+        // the two feeds a tester reads, rewritten to ask for the -beta binaries
+        { asset: 'beta.yml', name: 'beta.yml', type: 'text/yaml', retarget: true },
+        { asset: 'beta-linux.yml', name: 'beta-linux.yml', type: 'text/yaml', retarget: true },
+        ...BINARIES.map(([asset, type]) => ({ asset, name: betaName(asset), type })),
+      ],
+    };
+  }
   return {
     beta,
     uploads: [
-      ...at(UPDATES, yml('latest')),
-      // the release, named the way the beta channel reads it
-      ...at(BETA_FOLDER, yml('latest'), { 'latest.yml': 'beta.yml', 'latest-linux.yml': 'beta-linux.yml' }),
-    ],
+      ['latest.yml', 'text/yaml'], ['latest-linux.yml', 'text/yaml'], ['portable.yml', 'text/yaml'],
+      ...BINARIES,
+    ].map(([asset, type]) => ({ asset, name: asset, type })).concat([
+      // the release, under the names the beta channel reads, pointing at the same binaries
+      { asset: 'latest.yml', name: 'beta.yml', type: 'text/yaml' },
+      { asset: 'latest-linux.yml', name: 'beta-linux.yml', type: 'text/yaml' },
+    ]),
   };
 }
 
 /**
- * Which of the objects already there this run is responsible for clearing out. A run only ever
- * touches its own folder, so a beta cannot delete the release everybody else updates from, and a
- * release cannot delete a beta it knows nothing about.
+ * A feed that asks for the -beta copies of the files it names. electron-updater reads `path` and
+ * the `url` of each entry; the checksums inside describe the bytes, which do not change with the
+ * name, so only the names are rewritten.
+ * @param {string} text  the .yml as the release published it
+ */
+function retargetFeed(text) {
+  return String(text).replace(/(Dota-2-Mod-Manager[A-Za-z-]*)(\.(?:exe|AppImage))/g, (all, stem, ext) => (
+    stem.endsWith(BETA_MARK) ? all : `${stem}${BETA_MARK}${ext}`
+  ));
+}
+
+/**
+ * Which of the objects already there this run should clear out. A beta only ever clears the beta
+ * copies, so it can never delete the release everybody updates from; a release clears both, which
+ * is what frees the beta's binaries once the version that replaced it is out.
  * @param {string[]} keys      everything under updates/
  * @param {Set<string>} kept   keys this run uploaded
  * @param {boolean} beta
@@ -112,12 +139,11 @@ function releasePlan(version) {
 function staleReleaseFiles(keys, kept, beta) {
   return keys.filter((key) => {
     if (kept.has(key)) return false;
-    const inBeta = key.startsWith(BETA_FOLDER);
-    // a release owns both folders: it publishes into each of them
-    return beta ? inBeta : true;
+    return beta ? key.includes(BETA_MARK) : true;
   });
 }
 
 module.exports = {
-  staleCopies, publishedHash, checkBody, releasePlan, staleReleaseFiles, UPDATES, BETA_FOLDER,
+  staleCopies, publishedHash, checkBody, releasePlan, retargetFeed, staleReleaseFiles,
+  UPDATES, BETA_MARK, betaName,
 };

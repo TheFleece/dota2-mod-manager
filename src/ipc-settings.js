@@ -9,15 +9,38 @@ const { dialog, ipcMain } = require('electron');
 
 const i18n = require('./i18n');
 const { t } = i18n;
+const { betaState } = require('./beta');
 
 /** @param {object} ctx  the services and main-process callbacks these channels use */
 function registerSettingsIpc({
   // The four read late are main-process state that changes while the app runs; setPresenceView
   // writes one back. Passing values here would freeze them at registration time.
   applyPresenceSetting, catalog, discordAuth, findDotaGamePath, library, moveLangFolder,
-  presence, refreshPresence, settings, settingsView, validateGamePath,
-  langFolder, patchWatcher, setPresenceView, win,
+  presence, refreshPresence, remoteConfig, settings, settingsView, validateGamePath,
+  langFolder, patchWatcher, setPresenceView, updater, win,
 }) {
+  /* The beta channel, from the switch in settings and the list in the signed config.
+   *
+   * Read rather than remembered: an account taken off the list, or signed out of Discord, is back
+   * on the stable channel at the next check without anybody touching their machine. src/beta.js
+   * holds the rule, src/updater.js does the aiming, and neither is asked whether the user is
+   * "allowed" anywhere else - this is who is offered the build, not who can run it. */
+  const beta = () => betaState({
+    discordId: (settings.get('account') || {}).id || null,
+    beta: remoteConfig.beta(),
+    wanted: settings.get('betaChannel') === true,
+  });
+
+  ipcMain.handle('beta:state', () => beta());
+
+  ipcMain.handle('beta:set', (e, on) => {
+    settings.set('betaChannel', on === true);
+    const state = beta();
+    // look now rather than in four hours: switching this on is a question the user just asked
+    updater()?.recheck();
+    return state;
+  });
+
   ipcMain.handle('settings:get', () => settingsView({ consumeMigration: true }));
 
   ipcMain.handle('settings:set', (e, key, value) => {
@@ -50,6 +73,8 @@ function registerSettingsIpc({
 
   ipcMain.handle('account:signOut', () => {
     settings.set('account', null);
+    // no account, nobody to check against the list: back to the channel everybody else reads
+    updater()?.recheck();
     return { ok: true };
   });
 

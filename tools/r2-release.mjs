@@ -16,17 +16,18 @@
  * there before, so the bucket carries about 320 MB for updates rather than 320 MB per release
  * for ever. Old versions stay on GitHub, which is where anybody looking for one goes.
  *
- * A beta gets a folder of its own, updates/beta/, because the file names carry no version: a beta
- * beside the release would sit where the stable installer sits while latest.yml still described
- * the stable one. A release writes both folders, so a tester whose GitHub is unreachable moves on
- * to the release rather than sitting on the beta it replaced. tools/mirror-plan.js decides all of
- * that and is tested; this fetches and uploads.
+ * A beta shares the folder and not the names: its binaries carry -beta, and its two manifests are
+ * rewritten to ask for those. The bucket also holds the mod mirror and was at 8.77 GB of the free
+ * 10 GB in September 2026, so a second copy of every release was not worth 320 MB for ever. A
+ * release writes beta.yml as well, pointing at its own files, so a tester whose GitHub is
+ * unreachable moves on rather than sitting on the beta it replaced. tools/mirror-plan.js decides
+ * all of that and is tested; this fetches and uploads.
  *
  * Usage: node tools/r2-release.mjs <version>        e.g. 2.6.5 or 2.7.0-beta.1
  *        node tools/r2-release.mjs <version> --dry
  */
 import { createR2 } from './r2-client.js';
-import { releasePlan, staleReleaseFiles, UPDATES } from './mirror-plan.js';
+import { releasePlan, retargetFeed, staleReleaseFiles, UPDATES } from './mirror-plan.js';
 
 const version = (process.argv[2] || '').replace(/^v/, '');
 const dry = process.argv.includes('--dry');
@@ -65,10 +66,12 @@ console.log(`updates/ holds ${before.size} object(s), ${(([...before.values()].r
 const uploaded = new Set();
 let failed = 0;
 
-for (const { prefix, asset, name, type } of WANTED) {
-  const key = `${prefix}${name}`;
+for (const { asset, name, type, retarget } of WANTED) {
+  const key = `${PREFIX}${name}`;
   try {
-    const body = await fetchAsset(asset);
+    let body = await fetchAsset(asset);
+    // a beta's feed has to ask for the -beta copies of the files it names
+    if (retarget) body = Buffer.from(retargetFeed(body.toString('utf-8')), 'utf-8');
     // The manifests are small and change every release; the binaries are large and a matching
     // size means the same file, since a release tag never gets two different builds.
     if (before.get(key) === body.length && !name.endsWith('.yml')) {
