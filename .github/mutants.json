@@ -649,6 +649,30 @@
       "from": "const checked = validateSchema(merged.text, base.text);",
       "to": "const checked = { bytes: merged.text.length, items: 0 };",
       "test": "test/schema.test.js"
+    },
+    {
+      "name": "the beta list is hashed without its salt",
+      "file": "src/beta.js",
+      "anchor": "function idHash(id, salt) {",
+      "from": "update(`${String(salt || '')}:${String(id || '').trim()}`)",
+      "to": "update(`${String(id || '').trim()}`)",
+      "test": "test/beta.test.js"
+    },
+    {
+      "name": "the beta switch alone decides the channel",
+      "file": "src/beta.js",
+      "anchor": "function channelFor({ discordId = null, beta = null, wanted = false } = {}) {",
+      "from": "wanted && isTester(discordId, beta)",
+      "to": "wanted",
+      "test": "test/beta.test.js"
+    },
+    {
+      "name": "anything in the beta list counts as an account",
+      "file": "src/remote-config.js",
+      "anchor": "const beta = raw.beta && typeof raw.beta === 'object' ? raw.beta : null;",
+      "from": "typeof id === 'string' && /^[0-9a-f]{64}$/i.test(id.trim())",
+      "to": "typeof id === 'string'",
+      "test": "test/beta.test.js"
     }
   ]
 }

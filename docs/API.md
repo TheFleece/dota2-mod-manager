@@ -14,6 +14,7 @@ the code, not in this page.
 | Module | What it owns |
 |---|---|
 | [`src/adopt.js`](#srcadoptjs) | What a VPK has to go through before it counts as a mod. |
+| [`src/beta.js`](#srcbetajs) | The beta channel: who is let in, and which update feed this copy reads. |
 | [`src/capture.js`](#srccapturejs) |  |
 | [`src/catalog-signature.js`](#srccatalog-signaturejs) | Making the catalog's own author the only person who can change the catalog. |
 | [`src/catalog.js`](#srccatalogjs) | Catalog: fetch + cache mods.json / constants.json / guides.json from the Dota2PornFx repo |
@@ -83,6 +84,106 @@ function createAdopt({ installer, library, schemaService })
 @param {object} ctx.installer      reads the file to name and analyse it, and the master switch
 @param {object} ctx.library        the manifest the record is written into
 @param {object} ctx.schemaService  lifts the item blocks out, and splits a multi-hero pack
+```
+
+## src/beta.js
+
+The beta channel: who is let in, and which update feed this copy reads.
+
+Staged rollout was dropped in September 2026 for a good reason: an urgent fix has to reach
+everybody at once, and two versions in the wild at the same time make a Discord thread
+impossible to follow. A beta channel is the other half of that argument. It is not a slice of
+everybody, it is a few people the maintainer picked himself, who know they are running the
+build that has not been released yet.
+
+Who: the accounts already signed in with Discord (src/discord-auth.js). The list lives in the
+signed config/app.json, so it changes without a release, and it holds hashes rather than ids -
+that file is public, and a list of a dozen people's Discord accounts is not ours to publish.
+The salt sits next to the list: it does not make a hash unguessable for somebody who already
+has a specific id in mind, and it does stop the file being a ready-made list to look up.
+
+What it is not: a lock. Nothing here is checked by a server, the build itself is a public
+prerelease on GitHub, and a determined person can download it whatever this says. The gate
+decides who is offered the beta, not who is able to run it. If that ever needs to be a real
+lock, the files have to move behind something that verifies a Discord token, and that is a
+different piece of work.
+
+Signing out of Discord takes the beta with it: without an id there is nobody to check against,
+so the channel falls back to the stable one on the next check.
+
+### `BETA_CHANNEL`
+
+```js
+const BETA_CHANNEL = 'beta'
+```
+
+The channel name electron-updater reads, and the file it looks for: beta.yml.
+
+### `STABLE_CHANNEL`
+
+```js
+const STABLE_CHANNEL = 'latest'
+```
+
+_No description in the source._
+
+### `idHash`
+
+```js
+function idHash(id, salt)
+```
+
+How an id becomes a line in the public list.
+
+```
+@param {string|number} id  the Discord account id
+@param {string} salt       from the same block of the config
+```
+
+### `isTester`
+
+```js
+function isTester(discordId, beta)
+```
+
+Is this account on the list? A missing list, a missing id or a damaged entry all mean no,
+because the honest answer to "should this person be offered an unreleased build" is no
+until something says otherwise.
+
+```
+@param {string|null} discordId
+@param {{salt?: string, ids?: string[]}|null} beta  the `beta` block of the signed config
+```
+
+### `channelFor`
+
+```js
+function channelFor({ discordId = null, beta = null, wanted = false } = {})
+```
+
+Which update channel this copy should read now.
+
+`wanted` is the switch in settings. It is deliberately not enough on its own: a copy whose
+owner was taken off the list, or who signed out of Discord, goes back to the stable channel
+with the switch still on, and turns beta again by itself if they are let back in.
+
+```
+@param {{discordId?: string|null, beta?: object|null, wanted?: boolean}} state
+@returns {'latest'|'beta'}
+```
+
+### `betaState`
+
+```js
+function betaState({ discordId = null, beta = null, wanted = false } = {})
+```
+
+What the settings screen needs to draw: whether to show the switch at all, and where it sits.
+Somebody who is not on the list is not told there is a list - a switch they cannot use is
+noise, and "you are not invited" is a worse thing to read than nothing.
+
+```
+@returns {{eligible: boolean, on: boolean, channel: 'latest'|'beta'}}
 ```
 
 ## src/capture.js
@@ -2135,7 +2236,8 @@ Shape:
                    "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ],
     "blocks":  [ { "id": "2026-09-16-install-2.7.0", "feature": "install",
                    "minVersion": "2.7.0", "maxVersion": "2.7.0", "until": "2026-09-27",
-                   "ru": "…", "en": "…" } ]
+                   "ru": "…", "en": "…" } ],
+    "beta":    { "salt": "d2mm-beta-1", "ids": ["<sha256 of salt:discordId>", …] }
   }
 
 `features` switches something off in every version. That is right when the cause is outside
@@ -2145,6 +2247,10 @@ versions until a day. They have a key of their own because copies released befor
 read only `features` and `notices`: a range written into `features` would switch the feature
 off for every one of them, while a key they have never heard of is one they leave alone.
 tools/rollback.mjs writes both, signs the file and refuses the mistakes.
+
+`beta` is the list of Discord accounts the beta channel is offered to, as hashes: the file is
+public and a list of a dozen people's accounts is not ours to publish. src/beta.js does the
+checking; this only reads the block and refuses anything that is not shaped like one.
 
 ### `createRemoteConfig`
 

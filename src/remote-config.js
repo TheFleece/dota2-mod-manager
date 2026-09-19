@@ -20,7 +20,8 @@
 //                    "minVersion": "2.0.0", "maxVersion": "2.1.0", "until": "2026-08-14" } ],
 //     "blocks":  [ { "id": "2026-09-16-install-2.7.0", "feature": "install",
 //                    "minVersion": "2.7.0", "maxVersion": "2.7.0", "until": "2026-09-27",
-//                    "ru": "…", "en": "…" } ]
+//                    "ru": "…", "en": "…" } ],
+//     "beta":    { "salt": "d2mm-beta-1", "ids": ["<sha256 of salt:discordId>", …] }
 //   }
 //
 // `features` switches something off in every version. That is right when the cause is outside
@@ -30,6 +31,10 @@
 // read only `features` and `notices`: a range written into `features` would switch the feature
 // off for every one of them, while a key they have never heard of is one they leave alone.
 // tools/rollback.mjs writes both, signs the file and refuses the mistakes.
+//
+// `beta` is the list of Discord accounts the beta channel is offered to, as hashes: the file is
+// public and a list of a dozen people's accounts is not ours to publish. src/beta.js does the
+// checking; this only reads the block and refuses anything that is not shaped like one.
 const fs = require('fs');
 const path = require('path');
 const { fetchText } = require('./net');
@@ -68,6 +73,9 @@ const SWITCHABLE = ['install', 'cosmetics', 'voice'];
  * ships next is at least this one. */
 const BLOCKS_SINCE = '2.6.13';
 const MAX_NOTICES = 20;
+// A beta is a handful of people the maintainer picked, not a rollout: a list longer than this is
+// a sign the file was edited by something other than a person.
+const MAX_TESTERS = 100;
 const MAX_TEXT = 500;
 
 const str = (v, max = MAX_TEXT) => (typeof v === 'string' ? v.slice(0, max) : '');
@@ -93,7 +101,7 @@ function applies(entry, version, today) {
 const validDay = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) ? v : null);
 
 function normalize(raw) {
-  const out = { features: {}, notices: [], blocks: [] };
+  const out = { features: {}, notices: [], blocks: [], beta: null };
   if (!raw || typeof raw !== 'object') return out;
 
   const features = raw.features && typeof raw.features === 'object' ? raw.features : {};
@@ -141,6 +149,18 @@ function normalize(raw) {
       until,
     });
   }
+  /* The beta list. A block with no usable entry is left as null rather than as an empty list,
+     so "nobody is on the list" and "the file says nothing about a beta" read the same way here:
+     both mean the switch is not offered. */
+  const beta = raw.beta && typeof raw.beta === 'object' ? raw.beta : null;
+  if (beta) {
+    const ids = (Array.isArray(beta.ids) ? beta.ids : [])
+      .filter((id) => typeof id === 'string' && /^[0-9a-f]{64}$/i.test(id.trim()))
+      .slice(0, MAX_TESTERS)
+      .map((id) => id.trim().toLowerCase());
+    if (ids.length) out.beta = { salt: str(beta.salt, 80), ids };
+  }
+
   return out;
 }
 

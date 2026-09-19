@@ -198,9 +198,12 @@
       }
     },
     "win32": {
-      "measured": "2026-09-17",
+      "measured": "2026-09-19",
       "files": {
         "src/adopt.js": {
+          "lines": 100
+        },
+        "src/beta.js": {
           "lines": 100
         },
         "src/capture.js": {
@@ -396,7 +399,7 @@
           "lines": 63.9
         },
         "tools/virustotal.mjs": {
-          "lines": 59.1
+          "lines": 60.5
         }
       }
     }
