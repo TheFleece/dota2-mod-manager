@@ -1,5 +1,5 @@
 {
-  "count": 1333,
+  "count": 1337,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -340,6 +340,7 @@
     "40714d8b9751815e619d9c166080c36085dfed9f": [{"name":"Phantom Lancer Immortal Felidae","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "4076d7ba48926a446a4b04c02f516fb93d15f0d2": [{"name":"Lina","categoryId":"announcers","styleLabel":null,"type":"vpk"}],
     "40b5600ffc630fdf0ef69dce18b439f925b8b62a": [{"name":"ReZero Respawn Sound","categoryId":"sounds","styleLabel":null,"type":"vpk"}],
+    "40de82ed5e095c924e398fa8d9fc69002191411a": [{"name":"Reverse Tinker","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "4115106fe7d9da3a791b45c882d075214b0b7adf": [{"name":"TI9 Radiance","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "41186df226ee463de4584e953912430411064c53": [{"name":"Watermelons","categoryId":"backgrounds","styleLabel":null,"type":"vpk"}],
     "4187b3bbb0d5f574b90a451abbb415c840f9974c": [{"name":"TI8 Teleport III","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
@@ -502,6 +503,7 @@
     "6388df25af62a6c8ea0a56fcc13aaf49ad0705bc": [{"name":"Woodland Radiant Creeps","categoryId":"creeps","styleLabel":null,"type":"vpk"}],
     "63e18fa537ec23e56bb6d5fe8502332c90f0c516": [{"name":"TI10 Maelstrom Mjollnir","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "640521482239002ff8497911f1eda8d84d7ff57c": [{"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"type":"vpk"}],
+    "6423b4ebba4aaef716d858c0009480553fc09c15": [{"name":"Reverse Broodmother","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "645c3be7a7389087b8095ad7d5673ba9fc51b4b3": [{"name":"BP 2022 Radiance","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "64d766c4ea855150491806a0902c8c42c0c94dd9": [{"name":"Haze","categoryId":"shaders","styleLabel":null,"type":"vpk"}],
     "64eb0594da9715ded160a86a3160cb17d2abeaba": [{"name":"Anime Hud","categoryId":"huds","styleLabel":null,"type":"vpk"}],
@@ -1312,6 +1314,7 @@
     "fb239cd4c9e0a4f4336810ed17b9fa8f4fdd7569": [{"name":"Crimson Chains Emblem","categoryId":"emblems","styleLabel":null,"type":"vpk"}],
     "fb2bce58e7ac9cc8edb536371d69c81ae6e30136": [{"name":"Default Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],
     "fb5e7ff2534b97309a09143e5856e729e31ec12a": [{"name":"Purple Hex","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
+    "fb7d83eac144b4a70474ae4e1c0215b3a6b30ef5": [{"name":"Broodskoe","categoryId":"music","styleLabel":null,"type":"vpk"}],
     "fb9058256589c9d1968462fb401948916bf5b47c": [{"name":"Razor Rizelencer","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "fbc0df18b4685868e009d97d4143eb8e444eed56": [{"name":"Terrorblade Unblinking Horror","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "fbfd2dc9f28fb72d928055b1c27563b1c7572e8e": [{"name":"Axe Heracles","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -1328,6 +1331,7 @@
     "fe80a3e8d25e2cb6b7d2060ad72310dbe77da6e1": [{"name":"Zeus Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "fedbb29d7f0119cc4de34fddf9c6ea74db2720c4": [{"name":"TI8 Fountain Regen","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "fee409cdd00cb7ff9c87cfe592ec3430450faf22": [{"name":"Faceless Void Battlefury","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
+    "fee534d592abe2701a12e9c1288d5d210ae3b72b": [{"name":"Mirana Sacred Grove","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "fef88a1532ff589f8a687d0c5728948685652d80": [{"name":"TI6 Force Staff","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "ff070d073c9e58a87ad45d790ac4bf15e568d5c2": [{"name":"Curious Snaptrap","categoryId":"wards","styleLabel":null,"type":"vpk"}],
     "ff752c85e3504906fc95e6194a7b76653a1a8aab": [{"name":"Queen of Pain Deny","categoryId":"creep-deny","styleLabel":null,"type":"vpk"}],

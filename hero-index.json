@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1332,
+  "mods": 1335,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -194,6 +194,7 @@
         {"name":"Broodmother White Widow","categoryId":"heroes","styleLabel":null,"slots":["misc","head","legs"]},
         {"name":"Goffren Broodmother","categoryId":"heroes","styleLabel":null,"slots":["misc","head","legs"]},
         {"name":"Purple Witch Broodmother","categoryId":"heroes","styleLabel":null,"slots":["head","misc","legs"]},
+        {"name":"Reverse Broodmother","categoryId":"heroes","styleLabel":null,"slots":["misc","head","legs"]},
         {"name":"SF Broodmother","categoryId":"heroes","styleLabel":null,"slots":["legs"]}
       ]
     },
@@ -980,6 +981,7 @@
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Mirana Pulsar Remnant","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Mirana Purple","categoryId":"heroes","styleLabel":null,"slots":["weapon","arms","back","head","mount","misc","shoulder"]},
+        {"name":"Mirana Sacred Grove","categoryId":"heroes","styleLabel":null,"slots":["weapon","arms","back","head","mount","misc","shoulder"]},
         {"name":"Mirana Suigintou","categoryId":"heroes","styleLabel":null,"slots":["weapon","arms","back","misc","head","mount","shoulder","legs"]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -1693,6 +1695,7 @@
         {"name":"LenS Tinker","categoryId":"heroes","styleLabel":null,"slots":["misc","head","back","arms","shoulder"]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Reverse Tinker","categoryId":"heroes","styleLabel":null,"slots":["misc","head","back","arms","shoulder"]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI9 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
