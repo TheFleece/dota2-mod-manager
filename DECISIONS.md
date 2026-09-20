@@ -46,8 +46,8 @@ where it runs before the suite.
 
 ### The app ships two dependencies
 
-`adm-zip` and `electron-updater` ship inside it; `electron`, `electron-builder`, `eslint` and
-`typescript` only build and check it, and never reach a user's machine. The VPK reader and writer, the
+`adm-zip` and `electron-updater` ship inside it; `electron`, `electron-builder`, `eslint`,
+`typescript` and `fast-check` only build and check it, and never reach a user's machine. The VPK reader and writer, the
 KeyValues parser, the zip guards, the mirror logic and the update checks are written here,
 because every dependency is a stranger with write access to a game folder on tens of thousands
 of machines. That is a bias rather than a ban: a pull request adding one has to say what it
@@ -68,6 +68,19 @@ they existed, and three functions whose JSDoc described a different signature th
 it. Inferring types across thirty thousand lines is not something to write by hand either. What is
 left is counted per file in `.github/typecheck-baseline.json`, and `tools/typecheck.mjs` refuses a
 run where that count grows.
+
+`fast-check` was added on 2026-09-20, and it replaces something written here rather than adding a
+habit. The parsers were already fuzzed with generators of our own (`tools/fuzz-parsers.mjs`,
+`test/safe-zip-fuzz.test.js`), and those have one flaw that cannot be written around cheaply: when
+they find something they hand over the four kilobytes of rubbish that broke it instead of the two
+bytes that mattered. fast-check shrinks a failure to the smallest input that still fails, which is
+the difference between "an archive broke it" and "a name of one dot breaks it". Its properties are
+in `test/properties.test.js`, and the first of them already earns its keep: our hand-written crc32
+is checked against `zlib.crc32` on random bytes rather than on the cases somebody chose.
+
+It also flips a check on the OpenSSF Scorecard, which recognises fuzzing in JavaScript only
+through a short list of libraries and not through generators of our own. That is a real reason and
+not the reason: the shrinking is.
 
 *Check:* `node -e "const p=require('./package.json');console.log(p.dependencies,p.devDependencies)"`
 and `npm run typecheck`

@@ -713,6 +713,22 @@
       "from": "const version = portableUpdate();",
       "to": "const version = portableUpdate;",
       "test": "test/ipc-window.test.js"
+    },
+    {
+      "name": "the crc32 table is walked one bit off",
+      "file": "src/vpk.js",
+      "anchor": "function crc32(buf) {",
+      "from": "c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);",
+      "to": "c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 7);",
+      "test": "test/properties.test.js"
+    },
+    {
+      "name": "a preset link comes back with a name nobody chose",
+      "file": "src/preset-link.js",
+      "anchor": "function encodePresetLink({ name, author, mods }) {",
+      "from": "n: String(name || '').slice(0, 120),",
+      "to": "n: String(name || '').slice(0, 20),",
+      "test": "test/properties.test.js"
     }
   ]
 }

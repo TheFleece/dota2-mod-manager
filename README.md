@@ -288,7 +288,7 @@ section 7 of the GPL.
 | [Astro](https://github.com/withastro/astro) | The documentation site, not the app | MIT |
 
 <!-- facts:deps-en -->
-`package.json` lists six: `adm-zip` and `electron-updater` ship inside the app, `electron`, `electron-builder`, `eslint` and `typescript` only build or check it.
+`package.json` lists seven: `adm-zip` and `electron-updater` ship inside the app, `electron`, `electron-builder`, `eslint`, `fast-check` and `typescript` only build or check it.
 <!-- /facts:deps-en -->
 The tests and everything under `tools/` use no dependencies at all. The VPK reader and writer, the KeyValues parser, the zip guards and the
 update logic are written here, because every dependency is a stranger with write access to a
