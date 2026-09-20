@@ -118,7 +118,7 @@ week. What each of these actually is:
 - **Umbrella** and similar: scripts and automation that play part of the match. A different
   category entirely, and the one Valve does ban accounts for.
 - **Dota2Skins Manager**: a fork of this app. Its own site states it was created based on
-  Dota 2 Mod Manager by Mykhailo Lynnyk. The difference it advertises is a Linux build, which
+  Dota 2 Mod Manager by TheFleece. The difference it advertises is a Linux build, which
   this app has shipped since 2.4.0.
 
 A fuller version of that comparison, with the questions worth asking of any of them, is at

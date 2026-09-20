@@ -317,7 +317,7 @@ Node 24, Electron 44, без сборщика: рендерер — обычны
 
 ## Лицензия
 
-[GPL-3.0](LICENSE). Copyright (C) 2026 Mykhailo Lynnyk. Подробности и две добавки по седьмой
+[GPL-3.0](LICENSE). Copyright (C) 2026 TheFleece. Подробности и две добавки по седьмой
 секции лицензии — в [NOTICE](NOTICE).
 
 <div align="center">

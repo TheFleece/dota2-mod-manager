@@ -320,7 +320,7 @@ list of their own.
 
 ## License
 
-[GPL-3.0](LICENSE). Copyright (C) 2026 Mykhailo Lynnyk.
+[GPL-3.0](LICENSE). Copyright (C) 2026 TheFleece.
 
 Fork it, change it, ship your own. GPL-3.0 asks you to keep the copyright line, to say that you
 changed the code and when, and to open your version under the same license. Section 7 lets an

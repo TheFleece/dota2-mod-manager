@@ -53,7 +53,7 @@ export function authorNode(origin = 'https://dota2modmanager.com') {
   return {
     '@type': 'Person',
     '@id': `${origin}/#author`,
-    name: 'Mykhailo Lynnyk',
+    name: 'TheFleece',
     url: 'https://github.com/TheFleece',
     sameAs: ['https://github.com/TheFleece'],
   };

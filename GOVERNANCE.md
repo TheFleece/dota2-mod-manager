@@ -19,7 +19,7 @@ the reason and the date. A decision you can read is a decision you can argue wit
 
 ## Roles
 
-**Maintainer: Mykhailo Lynnyk ([@TheFleece](https://github.com/TheFleece)).** Reviews and merges
+**Maintainer: TheFleece ([@TheFleece](https://github.com/TheFleece)).** Reviews and merges
 pull requests, cuts releases, answers security reports within 48 hours, keeps the app working
 against a game that changes under it, and holds the keys: the signing key for `config/app.json`,
 the release workflow's secrets, the domain and the mirror bucket. Nobody else has them today, and

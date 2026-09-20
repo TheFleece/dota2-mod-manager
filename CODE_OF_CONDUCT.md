@@ -26,7 +26,7 @@ channel on the D2PFX Discord when you are speaking there about this project.
 
 ## Reporting
 
-Write to the maintainer, Mykhailo Lynnyk, privately: a direct message to **Fleece** on the
+Write to the maintainer, TheFleece, privately: a direct message to **Fleece** on the
 [D2PFX Discord](https://discord.gg/PBvG8D9MxT). Reports are read within 72 hours and kept between
 you and the maintainer.
 

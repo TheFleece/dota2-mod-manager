@@ -1,6 +1,6 @@
 /*
  * Dota 2 Mod Manager
- * Copyright (C) 2026 Mykhailo Lynnyk
+ * Copyright (C) 2026 TheFleece
  *
  * Free software under the GNU General Public License, version 3 or later. It comes with no
  * warranty whatsoever. LICENSE holds the terms; NOTICE holds the additional terms this

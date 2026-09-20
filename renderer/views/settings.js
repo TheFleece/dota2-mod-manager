@@ -162,7 +162,7 @@ export async function renderSettings() {
         <span>${L`hanta снял видео о менеджере`}</span>
         <a class="settings-link" id="thanksLink">youtube.com/@hqnta</a>
       </div>
-      <div class="settings-hint">© 2026 Mykhailo Lynnyk · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
+      <div class="settings-hint">© 2026 TheFleece · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
     </div>
   `; });
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/TheFleece/dota2-mod-manager'));
