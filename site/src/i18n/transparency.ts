@@ -54,6 +54,7 @@ export const transparency = {
 
     checkHeading: 'Checking any of this',
     check: 'The numbers about the program itself, the version, the mod count, the releases and the downloads, are on the facts page and are read from the catalog and the GitHub API at build time. '
+      + 'Whether any of it is answering right now is on the status page at dota2modmanager.betteruptime.com, which checks the update feed, the mirror, the catalog and this site every three minutes. '
       + 'What the app does on a machine is in its security policy, and what it promises is in the assurance case.',
   },
 
@@ -100,6 +101,7 @@ export const transparency = {
 
     checkHeading: 'Как это проверить',
     check: 'Числа про саму программу, версия, количество модов, релизы и загрузки, лежат на странице фактов и подставляются из каталога и GitHub API при сборке. '
+      + 'Отвечает ли всё это прямо сейчас, видно на странице статуса dota2modmanager.betteruptime.com: она раз в три минуты проверяет фид обновлений, зеркало, каталог и этот сайт. '
       + 'Что приложение делает с машиной, написано в политике безопасности, а что оно обещает, в assurance case.',
   },
 } as const;
