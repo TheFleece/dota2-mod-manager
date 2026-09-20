@@ -54,7 +54,7 @@ const FIRST = ['heroes', 'terrains', 'shaders', 'trees', 'river', 'backgrounds',
 
 import { iterMods } from './catalog-mods.js';
 import { createR2, purgeCache } from './r2-client.js';
-import { staleCopies, publishedHash, checkBody } from './mirror-plan.js';
+import { staleCopies, publishedHash, checkBody, budgetNote } from './mirror-plan.js';
 
 /* The bucket, and SigV4 with it, live in tools/r2-client.js: the release assets need the same
    signing and a second copy of eighty lines of crypto is how the catalog walk in this very file
@@ -270,3 +270,9 @@ if (replaced.length && purge && (purge.skipped || purge.failed)) {
 
 console.log(`\ncopied ${copied}, already current ${skipped}, too big ${tooBig}, failed ${failed}, refused ${refused}${stopped ? `, stopped on ${stopped}` : ''}`);
 console.log(`bucket now ~${(used / 1024 ** 3).toFixed(2)} GB, index lists ${index.length} archives`);
+
+/* Out of room is not an error - nothing is broken, and everything already mirrored still serves -
+   but it is the mirror quietly stopping, so it goes on the run as a warning rather than as the
+   last word of a green log nobody reads. */
+const note = budgetNote({ used, budget: BUDGET, stopped });
+console.log(note.warn ? `::warning::R2 mirror: ${note.text}` : `room: ${note.text}`);

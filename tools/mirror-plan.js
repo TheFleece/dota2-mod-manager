@@ -57,6 +57,46 @@ function checkBody(body, want) {
   return { ok: got === want, got };
 }
 
+/* ---------- how much room is left ---------- */
+
+/** Close enough to the end that somebody should hear about it before it arrives. */
+const NEARLY_FULL = 0.95;
+
+/**
+ * Whether the size of the bucket needs saying out loud.
+ *
+ * A sync that runs out of room stops copying and still goes green: the last line says "stopped on
+ * budget" and nothing else does, so the mirror quietly stops growing while the catalog keeps
+ * doing so, and the first anybody hears of it is a user who cannot install something on the day
+ * GitHub is down. That is the whole point of the mirror, failing silently.
+ *
+ * The numbers are not far off: the bucket holds the update mirror as well and was at 8.16 GB of
+ * the 9 GB this sync allows itself in September 2026, growing about 50 MB a day.
+ *
+ * @param {{used: number, budget: number, stopped?: string}} state  bytes, bytes, and why the run ended
+ * @returns {{warn: boolean, text: string}}
+ */
+function budgetNote({ used, budget, stopped = '' }) {
+  const gb = (n) => (n / 1024 ** 3).toFixed(2);
+  if (stopped === 'budget') {
+    return {
+      warn: true,
+      text: `the mirror is full at ${gb(used)} GB of ${gb(budget)} and stopped copying, so new mods `
+        + 'are not being mirrored. Give it more room where the bucket has it (--budget), lower the '
+        + 'cap on one archive (--max-file), or take the heaviest archives out.',
+    };
+  }
+  const left = budget - used;
+  if (left <= budget * (1 - NEARLY_FULL)) {
+    return {
+      warn: true,
+      text: `the mirror has ${gb(left)} GB left of ${gb(budget)}. The catalog grows by roughly `
+        + '50 MB a day, so this is weeks away, not months.',
+    };
+  }
+  return { warn: false, text: `${gb(left)} GB of the budget still free` };
+}
+
 /* ---------- the release mirror ---------- */
 
 /** What an updater reads, and the binaries those files point at. */
@@ -144,6 +184,6 @@ function staleReleaseFiles(keys, kept, beta) {
 }
 
 module.exports = {
-  staleCopies, publishedHash, checkBody, releasePlan, retargetFeed, staleReleaseFiles,
+  staleCopies, publishedHash, checkBody, budgetNote, releasePlan, retargetFeed, staleReleaseFiles,
   UPDATES, BETA_MARK, betaName,
 };

@@ -56,6 +56,31 @@ test('with no published hash, a copy is still a copy', () => {
   assert.deepEqual(checkBody(Buffer.from('anything'), null), { ok: true, got: null });
 });
 
+// ---------- how much room is left ----------
+
+test('a mirror that ran out of room says so on the run, rather than in the last line of a green log', () => {
+  /* The failure this guards is silence: the sync stops copying, the job is still green, and the
+     first anybody hears of it is somebody who cannot install a mod on the day GitHub is down. */
+  const { budgetNote } = require('../tools/mirror-plan.js');
+  const GB = 1024 ** 3;
+
+  const full = budgetNote({ used: 9 * GB, budget: 9 * GB, stopped: 'budget' });
+  assert.equal(full.warn, true);
+  assert.match(full.text, /full at 9\.00 GB of 9\.00/);
+  assert.match(full.text, /--budget/, 'and says what to do about it');
+
+  const nearly = budgetNote({ used: 8.7 * GB, budget: 9 * GB });
+  assert.equal(nearly.warn, true, 'within 5% is worth hearing before it arrives, not after');
+  assert.match(nearly.text, /0\.30 GB left/);
+
+  const fine = budgetNote({ used: 7 * GB, budget: 9 * GB });
+  assert.equal(fine.warn, false);
+  assert.match(fine.text, /2\.00 GB/);
+
+  assert.equal(budgetNote({ used: 1 * GB, budget: 9 * GB, stopped: 'limit' }).warn, false,
+    'stopping on --limit is somebody asking for a short run, not the bucket filling up');
+});
+
 // ---------- the release mirror ----------
 
 test('a beta shares the folder with the release, and never its file names', () => {
