@@ -1,0 +1,11 @@
+---
+import Base from '../../layouts/Base.astro';
+import Transparency from '../../components/Transparency.astro';
+import { transparency } from '../../i18n/transparency';
+
+const page = transparency.ru;
+---
+
+<Base title={page.title} description={page.description} path="/transparency/">
+  <Transparency lang="ru" />
+</Base>

@@ -1,0 +1,71 @@
+---
+/**
+ * What the project costs and who pays for it.
+ *
+ * Same shape as the fact sheet: content as data in one place for both languages, the page's own
+ * classes reused rather than new ones invented. The cost table is the fact sheet's label-and-value
+ * list, because that is what it is.
+ *
+ * The total is added up here rather than typed into the text, so a line that changes cannot leave
+ * a total that disagrees with it.
+ */
+import { transparency } from '../i18n/transparency';
+import type { Lang } from '../i18n/ui';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const page = transparency[lang];
+
+const money = (s: string) => Number(s.replace(/[^0-9.]/g, ''));
+const total = page.costs.reduce((sum, [, amount]) => sum + money(amount), 0);
+const totalText = `$${total.toFixed(2)}`;
+---
+
+<article class="doc wrap">
+  <h1>{page.heading}</h1>
+  <p class="lead">{page.intro}</p>
+
+  <h2 id="values">{page.valuesHeading}</h2>
+  <div class="cards doc-cards">
+    {page.values.map(([title, text]) => (
+      <div class="card">
+        <h3>{title}</h3>
+        <p>{text}</p>
+      </div>
+    ))}
+  </div>
+
+  <h2 id="costs">{page.costHeading}</h2>
+  <p>{page.costNote}</p>
+  <ul class="facts">
+    {page.costs.map(([label, amount, note]) => (
+      <li>
+        <b>{label}</b>
+        <span><b>{amount}</b> · {note}</span>
+      </li>
+    ))}
+    <li>
+      <b>{page.costTotal}</b>
+      <span><b>{totalText}</b></span>
+    </li>
+  </ul>
+
+  <h2 id="income">{page.incomeHeading}</h2>
+  <p>{page.income}</p>
+
+  <h2 id="help">{page.helpHeading}</h2>
+  <div class="cards doc-cards">
+    {page.help.map(([title, text]) => (
+      <div class="card">
+        <h3>{title}</h3>
+        <p>{text}</p>
+      </div>
+    ))}
+  </div>
+
+  <h2 id="sponsorship">{page.sponsorHeading}</h2>
+  <p>{page.sponsor}</p>
+
+  <h2 id="check">{page.checkHeading}</h2>
+  <p>{page.check}</p>
+</article>
