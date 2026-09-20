@@ -1,5 +1,5 @@
 {
-  "count": 1339,
+  "count": 1342,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -253,6 +253,7 @@
     "2e973f7c36fe17a9aeffa6ff99c3f2fd2c45b57c": [{"name":"Dark Bounty Rune","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "2eab72606cb6e1643cabb417993fc9634800ecf7": [{"name":"Old Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],
     "2ec754b81f8d65932037957bbdf98c80b437806e": [{"name":"Anti-Mage Blue Illidan","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "2ed7cdf7229925b9c21d79bdbfb85c6648289121": [{"name":"Broodmother Immortal Antiquity","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "2f393dae0c74fb29692a2d06bebe16947bd6c6b3": [{"name":"Dragon Knight Dragon Hold","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "2fa5f959a5e9b11c461e587ef7ce2c0ba9b06a80": [{"name":"Wave Lite Green","categoryId":"shaders","styleLabel":null,"type":"vpk"}],
     "2fc142e1c8fd24050376b8596a4f1889fc60cc2c": [{"name":"Visage Grimfeather Сorpse","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -479,6 +480,7 @@
     "5f7077156363b88410957b3eee7d5f7210f0f675": [{"name":"Grimstroke Arong","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "5f87d1a2986f2142e9c1ab0ee256d0bb980d3d64": [{"name":"Nian Courier","categoryId":"couriers","styleLabel":null,"type":"vpk"}],
     "5fca5fae7fcc31c67c1d494b25dd2f2972c20c32": [{"name":"Phantom Assassin Codicil","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
+    "601c9856cd4c5d195d0ff5e79d1f83d346ed4718": [{"name":"Pudge Gol0vach","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "603cf59ee7e8678a7c7437ed4a433b4b85c86cd2": [{"name":"Dark Willow","categoryId":"announcers","styleLabel":null,"type":"vpk"}],
     "605379fff72846f2117fd19a1bbad72784568bd6": [{"name":"Phantom Lancer Concord Dominion","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
     "6083d47f0a8ab51ddc9f91a30a82a3fd0f8e9e1b": [{"name":"Shadow Demon Grim Facade","categoryId":"hero-items","styleLabel":"Golden","type":"vpk"}],
@@ -809,6 +811,7 @@
     "9fd33e7f55255524be26364dc99820bd0cad84b8": [{"name":"Cosmic Earthshaker","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "9fd5af9c5185f948a5e450bac11bc09ec15aa078": [{"name":"Terrorblade 666 Fractal Horns","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "a006c0fc7a70c5ed2335af8de828d183f05f37aa": [{"name":"Snowing Marci","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "a04dd3a8fd83a9fc7e5d482caf7a220f59643a43": [{"name":"Anti-Mage Manta","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "a0aa37bffdfb3741c26eccc36bc3d3aedcdc165c": [{"name":"Guts","categoryId":"backgrounds","styleLabel":null,"type":"vpk"}],
     "a10ca98a1ab643b95be29ab48eb355de14cc1d00": [{"name":"Keeper of the Light Tamamo","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "a1469a11fe323c8cfdef290674c87f2c1a35a641": [{"name":"Bts3 Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],

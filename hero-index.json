@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1337,
+  "mods": 1340,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -48,6 +48,7 @@
         {"name":"Anti-Mage Creep","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","misc","head"]},
         {"name":"Anti-Mage Illidan","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","misc","head","weapon","legs","offhand","shoulder"]},
         {"name":"Anti-Mage Illidan v2","categoryId":"heroes","styleLabel":null,"slots":["head","weapon","arms","misc","belt"]},
+        {"name":"Anti-Mage Manta","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","misc","head","weapon"]},
         {"name":"Anti-Mage Prime","categoryId":"heroes","styleLabel":null,"slots":["weapon","misc","head","arms","belt"]},
         {"name":"Anti-Mage Ronin Warrior","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","misc","head","weapon"]},
         {"name":"Anti-Mage Shadow Slayer","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","misc","head","weapon"]},
@@ -187,6 +188,7 @@
       "mods": [
         {"name":"Broodmother Epoch of the Abysm","categoryId":"heroes","styleLabel":null,"slots":["head","misc","legs"]},
         {"name":"Broodmother Golden Orbweaver","categoryId":"heroes","styleLabel":null,"slots":["misc","head","legs"]},
+        {"name":"Broodmother Immortal Antiquity","categoryId":"heroes","styleLabel":null,"slots":["misc","head","legs"]},
         {"name":"Broodmother Redan","categoryId":"heroes","styleLabel":null,"slots":["misc","head","legs"]},
         {"name":"Broodmother Silken Queen","categoryId":"heroes","styleLabel":null,"slots":["misc","head","legs"]},
         {"name":"Broodmother Undermount Candles","categoryId":"heroes","styleLabel":null,"slots":["misc","legs","head","back"]},
@@ -1255,6 +1257,7 @@
         {"name":"Pudge Arcana Elephant","categoryId":"heroes","styleLabel":null,"slots":["weapon","belt","misc","head","back","arms"]},
         {"name":"Pudge Candy Cat","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
         {"name":"Pudge CM","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon"]},
+        {"name":"Pudge Gol0vach","categoryId":"heroes","styleLabel":null,"slots":["back","belt","head","arms","weapon","misc"]},
         {"name":"Pudge Hood of Defiance","categoryId":"hero-items","styleLabel":null,"slots":["head"]},
         {"name":"Pudge Immortal Gold","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
         {"name":"Pudge Iron Hog","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},

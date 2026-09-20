@@ -6646,6 +6646,143 @@
       ]
     },
     {
+      "id": "pudge",
+      "name": "Pudge",
+      "slug": "pudge",
+      "mods": [
+        {
+          "name": "Pudge Toy Butcher",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
+          "image": {"src":"/mods/pudge-toy-butcher.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1765448898
+        },
+        {
+          "name": "Pudge Toy Woodcutter",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
+          "image": {"src":"/mods/pudge-toy-woodcutter.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1788726574
+        },
+        {
+          "name": "Pudge Clown Toy",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc","shoulder"],
+          "image": {"src":"/mods/pudge-clown-toy.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1765283745
+        },
+        {
+          "name": "Pudge Arcana Elephant",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["weapon","belt","misc","head","back","arms"],
+          "image": {"src":"/mods/pudge-arcana-elephant.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1756539017
+        },
+        {
+          "name": "Pudge Candy Cat",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-candy-cat.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge Gol0vach",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","head","arms","weapon","misc"],
+          "image": {"src":"/mods/pudge-gol0vach.webp","width":854,"height":480},
+          "author": "твавт",
+          "authorUrl": "https://steamcommunity.com/id/myasu0/",
+          "date": 1789931584
+        },
+        {
+          "name": "Pudge Immortal Gold",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-immortal-gold.webp","width":854,"height":480},
+          "author": "Tenkay",
+          "authorUrl": "https://t.me/dota2Tenkay",
+          "date": 1786848392
+        },
+        {
+          "name": "Pudge Iron Hog",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-iron-hog.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge Mindless Slaughter",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-mindless-slaughter.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge Rotzo the Clown",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-rotzo-the-clown.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge CM",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon"],
+          "image": {"src":"/mods/pudge-cm.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1756539017
+        },
+        {
+          "name": "Gopo Pudge",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head"],
+          "image": {"src":"/mods/gopo-pudge.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1756539017
+        },
+        {
+          "name": "Pudge Hood of Defiance",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["head"],
+          "image": {"src":"/mods/pudge-hood-of-defiance.webp","width":854,"height":480},
+          "author": "apathydxd",
+          "authorUrl": "https://discord.com/users/538760177470668810",
+          "date": 1779803304
+        }
+      ]
+    },
+    {
       "id": "razor",
       "name": "Razor",
       "slug": "razor",
@@ -7184,6 +7321,133 @@
       ]
     },
     {
+      "id": "antimage",
+      "name": "Anti-Mage",
+      "slug": "anti-mage",
+      "mods": [
+        {
+          "name": "Anti-Mage Illidan",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon","legs","offhand","shoulder"],
+          "image": {"src":"/mods/anti-mage-illidan.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1769918621
+        },
+        {
+          "name": "Anti-Mage Turstarkuri Pilgrim",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon","legs","shoulder"],
+          "image": {"src":"/mods/anti-mage-turstarkuri-pilgrim.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1766149492
+        },
+        {
+          "name": "Immortal Anti-Mage",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon","offhand"],
+          "image": {"src":"/mods/immortal-anti-mage.webp","width":854,"height":480},
+          "author": "Haruma",
+          "authorUrl": "https://t.me/DotA_2_Mods",
+          "date": 1781266231
+        },
+        {
+          "name": "Anti-Mage Bloody Reaper",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon"],
+          "image": {"src":"/mods/anti-mage-bloody-reaper.webp","width":1280,"height":720},
+          "author": "CeoMods",
+          "authorUrl": "https://t.me/modsceo",
+          "date": 1786250017
+        },
+        {
+          "name": "Anti-Mage Blue Illidan",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon"],
+          "image": {"src":"/mods/anti-mage-blue-illidan.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1771574066
+        },
+        {
+          "name": "Anti-Mage Illidan v2",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","weapon","arms","misc","belt"],
+          "image": {"src":"/mods/anti-mage-illidan-v2.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1765372546
+        },
+        {
+          "name": "Anti-Mage Manta",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon"],
+          "image": {"src":"/mods/anti-mage-manta.webp","width":854,"height":480},
+          "author": "твавт",
+          "authorUrl": "https://steamcommunity.com/id/myasu0/",
+          "date": 1789935592
+        },
+        {
+          "name": "Anti-Mage Prime",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["weapon","misc","head","arms","belt"],
+          "image": {"src":"/mods/anti-mage-prime.webp","width":854,"height":480},
+          "author": "Ромчик",
+          "authorUrl": "https://watchmy.bio/shidehara",
+          "date": 1787851451
+        },
+        {
+          "name": "Anti-Mage Ronin Warrior",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon"],
+          "image": {"src":"/mods/anti-mage-ronin-warrior.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1769787537
+        },
+        {
+          "name": "Anti-Mage Shadow Slayer",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon"],
+          "image": {"src":"/mods/anti-mage-shadow-slayer.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1756923920
+        },
+        {
+          "name": "Curseding Anti-Mage",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head","weapon"],
+          "image": {"src":"/mods/curseding-anti-mage.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1775819130
+        },
+        {
+          "name": "Anti-Mage Creep",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","belt","misc","head"],
+          "image": {"src":"/mods/anti-mage-creep.webp","width":854,"height":480},
+          "author": "laskotdota",
+          "authorUrl": "https://t.me/laskotdota",
+          "date": 1768093343
+        }
+      ]
+    },
+    {
       "id": "batrider",
       "name": "Batrider",
       "slug": "batrider",
@@ -7307,6 +7571,133 @@
           "author": null,
           "authorUrl": null,
           "date": 1764003644
+        }
+      ]
+    },
+    {
+      "id": "broodmother",
+      "name": "Broodmother",
+      "slug": "broodmother",
+      "mods": [
+        {
+          "name": "Broodmother Undermount Candles",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","legs","head","back"],
+          "image": {"src":"/mods/broodmother-undermount-candles.webp","width":854,"height":480},
+          "author": "apathydxd",
+          "authorUrl": "https://discord.com/users/538760177470668810",
+          "date": 1778149447
+        },
+        {
+          "name": "Broodmother Epoch of the Abysm",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","misc","legs"],
+          "image": {"src":"/mods/broodmother-epoch-of-the-abysm.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1766145785
+        },
+        {
+          "name": "Broodmother Golden Orbweaver",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/broodmother-golden-orbweaver.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1780692007
+        },
+        {
+          "name": "Broodmother Immortal Antiquity",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/broodmother-immortal-antiquity.webp","width":854,"height":480},
+          "author": "твавт",
+          "authorUrl": "https://steamcommunity.com/id/myasu0/",
+          "date": 1789927392
+        },
+        {
+          "name": "Broodmother Redan",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/broodmother-redan.webp","width":854,"height":480},
+          "author": "arti4e",
+          "authorUrl": "https://t.me/d2modsreborn",
+          "date": 1756539017
+        },
+        {
+          "name": "Broodmother Silken Queen",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/broodmother-silken-queen.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1770736101
+        },
+        {
+          "name": "Broodmother Undermount Gloom",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/broodmother-undermount-gloom.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1776821710
+        },
+        {
+          "name": "Broodmother White Widow",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/broodmother-white-widow.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1766177291
+        },
+        {
+          "name": "Goffren Broodmother",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/goffren-broodmother.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1781266231
+        },
+        {
+          "name": "Purple Witch Broodmother",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","misc","legs"],
+          "image": {"src":"/mods/purple-witch-broodmother.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1764938743
+        },
+        {
+          "name": "Reverse Broodmother",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","head","legs"],
+          "image": {"src":"/mods/reverse-broodmother.webp","width":854,"height":480},
+          "author": "Миша Талант",
+          "authorUrl": "https://t.me/madberserker",
+          "date": 1789907693
+        },
+        {
+          "name": "SF Broodmother",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["legs"],
+          "image": {"src":"/mods/sf-broodmother.webp","width":854,"height":480},
+          "author": "laskotdota",
+          "authorUrl": "https://t.me/laskotdota",
+          "date": 1768065827
         }
       ]
     },
@@ -8191,133 +8582,6 @@
       ]
     },
     {
-      "id": "pudge",
-      "name": "Pudge",
-      "slug": "pudge",
-      "mods": [
-        {
-          "name": "Pudge Toy Butcher",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
-          "image": {"src":"/mods/pudge-toy-butcher.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1765448898
-        },
-        {
-          "name": "Pudge Toy Woodcutter",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
-          "image": {"src":"/mods/pudge-toy-woodcutter.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1788726574
-        },
-        {
-          "name": "Pudge Clown Toy",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc","shoulder"],
-          "image": {"src":"/mods/pudge-clown-toy.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1765283745
-        },
-        {
-          "name": "Pudge Arcana Elephant",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["weapon","belt","misc","head","back","arms"],
-          "image": {"src":"/mods/pudge-arcana-elephant.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1756539017
-        },
-        {
-          "name": "Pudge Candy Cat",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-candy-cat.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge Immortal Gold",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-immortal-gold.webp","width":854,"height":480},
-          "author": "Tenkay",
-          "authorUrl": "https://t.me/dota2Tenkay",
-          "date": 1786848392
-        },
-        {
-          "name": "Pudge Iron Hog",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-iron-hog.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge Mindless Slaughter",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-mindless-slaughter.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge Rotzo the Clown",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-rotzo-the-clown.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge CM",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon"],
-          "image": {"src":"/mods/pudge-cm.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1756539017
-        },
-        {
-          "name": "Gopo Pudge",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head"],
-          "image": {"src":"/mods/gopo-pudge.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1756539017
-        },
-        {
-          "name": "Pudge Hood of Defiance",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["head"],
-          "image": {"src":"/mods/pudge-hood-of-defiance.webp","width":854,"height":480},
-          "author": "apathydxd",
-          "authorUrl": "https://discord.com/users/538760177470668810",
-          "date": 1779803304
-        }
-      ]
-    },
-    {
       "id": "shadowshaman",
       "name": "Shadow Shaman",
       "slug": "shadow-shaman",
@@ -8953,123 +9217,6 @@
       ]
     },
     {
-      "id": "antimage",
-      "name": "Anti-Mage",
-      "slug": "anti-mage",
-      "mods": [
-        {
-          "name": "Anti-Mage Illidan",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon","legs","offhand","shoulder"],
-          "image": {"src":"/mods/anti-mage-illidan.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1769918621
-        },
-        {
-          "name": "Anti-Mage Turstarkuri Pilgrim",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon","legs","shoulder"],
-          "image": {"src":"/mods/anti-mage-turstarkuri-pilgrim.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1766149492
-        },
-        {
-          "name": "Immortal Anti-Mage",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon","offhand"],
-          "image": {"src":"/mods/immortal-anti-mage.webp","width":854,"height":480},
-          "author": "Haruma",
-          "authorUrl": "https://t.me/DotA_2_Mods",
-          "date": 1781266231
-        },
-        {
-          "name": "Anti-Mage Bloody Reaper",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon"],
-          "image": {"src":"/mods/anti-mage-bloody-reaper.webp","width":1280,"height":720},
-          "author": "CeoMods",
-          "authorUrl": "https://t.me/modsceo",
-          "date": 1786250017
-        },
-        {
-          "name": "Anti-Mage Blue Illidan",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon"],
-          "image": {"src":"/mods/anti-mage-blue-illidan.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1771574066
-        },
-        {
-          "name": "Anti-Mage Illidan v2",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["head","weapon","arms","misc","belt"],
-          "image": {"src":"/mods/anti-mage-illidan-v2.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1765372546
-        },
-        {
-          "name": "Anti-Mage Prime",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["weapon","misc","head","arms","belt"],
-          "image": {"src":"/mods/anti-mage-prime.webp","width":854,"height":480},
-          "author": "Ромчик",
-          "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1787851451
-        },
-        {
-          "name": "Anti-Mage Ronin Warrior",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon"],
-          "image": {"src":"/mods/anti-mage-ronin-warrior.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1769787537
-        },
-        {
-          "name": "Anti-Mage Shadow Slayer",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon"],
-          "image": {"src":"/mods/anti-mage-shadow-slayer.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1756923920
-        },
-        {
-          "name": "Curseding Anti-Mage",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head","weapon"],
-          "image": {"src":"/mods/curseding-anti-mage.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1775819130
-        },
-        {
-          "name": "Anti-Mage Creep",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","belt","misc","head"],
-          "image": {"src":"/mods/anti-mage-creep.webp","width":854,"height":480},
-          "author": "laskotdota",
-          "authorUrl": "https://t.me/laskotdota",
-          "date": 1768093343
-        }
-      ]
-    },
-    {
       "id": "bane",
       "name": "Bane",
       "slug": "bane",
@@ -9183,123 +9330,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1764003644
-        }
-      ]
-    },
-    {
-      "id": "broodmother",
-      "name": "Broodmother",
-      "slug": "broodmother",
-      "mods": [
-        {
-          "name": "Broodmother Undermount Candles",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","legs","head","back"],
-          "image": {"src":"/mods/broodmother-undermount-candles.webp","width":854,"height":480},
-          "author": "apathydxd",
-          "authorUrl": "https://discord.com/users/538760177470668810",
-          "date": 1778149447
-        },
-        {
-          "name": "Broodmother Epoch of the Abysm",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["head","misc","legs"],
-          "image": {"src":"/mods/broodmother-epoch-of-the-abysm.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1766145785
-        },
-        {
-          "name": "Broodmother Golden Orbweaver",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","head","legs"],
-          "image": {"src":"/mods/broodmother-golden-orbweaver.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1780692007
-        },
-        {
-          "name": "Broodmother Redan",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","head","legs"],
-          "image": {"src":"/mods/broodmother-redan.webp","width":854,"height":480},
-          "author": "arti4e",
-          "authorUrl": "https://t.me/d2modsreborn",
-          "date": 1756539017
-        },
-        {
-          "name": "Broodmother Silken Queen",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","head","legs"],
-          "image": {"src":"/mods/broodmother-silken-queen.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1770736101
-        },
-        {
-          "name": "Broodmother Undermount Gloom",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","head","legs"],
-          "image": {"src":"/mods/broodmother-undermount-gloom.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1776821710
-        },
-        {
-          "name": "Broodmother White Widow",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","head","legs"],
-          "image": {"src":"/mods/broodmother-white-widow.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1766177291
-        },
-        {
-          "name": "Goffren Broodmother",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","head","legs"],
-          "image": {"src":"/mods/goffren-broodmother.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1781266231
-        },
-        {
-          "name": "Purple Witch Broodmother",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["head","misc","legs"],
-          "image": {"src":"/mods/purple-witch-broodmother.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1764938743
-        },
-        {
-          "name": "Reverse Broodmother",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","head","legs"],
-          "image": {"src":"/mods/reverse-broodmother.webp","width":854,"height":480},
-          "author": "Миша Талант",
-          "authorUrl": "https://t.me/madberserker",
-          "date": 1789907693
-        },
-        {
-          "name": "SF Broodmother",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["legs"],
-          "image": {"src":"/mods/sf-broodmother.webp","width":854,"height":480},
-          "author": "laskotdota",
-          "authorUrl": "https://t.me/laskotdota",
-          "date": 1768065827
         }
       ]
     },
