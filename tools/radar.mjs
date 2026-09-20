@@ -37,6 +37,11 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 
 export const TITLE = 'Project status';
+/* The OpenSSF Best Practices entry this repository answers, see docs/openssf-answers.md. The
+   site fills a criterion whose answer is still a question mark from .bestpractices.json and
+   never touches one that is already saved, so the file and the entry drift apart silently and
+   the only sign is a percentage nobody is watching. */
+export const BADGE_PROJECT = 14721;
 export const MARK = '<!-- radar:v1 -->';
 
 /**
@@ -213,6 +218,33 @@ export function branchRuleGaps(rules, listed) {
  * the clock except through `now`. Every item says whether it is overdue (`overdue: true`), which
  * is what decides whether the maintainer gets a message.
  */
+/**
+ * Where the badge entry and this repository disagree about their own answers.
+ *
+ * `behind` is a criterion this repository answers and the entry has not taken: the robot on the
+ * form fills blanks only, so an answer written here after somebody pressed it never arrives.
+ * `disagree` is worse and rarer: both sides have an answer and they are different, which means
+ * somebody edited one of them by hand.
+ *
+ * @param {object} answers  .bestpractices.json
+ * @param {object} entry    the project's JSON from bestpractices.dev
+ * @returns {{behind: string[], disagree: string[]}}
+ */
+export function badgeDrift(answers, entry) {
+  const behind = [];
+  const disagree = [];
+  for (const [key, ours] of Object.entries(answers || {})) {
+    if (!key.endsWith('_status')) continue;
+    const id = key.slice(0, -'_status'.length);
+    const theirs = (entry || {})[key];
+    // a criterion the entry does not carry at all belongs to a level nobody has opened yet
+    if (theirs === undefined) continue;
+    if (theirs === null || theirs === '' || theirs === '?') behind.push(id);
+    else if (theirs !== ours) disagree.push(`${id}: the entry says ${theirs}, this repository says ${ours}`);
+  }
+  return { behind: behind.sort(), disagree: disagree.sort() };
+}
+
 export function evaluate(data, now = Date.now(), policy = POLICY) {
   const r = { decide: [], red: [], expiring: [], look: [], fine: [] };
 
@@ -289,6 +321,36 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
         detail: checks.join(', '),
         overdue: false,
       });
+    }
+  }
+
+  /* The badge questionnaire against the file this repository keeps it in. Nothing here is red:
+     an entry a couple of answers behind is a form nobody pressed Save on, not an outage. */
+  if (data.badge === 'unreadable') {
+    r.look.push({ title: 'The OpenSSF badge entry could not be read', detail: 'bestpractices.dev did not answer', overdue: false });
+  } else if (data.badge) {
+    const drift = badgeDrift(data.answers, data.badge);
+    const url = `https://www.bestpractices.dev/en/projects/${BADGE_PROJECT}`;
+    if (drift.behind.length) {
+      r.decide.push({
+        title: `${drift.behind.length} answer${drift.behind.length === 1 ? '' : 's'} in .bestpractices.json ${drift.behind.length === 1 ? 'is' : 'are'} not on the badge entry`,
+        url: `${url}/edit`,
+        detail: `${drift.behind.join(', ')}: open the form and press "Save (and continue)" with the robot, which fills answers the entry does not have`,
+        overdue: false,
+      });
+    }
+    if (drift.disagree.length) {
+      r.decide.push({
+        title: `The badge entry and this repository disagree about ${drift.disagree.length} criteri${drift.disagree.length === 1 ? 'on' : 'a'}`,
+        url: `${url}/edit`,
+        detail: `${drift.disagree.join('; ')}: the robot never overwrites a saved answer, so one of the two was edited by hand`,
+        overdue: false,
+      });
+    }
+    if (!drift.behind.length && !drift.disagree.length) {
+      const level = data.badge.badge_level || 'none';
+      const silver = data.badge.badge_percentage_1;
+      r.fine.push(`Badge entry matches this repository: ${level}${typeof silver === 'number' ? `, silver at ${silver}%` : ''}`);
     }
   }
 
@@ -561,6 +623,17 @@ async function gather(repo, token, now) {
     searchReportAt = reports.length ? reports[reports.length - 1].created_at : null;
   }
 
+  /* The badge entry, from the site rather than from GitHub: no token, and a failure is a line to
+     look at rather than a run that dies. */
+  let badge = 'unreadable';
+  try {
+    const res = await fetch(`https://www.bestpractices.dev/projects/${BADGE_PROJECT}.json`, {
+      headers: { 'User-Agent': 'dota2-mod-manager-radar' },
+    });
+    if (res.ok) badge = await res.json();
+  } catch { /* offline, or the site is down: the line says so */ }
+  const answers = JSON.parse(fs.readFileSync(path.join(root, '.bestpractices.json'), 'utf8'));
+
   const scanning = await api(`repos/${repo}/code-scanning/alerts?state=open&per_page=100`, { token, allow: [403, 404] });
   const codeScanning = Array.isArray(scanning) ? scanning : 'unreadable';
 
@@ -615,6 +688,8 @@ async function gather(repo, token, now) {
       codeScanning,
       audit: { app: audit(root), site: audit(path.join(root, 'site')) },
       scorecardUrl: `https://github.com/${repo}/security/code-scanning?query=tool%3AScorecard+is%3Aopen`,
+      badge,
+      answers,
       privateReporting: typeof pvr.enabled === 'boolean' ? pvr.enabled : undefined,
       securitySettingsUrl: `https://github.com/${repo}/settings/security_analysis`,
       communityHealth: community.health_percentage,

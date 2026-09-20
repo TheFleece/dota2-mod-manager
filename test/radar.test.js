@@ -323,3 +323,33 @@ test('a workflow that only runs when a release is published is watched wherever 
   }, NOW);
   assert.deepEqual(onMain.red.map((x) => x.title), ['Tests failed on main']);
 });
+
+test('the badge entry is watched for the answers it never took', async () => {
+  /* The site fills a criterion whose answer is still a question mark from .bestpractices.json and
+     leaves a saved one alone. So an answer corrected here after somebody pressed the button never
+     arrives, the entry keeps the old one, and the only sign is a percentage nobody is watching.
+     That is how vulnerability_report_private held the badge at 99% for a day. */
+  const { evaluate, badgeDrift } = await load();
+  const ours = { a_status: 'Met', b_status: 'Unmet', c_status: 'N/A' };
+
+  assert.deepEqual(badgeDrift(ours, { a_status: 'Met', b_status: 'Unmet', c_status: 'N/A' }), { behind: [], disagree: [] });
+  assert.deepEqual(badgeDrift(ours, { a_status: '?', b_status: 'Unmet', c_status: null }).behind, ['a', 'c']);
+  assert.deepEqual(badgeDrift(ours, { a_status: 'Unmet', b_status: 'Unmet', c_status: 'N/A' }).disagree,
+    ['a: the entry says Unmet, this repository says Met']);
+  assert.deepEqual(badgeDrift(ours, { a_status: 'Met' }), { behind: [], disagree: [] },
+    'a criterion the entry does not carry belongs to a level nobody has opened');
+
+  const behind = evaluate({ answers: ours, badge: { badge_level: 'passing', a_status: '?', b_status: 'Unmet', c_status: 'N/A' } }, NOW);
+  const line = behind.decide.find((x) => /not on the badge entry/.test(x.title));
+  assert.ok(line, 'an answer the entry never took is not reported');
+  assert.match(line.detail, /press "Save \(and continue\)"/);
+  assert.equal(line.overdue, false, 'a form nobody pressed Save on is not an outage');
+
+  const matching = evaluate({ answers: ours, badge: { badge_level: 'passing', badge_percentage_1: 98, a_status: 'Met', b_status: 'Unmet', c_status: 'N/A' } }, NOW);
+  assert.ok(matching.fine.some((f) => /Badge entry matches this repository: passing, silver at 98%/.test(f)));
+  assert.equal(matching.decide.filter((x) => /badge/i.test(x.title)).length, 0);
+
+  const down = evaluate({ answers: ours, badge: 'unreadable' }, NOW);
+  assert.ok(down.look.some((x) => /badge entry could not be read/.test(x.title)));
+});
+

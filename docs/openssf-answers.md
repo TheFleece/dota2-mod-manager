@@ -300,7 +300,12 @@ silver badge is out of reach, and that is the honest state of a project run by o
 
 ## After the badge
 
-- Put the badge in both READMEs, in the row of badges at the top.
-- Teach `tools/radar.mjs` to read the badge level, so a questionnaire that goes stale says so.
-- Silver asks for things this project does not have yet: a second maintainer, a documented
-  architecture review, and a signed release binary. Phase 3 of the quality plan is aimed there.
+All three are done.
+
+- The badge is in both READMEs, beside Scorecard.
+- `tools/radar.mjs` reads the entry every morning and compares it with `.bestpractices.json`. An
+  answer written here that the entry never took is a line in the status issue, because the robot
+  on the form fills blanks and leaves saved answers alone, so the two drift apart in silence.
+- Silver is written out above. It stands at 98%, and the 2% is `access_continuity`: one person
+  holds the release keys. [GOVERNANCE.md](../GOVERNANCE.md) and
+  [second-maintainer.md](second-maintainer.md) are what closes it the day somebody accepts.
