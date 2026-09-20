@@ -180,6 +180,7 @@ installed here survives its uninstall.
 | [PRIVACY.md](PRIVACY.md) | What is collected (nothing), and every address the app can contact |
 | [DECISIONS.md](DECISIONS.md) | What was decided on purpose, what is genuinely missing, and the command that checks each one |
 | [GOVERNANCE.md](GOVERNANCE.md) | Who decides what, how a change is accepted, and what happens to the project without its maintainer |
+| [docs/second-maintainer.md](docs/second-maintainer.md) | The second pair of hands: what the role is, and what to do on the day it matters |
 | [ROADMAP.md](ROADMAP.md) | What is coming next, what comes later, and what this project will not do |
 | [CHANGELOG.md](CHANGELOG.md) · [CHANGELOG.ru.md](CHANGELOG.ru.md) | What changed in each release |
 

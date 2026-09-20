@@ -25,6 +25,13 @@ against a game that changes under it, and holds the keys: the signing key for `c
 the release workflow's secrets, the domain and the mirror bucket. Nobody else has them today, and
 [Continuity](#continuity) says what that costs.
 
+**Second maintainer.** Somebody the maintainer trusts, holding the Maintain role: they can merge
+pull requests, push tags and close issues, and they cannot reach the repository's secrets. They
+are asked for opinions rather than for approvals, because a review here is never a gate, and they
+are the answer to the question "what happens if one person stops".
+[docs/second-maintainer.md](docs/second-maintainer.md) is the whole of it, including what to do on
+the day it matters.
+
 **Contributors.** Anybody who opens an issue, a pull request or a translation.
 [CONTRIBUTING.md](CONTRIBUTING.md) says what a change has to carry; nothing else is expected, and
 no agreement has to be signed. Opening a pull request means the change ships under GPL-3.0 as
@@ -41,22 +48,40 @@ In the issue, in writing. If it does not end there, the maintainer decides and r
 decision with its reason in [DECISIONS.md](DECISIONS.md). There is no committee and no vote,
 because there is nobody to vote.
 
-## Becoming a maintainer
+## Who can merge
+
+<!-- Every handle here must also be in .github/CODEOWNERS, and the other way round;
+     test/docs-current.test.js fails when they disagree. -->
+
+| Person | Role | Since |
+| --- | --- | --- |
+| [@TheFleece](https://github.com/TheFleece) | Maintainer | 2026-07-20 |
 
 Land changes over time, show the care this project asks for, and you can be invited. The
-maintainer invites; the invitation is recorded here, in this file, so the list of people who can
-merge is the same list everybody can read.
+maintainer invites, the row goes in this table, so the list of people who can merge is the same
+list everybody can read.
 
 ## Continuity
 
-Today this project has one maintainer, which is a risk it names rather than hides.
+A project one person can merge into is a project that stops when that person does. The answer
+here is a second maintainer with rights given before they are needed, described in
+[docs/second-maintainer.md](docs/second-maintainer.md): the Maintain role, enough to merge, tag
+and release, and not enough to reach a secret.
 
-What survives without him: the code. It is GPL-3.0 and public, so anybody may fork it and carry
+What survives either way: the code. It is GPL-3.0 and public, so anybody may fork it and carry
 on, and every release carries a provenance attestation that ties its files to the commit they
 were built from.
 
-What does not: the releases themselves, the update feed, the signed `config/app.json`, the site
-and the mirror. Those need keys and accounts only the maintainer holds, so a fork would have to
-start its own. Until that is arranged, the honest answer to "can this project keep releasing if
-one person disappears" is no, and it is answered that way on the project's
-[OpenSSF Best Practices entry](https://www.bestpractices.dev/en/projects/14721) as well.
+What a second maintainer adds: releases keep coming. Every pull request runs the same checks, CI
+builds and signs and publishes from a tag, and none of that needs a key the maintainer holds
+personally.
+
+What stays with the maintainer whatever happens: the private key that signs `config/app.json`,
+the domain and the mirror bucket. Losing those costs two conveniences rather than the project.
+The switches file stays at its last signed version, which every copy treats exactly as it treats
+an unreachable one, and the app falls back to GitHub when the mirror does not answer.
+
+Today the table above has one row, so the honest answer to "can this project keep releasing if
+one person disappears" is still no, and it is answered that way on the project's
+[OpenSSF Best Practices entry](https://www.bestpractices.dev/en/projects/14721). The day it has
+two, that answer changes and this paragraph goes.

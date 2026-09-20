@@ -157,3 +157,19 @@ test('the Electron version the documents name is the one package.json installs',
   }
   assert.deepEqual([...new Set(wrong)], [], [...new Set(wrong)].join('; '));
 });
+
+test('the people who can merge are the same list in both places', () => {
+  /* Rights and the record of them drift apart in the direction that matters: somebody is added on
+     GitHub and the page saying who can merge still names one person. CODEOWNERS is what GitHub
+     acts on, GOVERNANCE.md is what a reader is told, and neither is allowed to be alone. */
+  const owners = new Set([...read('.github/CODEOWNERS').matchAll(/@([A-Za-z0-9-]+)/g)].map((m) => m[1]));
+  const table = read('GOVERNANCE.md').split('## Who can merge')[1] || '';
+  const named = new Set([...table.split('## Continuity')[0].matchAll(/\[@([A-Za-z0-9-]+)\]/g)].map((m) => m[1]));
+
+  assert.ok(owners.size > 0, '.github/CODEOWNERS names nobody');
+  assert.deepEqual([...owners].filter((h) => !named.has(h)), [],
+    'in CODEOWNERS and not in the GOVERNANCE.md table');
+  assert.deepEqual([...named].filter((h) => !owners.has(h)), [],
+    'in the GOVERNANCE.md table and not in CODEOWNERS');
+});
+
