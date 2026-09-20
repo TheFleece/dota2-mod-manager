@@ -21,6 +21,8 @@
     <img src="https://img.shields.io/github/actions/workflow/status/TheFleece/dota2-mod-manager/codeql.yml?style=flat-square&label=codeql&labelColor=211f26&color=2bffa3" alt="Статус CodeQL"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/TheFleece/dota2-mod-manager">
     <img src="https://img.shields.io/ossf-scorecard/github.com/TheFleece/dota2-mod-manager?style=flat-square&label=openssf%20scorecard&labelColor=211f26" alt="Оценка OpenSSF Scorecard"></a>
+  <a href="https://www.bestpractices.dev/en/projects/14721">
+    <img src="https://img.shields.io/cii/level/14721?style=flat-square&label=openssf%20best%20practices&labelColor=211f26&color=2bffa3" alt="Значок OpenSSF Best Practices, уровень passing"></a>
   <img src="https://img.shields.io/github/last-commit/TheFleece/dota2-mod-manager?style=flat-square&label=%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BD%D0%B8%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BC%D0%B8%D1%82&labelColor=211f26&color=8b6ff0" alt="Последний коммит">
   <a href="LICENSE"><img src="https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-GPL--3.0-c4b5fd?style=flat-square&labelColor=211f26" alt="Лицензия"></a>
   <a href="https://dota2modmanager.com/ru/"><img src="https://img.shields.io/badge/%D1%81%D0%B0%D0%B9%D1%82-dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Сайт"></a>
@@ -174,6 +176,7 @@ v1.14rc7 проверяет принадлежность перед чистко
 | [CONTRIBUTING.md](CONTRIBUTING.md) · [AGENTS.md](AGENTS.md) · [SECURITY.md](SECURITY.md) | Как работать над проектом, с ИИ-ассистентом и без, и как сообщить о дыре |
 | [PRIVACY.md](PRIVACY.md) | Что собирается (ничего) и каждый адрес, куда приложение может пойти |
 | [DECISIONS.md](DECISIONS.md) | Что решено осознанно, чего действительно не хватает, и команда, которой это проверяется |
+| [GOVERNANCE.md](GOVERNANCE.md) | Кто принимает решения, как изменение попадает в проект и что с ним будет без сопровождающего |
 | [CHANGELOG.md](CHANGELOG.md) · [CHANGELOG.ru.md](CHANGELOG.ru.md) | Что менялось в каждом релизе |
 
 <br>
