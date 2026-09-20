@@ -76,7 +76,8 @@ you can undo anything this app does.
 and what Valve permits is their decision, not a property of this code.
 
 The argument behind these, with the trust boundaries and what each one is enforced by, is in
-[docs/assurance-case.md](docs/assurance-case.md).
+[docs/assurance-case.md](docs/assurance-case.md). What is signed, by whom, and what you can check
+yourself is in [docs/code-signing-policy.md](docs/code-signing-policy.md).
 
 ## Scope
 
