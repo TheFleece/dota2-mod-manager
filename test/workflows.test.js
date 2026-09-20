@@ -245,3 +245,19 @@ test('CI runs the same gate as a person and the commit hook', () => {
   assert.match(pkg.scripts.verify, /test:coverage/, 'npm run verify does not run the suite with its coverage floor');
   assert.match(read('test.yml'), /npm run verify/, 'test.yml runs its own list of steps instead of npm run verify');
 });
+
+test('the release asks for the antivirus check by name, because the event never comes', () => {
+  /* virustotal.yml listens for `release: published`, and that event is never raised: the release
+     is published by a workflow using GITHUB_TOKEN, and GitHub refuses to start workflows from
+     events its own token created. On its first chance, 2.7.0, it did not run, and the changelog
+     of that release said every release is scanned. */
+  const release = read('release.yml');
+  const publish = release.split(/^  publish:$/m)[1] || '';
+  assert.match(publish, /gh workflow run virustotal\.yml -f tag="\$TAG"/,
+    'publish does not start the antivirus check, and nothing else will');
+  assert.match(publish, /permissions:[\s\S]{0,120}actions: write/,
+    'starting another workflow needs actions: write');
+  assert.match(read('virustotal.yml'), /workflow_dispatch:[\s\S]{0,200}tag:/,
+    'virustotal.yml no longer takes the tag it is asked about');
+});
+

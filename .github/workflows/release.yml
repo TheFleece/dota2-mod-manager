@@ -414,6 +414,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       # By id: the tag endpoint does not see a draft, and `gh release edit` sends the tag along with
       # the change, which GitHub refuses whenever a second release shares it.
@@ -484,6 +485,22 @@ jobs:
               || { echo "::error::$want is missing from the release the updater reads"; exit 1; }
           done
           echo "one release, it is the latest, and it carries every file the updater and a person checking a download read"
+
+      # The antivirus check, asked for by name.
+      #
+      # virustotal.yml listens for `release: published` as well, and that event never comes: this
+      # release was published by a workflow using GITHUB_TOKEN, and GitHub refuses to start
+      # workflows from events its own token created. So the file sat there active and correct, and
+      # on its first chance, 2.7.0, it did not run: the release was public with a changelog saying
+      # every release is scanned. A dispatch is an API call rather than an event, so it runs.
+      - name: Ask for the antivirus check on this tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh workflow run virustotal.yml -f tag="$TAG"
+          echo "asked VirusTotal to look at $TAG"
 
   # A second place to get the update from.
   #

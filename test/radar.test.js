@@ -353,3 +353,21 @@ test('the badge entry is watched for the answers it never took', async () => {
   assert.ok(down.look.some((x) => /badge entry could not be read/.test(x.title)));
 });
 
+test('a workflow that only runs on a release, and never has, is red', async () => {
+  /* Nothing above catches it: no schedule to be late for, no failed run to report. VirusTotal was
+     added on 2026-09-17, was active and correct, and had not run once by 2.7.0, because a release
+     published by a workflow token raises no event. */
+  const { evaluate } = await load();
+  const vt = (over = {}) => ({ name: 'VirusTotal', state: 'active', url: 'u', intervalHours: null, onRelease: true, lastRun: null, created_at: ago(72), ...over });
+
+  const never = evaluate({ workflows: [vt()] }, NOW);
+  assert.deepEqual(never.red.map((x) => x.title), ['VirusTotal has never run, and it is meant to run on a release']);
+  assert.equal(never.overdue.length, 1);
+
+  const ran = evaluate({ workflows: [vt({ lastRun: { conclusion: 'success', created_at: ago(2), url: 'r', branch: 'v2.7.0' } })] }, NOW);
+  assert.deepEqual(ran.red, [], 'a release workflow that has run is not red for having no schedule');
+
+  const other = evaluate({ workflows: [vt({ onRelease: false })] }, NOW);
+  assert.deepEqual(other.red, [], 'a workflow nothing schedules and no release starts is not this rule to answer');
+});
+

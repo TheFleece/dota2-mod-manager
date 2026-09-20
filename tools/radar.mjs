@@ -419,6 +419,18 @@ export function evaluate(data, now = Date.now(), policy = POLICY) {
       const where = w.lastRun.branch && w.lastRun.branch !== 'main' ? ` on ${w.lastRun.branch}` : ' on main';
       r.red.push({ title: `${w.name} failed${where}`, url: w.lastRun.url, detail: `last run ${String(w.lastRun.created_at).slice(0, 10)}`, overdue: true });
     }
+    /* A workflow nothing schedules is only ever started by something else, and when that
+       something is an event GitHub refuses to raise (a release published by a workflow token, for
+       one) the file sits active and correct and never runs. Nothing above notices: it has no
+       schedule to be late for and no failed run to report. */
+    if (!w.intervalHours && w.onRelease && !w.lastRun) {
+      r.red.push({
+        title: `${w.name} has never run, and it is meant to run on a release`,
+        url: w.url,
+        detail: 'a release published by a workflow raises no event: start it by name from release.yml',
+        overdue: true,
+      });
+    }
     if (w.intervalHours) {
       /* GitHub starts scheduled runs when it can, not when the cron says: in September 2026 the
          30-minute catalog job actually ran every five or six hours. Twice the interval is the
@@ -656,6 +668,7 @@ async function gather(repo, token, now) {
       state: w.state,
       url: w.html_url,
       intervalHours: schedules.get(w.path) || null,
+      onRelease: onRelease.has(w.path),
       created_at: w.created_at,
       lastRun: last ? { conclusion: last.conclusion, created_at: last.created_at, url: last.html_url, branch: last.head_branch } : null,
     });
