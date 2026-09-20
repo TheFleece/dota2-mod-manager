@@ -4,10 +4,17 @@ The passing badge is a self-assessment on [bestpractices.dev](https://www.bestpr
 file holds an answer for every criterion at that level, with the link the form asks for, so filling
 it in is copying rather than remembering. The criteria ids match the anchors in the form.
 
-The same answers live in `.bestpractices.json` at the root of this repository, which the badge
-site reads by itself: opening the questionnaire and pressing "Save (and continue)" with the robot
-icon fills the form with them, to accept or change. This file is that list in prose, and
-test/openssf.test.js fails when the two stop naming the same criteria.
+The same answers live in `.bestpractices.json` at the root of this repository, which the badge site
+reads by itself: opening the questionnaire and pressing "Save (and continue)" with the robot icon
+fills the form from it. This file is that list in prose, and test/openssf.test.js fails when the
+two stop naming the same criteria.
+
+**The file fills blanks, it does not correct the form.** The site applies a proposed answer only
+where the form still says `?`; a criterion that already has a saved answer keeps it, whatever the
+file says afterwards. So changing an answer that is already on the form means editing it there, and
+editing the file alone changes nothing on the site. That is how the entry sat at 99% for a day in
+September 2026: `vulnerability_report_private` had been saved without the URL that criterion
+requires, the file was corrected, the robot read it, and the form kept the answer it already had.
 
 The project entry is https://www.bestpractices.dev/en/projects/14721.
 
