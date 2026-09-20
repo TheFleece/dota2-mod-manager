@@ -2,6 +2,60 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.7.0
+
+### A beta channel, for the people who asked to be first
+
+A few accounts now get builds before everybody else. If yours is one of them, Settings has a
+switch under Discord; if it is not, there is nothing there and nothing to miss. Signing out of
+Discord gives up the beta with it.
+
+The list is held in a signed file the app reads on its own, so being added or taken off it does
+not wait for an update, and it holds a fingerprint of a Discord account rather than the account.
+
+Staged rollout was dropped here for a good reason: an urgent fix has to reach everybody at once.
+This is the other half of that argument, a few people who know they are running what has not been
+released yet.
+
+### The Download button works again in the portable build
+
+A portable copy that found an update answered "no update" when you pressed Download, and has
+done since 2.3.0. It read which version to fetch once at start-up, before any check had run, so
+the answer was always empty. Installed copies replace themselves and were never affected.
+
+### Fonts and cursors stop coming back after you remove them
+
+Since 2.0.0 the app put back any font or cursor that Steam's file check had replaced, and it
+decided what to put back by comparing files. A mod that ships some of Valve's files unchanged
+looked identical at once: one install logged the same cursor set as "restored after verify" 29
+times in August, and removing such a mod could leave its files behind as if they were the game's.
+
+Every font and cursor the app writes is now recorded by its hash. A file holding what the app
+wrote is the app's file, and it is no longer mistaken for the game's. A copy installed before this
+reports the old way once more, and putting it back writes the record.
+
+### A cosmetic pick, called what it actually is
+
+The window and the site used to say "free cosmetics". That was never quite true, and it hid the
+part worth knowing: the app takes the standard item your account already has and draws it with the
+look of another one, in its own copy of the game's item table. Nothing is bought, nothing enters
+your inventory, and only you see it. Every text now says that instead.
+
+### Every release is scanned, and the result is published
+
+Two false positives reached people before anybody here knew there was something to answer. Each
+release is now looked up on VirusTotal by the checksum it already carries, and the verdict goes
+into the release notes as a table with a link for every file, whatever it says.
+
+### Smaller things
+
+- The app can be told about another place to download mods from without shipping an update, which
+  matters on the day GitHub is unreachable.
+- A damaged VPK tree or archive is refused in this app's own words rather than crashing or
+  reaching you in a library's.
+- A language folder that has to be created is created in one step, so a slow disk cannot leave it
+  half made.
+
 ## 2.6.12
 
 ### A technical release
