@@ -26,13 +26,13 @@ export const transparency = {
     ],
 
     costHeading: 'What it costs to run',
-    costNote: 'Per month, in US dollars. The free tiers are the published ones, not a favour.',
+    costNote: 'Per month, in euros, because that is what the largest line is billed in. The free tiers are the published ones, not a favour.',
     costs: [
-      ['Domain', '$0.88', 'dota2modmanager.com, about $10.50 a year at Cloudflare Registrar'],
-      ['Site and CDN', '$0.00', 'Cloudflare Pages and Workers, free plan'],
-      ['Mod and update mirror', '$0.00', 'Cloudflare R2, free up to 10 GB; 8.8 GB used'],
-      ['Build machines', '$0.00', 'GitHub Actions, free for a public repository'],
-      ['Code assistant', '$100.00', 'The subscription this project is written with, said out loud because the README says so too'],
+      ['Domain', '€0.80', 'dota2modmanager.com, about $10.50 a year at Cloudflare Registrar, billed in dollars'],
+      ['Site and CDN', '€0.00', 'Cloudflare Pages and Workers, free plan'],
+      ['Mod and update mirror', '€0.00', 'Cloudflare R2, free up to 10 GB; 8.8 GB used'],
+      ['Build machines', '€0.00', 'GitHub Actions, free for a public repository'],
+      ['Code assistant', '€22.50', 'Claude Pro, after tax. The subscription this project is written with, said out loud because the README says so too'],
     ],
     costTotal: 'Total',
 
@@ -72,13 +72,13 @@ export const transparency = {
     ],
 
     costHeading: 'Во сколько обходится',
-    costNote: 'В месяц, в долларах. Бесплатные тарифы здесь обычные опубликованные, а не одолжение.',
+    costNote: 'В месяц, в евро, потому что в них выставлена самая большая строка. Бесплатные тарифы здесь обычные опубликованные, а не одолжение.',
     costs: [
-      ['Домен', '$0.88', 'dota2modmanager.com, около 10,5 долларов в год в Cloudflare Registrar'],
-      ['Сайт и CDN', '$0.00', 'Cloudflare Pages и Workers, бесплатный тариф'],
-      ['Зеркало модов и обновлений', '$0.00', 'Cloudflare R2, бесплатно до 10 ГБ; занято 8,8 ГБ'],
-      ['Сборочные машины', '$0.00', 'GitHub Actions, бесплатно для открытого репозитория'],
-      ['Помощник для кода', '$100.00', 'Подписка, с которой пишется этот проект. Сказано вслух, потому что в README про это тоже сказано'],
+      ['Домен', '€0.80', 'dota2modmanager.com, около 10,5 долларов в год в Cloudflare Registrar, счёт в долларах'],
+      ['Сайт и CDN', '€0.00', 'Cloudflare Pages и Workers, бесплатный тариф'],
+      ['Зеркало модов и обновлений', '€0.00', 'Cloudflare R2, бесплатно до 10 ГБ; занято 8,8 ГБ'],
+      ['Сборочные машины', '€0.00', 'GitHub Actions, бесплатно для открытого репозитория'],
+      ['Помощник для кода', '€22.50', 'Claude Pro, с налогами. Подписка, с которой пишется этот проект. Сказано вслух, потому что в README про это тоже сказано'],
     ],
     costTotal: 'Итого',
 

@@ -16,9 +16,12 @@ interface Props { lang: Lang }
 const { lang } = Astro.props;
 const page = transparency[lang];
 
+/* One currency for the column, taken from the lines themselves rather than assumed, so a page
+   that moves to another one does not leave a total with the old sign on it. */
 const money = (s: string) => Number(s.replace(/[^0-9.]/g, ''));
+const sign = page.costs[0][1].replace(/[0-9.,\s]/g, '') || '€';
 const total = page.costs.reduce((sum, [, amount]) => sum + money(amount), 0);
-const totalText = `$${total.toFixed(2)}`;
+const totalText = `${sign}${total.toFixed(2)}`;
 ---
 
 <article class="doc wrap">
