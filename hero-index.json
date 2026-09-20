@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1335,
+  "mods": 1337,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -677,6 +677,7 @@
       "mods": [
         {"name":"Juggernaut Ancient Exile","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]},
         {"name":"Juggernaut Arcana","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]},
+        {"name":"Juggernaut Arcana Golden Edge","categoryId":"heroes","styleLabel":null,"slots":["head","misc","arms","back","weapon"]},
         {"name":"Juggernaut Arcana Purple","categoryId":"heroes","styleLabel":null,"slots":["head","misc","weapon","back","arms"]},
         {"name":"Juggernaut Bladeform Aesthete","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]},
         {"name":"Juggernaut Fireborn Assault","categoryId":"heroes","styleLabel":null,"slots":["weapon"]},
@@ -1703,6 +1704,7 @@
         {"name":"Tinker Cripple","categoryId":"hero-items","styleLabel":null,"slots":[]},
         {"name":"Tinker Deathsman","categoryId":"heroes","styleLabel":null,"slots":["back","head","arms","shoulder"]},
         {"name":"Tinker Deep Hornet","categoryId":"heroes","styleLabel":null,"slots":["back","head","arms","shoulder"]},
+        {"name":"Tinker Flame","categoryId":"heroes","styleLabel":null,"slots":["head","back","arms","shoulder"]},
         {"name":"Tinker Fortified Fabricator","categoryId":"heroes","styleLabel":null,"slots":["back","head","arms","shoulder"]},
         {"name":"Tinker Frusy","categoryId":"heroes","styleLabel":null,"slots":["back","head","arms","shoulder","legs","weapon","misc"]},
         {"name":"Tinker Immortal","categoryId":"heroes","styleLabel":null,"slots":["misc","head","back","arms","shoulder"]},

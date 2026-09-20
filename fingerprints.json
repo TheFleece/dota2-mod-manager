@@ -1,5 +1,5 @@
 {
-  "count": 1337,
+  "count": 1339,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -373,6 +373,7 @@
     "487a9bbba26a2538fc80f4e549ce30ac2d8ead1f": [{"name":"Alchemist Radiance Blades","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
     "48de643c5b8e63a0fcfd58471ab13337714025b7": [{"name":"Cone Trees","categoryId":"trees","styleLabel":null,"type":"vpk"}],
     "48e4c3c474177278a545c84dfdca5eb0454f20c4": [{"name":"Ember Spirit Master of Searing Path","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "48f248c591651618555c68125c082ac842eb8f67": [{"name":"Juggernaut Arcana Golden Edge","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "494cdd1e983b0950457fa3016a3be94d879988a1": [{"name":"Axe Immortal Bootblack","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "49570d55b07d147f79dacab4804b261a8f292ca3": [{"name":"BP 2022 Mekanism","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "49580a77a7e07a63a56ae3cb6fb7c6bfa8d7d199": [{"name":"Wraith King Pizdec","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -825,6 +826,7 @@
     "a3a43dae77ebf4080370461011d09932cd677287": [{"name":"Sven Yatogami Tohka v2","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "a3b37135d02310f58ffc0c63e02dbf612b296663": [{"name":"Windranger Pedestal","categoryId":"pedestal","styleLabel":null,"type":"vpk"}],
     "a3fd21a95226b208812ffcacd983a640e663e40d": [{"name":"USSR and Germany Horn","categoryId":"sounds","styleLabel":null,"type":"vpk"}],
+    "a4026c300c26b6a4088029f18deb28e93fd1ca58": [{"name":"Tinker Flame","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "a49d33a3345dd725b832ed85fce10f149c866e36": [{"name":"Golden Huntling","categoryId":"couriers","styleLabel":null,"type":"vpk"}],
     "a5227d709be332f9256f53ddbe7d3b8fa281e459": [{"name":"Honey Heist Baby Roshan","categoryId":"couriers","styleLabel":null,"type":"vpk"}],
     "a567c20bbe2c1aa1fbb09bda7bfa1f3c1e138cc3": [{"name":"Warlock Puppet Bear","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
