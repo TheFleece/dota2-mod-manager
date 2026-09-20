@@ -64,7 +64,9 @@ test('a host the signed config names joins the chain, after our own copy and bef
   const list = net.mirrorsFor(RAW_URL);
   const at = list.findIndex((u) => u.startsWith(GITLAB));
   assert.equal(list[at], `${GITLAB}heroes/Mod.zip`, 'the path after assets/files/ is kept');
-  assert.ok(at > list.findIndex((u) => u.includes('cdn.dota2modmanager.com')), 'after our own bucket');
+  // the whole prefix, not a host anywhere in the string: a substring check here reads as a
+  // security check to the scanner, and it would be a bad one
+  assert.ok(at > list.findIndex((u) => u.startsWith('https://cdn.dota2modmanager.com/')), 'after our own bucket');
   assert.ok(at < list.findIndex((u) => u.startsWith('https://ghproxy.net/')), 'before the proxies, which are GitHub again');
 
   net.applyMirrors([]);
