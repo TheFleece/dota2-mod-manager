@@ -37,6 +37,47 @@ Anything that gets code running, writes outside those places, or turns catalogue
 instruction is worth reporting. So is anything that makes the app fetch from somewhere it was
 not asked to.
 
+## What you can expect, and what you cannot
+
+The promises this app makes, so that a broken one is a bug you can name.
+
+**You can expect that nothing reaches your game folder unchecked.** Every mod archive is measured
+against a sha256 from a list its author signed, and bytes that do not match never get written.
+
+**You can expect Valve's own files back.** Anything the app replaces or patches is copied first
+and restored byte for byte, and a Dota patch that takes files back is noticed and repaired rather
+than left to you.
+
+**You can expect an archive to stay inside the folders the app owns.** A name inside a zip is a
+name, not a path: absolute paths, parent traversal and links are refused before anything is
+written.
+
+**You can expect the app never to run code it downloaded.** Mods are data. The single executable
+it can fetch is a published tool, pinned by version and hash, and only when you ask for it.
+
+**You can expect it to keep no secret of yours.** There is no password anywhere, no token is
+stored, and signing in with Discord keeps a name, an id and an avatar. Every address the app can
+reach is listed in [PRIVACY.md](PRIVACY.md).
+
+**You can expect a release to be traceable to its source.** `SHA256SUMS` and a Sigstore
+attestation tie every published file to the commit it was built from, which you can check
+yourself with the commands below.
+
+**You cannot expect a mod to be reviewed.** The app checks who published a file and that the
+bytes are theirs. It does not judge what a mod does to the game's look, and a mod can be ugly,
+broken or a copyright argument waiting to happen.
+
+**You cannot expect protection from somebody who already has your machine.** Anything running as
+you can undo anything this app does.
+
+**You cannot expect a signed installer yet.** It is not code-signed, and SmartScreen says so.
+
+**You cannot expect us to speak for Valve.** What this app changes is client-side and cosmetic,
+and what Valve permits is their decision, not a property of this code.
+
+The argument behind these, with the trust boundaries and what each one is enforced by, is in
+[docs/assurance-case.md](docs/assurance-case.md).
+
 ## Scope
 
 In scope: this repository, and the installers published from it.

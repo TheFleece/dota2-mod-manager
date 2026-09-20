@@ -225,6 +225,79 @@ Shorthand used below: **repo** is `https://github.com/TheFleece/dota2-mod-manage
 > that matters: a path that would leave its folder, an archive that lies about its size, a game
 > folder that holds no game. Production builds do not carry extra assertions beyond those refusals.
 
+## Silver
+
+The next level up, 55 criteria, on the same entry:
+https://www.bestpractices.dev/en/projects/14721/silver
+
+The silver form starts empty, which is what makes the file worth keeping: the site fills a
+criterion whose answer is still a question mark from `.bestpractices.json`, so opening the
+silver page and pressing the robot button carries all of these over at once. It cannot change
+an answer that is already saved.
+
+One of them is a MUST this project does not meet, and will not meet by writing:
+`access_continuity`. Anybody can fork the code and carry it on, and nobody but the maintainer
+can cut a release, sign the config or touch the site. Until somebody else holds those keys the
+silver badge is out of reach, and that is the honest state of a project run by one person.
+
+| Criterion | Answer | URL to give |
+| --- | --- | --- |
+| `achieve_passing` | Met | the badge entry |
+| `contribution_requirements` | Met | repo CONTRIBUTING.md |
+| `dco` | Unmet (SHOULD) | repo CONTRIBUTING.md |
+| `governance` | Met | repo GOVERNANCE.md |
+| `code_of_conduct` | Met | repo CODE_OF_CONDUCT.md |
+| `roles_responsibilities` | Met | repo GOVERNANCE.md |
+| `access_continuity` | Unmet | repo GOVERNANCE.md |
+| `bus_factor` | Unmet (SHOULD) | repo DECISIONS.md |
+| `documentation_roadmap` | Met | repo ROADMAP.md |
+| `documentation_architecture` | Met | repo ARCHITECTURE.md |
+| `documentation_security` | Met | repo SECURITY.md |
+| `documentation_quick_start` | Met | repo README.md |
+| `documentation_current` | Met | repo docs/API.md |
+| `documentation_achievements` | Met | repo README.md |
+| `accessibility_best_practices` | Met (SHOULD) | repo renderer |
+| `internationalization` | Met (SHOULD) | repo tools/check-i18n.js |
+| `sites_password_security` | N/A | none needed |
+| `maintenance_or_update` | Met | repo RELEASING.md |
+| `report_tracker` | Met | https://github.com/TheFleece/dota2-mod-manager/issues |
+| `vulnerability_report_credit` | N/A | repo SECURITY.md |
+| `vulnerability_response_process` | Met | repo SECURITY.md |
+| `coding_standards` | Met | repo eslint.config.js |
+| `coding_standards_enforced` | Met | none needed |
+| `build_standard_variables` | N/A | none needed |
+| `build_preserve_debug` | N/A (SHOULD) | none needed |
+| `build_non_recursive` | N/A | none needed |
+| `build_repeatable` | N/A | repo SECURITY.md |
+| `installation_common` | Met | repo README.md |
+| `installation_standard_variables` | N/A | none needed |
+| `installation_development_quick` | Met | repo CONTRIBUTING.md |
+| `external_dependencies` | Met | repo package.json |
+| `dependency_monitoring` | Met | repo .github/dependabot.yml |
+| `updateable_reused_components` | Met | none needed |
+| `interfaces_current` | Met (SHOULD) | none needed |
+| `automated_integration_testing` | Met | repo .github/workflows/test.yml |
+| `regression_tests_added50` | Met | repo tools/pr-test-rule.mjs |
+| `test_statement_coverage80` | Met | repo .github/coverage-baseline.json |
+| `test_policy_mandated` | Met | repo CONTRIBUTING.md |
+| `tests_documented_added` | Met | repo CONTRIBUTING.md |
+| `warnings_strict` | Met | none needed |
+| `implement_secure_design` | Met | repo docs/assurance-case.md |
+| `crypto_weaknesses` | Met | none needed |
+| `crypto_algorithm_agility` | Unmet (SHOULD) | none needed |
+| `crypto_credential_agility` | N/A | none needed |
+| `crypto_used_network` | Met (SHOULD) | repo PRIVACY.md |
+| `crypto_tls12` | Met (SHOULD) | none needed |
+| `crypto_certificate_verification` | Met | none needed |
+| `crypto_verification_private` | Met | none needed |
+| `signed_releases` | Met | repo SECURITY.md |
+| `version_tags_signed` | Unmet (SUGGESTED) | none needed |
+| `input_validation` | Met | repo docs/assurance-case.md |
+| `hardening` | Met (SHOULD) | none needed |
+| `assurance_case` | Met | repo docs/assurance-case.md |
+| `static_analysis_common_vulnerabilities` | Met | none needed |
+| `dynamic_analysis_unsafe` | N/A | none needed |
+
 ## After the badge
 
 - Put the badge in both READMEs, in the row of badges at the top.

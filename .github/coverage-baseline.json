@@ -1,7 +1,7 @@
 {
   "_why": "How much of each file the suite covers, and the aggregate floor. tools/coverage.mjs refuses a run where a file drops more than half a point below its line, or where a measured file stops being measured. The per-file lines are held per platform, from the map below, because the two platforms measure differently; a platform with no entry here is held to the aggregate floor alone, which holds everywhere and sits under both. Raise a line by writing tests and running: node tools/coverage.mjs --update, which rewrites only the platform it ran on and leaves the others exactly as they were. Never lower one to make a run pass.",
   "global": {
-    "lines": 74,
+    "lines": 80,
     "branches": 76,
     "functions": 72
   },

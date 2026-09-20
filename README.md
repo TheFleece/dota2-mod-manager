@@ -176,6 +176,7 @@ installed here survives its uninstall.
 | [Every fact, checkable](https://dota2modmanager.com/facts/) | Version, platforms, counts, and how to verify each one |
 | [ARCHITECTURE.md](ARCHITECTURE.md) · [docs/API.md](docs/API.md) | Which file owns which decision, and every module's exports |
 | [CONTRIBUTING.md](CONTRIBUTING.md) · [AGENTS.md](AGENTS.md) · [SECURITY.md](SECURITY.md) | How to work on it, with or without an assistant, and how to report a hole |
+| [docs/assurance-case.md](docs/assurance-case.md) | What could go wrong, what stops it, and the test that proves each answer |
 | [PRIVACY.md](PRIVACY.md) | What is collected (nothing), and every address the app can contact |
 | [DECISIONS.md](DECISIONS.md) | What was decided on purpose, what is genuinely missing, and the command that checks each one |
 | [GOVERNANCE.md](GOVERNANCE.md) | Who decides what, how a change is accepted, and what happens to the project without its maintainer |
