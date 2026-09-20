@@ -31,10 +31,12 @@ than one place, and where is still open.
 releasing when one person disappears, which is the same gap [GOVERNANCE.md](GOVERNANCE.md) names
 at the end. Everything else on that list is written down or already true.
 
-**An Arch package.** `tools/gen-aur.js` already builds the PKGBUILD from a release. Publishing it
-waits on account registration at the AUR reopening.
-
 ## Later
+
+**An Arch package, when the AUR lets anybody in again.** `tools/gen-aur.js` already builds the
+PKGBUILD from a release. Registration at the AUR has been closed since late August 2026 while
+they deal with a wave of automated accounts, with no queue and no date, so this is ready and
+parked rather than next.
 
 **Linux caught up with Windows.** The AppImage has shipped since 2.4.0 and CI installs a mod
 through it on every change, but Windows has a year of people using it and Linux has months.

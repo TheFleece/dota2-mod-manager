@@ -94,6 +94,17 @@ module.exports = [
     rules,
   },
   {
+    /* The mail worker runs in Cloudflare's runtime rather than in Node: a module, with fetch and
+       friends, and none of Node's own globals. */
+    files: ['tools/email-worker/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: 'module',
+      globals: { fetch: 'readonly', Headers: 'readonly', Response: 'readonly', console: 'readonly' },
+    },
+    rules,
+  },
+  {
     // .mjs tools are modules, and they have top-level await
     files: ['tools/**/*.mjs'],
     languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: NODE },

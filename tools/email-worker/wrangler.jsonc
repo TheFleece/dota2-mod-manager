@@ -1,0 +1,15 @@
+{
+  // The mailbox doorbell. See worker.js for what it does and README.md for how to switch it on.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dota2modmanager-mail",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-01",
+  "vars": {
+    // where the whole message goes; it has to be a verified destination in Email Routing
+    "FORWARD_TO": "linnik.misha.2007@gmail.com"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // DISCORD_WEBHOOK is a secret, not a var: npx wrangler secret put DISCORD_WEBHOOK
+}
