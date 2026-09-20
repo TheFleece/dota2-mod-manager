@@ -55,6 +55,38 @@ function tempDir(t) {
 
 test.afterEach(() => net.setMirrors(null));
 
+test('a host the signed config names joins the chain, after our own copy and before the proxies', () => {
+  /* The built-in list is compiled in, so arranging a second copy of the catalog somewhere used
+     to mean a release and then waiting for people to take it. */
+  const GITLAB = 'https://gitlab.com/rotten/mirror/-/raw/main/assets/files/';
+  net.applyMirrors([{ id: 'gitlab', base: GITLAB, host: 'gitlab.com' }]);
+
+  const list = net.mirrorsFor(RAW_URL);
+  const at = list.findIndex((u) => u.startsWith(GITLAB));
+  assert.equal(list[at], `${GITLAB}heroes/Mod.zip`, 'the path after assets/files/ is kept');
+  assert.ok(at > list.findIndex((u) => u.includes('cdn.dota2modmanager.com')), 'after our own bucket');
+  assert.ok(at < list.findIndex((u) => u.startsWith('https://ghproxy.net/')), 'before the proxies, which are GitHub again');
+
+  net.applyMirrors([]);
+  assert.equal(net.mirrorsFor(RAW_URL).some((u) => u.startsWith(GITLAB)), false, 'and taken out again by an empty list');
+});
+
+test('a host named in the config is never the one believed when no copy matches the published hash', () => {
+  /* origin means the host the catalog is published from, which is the one host the published
+     hashes cannot prove anything about. A file named in the config is somewhere else entirely. */
+  net.applyMirrors([
+    { id: 'gitlab', base: 'https://gitlab.com/x/-/raw/main/assets/files/', host: 'gitlab.com' },
+    { id: 'liar', base: 'https://raw.githubusercontent.com/x/y/main/assets/files/', host: 'raw.githubusercontent.com' },
+  ]);
+
+  const entries = net.entriesFor(RAW_URL);
+  const origins = entries.filter((e) => e.origin);
+  assert.equal(origins.length, 1, 'exactly one entry is the origin');
+  assert.equal(origins[0].url, RAW_URL);
+  assert.equal(entries.filter((e) => e.host === 'raw.githubusercontent.com').length, 1,
+    'and an entry claiming that host is dropped rather than added beside it');
+});
+
 test('a GitHub raw URL gets mirrors, and a size-capped one only for small files', () => {
   const big = net.mirrorsFor(RAW_URL);
   const small = net.mirrorsFor(RAW_URL, { small: true });

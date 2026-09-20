@@ -390,7 +390,38 @@ function setMirrors(list) {
   health.clear();
 }
 
+/**
+ * Put the hosts the signed config names into the chain, or take them out again.
+ *
+ * The built-in list is compiled in, so arranging a second copy of the catalog somewhere used to
+ * mean a release and then waiting for people to take it. These sit after our own bucket and
+ * before the proxies, because a proxy is GitHub wearing a different hostname and one of these is
+ * a real second copy. None of them is ever the origin: the bytes are checked against the hash
+ * the catalog publishes, and when nothing matches it is the origin's copy that is believed, so
+ * what a host named here can do is serve a download or fail it.
+ *
+ * A host that answers with nothing useful stands itself down after a few failures like any
+ * other, which is also what happens to one that is named here after it stops existing.
+ *
+ * @param {Array<{id: string, base: string, host: string}>} list  from src/remote-config.js
+ */
+function applyMirrors(list) {
+  const extra = (Array.isArray(list) ? list : [])
+    .filter((m) => m && m.base && m.host && m.host !== 'raw.githubusercontent.com')
+    .map((m) => ({
+      host: m.host,
+      map: (url) => (url.startsWith(CATALOG_FILES) ? m.base + url.slice(CATALOG_FILES.length) : null),
+    }));
+  if (!extra.length) { setMirrors(null); return DEFAULT_MIRRORS.length; }
+
+  const at = DEFAULT_MIRRORS.findIndex((m) => m.host === 'cdn.dota2modmanager.com');
+  const next = [...DEFAULT_MIRRORS];
+  next.splice(at + 1, 0, ...extra);
+  setMirrors(next);
+  return next.length;
+}
+
 module.exports = {
-  RAW_HOST, DEFAULT_MIRRORS, FAIL_THRESHOLD, COOLDOWN_MS,
-  mirrorsFor, fetchMirrored, fetchText, downloadFile, sha256, mirrorHealth, resetHealth, setMirrors,
+  RAW_HOST, DEFAULT_MIRRORS, FAIL_THRESHOLD, COOLDOWN_MS, applyMirrors,
+  mirrorsFor, entriesFor, fetchMirrored, fetchText, downloadFile, sha256, mirrorHealth, resetHealth, setMirrors,
 };

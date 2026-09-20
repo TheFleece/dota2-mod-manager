@@ -262,3 +262,51 @@ test('taking somebody off needs their id, and an empty list leaves no block behi
   assert.throws(() => uninvite(EMPTY, TESTER), /nobody is on the list/);
 });
 
+/* ---------- where else the archives can be fetched from ---------- */
+
+const GITLAB = 'https://gitlab.com/rotten/mirror/-/raw/main/assets/files/';
+
+test('a mirror the app would ignore is refused rather than written', async () => {
+  /* The rules belong to the app, so the tool asks it rather than keeping a second copy of them
+     that can drift: anything normalize() drops is refused here. */
+  const { addMirror } = await load();
+  const { config, id } = addMirror(EMPTY, GITLAB);
+
+  assert.equal(id, 'gitlab.com', 'with no id of its own it is known by its host');
+  assert.deepEqual(config.mirrors, [{ id: 'gitlab.com', base: GITLAB }]);
+  assert.deepEqual(current.normalize(config).mirrors, [{ id: 'gitlab.com', base: GITLAB, host: 'gitlab.com' }]);
+
+  for (const bad of ['http://plain.example/files/', 'https://no-slash.example/files', GITLAB]) {
+    assert.throws(() => addMirror(config, bad), /would not take/, `"${bad}" should be refused`);
+  }
+  assert.throws(() => addMirror(config, 'https://raw.githubusercontent.com/h6rd/x/main/assets/files/'),
+    /would not take/, 'nothing may claim to be the host the catalog is published from');
+});
+
+test('the tool stops where the app stops reading mirrors', async () => {
+  const { addMirror } = await load();
+  let config = EMPTY;
+  for (let i = 0; i < 4; i++) config = addMirror(config, `https://m${i}.example/files/`).config;
+
+  assert.equal(config.mirrors.length, 4);
+  assert.throws(() => addMirror(config, 'https://one-more.example/files/'), /take one out first/);
+});
+
+test('a mirror comes out by its id or by its host, and the last one leaves no key behind', async () => {
+  const { addMirror, dropMirror, describe } = await load();
+  let config = addMirror(EMPTY, GITLAB, { id: 'rotten' }).config;
+  config = addMirror(config, 'https://other.example/files/').config;
+
+  assert.deepEqual(describe(config, TODAY), [
+    'mirror          rotten: https://gitlab.com/rotten/mirror/-/raw/main/assets/files/',
+    'mirror          other.example: https://other.example/files/',
+  ]);
+
+  const byId = dropMirror(config, 'rotten');
+  assert.deepEqual(byId.mirrors.map((m) => m.id), ['other.example']);
+  assert.equal('mirrors' in dropMirror(byId, 'other.example'), false);
+  assert.deepEqual(dropMirror(config, 'gitlab.com').mirrors.map((m) => m.id), ['other.example'],
+    'the host works as well as the id, because the host is what somebody reads off the list');
+  assert.throws(() => dropMirror(EMPTY, 'rotten'), /no mirror here/);
+});
+

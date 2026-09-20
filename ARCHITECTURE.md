@@ -62,7 +62,10 @@ or turning mods back on would resurrect the ones you had deliberately switched o
    own, so it is treated as a name and can never become a path.
 2. Download through `src/net.js`, which tries mirrors when `raw.githubusercontent.com` is
    unreachable, and keeps the archive in the download cache keyed by that name. A second install of
-   the same mod never leaves the disk.
+   the same mod never leaves the disk. The built-in chain can be extended after a build has
+   shipped: the signed `config/app.json` may name other places the archives are kept, which join
+   the chain after our own copy and before the proxies. None of them is ever the origin, so what a
+   host named there can do is serve a download or fail its checksum.
 3. Open the archive through `src/safe-zip.js`, the single door every foreign zip comes through.
 4. Compare its contents against what is already installed and report conflicts (see below).
 5. Pick a free slot: low ones for categories that must load early, otherwise the first free number

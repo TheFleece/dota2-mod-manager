@@ -1517,6 +1517,28 @@ const COOLDOWN_MS = 120000
 
 _No description in the source._
 
+### `applyMirrors`
+
+```js
+function applyMirrors(list)
+```
+
+Put the hosts the signed config names into the chain, or take them out again.
+
+The built-in list is compiled in, so arranging a second copy of the catalog somewhere used to
+mean a release and then waiting for people to take it. These sit after our own bucket and
+before the proxies, because a proxy is GitHub wearing a different hostname and one of these is
+a real second copy. None of them is ever the origin: the bytes are checked against the hash
+the catalog publishes, and when nothing matches it is the origin's copy that is believed, so
+what a host named here can do is serve a download or fail it.
+
+A host that answers with nothing useful stands itself down after a few failures like any
+other, which is also what happens to one that is named here after it stops existing.
+
+```
+@param {Array<{id: string, base: string, host: string}>} list  from src/remote-config.js
+```
+
 ### `mirrorsFor`
 
 ```js
@@ -1530,6 +1552,14 @@ whose catalog entry points somewhere else entirely) has no mirrors - it is itsel
 @param {object} [opts]
 @param {boolean} [opts.small] the file is JSON-sized, so size-capped mirrors may be used
 ```
+
+### `entriesFor`
+
+```js
+function entriesFor(url, { small = false, trustedOnly = false } = {})
+```
+
+The same list, each entry still knowing which mirror it came from.
 
 ### `fetchMirrored`
 
@@ -2322,6 +2352,15 @@ const MAX_TESTERS = 100
 
 A beta is a handful of people the maintainer picked, not a rollout: a list longer than this is
 a sign the file was edited by something other than a person.
+
+### `MAX_MIRRORS`
+
+```js
+const MAX_MIRRORS = 4
+```
+
+Somewhere else the archives can be fetched from. A handful at most: the chain is walked in
+   order on every download, and a host that is not really there costs a request each time.
 
 ### `CONFIG_URL`
 

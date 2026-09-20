@@ -161,3 +161,42 @@ test('a fetched file is used and kept; a missing one changes nothing', async (t)
   assert.equal(second.feature('voice').off, true);
   assert.equal(CONFIG_URL.startsWith('https://'), true);
 });
+
+/* ---------- another place the archives can be fetched from ---------- */
+
+test('a mirror the file names is taken, and only if it could be a mirror', () => {
+  const { normalize } = require('../src/remote-config.js');
+  const good = 'https://gitlab.com/rotten/mirror/-/raw/main/assets/files/';
+
+  const out = normalize({
+    mirrors: [
+      { id: 'gitlab', base: good },
+      { base: 'http://plain.example/files/' },
+      { base: 'https://raw.githubusercontent.com/h6rd/x/main/assets/files/' },
+      { base: 'https://no-slash.example/files' },
+      { base: 'https://query.example/files/?token=abc' },
+      { base: 'https://user:pass@creds.example/files/' },
+      { base: good, id: 'again' },
+      'not an object',
+    ],
+  });
+
+  assert.deepEqual(out.mirrors, [{ id: 'gitlab', base: good, host: 'gitlab.com' }]);
+});
+
+test('a mirror with no id of its own is known by its host, and the list has an end', () => {
+  const { normalize, MAX_MIRRORS } = require('../src/remote-config.js');
+  const many = Array.from({ length: MAX_MIRRORS + 3 }, (_, i) => ({ base: `https://m${i}.example/files/` }));
+
+  const out = normalize({ mirrors: many });
+  assert.equal(out.mirrors.length, MAX_MIRRORS, 'the chain is walked on every download; it cannot be long');
+  assert.equal(out.mirrors[0].id, 'm0.example');
+});
+
+test('a file that says nothing about mirrors leaves the built-in chain alone', () => {
+  const { normalize } = require('../src/remote-config.js');
+  assert.deepEqual(normalize({}).mirrors, []);
+  assert.deepEqual(normalize(null).mirrors, []);
+  assert.deepEqual(normalize({ mirrors: 'gitlab' }).mirrors, []);
+});
+

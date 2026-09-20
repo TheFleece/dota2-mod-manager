@@ -32,6 +32,8 @@ const { DiscordPresence } = require('./src/discord-presence');
 const { findDotaGamePath, validateGamePath } = require('./src/steam');
 const { createSchemaService } = require('./src/schema-service');
 const { createRemoteConfig } = require('./src/remote-config');
+// the download chain, so a mirror named in that signed file joins it (electron's own `net` is above)
+const { applyMirrors } = require('./src/net');
 const { createToolchain } = require('./src/toolchain');
 const { createGameIcons } = require('./src/game-icons');
 const { createModPreviews } = require('./src/mod-preview');
@@ -468,7 +470,10 @@ app.whenReady().then(async () => {
   // what the app can be told after it shipped: a feature switched off with a reason, and
   // dated notices. Fire-and-forget, and everything it governs stays on until it says otherwise
   remoteConfig = createRemoteConfig({ userDataDir: userData, appVersion: () => app.getVersion(), log: diag });
-  remoteConfig.refresh();
+  /* The cached file is read before the fetch answers, so a second copy of the catalog arranged
+     after this build shipped is in the chain from the first download rather than the second run. */
+  applyMirrors(remoteConfig.mirrors());
+  remoteConfig.refresh().then(() => applyMirrors(remoteConfig.mirrors()));
   // pictures for the cosmetics picker come through Electron's network stack (see src/icons.js)
   icons = new Icons(userData, net.fetch);
   // ...unless the Source 2 toolchain is here, in which case they come out of the game itself

@@ -76,6 +76,11 @@ const MAX_NOTICES = 20;
 // A beta is a handful of people the maintainer picked, not a rollout: a list longer than this is
 // a sign the file was edited by something other than a person.
 const MAX_TESTERS = 100;
+/* Somewhere else the archives can be fetched from. A handful at most: the chain is walked in
+   order on every download, and a host that is not really there costs a request each time. */
+const MAX_MIRRORS = 4;
+// the catalog's own host: a list entry claiming to be it would be claiming to be the origin
+const RAW_MIRROR_HOST = 'raw.githubusercontent.com';
 const MAX_TEXT = 500;
 
 const str = (v, max = MAX_TEXT) => (typeof v === 'string' ? v.slice(0, max) : '');
@@ -101,7 +106,9 @@ function applies(entry, version, today) {
 const validDay = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) ? v : null);
 
 function normalize(raw) {
-  const out = { features: {}, notices: [], blocks: [], beta: null };
+  const out = {
+    features: {}, notices: [], blocks: [], beta: null, mirrors: [],
+  };
   if (!raw || typeof raw !== 'object') return out;
 
   const features = raw.features && typeof raw.features === 'object' ? raw.features : {};
@@ -159,6 +166,31 @@ function normalize(raw) {
       .slice(0, MAX_TESTERS)
       .map((id) => id.trim().toLowerCase());
     if (ids.length) out.beta = { salt: str(beta.salt, 80), ids };
+  }
+
+  /* Another copy of the archives, named after the app shipped.
+   *
+   * The built-in chain (src/net.js) is compiled in, so every new host used to need a release.
+   * What a mirror can do is limited by what a mirror is asked for: the bytes are checked against
+   * the hash the catalog publishes, and only the origin is believed when nothing matches, so a
+   * host named here can serve a download or fail it and nothing else. https, no credentials and
+   * no query, and never the host the catalog itself is published from, which would be claiming
+   * to be the origin. */
+  const mirrors = Array.isArray(raw.mirrors) ? raw.mirrors.slice(0, MAX_MIRRORS) : [];
+  for (const m of mirrors) {
+    if (!m || typeof m !== 'object') continue;
+    const base = str(m.base, 300);
+    let host = '';
+    try {
+      const u = new URL(base);
+      if (u.protocol !== 'https:' || u.username || u.password || u.search || u.hash) continue;
+      if (!u.pathname.endsWith('/')) continue;
+      host = u.host;
+    } catch { continue; }
+    if (host === RAW_MIRROR_HOST) continue;
+    const id = str(m.id, 40) || host;
+    if (out.mirrors.some((x) => x.id === id || x.base === base)) continue;
+    out.mirrors.push({ id, base, host });
   }
 
   return out;
@@ -235,10 +267,14 @@ function createRemoteConfig({ userDataDir, appVersion, log = () => {}, publicKey
   /** The beta list as the signed file gives it, or null when it says nothing about one. */
   const beta = () => read().beta;
 
-  return { refresh, feature, notices, beta, url: CONFIG_URL, SWITCHABLE };
+  /** Extra hosts the archives can be fetched from, for src/net.js to put in the chain. */
+  const mirrors = () => read().mirrors;
+
+  return { refresh, feature, notices, beta, mirrors, url: CONFIG_URL, SWITCHABLE };
 }
 
 module.exports = {
   createRemoteConfig, normalize, cmpVersion, applies, SWITCHABLE, BLOCKS_SINCE, MAX_TESTERS,
+  MAX_MIRRORS,
   CONFIG_URL, CONFIG_SIG_URL, CONFIG_PUBLIC_KEY,
 };

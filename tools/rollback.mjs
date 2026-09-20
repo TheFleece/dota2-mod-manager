@@ -17,6 +17,8 @@
  *   node tools/rollback.mjs prune                                     drop what is past its day
  *   node tools/rollback.mjs invite 123456789012345678               offer this account the beta
  *   node tools/rollback.mjs uninvite 123456789012345678             take it back off the list
+ *   node tools/rollback.mjs mirror https://host/path/              another copy of the archives
+ *   node tools/rollback.mjs unmirror gitlab.com                    stop sending anybody there
  *   node tools/rollback.mjs sign                                      sign the file as it stands
  *
  * A block goes under `blocks`, which copies before BLOCKS_SINCE never read (see
@@ -34,7 +36,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const {
-  normalize, cmpVersion, SWITCHABLE, BLOCKS_SINCE, MAX_TESTERS, CONFIG_PUBLIC_KEY,
+  normalize, cmpVersion, SWITCHABLE, BLOCKS_SINCE, MAX_TESTERS, MAX_MIRRORS, CONFIG_PUBLIC_KEY,
 } = require('../src/remote-config.js');
 const { idHash } = require('../src/beta.js');
 const { verify } = require('../src/catalog-signature.js');
@@ -49,7 +51,9 @@ const README = 'What the app reads after it has shipped: src/remote-config.js. E
   + 'an id, text in at least one language and an until date (YYYY-MM-DD, the last day it shows); url '
   + 'must be https; minVersion and maxVersion bound the versions it is meant for. Copies older than '
   + 'the until field ignore it, so take a notice out once its date has passed. Write this file with '
-  + 'tools/rollback.mjs, which signs it.';
+  + 'tools/rollback.mjs, which signs it. "beta" is who is offered the unreleased build, as hashes; '
+  + '"mirrors" name other places the archives can be fetched from, tried after the ones built '
+  + 'into the app.';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -209,6 +213,47 @@ export function uninvite(config, discordId) {
   return { config: next, found };
 }
 
+/* ---------- where else the archives can be fetched from ---------- */
+
+/**
+ * Name another copy of the catalog's archives.
+ *
+ * The rules are the app's, not this tool's: normalize() decides what a copy of the app would
+ * actually take, and anything it drops is refused here rather than written and ignored. The base
+ * is the part before what the catalog calls assets/files/, so the mod's own path is appended to
+ * it unchanged.
+ */
+export function addMirror(config, base, { id = '' } = {}) {
+  const next = structuredClone(config);
+  const list = Array.isArray(next.mirrors) ? [...next.mirrors] : [];
+  if (list.length >= MAX_MIRRORS) {
+    throw new Error(`the app reads the first ${MAX_MIRRORS} mirrors and ignores the rest; take one out first`);
+  }
+  // one more than the file already had: the same base twice is one entry to the app, not two
+  const before = normalize({ mirrors: list }).mirrors.length;
+  const kept = normalize({ mirrors: [...list, id ? { id, base } : { base }] }).mirrors;
+  const mine = kept.length === before + 1 ? kept[kept.length - 1] : null;
+  if (!mine) {
+    throw new Error(`the app would not take "${base}". It has to be https, with no query and no `
+      + 'credentials, a path ending in /, not raw.githubusercontent.com, and not one already here.');
+  }
+  next.mirrors = [...list, { id: mine.id, base }];
+  return { config: next, id: mine.id };
+}
+
+/** Stop sending anybody there, by the id it was given or by its host. */
+export function dropMirror(config, which) {
+  const name = String(which || '').trim();
+  const list = Array.isArray(config.mirrors) ? config.mirrors : [];
+  const hostOf = (base) => { try { return new URL(base).host; } catch { return ''; } };
+  const rest = list.filter((m) => m.id !== name && hostOf(m.base) !== name);
+  if (rest.length === list.length) throw new Error(`no mirror here is called "${name}"`);
+  const next = structuredClone(config);
+  if (rest.length) next.mirrors = rest;
+  else delete next.mirrors;
+  return next;
+}
+
 /** What the file is doing today, one line each. */
 export function describe(config, today) {
   const lines = [];
@@ -225,6 +270,7 @@ export function describe(config, today) {
     if (blockIds.has(n.id)) continue;
     lines.push(`${n.until && n.until < today ? 'expired ' : 'notice  '}        ${n.id} until ${n.until || 'no end'}`);
   }
+  for (const m of config.mirrors || []) lines.push(`mirror          ${m.id}: ${m.base}`);
   const testers = ((config.beta || {}).ids || []).length;
   if (testers) lines.push(`beta            ${testers} account(s) offered the unreleased build`);
   return lines.length ? lines : ['nothing is switched off and nobody is told anything'];
@@ -312,6 +358,12 @@ if (invokedDirectly) {
       const { config: next, found } = uninvite(config, subject);
       if (!found) console.log('that account was not on the list; writing the file anyway, so it is signed as it stands');
       write(next, today);
+    } else if (command === 'mirror') {
+      const { config: next, id } = addMirror(config, subject, { id: flags.id === true ? '' : flags.id });
+      console.log(`mirror ${id}`);
+      write(next, today);
+    } else if (command === 'unmirror') {
+      write(dropMirror(config, subject), today);
     } else if (command === 'prune') {
       const { config: next, gone } = pruneExpired(config, today);
       if (!gone.length) console.log('nothing is past its day');
