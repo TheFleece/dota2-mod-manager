@@ -1362,6 +1362,7 @@
     {
       "id": "other",
       "mods": [
+        {"name":"All Grandmasters","styleLabel":null,"image":{"src":"/mods/all-grandmasters.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1789988579},
         {"name":"Black Click","styleLabel":null,"image":{"src":"/mods/black-click.webp","width":854,"height":480},"author":"Morecursed","authorUrl":null,"date":1788815201},
         {"name":"Light Brown Click","styleLabel":null,"image":{"src":"/mods/light-brown-click.webp","width":854,"height":480},"author":"YuyaKizami","authorUrl":"https://t.me/YuyaKizami","date":1788762686},
         {"name":"Sapphire Click","styleLabel":null,"image":{"src":"/mods/sapphire-click.webp","width":854,"height":480},"author":"YuyaKizami","authorUrl":"https://t.me/YuyaKizami","date":1788762686},
@@ -1416,6 +1417,7 @@
     {
       "id": "huds",
       "mods": [
+        {"name":"Horror Black Hud","styleLabel":null,"image":{"src":"/mods/horror-black-hud.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1789988579},
         {"name":"Gotohouse Hud","styleLabel":null,"image":{"src":"/mods/gotohouse-hud.webp","width":854,"height":480},"author":"Morecursed","authorUrl":null,"date":1789396660},
         {"name":"Void Hud","styleLabel":null,"image":{"src":"/mods/void-hud.webp","width":854,"height":480},"author":"lssqqqq","authorUrl":"https://t.me/lssqqqq","date":1789278465},
         {"name":"Total Black Hud","styleLabel":null,"image":{"src":"/mods/total-black-hud.webp","width":854,"height":480},"author":"Morecursed","authorUrl":null,"date":1789234312},
@@ -1499,6 +1501,7 @@
     {
       "id": "ranks",
       "mods": [
+        {"name":"Immortal Ranks","styleLabel":null,"image":{"src":"/mods/immortal-ranks.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1789988579},
         {"name":"Normis Rank Icons","styleLabel":null,"image":{"src":"/mods/normis-rank-icons.webp","width":854,"height":480},"author":"palekid666","authorUrl":"https://t.me/ubiycasmerty","date":1781873451},
         {"name":"Umbrella Medals","styleLabel":null,"image":{"src":"/mods/umbrella-medals.webp","width":854,"height":480},"author":"kebabmaker","authorUrl":null,"date":1777387078},
         {

@@ -10922,6 +10922,113 @@
       ]
     },
     {
+      "id": "marci",
+      "name": "Marci",
+      "slug": "marci",
+      "mods": [
+        {
+          "name": "Marci Atri",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","back","head","shoulder","arms"],
+          "image": {"src":"/mods/marci-atri.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771195327
+        },
+        {
+          "name": "Cosmic Cartographer",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder"],
+          "image": {"src":"/mods/cosmic-cartographer.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1779803304
+        },
+        {
+          "name": "Marci Bloomjewel Brawler",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder"],
+          "image": {"src":"/mods/marci-bloomjewel-brawler.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1779803304
+        },
+        {
+          "name": "Marci Bloomjewel Unusual",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder"],
+          "image": {"src":"/mods/marci-bloomjewel-unusual.webp","width":854,"height":480},
+          "author": "твавт",
+          "authorUrl": "https://steamcommunity.com/id/myasu0/",
+          "date": 1789985397
+        },
+        {
+          "name": "Marci Faithful Fortune",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder"],
+          "image": {"src":"/mods/marci-faithful-fortune.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1779803304
+        },
+        {
+          "name": "Marci Laurels of the Downstar",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder"],
+          "image": {"src":"/mods/marci-laurels-of-the-downstar.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1766284079
+        },
+        {
+          "name": "Marci School of the Solar Fang",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder"],
+          "image": {"src":"/mods/marci-school-of-the-solar-fang.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1779803304
+        },
+        {
+          "name": "Nude Marci",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder"],
+          "image": {"src":"/mods/nude-marci.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1773747879
+        },
+        {
+          "name": "Snowing Marci",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["shoulder","misc","head","back"],
+          "image": {"src":"/mods/snowing-marci.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1766145785
+        },
+        {
+          "name": "Maid Marci",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["shoulder","misc","back"],
+          "image": {"src":"/mods/maid-marci.webp","width":854,"height":480},
+          "author": "Kliromin",
+          "authorUrl": "https://www.youtube.com/@mrkliromin7723",
+          "date": 1763042018
+        }
+      ]
+    },
+    {
       "id": "naga",
       "name": "Naga Siren",
       "slug": "naga-siren",
@@ -11764,103 +11871,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1779535888
-        }
-      ]
-    },
-    {
-      "id": "marci",
-      "name": "Marci",
-      "slug": "marci",
-      "mods": [
-        {
-          "name": "Marci Atri",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","back","head","shoulder","arms"],
-          "image": {"src":"/mods/marci-atri.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771195327
-        },
-        {
-          "name": "Cosmic Cartographer",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder"],
-          "image": {"src":"/mods/cosmic-cartographer.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1779803304
-        },
-        {
-          "name": "Marci Bloomjewel Brawler",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder"],
-          "image": {"src":"/mods/marci-bloomjewel-brawler.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1779803304
-        },
-        {
-          "name": "Marci Faithful Fortune",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder"],
-          "image": {"src":"/mods/marci-faithful-fortune.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1779803304
-        },
-        {
-          "name": "Marci Laurels of the Downstar",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder"],
-          "image": {"src":"/mods/marci-laurels-of-the-downstar.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1766284079
-        },
-        {
-          "name": "Marci School of the Solar Fang",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder"],
-          "image": {"src":"/mods/marci-school-of-the-solar-fang.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1779803304
-        },
-        {
-          "name": "Nude Marci",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder"],
-          "image": {"src":"/mods/nude-marci.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1773747879
-        },
-        {
-          "name": "Snowing Marci",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["shoulder","misc","head","back"],
-          "image": {"src":"/mods/snowing-marci.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1766145785
-        },
-        {
-          "name": "Maid Marci",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["shoulder","misc","back"],
-          "image": {"src":"/mods/maid-marci.webp","width":854,"height":480},
-          "author": "Kliromin",
-          "authorUrl": "https://www.youtube.com/@mrkliromin7723",
-          "date": 1763042018
         }
       ]
     },
@@ -13728,6 +13738,43 @@
       ]
     },
     {
+      "id": "doom",
+      "name": "Doom",
+      "slug": "doom",
+      "mods": [
+        {
+          "name": "Doom Jeanne Alter",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","arms","head","weapon","shoulder","tail","wings","back","misc"],
+          "image": {"src":"/mods/doom-jeanne-alter.webp","width":854,"height":480},
+          "author": "SanyaBane",
+          "authorUrl": "https://steamcommunity.com/profiles/76561198072955043",
+          "date": 1771195327
+        },
+        {
+          "name": "Doom Fallen Khorne",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","arms","head","weapon","shoulder","tail","wings"],
+          "image": {"src":"/mods/doom-fallen-khorne.webp","width":854,"height":480},
+          "author": "Ромчик",
+          "authorUrl": "https://watchmy.bio/shidehara",
+          "date": 1784702480
+        },
+        {
+          "name": "Doom Sematary",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","arms","head","weapon","shoulder","tail","wings"],
+          "image": {"src":"/mods/doom-sematary.webp","width":854,"height":480},
+          "author": "XIIIpsiblade",
+          "authorUrl": "https://t.me/XIIIpsiblade",
+          "date": 1789988579
+        }
+      ]
+    },
+    {
       "id": "pangolier",
       "name": "Pangolier",
       "slug": "pangolier",
@@ -13900,33 +13947,6 @@
           "author": "Haruma",
           "authorUrl": "https://t.me/DotA_2_Mods",
           "date": 1779111814
-        }
-      ]
-    },
-    {
-      "id": "doom",
-      "name": "Doom",
-      "slug": "doom",
-      "mods": [
-        {
-          "name": "Doom Jeanne Alter",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","arms","head","weapon","shoulder","tail","wings","back","misc"],
-          "image": {"src":"/mods/doom-jeanne-alter.webp","width":854,"height":480},
-          "author": "SanyaBane",
-          "authorUrl": "https://steamcommunity.com/profiles/76561198072955043",
-          "date": 1771195327
-        },
-        {
-          "name": "Doom Fallen Khorne",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","arms","head","weapon","shoulder","tail","wings"],
-          "image": {"src":"/mods/doom-fallen-khorne.webp","width":854,"height":480},
-          "author": "Ромчик",
-          "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1784702480
         }
       ]
     },

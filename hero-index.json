@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1342,
+  "mods": 1344,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -387,7 +387,8 @@
       "name": "Doom",
       "mods": [
         {"name":"Doom Fallen Khorne","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","head","weapon","shoulder","tail","wings"]},
-        {"name":"Doom Jeanne Alter","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","head","weapon","shoulder","tail","wings","back","misc"]}
+        {"name":"Doom Jeanne Alter","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","head","weapon","shoulder","tail","wings","back","misc"]},
+        {"name":"Doom Sematary","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","head","weapon","shoulder","tail","wings"]}
       ]
     },
     "dragon_knight": {
@@ -932,6 +933,7 @@
         {"name":"Maid Marci","categoryId":"heroes","styleLabel":null,"slots":["shoulder","misc","back"]},
         {"name":"Marci Atri","categoryId":"heroes","styleLabel":null,"slots":["misc","back","head","shoulder","arms"]},
         {"name":"Marci Bloomjewel Brawler","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder"]},
+        {"name":"Marci Bloomjewel Unusual","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder"]},
         {"name":"Marci Faithful Fortune","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder"]},
         {"name":"Marci Laurels of the Downstar","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder"]},
         {"name":"Marci School of the Solar Fang","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder"]},
