@@ -28,9 +28,14 @@ and a worker that handles a few messages a day stays inside the free plan.
 
 ## Checking it works
 
-Send a message to `hello@dota2modmanager.com` from an ordinary mailbox. The forwarded copy should
-arrive within a minute, and the Discord channel should show one line with the subject and who it
-came from. `npx wrangler tail` shows what the worker did with it.
+Send a message to `hello@dota2modmanager.com` **from a mailbox other than the one it forwards
+to**. The copy should arrive within a minute, and the channel should show one line with the
+subject and who it came from.
+
+From the same mailbox it forwards to, the copy never appears, and nothing is broken: the message
+comes back with a Message-ID Gmail already has in Sent, and Gmail drops a duplicate without a
+word. The line in Discord is the proof the worker ran; the line says so when a forward actually
+failed. `npx wrangler tail` shows the rest.
 
 ## Sending from the address
 
