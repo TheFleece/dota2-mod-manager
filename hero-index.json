@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1344,
+  "mods": 1347,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -126,6 +126,7 @@
       "name": "Beastmaster",
       "mods": [
         {"name":"Beastmaster Bone Armor","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","belt","head","shoulder","weapon"]},
+        {"name":"Beastmaster Egxrdemxn","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","belt","head","shoulder","weapon"]},
         {"name":"Beastmaster Primal Paean","categoryId":"hero-items","styleLabel":null,"slots":["shoulder"]},
         {"name":"Beastmaster Primal Paean Crimson","categoryId":"hero-items","styleLabel":null,"slots":["shoulder"]},
         {"name":"Beastmaster Primal Peacemaker","categoryId":"hero-items","styleLabel":"Crimson","slots":["weapon"]},
@@ -138,6 +139,7 @@
       "name": "Bloodseeker",
       "mods": [
         {"name":"Bloodseeker Harvest Hound","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","back","head","misc","weapon","offhand"]},
+        {"name":"Bloodseeker Immortal","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","back","head","misc","weapon","offhand"]},
         {"name":"Bloodseeker Strygwyr","categoryId":"heroes","styleLabel":null,"slots":["misc","back","head","weapon","offhand"]},
         {"name":"Bloodseeker Thirst of Eztzhok","categoryId":"hero-items","styleLabel":null,"slots":["weapon","offhand"]}
       ]
@@ -1903,6 +1905,7 @@
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI9 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"slots":["misc","weapon","back","head","shoulder"]},
+        {"name":"Windranger Papizi","categoryId":"heroes","styleLabel":null,"slots":["head","weapon","back","misc","shoulder","offhand"]},
         {"name":"Windranger Peregrine Flight","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Yellow Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]}
       ]
