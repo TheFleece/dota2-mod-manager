@@ -13050,6 +13050,63 @@
       ]
     },
     {
+      "id": "chaos_knight",
+      "name": "Chaos Knight",
+      "slug": "chaos-knight",
+      "mods": [
+        {
+          "name": "Chaos Knight Flandre Scarlet",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","misc","mount","shield","shoulder","arms","offhand","weapon","legs"],
+          "image": {"src":"/mods/chaos-knight-flandre-scarlet.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771195327
+        },
+        {
+          "name": "Chaos Knight Unities Of Discord",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","misc","mount","shield","shoulder"],
+          "image": {"src":"/mods/chaos-knight-unities-of-discord.webp","width":854,"height":480},
+          "author": "J0nathan550",
+          "authorUrl": "https://github.com/J0nathan550",
+          "date": 1789948980
+        },
+        {
+          "name": "Ice Chaos Knight",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","shoulder","head","mount","shield"],
+          "image": {"src":"/mods/ice-chaos-knight.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1766382657
+        },
+        {
+          "name": "Nightmare Chaos Knight",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","misc","mount","shield","shoulder"],
+          "image": {"src":"/mods/nightmare-chaos-knight.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1756539017
+        },
+        {
+          "name": "Darkness Crimson Naga Siren",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": [],
+          "image": {"src":"/mods/darkness-crimson-naga-siren.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1776456530
+        }
+      ]
+    },
+    {
       "id": "rattletrap",
       "name": "Clockwerk",
       "slug": "clockwerk",
@@ -13274,53 +13331,6 @@
           "author": "frayserclick",
           "authorUrl": "https://t.me/frayserclick",
           "date": 1787470721
-        }
-      ]
-    },
-    {
-      "id": "chaos_knight",
-      "name": "Chaos Knight",
-      "slug": "chaos-knight",
-      "mods": [
-        {
-          "name": "Chaos Knight Flandre Scarlet",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["head","misc","mount","shield","shoulder","arms","offhand","weapon","legs"],
-          "image": {"src":"/mods/chaos-knight-flandre-scarlet.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771195327
-        },
-        {
-          "name": "Ice Chaos Knight",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","shoulder","head","mount","shield"],
-          "image": {"src":"/mods/ice-chaos-knight.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1766382657
-        },
-        {
-          "name": "Nightmare Chaos Knight",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["head","misc","mount","shield","shoulder"],
-          "image": {"src":"/mods/nightmare-chaos-knight.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1756539017
-        },
-        {
-          "name": "Darkness Crimson Naga Siren",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": [],
-          "image": {"src":"/mods/darkness-crimson-naga-siren.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1776456530
         }
       ]
     },
@@ -13718,6 +13728,43 @@
       ]
     },
     {
+      "id": "pangolier",
+      "name": "Pangolier",
+      "slug": "pangolier",
+      "mods": [
+        {
+          "name": "Bare Pangolier",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","head","weapon"],
+          "image": {"src":"/mods/bare-pangolier.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1765720497
+        },
+        {
+          "name": "Pangolier Gentleman",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","head","weapon"],
+          "image": {"src":"/mods/pangolier-gentleman.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1768729974
+        },
+        {
+          "name": "Pangolier Windward Rogue",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","head","weapon"],
+          "image": {"src":"/mods/pangolier-windward-rogue.webp","width":854,"height":480},
+          "author": "твавт",
+          "authorUrl": "https://steamcommunity.com/id/myasu0/",
+          "date": 1789950439
+        }
+      ]
+    },
+    {
       "id": "tidehunter",
       "name": "Tidehunter",
       "slug": "tidehunter",
@@ -13934,33 +13981,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1766284079
-        }
-      ]
-    },
-    {
-      "id": "pangolier",
-      "name": "Pangolier",
-      "slug": "pangolier",
-      "mods": [
-        {
-          "name": "Bare Pangolier",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","head","weapon"],
-          "image": {"src":"/mods/bare-pangolier.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1765720497
-        },
-        {
-          "name": "Pangolier Gentleman",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","head","weapon"],
-          "image": {"src":"/mods/pangolier-gentleman.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1768729974
         }
       ]
     },

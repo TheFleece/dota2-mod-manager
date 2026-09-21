@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1340,
+  "mods": 1342,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -220,6 +220,7 @@
       "name": "Chaos Knight",
       "mods": [
         {"name":"Chaos Knight Flandre Scarlet","categoryId":"heroes","styleLabel":null,"slots":["head","misc","mount","shield","shoulder","arms","offhand","weapon","legs"]},
+        {"name":"Chaos Knight Unities Of Discord","categoryId":"heroes","styleLabel":null,"slots":["head","misc","mount","shield","shoulder"]},
         {"name":"Darkness Crimson Naga Siren","categoryId":"heroes","styleLabel":null,"slots":[]},
         {"name":"Ice Chaos Knight","categoryId":"heroes","styleLabel":null,"slots":["misc","shoulder","head","mount","shield"]},
         {"name":"Nightmare Chaos Knight","categoryId":"heroes","styleLabel":null,"slots":["head","misc","mount","shield","shoulder"]}
@@ -1168,7 +1169,8 @@
       "name": "Pangolier",
       "mods": [
         {"name":"Bare Pangolier","categoryId":"heroes","styleLabel":null,"slots":["arms","head","weapon"]},
-        {"name":"Pangolier Gentleman","categoryId":"heroes","styleLabel":null,"slots":["arms","head","weapon"]}
+        {"name":"Pangolier Gentleman","categoryId":"heroes","styleLabel":null,"slots":["arms","head","weapon"]},
+        {"name":"Pangolier Windward Rogue","categoryId":"heroes","styleLabel":null,"slots":["arms","head","weapon"]}
       ]
     },
     "phantom_assassin": {

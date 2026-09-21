@@ -1,5 +1,5 @@
 {
-  "count": 1342,
+  "count": 1344,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -336,6 +336,7 @@
     "3f0eb23a2c3678196a50632825f74fe3f9761808": [{"name":"Abaddon Fallen King","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3f5c617eae9ab55791407b8b0adf6b2269145f97": [{"name":"Cosmic Zeus","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3f755d707c1ecf5f63606313342240a5de883d77": [{"name":"Bare Hoodwink","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "3fc0dc6a7955ae1fc522cb985d2b64db7de6cf9b": [{"name":"Pangolier Windward Rogue","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3fe88cb832556fb9dd74eb1b2f75026391dedded": [{"name":"Custom Slark","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "40126316ce47b268f9914840e9838316615fd390": [{"name":"High Five Aghanim Puppet","categoryId":"high-five","styleLabel":null,"type":"vpk"}],
     "40714d8b9751815e619d9c166080c36085dfed9f": [{"name":"Phantom Lancer Immortal Felidae","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -681,6 +682,7 @@
     "84456ad792a195d8d09c903b116a6c5eb5e6b2d3": [{"name":"TI7 Teleport III","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "84ace77cc846be8e7f9e082febfb0bf7d5330f6a": [{"name":"TI10 Blink Dagger","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "84c4227342d57b536b27623aa51564e54c08bfb7": [{"name":"Luna Moonfall","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
+    "850e0d543f835ff10d92c47953e91d93882da56d": [{"name":"Chaos Knight Unities Of Discord","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "853a68b236663d0a3527fbd2792ec0cdc1d1c7fc": [{"name":"Earthshaker Burning Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "85459493bd0fb361a647d1a7df47674ae2fe6a97": [{"name":"Flash Step Blink","categoryId":"sounds","styleLabel":null,"type":"vpk"}],
     "85586a44ee31cbd004931134bb98ea7d27a2f595": [{"name":"Shadow Fiend Lightning Soul","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
