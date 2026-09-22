@@ -236,6 +236,45 @@ stores on disk.
 
 *Check:* `PRIVACY.md`, and grep the source for an outbound call: `grep -rn "fetch\|https.get" src/`.
 
+### The catalog's preview images are committed, and stay committed
+
+`site/public/mods/` is 1,324 files and 47.3 MB of a 57.2 MB pack once history is counted in: 83%
+of it. It grows by five to ten files a day, and the generated JSON at the root that reviews
+usually blame for the size is 1.3 MB, so this is where the weight is.
+
+It stays. The two alternatives both cost more than they save. Fetching the pictures during the
+site build makes every build depend on the catalog being up, for files that are written once and
+almost never rewritten. Moving them to the R2 bucket changes their public addresses, and those
+addresses are indexed: the catalog and hero pages are what the site is found by, and trading a
+settled position in search for repository size is a bad trade for a project whose whole problem
+is that too few people know it exists.
+
+What makes it affordable is that these files are append-only. A picture arrives, and that is the
+last time it is written, so the pack grows by what the catalog gains rather than by what anyone
+edits.
+
+*Check:*
+```
+git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize:disk) %(rest)' | awk '$1=="blob"&&$4~/^site\/public\/mods\//{n+=$3} END{print n/1048576" MB"}'
+```
+
+### TypeScript stays on 5.x
+
+The type check here is not a compiler step. Nothing is emitted; it reads the JSDoc the code
+already carries and counts what disagrees, and `.github/typecheck-baseline.json` holds that count
+so it can only fall.
+
+TypeScript 7, the Go rewrite, reads `@param {object}` far more strictly than 5.x does. The same
+tree goes from 66 known errors to 303, nearly all of them `Property does not exist on type
+'object'`. Measured on 2026-09-22, and the module-resolution change that 7 also forces was ruled
+out separately: 5.9.3 on those same settings gives 64.
+
+Taking 7 means writing out the shapes behind those annotations first, across forty-one files.
+That is worth doing, and it is a piece of work rather than a dependency bump, so the bot is told
+to stop offering the major version until somebody does it.
+
+*Check:* `.github/dependabot.yml`, the `ignore` block for the app's dependencies.
+
 ---
 
 ## Known gaps
@@ -364,20 +403,6 @@ own layout there has never been tested here.
 ## Open questions
 
 Weighed, not settled. Listed so nobody files them as an oversight.
-
-### The repository carries 46 MB of catalog preview images
-
-`site/public/mods/` is 1,324 files and 49 MB on disk, and 47.3 MB of a 57.2 MB pack once history
-is counted in: 83% of it. It grows by five to ten files a day. Committing them was decided when
-there were 468 of them averaging 14 KB. The candidates are leaving it alone, fetching them during
-the site build instead of committing them, and serving them from the R2 bucket that already
-mirrors the mod archives. For what it is worth, the generated JSON at the root that reviews
-usually blame for the size is 1.3 MB of that pack, so this is where the weight actually is.
-
-*Check:*
-```
-git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize:disk) %(rest)' | awk '$1=="blob"&&$4~/^site\/public\/mods\//{n+=$3} END{print n/1048576" MB"}'
-```
 
 ### Applying to SignPath again
 
