@@ -5,7 +5,10 @@
 Open a private advisory:
 [github.com/TheFleece/dota2-mod-manager/security/advisories/new](https://github.com/TheFleece/dota2-mod-manager/security/advisories/new)
 
-It reaches the author and nobody else. Do not open a public issue for something exploitable.
+Or write to **security@dota2modmanager.com**, which needs no GitHub account and is read by the
+same one person. Say in the first line that it is a security report.
+
+Either reaches the author and nobody else. Do not open a public issue for something exploitable.
 
 Tell me what you did and what happened. A rough description beats none, and a way to reproduce
 it beats everything. I will answer, and I will say plainly whether I think it is a problem.

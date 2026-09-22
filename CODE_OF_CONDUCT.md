@@ -26,9 +26,11 @@ channel on the D2PFX Discord when you are speaking there about this project.
 
 ## Reporting
 
-Write to the maintainer, TheFleece, privately: a direct message to **Fleece** on the
-[D2PFX Discord](https://discord.gg/PBvG8D9MxT). Reports are read within 72 hours and kept between
-you and the maintainer.
+Write to the maintainer, TheFleece, privately: **hello@dota2modmanager.com**, or a direct
+message to **Fleece** on the [D2PFX Discord](https://discord.gg/PBvG8D9MxT). The address is there
+because a Discord message means joining a server first, and somebody reporting how they were
+treated should not have to stand in the room to do it. Reports are read within 72 hours and kept
+between you and the maintainer.
 
 ## What happens
 

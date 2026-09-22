@@ -93,6 +93,21 @@ analytics, no tag manager and no cookies. Fonts, styles and scripts are served f
 itself. Cloudflare keeps request logs the way any host does; nothing beyond that is collected,
 and there is nothing on the site that could identify a visitor to us.
 
+## Writing to hello@ or security@
+
+Both addresses are Cloudflare Email Routing, and a letter to either is handled in two steps, in
+this order. It is forwarded whole to the maintainer's own mailbox, so nothing is lost or
+rewritten on the way. Then a line about it is posted to a private channel the maintainer reads,
+so it is seen the same day rather than in a week.
+
+That line carries the headers and nothing else: who it is from, who it was addressed to, the
+subject, the size, and whether SPF and DKIM passed. Not the body, not attachments. The code is
+`tools/email-worker/worker.js` in this repository, which is the whole of it.
+
+The letter itself is in a Gmail mailbox after that, and Google's terms apply to it the way they
+apply to any mail sent to any Gmail address. If that matters for what you are writing, say so and
+ask for another way to continue.
+
 ## Changes
 
 This file changes when the app does. Its history is in this repository, so what it said on any

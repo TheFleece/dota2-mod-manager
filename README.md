@@ -199,6 +199,7 @@ installed here survives its uninstall.
 | [Discussions](https://github.com/TheFleece/dota2-mod-manager/discussions) | Questions, setups worth showing, and anything that is not yet a bug |
 | [Discord](https://discord.gg/PBvG8D9MxT) | Quick help, in the catalog's own community |
 | [Security](SECURITY.md) | Vulnerabilities, privately — never a public issue |
+| [hello@dota2modmanager.com](mailto:hello@dota2modmanager.com) | Anything that does not fit a public tracker: press, licensing, a company asking questions |
 
 Two things first: make sure you are on the latest version, and if Dota updated recently, open
 the app and let it put the patch back.
