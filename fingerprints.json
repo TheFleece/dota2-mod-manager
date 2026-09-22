@@ -1,5 +1,5 @@
 {
-  "count": 1352,
+  "count": 1353,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -332,6 +332,7 @@
     "3e45d8de524fa0a36b25458cdc1329d98ceeb80f": [{"name":"Kurumi Tokisaki","categoryId":"backgrounds","styleLabel":null,"type":"vpk"}],
     "3e5ebeade3b560bd6224f1bcd362969c645f8868": [{"name":"Young Invoker","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3e6151c7e7cf0e898f78c05ace7eb61bb1d5d886": [{"name":"Bounty Hunter Taunt","categoryId":"hero-sounds","styleLabel":null,"type":"vpk"}],
+    "3e67a9823b46235066cc303b4062626a31fd4591": [{"name":"Razor Voidstorm Asylum","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3e9a823789d0a6fe6f445e645493988962c5f2cb": [{"name":"Purple TI8 Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],
     "3ef27447b95b7c33eeac9cbc72a261748c785c80": [{"name":"Sea Of Flowers","categoryId":"backgrounds","styleLabel":null,"type":"vpk"}],
     "3ef4fcce52c2cc80248c9d61cd1310100d71e986": [{"name":"White Necronub Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],

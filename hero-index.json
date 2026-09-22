@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1347,
+  "mods": 1348,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -1331,6 +1331,7 @@
         {"name":"Razor Rainbow Statics","categoryId":"heroes","styleLabel":null,"slots":["arms","head","misc","weapon"]},
         {"name":"Razor Rizelencer","categoryId":"heroes","styleLabel":null,"slots":["head","weapon","arms","misc"]},
         {"name":"Razor Silver Rrevenant","categoryId":"heroes","styleLabel":null,"slots":["arms","head","misc","weapon"]},
+        {"name":"Razor Voidstorm Asylum","categoryId":"heroes","styleLabel":null,"slots":["weapon","arms","head","misc","belt","shield"]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
