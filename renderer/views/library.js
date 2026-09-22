@@ -10,7 +10,7 @@
  * of in the shared store: no other screen has ever read them.
  */
 import { $ } from '../core/dom.js';
-import { COSMETIC_PREFIX, cosmeticMeta } from '../core/constants.js';
+import { COSMETIC_PREFIX } from '../core/constants.js';
 import { state } from '../core/store.js';
 import { registerView, render, pane } from '../core/router.js';
 import { matchLabel, applyInstalled, refreshInstalledIndex } from '../core/installed.js';
@@ -206,7 +206,7 @@ function normalRowHtml(rec, i, masterOff) {
       ${gripHtml(rec)}
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span class="lib-check-gap"></span>'}
       ${cosmetic
-        ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${cosmeticMeta(rec.slot).icon}</span></div>`
+        ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${catIcon(COSMETIC_PREFIX + rec.slot)}</span></div>`
         : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}${coveredTagHtml(rec)}</div>

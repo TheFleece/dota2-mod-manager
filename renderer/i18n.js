@@ -146,11 +146,27 @@ const EN = {
   'Косметика': 'Cosmetics',
   'Моды': 'Mods',
   'вид для стандартного предмета': 'a look for a default item',
+  'Предметы': 'Items',
+  'Предмет': 'Item',
+  'Эффект': 'Effect',
+  'Выбрано': 'Selected',
+  'Выбрать предмет': 'Choose an item',
+  'Нажми, чтобы сменить': 'Click to change',
+  'Нет': 'None',
+  'Установлено': 'Installed',
+  'Эффекты (можно несколько)': 'Effects (you can pick several)',
+  'Некоторые эффекты (например, frostbloom, snow) могут не прикрепляться ко всем моделям.':
+    'Some effects (frostbloom and snow, for example) may not attach to every model.',
+  'Без эффектов': 'No effects',
+  'Стандартный предмет героя сохранит свои id, name и prefab=default_item. Остальная часть блока берётся у выбранного предмета, а выбранные эффекты добавляются в visuals.':
+    'The default item of the hero keeps its id, name and prefab=default_item. The rest of the block comes from the chosen item, and the chosen effects are added to its visuals.',
   'Выбрать всю косметику': 'Select every look',
   'Вернуть все слоты к тому, что даёт игра': 'Put every slot back to what the game gives',
   'Косметика выключена — слоты снова как в игре': 'Cosmetics off — the slots are the game’s own again',
   'Вид подставляется в схему предметов игры — стандартный предмет просто рисуется как выбранный. Файлы модов это не трогает, и видно только тебе.':
     'A look is spliced into the game’s item schema — it touches no mod files, and only you can see it.',
+  'Стандартный предмет героя сохранит свои id, name и prefab=default_item. Остальная часть блока берётся у выбранного предмета, а выбранный эффект добавляется в visuals.':
+    'The hero’s stock item keeps its own id, name and prefab=default_item. The rest of the block comes from the chosen item, and the chosen effect is added to visuals.',
   '…и ещё {0} — уточни запрос': '…and {0} more — narrow the search',
   // cosmetic slot labels
   'Погода': 'Weather', 'Ландшафт': 'Terrain', 'Интерфейс игры': 'Game HUD',

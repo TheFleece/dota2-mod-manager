@@ -213,7 +213,8 @@ function presetsService({ catalog, installer, library, schemaService, deployAndA
         else out.embedded++;
       } else if (e.kind === 'cosmetic') {
         // free either way — nothing to fetch, just an instant pick from the local game schema
-        const have = library.list().find((r) => r.categoryId === 'cosmetic' && r.slot === e.slot && r.itemId === e.itemId);
+        const have = library.list().find((r) => r.categoryId === 'cosmetic'
+          && r.slot === e.slot && r.itemId === e.itemId && String(r.effectId || '') === String(e.effectId || ''));
         if (have && have.enabled !== false) out.installed++;
         else out.free++;
       } else {

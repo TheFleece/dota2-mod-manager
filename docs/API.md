@@ -2096,7 +2096,7 @@ function encodePresetLink({ name, author, mods })
 ```
 
 ```
-@param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId}>}} preset
+@param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId, effectId}>}} preset
 @returns {{code: string, web: string, direct: string}} the clickable form and the raw one
 ```
 
@@ -2615,6 +2615,30 @@ adds to the schema later shows up on its own, without an app update.
 @returns {Array<{id, name}>}  name is the schema's own English name, sorted A-Z
 ```
 
+### `itemEffects`
+
+```js
+function itemEffects()
+```
+
+The effect variants the synthetic cosmetics/items picker can apply.
+
+### `itemOptions`
+
+```js
+function itemOptions(text)
+```
+
+Wearable items with visuals and a matching stock default_item, offered under cosmetics/items.
+
+### `itemSlots`
+
+```js
+function itemSlots(text)
+```
+
+Hero item slots built from real default_item entries, with one donor list per hero part.
+
 ### `findItem`
 
 ```js
@@ -2626,6 +2650,14 @@ One item definition, by id. Returns the exact source range so a splice is byte-e
 ```
 @returns {{ id: string, start: number, end: number, text: string } | null}
 ```
+
+### `defaultItemForWearable`
+
+```js
+function defaultItemForWearable(text, sourceId)
+```
+
+The stock default_item that matches a wearable by slot and by the hero(es) that can equip it.
 
 ### `itemFields`
 
@@ -2710,6 +2742,32 @@ Styles come along with the visuals, but a paid item locks its extra styles behin
 "unlock { price, item_def }" - on a base item that only produces a "style locked"
 button, so those gates come off.
 
+### `itemEffectPatch`
+
+```js
+function itemEffectPatch(baseText, itemId, effectId)
+```
+
+Turn one paid wearable into the hero's stock item for that slot.
+
+The block stays the donor item almost verbatim: only the header is rewritten to the matching
+default_item (id + name + prefab), styles/unlocks that cannot be used on a free base item are
+dropped, and the chosen effect is inserted into visuals. The donor model/particles stay named
+as the paid item in items_game, while assetCopies still describe the stock-path overrides the
+built VPK should carry.
+
+```
+@returns {{ id: string, block: string, assetCopies: Array<{from: string, to: string}> }}
+```
+
+### `gameAssetEntries`
+
+```js
+function gameAssetEntries(gamePath, assetCopies)
+```
+
+Read compiled asset bytes out of pak01 and stage them under the renamed path in our VPK.
+
 ### `mergeSchema`
 
 ```js
@@ -2737,7 +2795,7 @@ only: a malformed file is what makes the game die with "ERROR PARSING SCRIPT".
 ### `buildSchemaVpk`
 
 ```js
-function buildSchemaVpk(text)
+function buildSchemaVpk(text, extraEntries = [])
 ```
 
 Pack the merged schema as a one-file VPK holding nothing but items_game.txt.
