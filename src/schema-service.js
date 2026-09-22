@@ -41,12 +41,17 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
   // Enabled mods' lifted item blocks + the free cosmetics the user picked. A cosmetic pick
   // is a library record like any other (categoryId 'cosmetic', slot + itemId of its own),
   // so toggling, deleting and sharing it in a preset all go through the normal machinery.
-  function patches(vanillaText) {
+  function patches(vanillaText, game) {
     const out = [];
     for (const rec of library.list()) {
       if (rec.enabled === false) continue;
       if (rec.categoryId === 'cosmetic') {
         try {
+          if (rec.slot === 'items' || String(rec.slot || '').startsWith('item:')) {
+            const built = schema.itemEffectPatch(vanillaText, rec.itemId, rec.effectId);
+            out.push({ id: built.id, block: built.block, assets: schema.gameAssetEntries(game, built.assetCopies), source: rec.name });
+            continue;
+          }
           const target = schema.baseItemFor(vanillaText, rec.slot);
           if (!target) continue;
           out.push({ id: target.id, block: schema.baseItemPatch(vanillaText, target.id, rec.itemId), source: rec.name });
@@ -73,7 +78,7 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
       // through the cache, not around it: this runs on every mod removed, enabled or
       // switched off, and re-extracting 50 MB from the game's pak each time was the wait
       const base = vanillaBase();
-      const list = patches(base.text);
+      const list = patches(base.text, game);
       if (!list.length) return drop();
       const res = schema.deploy({ gamePath: game, folder: patcher.FOLDER, patches: list, base });
       settings.set('schemaStamp', res.stamp);
@@ -296,6 +301,23 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
         const rec = cosmeticRecordFor(slot);
         slots.push({ slot, base: base.id, picked: rec ? rec.itemId : null, recordId: rec ? rec.id : null, options });
       }
+      const itemSlots = schema.itemSlots(text);
+      const effects = schema.itemEffects();
+      if (itemSlots.length && effects.length) {
+        const entries = itemSlots.map((it) => {
+          const rec = cosmeticRecordFor(it.slot);
+          return {
+            ...it,
+            picked: rec ? rec.itemId : null,
+            pickedEffect: rec ? (rec.effectId || '') : '',
+            recordId: rec ? rec.id : null,
+            effects,
+          };
+        });
+        const at = slots.findIndex((s) => s.slot === 'weather');
+        if (at === -1) slots.unshift(...entries);
+        else slots.splice(at + 1, 0, ...entries);
+      }
       return { slots };
     } catch (err) {
       return { slots: [], error: String(err.message || err) };
@@ -309,18 +331,20 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
    * reactivates a dormant one for that same item, so flipping back and forth between two
    * looks doesn't spawn a new row each time. Returns the now-live record.
    */
-  function pickCosmetic(slot, itemId, itemName) {
+  function pickCosmetic(slot, itemId, itemName, effectId = null) {
     const id = String(itemId);
     const name = itemName || id;
+    const effect = (slot === 'items' || String(slot || '').startsWith('item:')) ? String(effectId || '') : '';
     const live = cosmeticRecordFor(slot);
-    if (live && live.itemId === id) return live; // already this
+    if (live && live.itemId === id && String(live.effectId || '') === effect) return live; // already this
 
     if (live) library.setEnabled(live.id, false);
-    const dormant = library.list().find((r) => r.categoryId === 'cosmetic' && r.slot === slot && r.itemId === id);
+    const dormant = library.list().find((r) => r.categoryId === 'cosmetic'
+      && r.slot === slot && r.itemId === id && String(r.effectId || '') === effect);
     const rec = dormant
-      ? library.update(dormant.id, { name, enabled: true })
+      ? library.update(dormant.id, { name, enabled: true, effectId: effect || undefined })
       : library.add({ name, categoryId: 'cosmetic', styleLabel: null, fileRef: null, preview: null, files: [] });
-    if (!dormant) library.update(rec.id, { slot, itemId: id });
+    if (!dormant) library.update(rec.id, { slot, itemId: id, ...(effect ? { effectId: effect } : {}) });
     refresh();
     return library.find(rec.id);
   }

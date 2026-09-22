@@ -251,7 +251,7 @@ function registerPresetsIpc({
           return records.map((r) => r.id);
         }
         if (entry.kind === 'cosmetic') {
-          const rec = schemaService.pickCosmetic(entry.slot, entry.itemId, entry.name);
+          const rec = schemaService.pickCosmetic(entry.slot, entry.itemId, entry.name, entry.effectId);
           return rec ? [rec.id] : [];
         }
         errors.push(`${entry.name}: ${entry.reason || t('нет в файле')}`);

@@ -135,12 +135,20 @@ const EN = {
     'Files overruled: {0} — {1}. The mod that loads earlier supplies them; right-click to change the order.',
   'Косметика': 'Cosmetics',
   'Моды': 'Mods',
+  'Предметы': 'Items',
+  'Предмет': 'Item',
+  'Эффект': 'Effect',
+  'Выбрано': 'Selected',
+  'Выбрать предмет': 'Choose an item',
+  'Нажми, чтобы сменить': 'Click to change',
   'бесплатная косметика': 'free cosmetic',
   'Выбрать всю косметику': 'Select every look',
   'Вернуть все слоты к тому, что даёт игра': 'Put every slot back to what the game gives',
   'Косметика выключена — слоты снова как в игре': 'Cosmetics off — the slots are the game’s own again',
   'Косметика подставляется в схему предметов игры — файлы модов она не трогает, и её видно только тебе.':
     'A look is spliced into the game’s item schema — it touches no mod files, and only you can see it.',
+  'Стандартный предмет героя сохранит свои id, name и prefab=default_item. Остальная часть блока берётся у выбранного предмета, а выбранный эффект добавляется в visuals.':
+    'The hero’s stock item keeps its own id, name and prefab=default_item. The rest of the block comes from the chosen item, and the chosen effect is added to visuals.',
   '…и ещё {0} — уточни запрос': '…and {0} more — narrow the search',
   // cosmetic slot labels
   'Погода': 'Weather', 'Ландшафт': 'Terrain', 'Интерфейс игры': 'Game HUD',

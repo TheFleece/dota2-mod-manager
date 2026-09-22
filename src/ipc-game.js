@@ -170,11 +170,11 @@ function registerGameIpc({
 
   // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
   // handle it (see touchesSchema above), this is only for the initial choice.
-  ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName) => {
+  ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName, effectId) => {
     const stop = blocked('cosmetics');
     if (stop) return stop;
     try {
-      const rec = schemaService.pickCosmetic(slot, itemId, itemName);
+      const rec = schemaService.pickCosmetic(slot, itemId, itemName, effectId);
       return { ok: true, record: rec };
     } catch (err) {
       return { error: String(err.message || err) };

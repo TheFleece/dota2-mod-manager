@@ -28,7 +28,7 @@
   background: var(--surface-solid);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
-  width: min(700px, calc(92vw / var(--content-zoom)));
+  width: min(860px, calc(92vw / var(--content-zoom)));
   max-height: calc(88vh / var(--content-zoom));
   overflow-y: auto;
   box-shadow: var(--shadow), 0 0 60px color-mix(in srgb, var(--md-primary) 8%, transparent);
@@ -153,6 +153,9 @@
   border-color: rgba(251, 191, 36, 0.32);
 }
 .modal-note.warn b { color: var(--warning); }
+.modal-field { display: flex; flex-direction: column; gap: 8px; }
+.modal-field-label { font-size: 12px; font-weight: 700; color: var(--text); }
+.modal-field .select-wrap { width: fit-content; }
 
 /* ============ Confirm dialog ============ */
 .confirm-overlay {

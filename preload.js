@@ -77,7 +77,7 @@ contextBridge.exposeInMainWorld('api', {
   cosmetics: {
     slots: () => ipcRenderer.invoke('cosmetics:slots'),
     icons: (names) => ipcRenderer.invoke('cosmetics:icons', names),
-    pick: (slot, itemId, itemName) => ipcRenderer.invoke('cosmetics:pick', slot, itemId, itemName),
+    pick: (slot, itemId, itemName, effectId) => ipcRenderer.invoke('cosmetics:pick', slot, itemId, itemName, effectId),
   },
   // a mod's own video, and the still the window decodes out of it
   preview: {
@@ -124,6 +124,7 @@ contextBridge.exposeInMainWorld('api', {
     cacheSize: () => ipcRenderer.invoke('misc:cacheSize'),
     clearCache: () => ipcRenderer.invoke('misc:clearCache'),
     runTool: (dirName) => ipcRenderer.invoke('misc:runTool', dirName),
+    listAssetFiles: (subfolder) => ipcRenderer.invoke('misc:listAssetFiles', subfolder),
   },
   diag: {
     export: () => ipcRenderer.invoke('diag:export'),
