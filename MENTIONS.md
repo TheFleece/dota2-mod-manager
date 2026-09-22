@@ -21,12 +21,12 @@ Every link below was opened on **2026-09-15**. Counts are as of that day. For ho
 
 ### Videos
 
-All in Russian.
+All in Russian. View counts here were read again on 2026-09-22; the rest of this file is still as of the date above.
 
 | Video | Who | Published | Notes |
 |---|---|---|---|
-| [Как ставить любые моды, шмотки и карты в Dota 2 еще легче? \| Dota 2 Mod Manager](https://www.youtube.com/watch?v=Z_yalpuP6pA) | [hanta](https://www.youtube.com/@hqnta), YouTube | 2026-08-21 | A walkthrough of the app. 7,478 views |
-| [Ставлю моды на Dota 2 за 5 минут \| Dota 2 Mod Manager](https://www.youtube.com/watch?v=RWBGYSjN-Ow) | [dricsy66](https://www.youtube.com/@dricsy66), YouTube | 2026-08-18 | Installing mods with the app, four minutes. 1,038 views |
+| [Как ставить любые моды, шмотки и карты в Dota 2 еще легче? \| Dota 2 Mod Manager](https://www.youtube.com/watch?v=Z_yalpuP6pA) | [hanta](https://www.youtube.com/@hqnta), YouTube | 2026-08-21 | A walkthrough of the app. 9,189 views |
+| [Ставлю моды на Dota 2 за 5 минут \| Dota 2 Mod Manager](https://www.youtube.com/watch?v=RWBGYSjN-Ow) | [dricsy66](https://www.youtube.com/@dricsy66), YouTube | 2026-08-18 | Installing mods with the app, four minutes. 1,259 views |
 | [Short clip](https://www.tiktok.com/@romantic_9991/video/7683011914242313492) | [romantic_9991](https://www.tiktok.com/@romantic_9991), TikTok | 2026-09-08 | The app's catalog on screen, tagged as a guide to replacement skins |
 | [Short clip](https://www.tiktok.com/@romantic_9991/video/7682934300328660245) | [romantic_9991](https://www.tiktok.com/@romantic_9991), TikTok | 2026-09-07 | A second clip from the same account |
 
