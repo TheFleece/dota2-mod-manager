@@ -61,5 +61,9 @@ entry in Windows' own list of installed programs passes no arguments at all.
   two locks are only cheap while they agree, so the flags in the NSIS script are read out and
   compared with the list in the module.
 - `test/uninstall-args.test.js` "nothing destructive is ticked for the person in advance"
+- `tools/e2e.mjs` "an update does not get the removal window": the end-to-end run starts the
+  built app on the command line electron-builder uses and looks at which window comes up.
+- `tools/e2e.mjs` "deleting the mods is not ticked for the person": the same run opens the real
+  removal window and reads the boxes, which is the part people saw.
 - `.github/mutants.json` "the removal window opens during an update too": the weekly mutation run
   drops the update check and expects these tests to fail.

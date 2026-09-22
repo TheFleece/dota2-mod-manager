@@ -36,7 +36,7 @@ jobs:
       - name: Install xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Install, switch off, switch on and remove a mod by clicking
+      - name: Click through installing a mod, removing it, and the removal window
         run: xvfb-run -a node tools/e2e.mjs
 
       - name: What the window showed
@@ -59,7 +59,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Install, switch off, switch on and remove a mod by clicking
+      - name: Click through installing a mod, removing it, and the removal window
         run: node tools/e2e.mjs
 
       - name: What the window showed

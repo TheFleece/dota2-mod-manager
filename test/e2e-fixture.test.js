@@ -99,7 +99,8 @@ test('the sandbox answers every question the app asks once on first run', () => 
 });
 
 test('the scripts the window runs compile', async () => {
-  const { EVAL_INSTALL, EVAL_REMOVE } = await load();
-  assert.doesNotThrow(() => new AsyncFunction(EVAL_INSTALL));
-  assert.doesNotThrow(() => new AsyncFunction(EVAL_REMOVE));
+  const m = await load();
+  for (const name of ['EVAL_INSTALL', 'EVAL_REMOVE', 'EVAL_UNINSTALL_WINDOW', 'EVAL_NOT_THE_REMOVAL_WINDOW']) {
+    assert.doesNotThrow(() => new AsyncFunction(m[name]), `${name} does not compile`);
+  }
 });
