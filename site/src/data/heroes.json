@@ -126,6 +126,16 @@
           "date": 1786679674
         },
         {
+          "name": "Invoker Blackguard Magus",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","arms","back","head","shoulder"],
+          "image": {"src":"/mods/invoker-blackguard-magus.webp","width":854,"height":480},
+          "author": "XIIIpsiblade",
+          "authorUrl": "https://t.me/XIIIpsiblade",
+          "date": 1790084006
+        },
+        {
           "name": "Invoker Bloody Wizard",
           "categoryId": "heroes",
           "styleLabel": null,
@@ -421,6 +431,26 @@
           "author": "Darkness",
           "authorUrl": "https://t.me/Darkness_Logovo",
           "date": 1768720851
+        },
+        {
+          "name": "Diabolical Shadow Fiend",
+          "categoryId": "heroes",
+          "styleLabel": "Desolation",
+          "slots": ["arms","head","shoulder"],
+          "image": {"src":"/mods/diabolical-shadow-fiend-desolation.webp","width":854,"height":480},
+          "author": "XIIIpsiblade",
+          "authorUrl": "https://t.me/XIIIpsiblade",
+          "date": 1790084006
+        },
+        {
+          "name": "Diabolical Shadow Fiend",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","head","shoulder"],
+          "image": {"src":"/mods/diabolical-shadow-fiend.webp","width":854,"height":480},
+          "author": "XIIIpsiblade",
+          "authorUrl": "https://t.me/XIIIpsiblade",
+          "date": 1790084006
         },
         {
           "name": "Ghost Shadow Fiend",
@@ -5549,6 +5579,153 @@
       ]
     },
     {
+      "id": "pudge",
+      "name": "Pudge",
+      "slug": "pudge",
+      "mods": [
+        {
+          "name": "Pudge Toy Butcher",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
+          "image": {"src":"/mods/pudge-toy-butcher.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1765448898
+        },
+        {
+          "name": "Pudge Toy Woodcutter",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
+          "image": {"src":"/mods/pudge-toy-woodcutter.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1788726574
+        },
+        {
+          "name": "Pudge Clown Toy",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc","shoulder"],
+          "image": {"src":"/mods/pudge-clown-toy.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1765283745
+        },
+        {
+          "name": "Pudge Abberant Observer",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-abberant-observer.webp","width":854,"height":480},
+          "author": "rasstegai",
+          "authorUrl": "https://steamcommunity.com/id/rasstegai/",
+          "date": 1790089462
+        },
+        {
+          "name": "Pudge Arcana Elephant",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["weapon","belt","misc","head","back","arms"],
+          "image": {"src":"/mods/pudge-arcana-elephant.webp","width":854,"height":480},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1756539017
+        },
+        {
+          "name": "Pudge Candy Cat",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-candy-cat.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge Gol0vach",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","head","arms","weapon","misc"],
+          "image": {"src":"/mods/pudge-gol0vach.webp","width":854,"height":480},
+          "author": "твавт",
+          "authorUrl": "https://steamcommunity.com/id/myasu0/",
+          "date": 1789931584
+        },
+        {
+          "name": "Pudge Immortal Gold",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-immortal-gold.webp","width":854,"height":480},
+          "author": "Tenkay",
+          "authorUrl": "https://t.me/dota2Tenkay",
+          "date": 1786848392
+        },
+        {
+          "name": "Pudge Iron Hog",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-iron-hog.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge Mindless Slaughter",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-mindless-slaughter.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge Rotzo the Clown",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon","misc"],
+          "image": {"src":"/mods/pudge-rotzo-the-clown.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1771681325
+        },
+        {
+          "name": "Pudge CM",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head","weapon"],
+          "image": {"src":"/mods/pudge-cm.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1756539017
+        },
+        {
+          "name": "Gopo Pudge",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","belt","arms","head"],
+          "image": {"src":"/mods/gopo-pudge.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1756539017
+        },
+        {
+          "name": "Pudge Hood of Defiance",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["head"],
+          "image": {"src":"/mods/pudge-hood-of-defiance.webp","width":854,"height":480},
+          "author": "apathydxd",
+          "authorUrl": "https://discord.com/users/538760177470668810",
+          "date": 1779803304
+        }
+      ]
+    },
+    {
       "id": "razor",
       "name": "Razor",
       "slug": "razor",
@@ -6789,143 +6966,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1764003644
-        }
-      ]
-    },
-    {
-      "id": "pudge",
-      "name": "Pudge",
-      "slug": "pudge",
-      "mods": [
-        {
-          "name": "Pudge Toy Butcher",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
-          "image": {"src":"/mods/pudge-toy-butcher.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1765448898
-        },
-        {
-          "name": "Pudge Toy Woodcutter",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc","base","shoulder"],
-          "image": {"src":"/mods/pudge-toy-woodcutter.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1788726574
-        },
-        {
-          "name": "Pudge Clown Toy",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc","shoulder"],
-          "image": {"src":"/mods/pudge-clown-toy.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1765283745
-        },
-        {
-          "name": "Pudge Arcana Elephant",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["weapon","belt","misc","head","back","arms"],
-          "image": {"src":"/mods/pudge-arcana-elephant.webp","width":854,"height":480},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1756539017
-        },
-        {
-          "name": "Pudge Candy Cat",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-candy-cat.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge Gol0vach",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","head","arms","weapon","misc"],
-          "image": {"src":"/mods/pudge-gol0vach.webp","width":854,"height":480},
-          "author": "твавт",
-          "authorUrl": "https://steamcommunity.com/id/myasu0/",
-          "date": 1789931584
-        },
-        {
-          "name": "Pudge Immortal Gold",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-immortal-gold.webp","width":854,"height":480},
-          "author": "Tenkay",
-          "authorUrl": "https://t.me/dota2Tenkay",
-          "date": 1786848392
-        },
-        {
-          "name": "Pudge Iron Hog",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-iron-hog.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge Mindless Slaughter",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-mindless-slaughter.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge Rotzo the Clown",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon","misc"],
-          "image": {"src":"/mods/pudge-rotzo-the-clown.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1771681325
-        },
-        {
-          "name": "Pudge CM",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head","weapon"],
-          "image": {"src":"/mods/pudge-cm.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1756539017
-        },
-        {
-          "name": "Gopo Pudge",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","belt","arms","head"],
-          "image": {"src":"/mods/gopo-pudge.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1756539017
-        },
-        {
-          "name": "Pudge Hood of Defiance",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["head"],
-          "image": {"src":"/mods/pudge-hood-of-defiance.webp","width":854,"height":480},
-          "author": "apathydxd",
-          "authorUrl": "https://discord.com/users/538760177470668810",
-          "date": 1779803304
         }
       ]
     },

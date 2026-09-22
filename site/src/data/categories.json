@@ -1014,6 +1014,14 @@
     {
       "id": "couriers",
       "mods": [
+        {
+          "name": "Mega Greevil Courier",
+          "styleLabel": null,
+          "image": {"src":"/mods/mega-greevil-courier.webp","width":854,"height":480},
+          "author": "rasstegai",
+          "authorUrl": "https://steamcommunity.com/id/rasstegai/",
+          "date": 1790086853
+        },
         {"name":"Onibi","styleLabel":null,"image":{"src":"/mods/onibi.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1779436367},
         {
           "name": "Honey Heist Baby Roshan",
@@ -1626,6 +1634,21 @@
         {"name":"Tinker Lite Machines","styleLabel":null,"image":{"src":"/mods/tinker-lite-machines.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1773596942},
         {"name":"Default Wards","styleLabel":null,"image":{"src":"/mods/default-wards.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1769787537},
         {"name":"Commands","styleLabel":null,"image":null,"author":null,"authorUrl":null,"date":null}
+      ]
+    },
+    {
+      "id": "parts",
+      "mods": [
+        {"name":"Black Top Bar","styleLabel":null,"image":{"src":"/mods/black-top-bar.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790084006},
+        {"name":"Kaneki Search Bar","styleLabel":null,"image":{"src":"/mods/kaneki-search-bar.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790084006},
+        {
+          "name": "Scolopendra Search Bar",
+          "styleLabel": null,
+          "image": {"src":"/mods/scolopendra-search-bar.webp","width":854,"height":480},
+          "author": "XIIIpsiblade",
+          "authorUrl": "https://t.me/XIIIpsiblade",
+          "date": 1790084006
+        }
       ]
     },
     {
