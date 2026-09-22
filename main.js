@@ -47,6 +47,7 @@ const gamelang = require('./src/gamelang');
 // handed to src/ipc-settings.js by name, the same one it has always been passed under
 const { moveLangFolder } = gamelang;
 const { uninstallFlow } = require('./src/uninstall-window');
+const { isUninstallRun } = require('./src/uninstall-args');
 const { presetsService } = require('./src/presets-service');
 const { registerPresetsIpc } = require('./src/ipc-presets');
 const { registerModsIpc } = require('./src/ipc-mods');
@@ -91,9 +92,9 @@ const IS_PORTABLE = !!process.env.PORTABLE_EXECUTABLE_DIR;
  * An update runs the old uninstaller with --updated and /KEEP_APP_DATA, and the NSIS side
  * already stops there. This is the second lock on the same door: it went wrong once, in front
  * of everybody, and the failure mode is a person being asked whether to delete their mods
- * while they are merely updating. Two cheap checks are worth more than one clever one. */
-const UNINSTALL_IS_UPDATE = process.argv.some((a) => /^(--updated|\/KEEP_APP_DATA|\/S)$/i.test(a));
-const IS_UNINSTALL = process.argv.includes('--uninstall') && !UNINSTALL_IS_UPDATE;
+ * while they are merely updating. Both locks and the reasoning are in src/uninstall-args.js,
+ * which takes a command line so the cases can be tested without being launched. */
+const IS_UNINSTALL = isUninstallRun(process.argv);
 if (IS_PORTABLE) {
   try {
     const beside = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'Dota 2 Mod Manager Data');

@@ -729,6 +729,14 @@
       "from": "n: String(name || '').slice(0, 120),",
       "to": "n: String(name || '').slice(0, 20),",
       "test": "test/properties.test.js"
+    },
+    {
+      "name": "the removal window opens during an update too",
+      "file": "src/uninstall-args.js",
+      "anchor": "/** A person removing the program, which is the only case the window may open in. */",
+      "lineStartsWith": "const isUninstallRun = ",
+      "to": "const isUninstallRun = (argv = []) => argv.includes('--uninstall');",
+      "test": "test/uninstall-args.test.js"
     }
   ]
 }

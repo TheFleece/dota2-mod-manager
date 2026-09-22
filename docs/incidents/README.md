@@ -5,6 +5,7 @@ incident, named by the day it was found.
 
 | Found | Incident | Versions | Fixed in |
 | --- | --- | --- | --- |
+| 2026-08-31 | [Updating put the removal window on screen](2026-08-31-uninstaller-during-update.md) | 2.6.1 | 2.6.2 |
 | 2026-09-10 | [Pressing Install did nothing](2026-09-10-install-did-nothing.md) | 2.6.5, 2.6.6 | 2.6.7 |
 | 2026-09-10 | [Mods refused after the checksum check arrived](2026-09-10-downloads-refused.md) | 2.6.5 | 2.6.6 |
 | 2026-09-11 | [The update mirror carried nothing for Linux](2026-09-11-linux-update-files-missing.md) | 2.6.5 to 2.6.8 | 2.6.9 |
