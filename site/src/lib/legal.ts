@@ -1,0 +1,47 @@
+/**
+ * The privacy policy and the terms, read from docs/ when the site is built.
+ *
+ * docs/privacy/index.html and docs/terms/index.html were written in July 2026 for the Discord
+ * application, which asks for both, and were served from thefleece.github.io until the
+ * repository moved. They stay the one copy. Each holds an English and a Russian article, and this
+ * lifts the article for one language into the site's own layout, the way tools/preset-page.mjs
+ * carries the preset page over. The back link goes, because the site has a header of its own.
+ *
+ * A heading or a date that goes missing from either file fails the build here, rather than
+ * leaving a page without a title on the site.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { REPO_ROOT } from './paths';
+import type { Lang } from '../i18n/ui';
+
+export type LegalPage = 'privacy' | 'terms';
+
+export interface LegalDoc {
+  title: string;
+  /** The line under the heading, which carries the date the text was last changed. */
+  date: string;
+  /** The article without its heading, date and back link. Our own file, so it is used as HTML. */
+  body: string;
+  /** The first paragraph as plain text, cut for a meta description. */
+  description: string;
+}
+
+export function legal(page: LegalPage, lang: Lang): LegalDoc {
+  const file = path.join(REPO_ROOT, 'docs', page, 'index.html');
+  const html = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const article = new RegExp(`<article data-lang="${lang}">([\\s\\S]*?)</article>`).exec(html);
+  if (!article) throw new Error(`docs/${page}/index.html has no article for "${lang}"`);
+  let body = article[1];
+  const title = (/<h1>([^<]+)<\/h1>/.exec(body) || [])[1];
+  const date = (/<div class="date">([^<]+)<\/div>/.exec(body) || [])[1];
+  if (!title || !date) throw new Error(`docs/${page}/index.html (${lang}) lost its heading or its date line`);
+  body = body
+    .replace(/<h1>[^<]*<\/h1>/, '')
+    .replace(/<div class="date">[^<]*<\/div>/, '')
+    .replace(/<a class="back"[^>]*>[\s\S]*?<\/a>/, '')
+    .trim();
+  const first = ((/<p>([\s\S]*?)<\/p>/.exec(body) || [])[1] || title).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const description = first.length > 160 ? `${first.slice(0, 157).replace(/\s+\S*$/, '')}…` : first;
+  return { title, date, body, description };
+}

@@ -1,0 +1,18 @@
+---
+/**
+ * The privacy policy or the terms, in the site's layout. The words live in docs/ and come in
+ * through lib/legal.ts, so the text the Discord application links to has one copy.
+ */
+import { legal, type LegalPage } from '../lib/legal';
+import type { Lang } from '../i18n/ui';
+
+interface Props { page: LegalPage; lang: Lang }
+const { page, lang } = Astro.props;
+const doc = legal(page, lang);
+---
+
+<article class="doc wrap">
+  <h1>{doc.title}</h1>
+  <p class="lead">{doc.date}</p>
+  <Fragment set:html={doc.body} />
+</article>
