@@ -22,7 +22,7 @@ const path = require('path');
 const https = require('https');
 
 const OUT = path.resolve(__dirname, '..', 'packaging', 'aur');
-const REPO = 'TheFleece/dota2-mod-manager';
+const REPO = 'dota2modmanager/dota2-mod-manager';
 const PKGNAME = 'dota2-mod-manager-appimage';
 
 function get(url, depth = 0) {

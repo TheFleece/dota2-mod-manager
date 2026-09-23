@@ -23,7 +23,7 @@ const { BETA_CHANNEL } = require('./beta');
 
 /** The copy of each release this project keeps, for the hours GitHub is not answering. */
 const MIRROR = 'https://cdn.dota2modmanager.com/updates/';
-const GITHUB = { provider: 'github', owner: 'TheFleece', repo: 'dota2-mod-manager' };
+const GITHUB = { provider: 'github', owner: 'dota2modmanager', repo: 'dota2-mod-manager' };
 /** How often an open window looks again. */
 const EVERY = 4 * 60 * 60 * 1000;
 

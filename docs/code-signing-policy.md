@@ -21,7 +21,7 @@ workflow at the tagged commit. There is no private key on anybody's machine: Sig
 short-lived certificate to the workflow and records the signature in a public transparency log.
 
 ```
-gh attestation verify Dota-2-Mod-Manager-Setup.exe --repo TheFleece/dota2-mod-manager
+gh attestation verify Dota-2-Mod-Manager-Setup.exe --repo dota2modmanager/dota2-mod-manager
 ```
 
 **The catalog the app reads**, by its author. Mod data carries an ed25519 signature made by the

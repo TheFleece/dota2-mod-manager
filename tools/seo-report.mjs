@@ -48,7 +48,7 @@ const OUT = path.join(root, 'seo-report.md');
 
 const SITE = process.env.SEO_SITE_URL || 'https://dota2modmanager.com';
 const HOST = new URL(SITE).hostname;
-const REPO = process.env.GITHUB_REPOSITORY || 'TheFleece/dota2-mod-manager';
+const REPO = process.env.GITHUB_REPOSITORY || 'dota2modmanager/dota2-mod-manager';
 const BING_KEY = process.env.BING_API_KEY || '';
 const GOOGLE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '';
 const YANDEX_TOKEN = process.env.YANDEX_OAUTH_TOKEN || '';

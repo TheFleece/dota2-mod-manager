@@ -17,7 +17,7 @@ You need Node 24 or newer. The tests use `zlib.crc32`, which arrived in Node 22,
 24.
 
 ```bash
-git clone https://github.com/TheFleece/dota2-mod-manager.git
+git clone https://github.com/dota2modmanager/dota2-mod-manager.git
 cd dota2-mod-manager
 npm install
 npm start          # the app, against your real settings

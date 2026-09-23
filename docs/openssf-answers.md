@@ -21,7 +21,7 @@ The project entry is https://www.bestpractices.dev/en/projects/14721.
 Keep this file honest. A criterion answered here and no longer true in the repository is worse than
 an unanswered one, and the badge is rechecked at every release.
 
-Shorthand used below: **repo** is `https://github.com/TheFleece/dota2-mod-manager`, **site** is
+Shorthand used below: **repo** is `https://github.com/dota2modmanager/dota2-mod-manager`, **site** is
 `https://dota2modmanager.com`.
 
 ## Basics
@@ -235,12 +235,11 @@ criterion whose answer is still a question mark from `.bestpractices.json`, so o
 silver page and pressing the robot button carries all of these over at once. It cannot change
 an answer that is already saved.
 
-One of them is a MUST this project does not meet yet, and will not meet by writing:
-`access_continuity`. Since 2026-09-23 a second maintainer can merge and release what other people
-send. They cannot merge a change of their own, a version bump included, because main wants an
-approval from somebody other than the author and only the owner of a personal repository can
-change that rule. The repository moving into an organization with both maintainers as owners is
-what turns this into Met, and the silver badge waits for it.
+`access_continuity` was the one MUST this project could not meet by writing. It turned Met on
+2026-09-23, when the repository moved into an organization owned by both maintainers: either of
+them can merge, tag, release and change the branch rule without the other. The saved answer on
+the form still says Unmet, and the robot does not overwrite saved answers, so it has to be changed
+by hand.
 
 | Criterion | Answer | URL to give |
 | --- | --- | --- |
@@ -250,7 +249,7 @@ what turns this into Met, and the silver badge waits for it.
 | `governance` | Met | repo GOVERNANCE.md |
 | `code_of_conduct` | Met | repo CODE_OF_CONDUCT.md |
 | `roles_responsibilities` | Met | repo GOVERNANCE.md |
-| `access_continuity` | Unmet | repo GOVERNANCE.md |
+| `access_continuity` | Met | repo GOVERNANCE.md, section Continuity |
 | `bus_factor` | Unmet (SHOULD) | repo DECISIONS.md |
 | `documentation_roadmap` | Met | repo ROADMAP.md |
 | `documentation_architecture` | Met | repo ARCHITECTURE.md |
@@ -262,7 +261,7 @@ what turns this into Met, and the silver badge waits for it.
 | `internationalization` | Met (SHOULD) | repo tools/check-i18n.js |
 | `sites_password_security` | N/A | none needed |
 | `maintenance_or_update` | Met | repo RELEASING.md |
-| `report_tracker` | Met | https://github.com/TheFleece/dota2-mod-manager/issues |
+| `report_tracker` | Met | https://github.com/dota2modmanager/dota2-mod-manager/issues |
 | `vulnerability_report_credit` | N/A | repo SECURITY.md |
 | `vulnerability_response_process` | Met | repo SECURITY.md |
 | `coding_standards` | Met | repo eslint.config.js |
@@ -308,7 +307,6 @@ All three are done.
 - `tools/radar.mjs` reads the entry every morning and compares it with `.bestpractices.json`. An
   answer written here that the entry never took is a line in the status issue, because the robot
   on the form fills blanks and leaves saved answers alone, so the two drift apart in silence.
-- Silver is written out above. It stands at 98%, and the 2% is `access_continuity`. A second
-  maintainer joined on 2026-09-23, and the move to an organization is what finishes it:
-  [GOVERNANCE.md](../GOVERNANCE.md), section Continuity, and
-  [second-maintainer.md](second-maintainer.md) say why.
+- Silver is written out above. It stood at 98% until `access_continuity` turned Met with the move
+  to an organization on 2026-09-23; [GOVERNANCE.md](../GOVERNANCE.md), section Continuity, says
+  why. The form needs that one answer edited by hand.

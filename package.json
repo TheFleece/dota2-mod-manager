@@ -28,11 +28,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/TheFleece/dota2-mod-manager.git"
+    "url": "https://github.com/dota2modmanager/dota2-mod-manager.git"
   },
   "author": "TheFleece",
   "license": "GPL-3.0-or-later",
-  "homepage": "https://github.com/TheFleece/dota2-mod-manager",
+  "homepage": "https://github.com/dota2modmanager/dota2-mod-manager",
   "devDependencies": {
     "electron": "^44.4.3",
     "electron-builder": "^26.15.3",
@@ -108,7 +108,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "TheFleece",
+      "owner": "dota2modmanager",
       "repo": "dota2-mod-manager",
       "releaseType": "release"
     }

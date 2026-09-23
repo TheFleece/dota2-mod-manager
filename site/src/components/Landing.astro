@@ -33,7 +33,7 @@ const c = landing[lang];
     way the guides do, so one string serves both halves of the site. */
 const link = (html: string) => html.replaceAll('~/', lang === 'en' ? '/' : `/${lang}/`);
 
-const GITHUB = 'https://github.com/TheFleece/dota2-mod-manager';
+const GITHUB = 'https://github.com/dota2modmanager/dota2-mod-manager';
 const RELEASES = `${GITHUB}/releases/latest`;
 const WORKFLOW = `${GITHUB}/actions`;
 const DISCORD = 'https://discord.gg/PBvG8D9MxT';
@@ -42,7 +42,7 @@ const DISCORD = 'https://discord.gg/PBvG8D9MxT';
 // while building, the badge simply does not appear - a stale version number would be worse.
 let latestTag: string | null = null;
 try {
-  const r = await fetch('https://api.github.com/repos/TheFleece/dota2-mod-manager/releases/latest', {
+  const r = await fetch('https://api.github.com/repos/dota2modmanager/dota2-mod-manager/releases/latest', {
     headers: { 'User-Agent': 'dota2modmanager-site' },
   });
   if (r.ok) latestTag = (await r.json()).tag_name ?? null;
@@ -331,7 +331,7 @@ const shots = shotNames.map((name, i) => ({
       '%c Dota 2 Mod Manager ',
       'background:#d0bcff;color:#220a32;padding:4px 10px;border-radius:6px;font-weight:700',
     );
-    console.log('GPL-3.0, every line: https://github.com/TheFleece/dota2-mod-manager');
+    console.log('GPL-3.0, every line: https://github.com/dota2modmanager/dota2-mod-manager');
     console.log('The app wears eight hero palettes. So does this page: mm.hero("brew")');
     (window as any).mm = {
       palettes: Object.fromEntries(heroes.map((h) => [h.id, h.primary])),

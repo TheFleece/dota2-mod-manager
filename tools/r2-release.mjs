@@ -31,7 +31,7 @@ import { releasePlan, retargetFeed, staleReleaseFiles, UPDATES } from './mirror-
 
 const version = (process.argv[2] || '').replace(/^v/, '');
 const dry = process.argv.includes('--dry');
-const REPO = 'TheFleece/dota2-mod-manager';
+const REPO = 'dota2modmanager/dota2-mod-manager';
 const PREFIX = UPDATES;
 
 if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version)) {

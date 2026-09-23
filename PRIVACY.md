@@ -113,6 +113,6 @@ ask for another way to continue.
 This file changes when the app does. Its history is in this repository, so what it said on any
 date is a matter of record rather than of memory.
 
-Questions: [an issue](https://github.com/TheFleece/dota2-mod-manager/issues), or the
+Questions: [an issue](https://github.com/dota2modmanager/dota2-mod-manager/issues), or the
 [Discord](https://discord.gg/PBvG8D9MxT). Security reports go through [SECURITY.md](SECURITY.md)
 instead, privately.

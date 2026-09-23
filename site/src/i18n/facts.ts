@@ -180,12 +180,12 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       {
         k: 'list',
         items: [
-          '<b>The installer is built in public.</b> Every release is produced by <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> on a GitHub-hosted runner, from the commit the version tag points at. Nothing is uploaded from a desktop. <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml">Every run, with its log</a>.',
+          '<b>The installer is built in public.</b> Every release is produced by <a href="https://github.com/dota2modmanager/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> on a GitHub-hosted runner, from the commit the version tag points at. Nothing is uploaded from a desktop. <a href="https://github.com/dota2modmanager/dota2-mod-manager/actions/workflows/release.yml">Every run, with its log</a>.',
           '<b>The tag and the code match.</b> A release page names its tag; the tag names a commit; the run log for that tag shows the checkout. Three clicks, no account.',
-          '<b>Checks run on every push.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>: a linter aimed at code that cannot run, then the full suite on Linux and on Windows, with a coverage floor that fails the run rather than warning about it.',
+          '<b>Checks run on every push.</b> <a href="https://github.com/dota2modmanager/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>: a linter aimed at code that cannot run, then the full suite on Linux and on Windows, with a coverage floor that fails the run rather than warning about it.',
           '<b>The code is scanned.</b> CodeQL on every push and weekly, with the security-and-quality rules; findings are public under the Security tab of the repository.',
-          '<b>Reach is published every week.</b> Downloads, update checks and visits from search go to <a href="https://github.com/TheFleece/dota2-mod-manager/issues/3">one public issue</a>, posted by a workflow, with every earlier week above it.',
-          '<b>Who else links here is written down.</b> The catalog\'s README and install guide, videos on YouTube and TikTok, a Steam discussion and the projects built from this code are in <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/MENTIONS.md">MENTIONS.md</a>, with dates. The pages the maintainer wrote are listed separately.',
+          '<b>Reach is published every week.</b> Downloads, update checks and visits from search go to <a href="https://github.com/dota2modmanager/dota2-mod-manager/issues/3">one public issue</a>, posted by a workflow, with every earlier week above it.',
+          '<b>Who else links here is written down.</b> The catalog\'s README and install guide, videos on YouTube and TikTok, a Steam discussion and the projects built from this code are in <a href="https://github.com/dota2modmanager/dota2-mod-manager/blob/main/MENTIONS.md">MENTIONS.md</a>, with dates. The pages the maintainer wrote are listed separately.',
           '<b>Dependencies are watched.</b> Dependabot covers the app, this site, and the actions the workflows themselves call.',
           '<b>What it fetches while running</b> is public files you can open in a browser: the catalog\'s own lists and the signatures over them, the fingerprint map this repository publishes, the mod you asked for, and the update check. Nothing about you goes the other way.',
         ],
@@ -195,9 +195,9 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       {
         k: 'list',
         items: [
-          '<a href="https://github.com/TheFleece/dota2-mod-manager">Source code on GitHub</a>, GPL-3.0',
-          '<a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Latest release</a>, the builds for {platformsShort}',
-          '<a href="https://github.com/TheFleece/dota2-mod-manager/actions">Build logs</a>, every release and how it was made',
+          '<a href="https://github.com/dota2modmanager/dota2-mod-manager">Source code on GitHub</a>, GPL-3.0',
+          '<a href="https://github.com/dota2modmanager/dota2-mod-manager/releases/latest">Latest release</a>, the builds for {platformsShort}',
+          '<a href="https://github.com/dota2modmanager/dota2-mod-manager/actions">Build logs</a>, every release and how it was made',
           '<a href="~/docs/">Guides</a>: installing, VPK and load order, free cosmetics, what to do after a patch',
           '<a href="https://discord.gg/PBvG8D9MxT">Discord</a>, the catalog community',
           '<a href="mailto:hello@dota2modmanager.com">hello@dota2modmanager.com</a>, for anything a public tracker is the wrong place for',
@@ -351,12 +351,12 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       {
         k: 'list',
         items: [
-          '<b>Установщик собирается публично.</b> Каждый релиз делает <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> на раннере GitHub из того коммита, на который указывает тег версии. Ничего не заливается с чьего-то компьютера. <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml">Все прогоны с логами</a>.',
+          '<b>Установщик собирается публично.</b> Каждый релиз делает <a href="https://github.com/dota2modmanager/dota2-mod-manager/blob/main/.github/workflows/release.yml">release.yml</a> на раннере GitHub из того коммита, на который указывает тег версии. Ничего не заливается с чьего-то компьютера. <a href="https://github.com/dota2modmanager/dota2-mod-manager/actions/workflows/release.yml">Все прогоны с логами</a>.',
           '<b>Тег и код сходятся.</b> Страница релиза называет тег, тег называет коммит, лог прогона по этому тегу показывает checkout. Три клика, без аккаунта.',
-          '<b>Проверки гоняются на каждый пуш.</b> <a href="https://github.com/TheFleece/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>: сначала линтер, который ищет код, не способный выполниться, потом вся сюита на Linux и на Windows, с порогом покрытия, который роняет прогон, а не предупреждает.',
+          '<b>Проверки гоняются на каждый пуш.</b> <a href="https://github.com/dota2modmanager/dota2-mod-manager/actions/workflows/test.yml">test.yml</a>: сначала линтер, который ищет код, не способный выполниться, потом вся сюита на Linux и на Windows, с порогом покрытия, который роняет прогон, а не предупреждает.',
           '<b>Код сканируется.</b> CodeQL на каждый пуш и раз в неделю, набор правил security-and-quality; находки публичны во вкладке Security.',
-          '<b>Охват публикуется каждую неделю.</b> Скачивания, проверки обновлений и переходы из поиска workflow выкладывает в <a href="https://github.com/TheFleece/dota2-mod-manager/issues/3">одно открытое issue</a>, прошлые недели там же выше.',
-          '<b>Кто ещё на нас ссылается, записано.</b> README каталога и его гайд по установке, ролики на YouTube и TikTok, обсуждение в Steam и проекты, выросшие из этого кода, собраны с датами в <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/MENTIONS.md">MENTIONS.md</a>. Страницы, которые написал сам автор, идут отдельным списком.',
+          '<b>Охват публикуется каждую неделю.</b> Скачивания, проверки обновлений и переходы из поиска workflow выкладывает в <a href="https://github.com/dota2modmanager/dota2-mod-manager/issues/3">одно открытое issue</a>, прошлые недели там же выше.',
+          '<b>Кто ещё на нас ссылается, записано.</b> README каталога и его гайд по установке, ролики на YouTube и TikTok, обсуждение в Steam и проекты, выросшие из этого кода, собраны с датами в <a href="https://github.com/dota2modmanager/dota2-mod-manager/blob/main/MENTIONS.md">MENTIONS.md</a>. Страницы, которые написал сам автор, идут отдельным списком.',
           '<b>За зависимостями следят.</b> Dependabot покрывает приложение, этот сайт и сами actions, которые вызывают воркфлоу.',
           '<b>Что программа тянет во время работы</b> - публичные файлы, которые открываются в браузере: списки самого каталога и подписи под ними, карту отпечатков из этого репозитория, тот мод, который ты попросил, и проверку обновлений. В обратную сторону о тебе не уходит ничего.',
         ],
@@ -366,9 +366,9 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       {
         k: 'list',
         items: [
-          '<a href="https://github.com/TheFleece/dota2-mod-manager">Исходники на GitHub</a>, GPL-3.0',
-          '<a href="https://github.com/TheFleece/dota2-mod-manager/releases/latest">Последний релиз</a>, сборки для {platformsShort}',
-          '<a href="https://github.com/TheFleece/dota2-mod-manager/actions">Логи сборок</a>, каждый релиз и как он собран',
+          '<a href="https://github.com/dota2modmanager/dota2-mod-manager">Исходники на GitHub</a>, GPL-3.0',
+          '<a href="https://github.com/dota2modmanager/dota2-mod-manager/releases/latest">Последний релиз</a>, сборки для {platformsShort}',
+          '<a href="https://github.com/dota2modmanager/dota2-mod-manager/actions">Логи сборок</a>, каждый релиз и как он собран',
           '<a href="~/docs/">Гайды</a>: установка, VPK и порядок загрузки, бесплатная косметика, что делать после патча',
           '<a href="https://discord.gg/PBvG8D9MxT">Discord</a>, сообщество каталога',
           '<a href="mailto:hello@dota2modmanager.com">hello@dota2modmanager.com</a>, для всего, чему публичный трекер не место',

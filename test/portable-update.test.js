@@ -73,5 +73,5 @@ test('a size that is not a positive number is refused', () => {
 // point: a rewritten manifest cannot send the download somewhere else.
 test('the download address is built from the version and always points at the project', () => {
   const url = releaseUrl('2.3.0', 'portable.yml');
-  assert.equal(url, 'https://github.com/TheFleece/dota2-mod-manager/releases/download/v2.3.0/portable.yml');
+  assert.equal(url, 'https://github.com/dota2modmanager/dota2-mod-manager/releases/download/v2.3.0/portable.yml');
 });

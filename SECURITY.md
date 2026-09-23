@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Open a private advisory:
-[github.com/TheFleece/dota2-mod-manager/security/advisories/new](https://github.com/TheFleece/dota2-mod-manager/security/advisories/new)
+[github.com/dota2modmanager/dota2-mod-manager/security/advisories/new](https://github.com/dota2modmanager/dota2-mod-manager/security/advisories/new)
 
 Or write to **security@dota2modmanager.com**, which needs no GitHub account and is read by the
 same one person. Say in the first line that it is a security report.
@@ -99,8 +99,10 @@ older versions to patch.
 
 Each release carries `SHA256SUMS`, a list of every file on it with its SHA-256, and a provenance
 attestation for that list, signed through Sigstore by `.github/workflows/release.yml` at the tagged
-commit. `gh attestation verify <file> --repo TheFleece/dota2-mod-manager` confirms a file came out of
-that workflow; the README shows the commands. The signed bundle is on the release as
+commit. `gh attestation verify <file> --repo dota2modmanager/dota2-mod-manager` confirms a file came out of
+that workflow; the README shows the commands. Releases up to 2.7.0 were signed before the
+repository moved from TheFleece/dota2-mod-manager, and their attestations name that address, so
+check those with `--repo TheFleece/dota2-mod-manager`. The signed bundle is on the release as
 `SHA256SUMS.intoto.jsonl`, and a CycloneDX SBOM of what the app ships is beside it as
 `dota2-mod-manager.cdx.json`. A file that fails the check did not come from this repository's
 release job, whatever page it was downloaded from.

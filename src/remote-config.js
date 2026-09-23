@@ -40,7 +40,7 @@ const path = require('path');
 const { fetchText } = require('./net');
 const { verify } = require('./catalog-signature');
 
-const CONFIG_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/config/app.json';
+const CONFIG_URL = 'https://raw.githubusercontent.com/dota2modmanager/dota2-mod-manager/main/config/app.json';
 /** The signature, always the config's own address with .sig on the end. */
 const CONFIG_SIG_URL = `${CONFIG_URL}.sig`;
 

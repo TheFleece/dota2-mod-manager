@@ -363,7 +363,7 @@ const en: Record<CoreSlug, Doc> = {
       },
       {
         k: 'p',
-        t: 'Where this app sits: skins never need the second mechanism, and the app installs them without it. The schema patch runs only for putting a look on a default item, it copies both Valve files before its first write and puts them back byte for byte when you undo it, and the code that does it is <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">one file of four hundred lines</a> that you can read end to end, rather than something you have to take on faith. Whether that is enough is your call to make, and the rest of the app works with it switched off.',
+        t: 'Where this app sits: skins never need the second mechanism, and the app installs them without it. The schema patch runs only for putting a look on a default item, it copies both Valve files before its first write and puts them back byte for byte when you undo it, and the code that does it is <a href="https://github.com/dota2modmanager/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">one file of four hundred lines</a> that you can read end to end, rather than something you have to take on faith. Whether that is enough is your call to make, and the rest of the app works with it switched off.',
       },
 
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
@@ -406,7 +406,7 @@ const en: Record<CoreSlug, Doc> = {
       },
       {
         k: 'p',
-        t: 'This one is GPL-3.0, built from that source by GitHub Actions, and every release since the first is still on the releases page. <a href="https://github.com/TheFleece/dota2-mod-manager" rel="noopener">Read it</a> before you run it.',
+        t: 'This one is GPL-3.0, built from that source by GitHub Actions, and every release since the first is still on the releases page. <a href="https://github.com/dota2modmanager/dota2-mod-manager" rel="noopener">Read it</a> before you run it.',
       },
 
       { k: 'h2', t: 'Questions', id: 'faq' },
@@ -859,7 +859,7 @@ const ru: Record<CoreSlug, Doc> = {
       },
       {
         k: 'p',
-        t: 'Где в этой картине приложение: скинам второй механизм не нужен вообще, и оно ставит их без него. Патч схемы работает только ради видов для стандартных предметов, оба валвовских файла копируются до первой записи и возвращаются побайтово при откате, а код, который это делает, - <a href="https://github.com/TheFleece/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">один файл на четыреста строк</a>, который читается целиком, а не то, что приходится принимать на веру. Достаточно этого или нет, решаешь ты, и всё остальное работает с выключенным патчем.',
+        t: 'Где в этой картине приложение: скинам второй механизм не нужен вообще, и оно ставит их без него. Патч схемы работает только ради видов для стандартных предметов, оба валвовских файла копируются до первой записи и возвращаются побайтово при откате, а код, который это делает, - <a href="https://github.com/dota2modmanager/dota2-mod-manager/blob/main/src/patcher.js" rel="noopener">один файл на четыреста строк</a>, который читается целиком, а не то, что приходится принимать на веру. Достаточно этого или нет, решаешь ты, и всё остальное работает с выключенным патчем.',
       },
 
       { k: 'h2', t: 'Забанят ли за моды в Доте 2', id: 'ban' },
@@ -902,7 +902,7 @@ const ru: Record<CoreSlug, Doc> = {
       },
       {
         k: 'p',
-        t: 'Этот - под GPL-3.0, собран из своих же исходников через GitHub Actions, и каждый релиз с самого первого до сих пор лежит на странице релизов. <a href="https://github.com/TheFleece/dota2-mod-manager" rel="noopener">Прочитай</a>, прежде чем запускать.',
+        t: 'Этот - под GPL-3.0, собран из своих же исходников через GitHub Actions, и каждый релиз с самого первого до сих пор лежит на странице релизов. <a href="https://github.com/dota2modmanager/dota2-mod-manager" rel="noopener">Прочитай</a>, прежде чем запускать.',
       },
 
       { k: 'h2', t: 'Вопросы', id: 'faq' },

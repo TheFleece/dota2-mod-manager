@@ -14,7 +14,7 @@ url="https://dota2modmanager.com"
 license=('GPL-3.0-or-later')
 depends=('gtk3' 'nss' 'alsa-lib' 'libxtst' 'libsecret' 'hicolor-icon-theme')
 options=('!strip')
-source=("${_appname}-${pkgver}.AppImage::https://github.com/TheFleece/dota2-mod-manager/releases/download/v${pkgver}/Dota-2-Mod-Manager.AppImage")
+source=("${_appname}-${pkgver}.AppImage::https://github.com/dota2modmanager/dota2-mod-manager/releases/download/v${pkgver}/Dota-2-Mod-Manager.AppImage")
 sha512sums=('a5b2c6ae91abd75f31e713f500a256ffa8db9e6377900c4f04d968c5e7d29f916fce47e5a240bc8cb293ba44e19ca7b1a4b4c7bd4ffcd3a461d0975de1d8538d')
 noextract=("${_appname}-${pkgver}.AppImage")
 

@@ -116,7 +116,7 @@ const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === fil
 if (invokedDirectly) {
   const sha = process.argv[2];
   const once = process.argv.includes('--once');
-  const repo = process.env.GITHUB_REPOSITORY || 'TheFleece/dota2-mod-manager';
+  const repo = process.env.GITHUB_REPOSITORY || 'dota2modmanager/dota2-mod-manager';
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '';
   const timeoutMs = Number(process.env.GATE_TIMEOUT_MINUTES || 60) * 60000;
   const pollMs = Number(process.env.GATE_POLL_SECONDS || 30) * 1000;

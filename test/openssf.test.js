@@ -106,14 +106,14 @@ test('the silver level is answered in full', () => {
 });
 
 test('the silver answers that are not Met are the ones this project cannot write its way out of', () => {
-  /* Four of the five are a SHOULD or a SUGGESTED and may stay that way. The MUST is
-     access_continuity, refused on purpose because one person holds the release keys. When that
-     changes, this is the reminder that the answer changes with it. */
+  /* Every one left is a SHOULD or a SUGGESTED and may stay that way. access_continuity, the MUST,
+     was Unmet until 2026-09-23, while one person could release; it turned Met when the repository
+     moved into an organization both maintainers own. If a MUST shows up here again, silver is
+     gone, and that is not something to fix by editing this list. */
   const notMet = SILVER.filter((id) => !['Met', 'N/A'].includes(statusOf(id))).sort();
-  assert.deepEqual(notMet, ['access_continuity', 'bus_factor', 'crypto_algorithm_agility',
-    'dco', 'version_tags_signed']);
+  assert.deepEqual(notMet, ['bus_factor', 'crypto_algorithm_agility', 'dco', 'version_tags_signed']);
   assert.match(why('access_continuity'), /GOVERNANCE\.md/,
-    'the one MUST that is unmet has to point at where that is explained');
+    'the continuity answer has to point at where it is explained');
 });
 
 test('the prose and the machine-readable answers cover the same criteria', () => {

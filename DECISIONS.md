@@ -188,10 +188,10 @@ The same day the release gate started refusing a tag on a commit that is not on 
 on pull request branches as well, so without that a tag on a green, unapproved branch would ship
 it.
 
-*Check:* `curl https://api.github.com/repos/TheFleece/dota2-mod-manager/rules/branches/main`, which
-needs no token, or `gh api repos/TheFleece/dota2-mod-manager/rulesets`. `tools/radar.mjs` compares
+*Check:* `curl https://api.github.com/repos/dota2modmanager/dota2-mod-manager/rules/branches/main`, which
+needs no token, or `gh api repos/dota2modmanager/dota2-mod-manager/rulesets`. `tools/radar.mjs` compares
 that answer with `.github/required-checks.json` every morning and reports a rule that drifted.
-Note that `gh api repos/TheFleece/dota2-mod-manager/branches/main/protection` answers **404 Branch
+Note that `gh api repos/dota2modmanager/dota2-mod-manager/branches/main/protection` answers **404 Branch
 not protected**, because this is a ruleset and not classic branch protection. Reviewers have read
 that 404 as an unguarded branch.
 
@@ -305,17 +305,17 @@ nobody pays for. What stands in for a signature: every binary is built by a publ
 a public commit, and the update metadata beside it carries a SHA-512 of the file.
 
 *Check:* the run that produced any release under
-<https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml>, and `latest.yml`
+<https://github.com/dota2modmanager/dota2-mod-manager/actions/workflows/release.yml>, and `latest.yml`
 in the release assets.
 
 ### Two maintainers, and one of them holds the keys
 
-One person writes most of it and releases it. Since 2026-09-23 a second maintainer reviews every
-change before it merges, which is what [GOVERNANCE.md](GOVERNANCE.md) lists. What does not move
-yet: the second maintainer cannot merge a change of their own while the repository belongs to a
-personal account, so a release still needs the first one. The fix is an organization with both as
-owners. Until it happens, the project does not survive its maintainer losing interest, and that
-is worth knowing before you depend on it.
+One person writes most of it. Since 2026-09-23 a second maintainer reviews every change before it
+merges, and both own the [dota2modmanager](https://github.com/dota2modmanager) organization the
+repository moved into that day, so either can release without the other. What still sits with one
+person: the knowledge of how the app keeps up with a game update, and the keys outside GitHub
+(the `config/app.json` signing key, the domain, the mirror bucket).
+[GOVERNANCE.md](GOVERNANCE.md) says what losing those costs.
 
 *Check:* `git shortlog -sne HEAD`, `.github/CODEOWNERS`, and the "Who can merge" table in
 GOVERNANCE.md.
@@ -323,7 +323,7 @@ GOVERNANCE.md.
 ### The coverage floor is measured on one platform only
 
 The suite runs on both since 2026-09-09, which is what issue
-[#5](https://github.com/TheFleece/dota2-mod-manager/issues/5) asked for: `ubuntu-latest` carries
+[#5](https://github.com/dota2modmanager/dota2-mod-manager/issues/5) asked for: `ubuntu-latest` carries
 the coverage gate, `windows-latest` runs the same tests for correctness, and that job earned
 itself on its first run by finding a libuv abort Linux cannot see.
 
@@ -396,7 +396,7 @@ code, photographs the first window and fails on `unhandledrejection`, `is not de
 restarts the app, switches it on and removes it, and compares the language folder on disk after
 each launch. Run against the 2.6.6 code it stops at Install with `blocked is not defined`, the
 error that left installing dead in 2.6.5 and 2.6.6
-([#19](https://github.com/TheFleece/dota2-mod-manager/issues/19)). These jobs are required before
+([#19](https://github.com/dota2modmanager/dota2-mod-manager/issues/19)). These jobs are required before
 a pull request merges and before a release builds.
 
 What it still does not cover: one mod of one shape, a zip holding a single VPK, in one category.
@@ -441,12 +441,12 @@ Each of these has arrived in a review. Each is answered by one command.
 
 | Claim | What is true | Check |
 |---|---|---|
-| "The repository cannot be opened, so the open-source promise is unverifiable" | It is public and has been. A fetch failing at one moment is not a private repository | `gh repo view TheFleece/dota2-mod-manager --json visibility` |
+| "The repository cannot be opened, so the open-source promise is unverifiable" | It is public and has been. A fetch failing at one moment is not a private repository | `gh repo view dota2modmanager/dota2-mod-manager --json visibility` |
 | "`main.js` is a 3,100 line monolith" | About 1,150 lines since 2026-09-06, with the IPC handlers in `src/ipc-*.js` and three more jobs moved out since | `wc -l main.js` |
 | "The catalog counts on the site disagree between pages" | They are counted when each page is built. Two pages built an hour apart show two numbers, and both were right when they were made | `site/src/lib/stats.ts` |
 | "The state files in the root are why the repository is 61 MB" | The generated JSON at the root is 1.3 MB of the pack. The preview images are 47.3 MB of 57.2 MB | the command under the open question above |
 | "It is a Windows-only app" | Every release since 2.4.0 also carries a Linux AppImage | `gh release view --json assets` |
-| "`main` is unprotected" | It is guarded by a ruleset, which the branch-protection endpoint does not report | `gh api repos/TheFleece/dota2-mod-manager/rulesets` |
+| "`main` is unprotected" | It is guarded by a ruleset, which the branch-protection endpoint does not report | `gh api repos/dota2modmanager/dota2-mod-manager/rulesets` |
 | "There are 25 test files" | More than 40 of them, run on Linux and on Windows on every push | `ls test/*.test.js \| wc -l` then `npm test` |
 | "An open issue asks for tests that already exist" | Issue #4 was closed on 2026-09-08 when that was pointed out, and `#5` on 2026-09-09 when Windows CI landed. `#3`, `#6`, `#7` and `#9` are open and really are open | `gh issue list --state open` |
 | "There is no static analysis, only tests" | `eslint` runs before the suite in CI and again in the commit guard, with rules about code that cannot run rather than about style | `npm run lint` |
@@ -460,5 +460,5 @@ Say which commit or release you looked at, because this repository moves quickly
 last month's tree reads as wrong rather than as dated. And run the check next to a claim before
 filing it, because most of what arrives has one.
 
-Where to put it: an [issue](https://github.com/TheFleece/dota2-mod-manager/issues) for anything
+Where to put it: an [issue](https://github.com/dota2modmanager/dota2-mod-manager/issues) for anything
 public, and a [private advisory](SECURITY.md) for anything exploitable.

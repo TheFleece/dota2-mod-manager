@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { fetchText } = require('./net');
 
-const FP_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/fingerprints.json';
+const FP_URL = 'https://raw.githubusercontent.com/dota2modmanager/dota2-mod-manager/main/fingerprints.json';
 
 class Fingerprints {
   constructor(userDataDir) {

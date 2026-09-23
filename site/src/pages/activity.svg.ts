@@ -176,7 +176,7 @@ export const GET: APIRoute = async () => {
     svg = card(`
 <text class="t" x="28" y="40" fill="#efe9ff" font-size="17" font-weight="700">Project activity</text>
 <text class="t" x="28" y="66" fill="#8d84a6" font-size="12">This card is drawn from git history, and the build that made this page had none.</text>
-<text class="t" x="28" y="86" fill="#8d84a6" font-size="12">The repository itself is at github.com/TheFleece/dota2-mod-manager.</text>`);
+<text class="t" x="28" y="86" fill="#8d84a6" font-size="12">The repository itself is at github.com/dota2modmanager/dota2-mod-manager.</text>`);
   }
 
   return new Response(svg, {

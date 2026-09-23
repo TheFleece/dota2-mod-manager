@@ -22,7 +22,7 @@ interface Props {
 }
 const { copy, big = false, anchor = false } = Astro.props;
 
-const RELEASE = 'https://github.com/TheFleece/dota2-mod-manager/releases/latest/download';
+const RELEASE = 'https://github.com/dota2modmanager/dota2-mod-manager/releases/latest/download';
 const items = [
   { os: 'win', file: `${RELEASE}/Dota-2-Mod-Manager-Setup.exe`, ...copy.dlInstaller },
   { os: 'win', file: `${RELEASE}/Dota-2-Mod-Manager-Portable.exe`, ...copy.dlPortable },
@@ -45,7 +45,7 @@ const items = [
         <span>{item.note}</span>
       </a>
     ))}
-    <a class="dl-all" href="https://github.com/TheFleece/dota2-mod-manager/releases/latest" rel="noopener">{copy.dlAll}</a>
+    <a class="dl-all" href="https://github.com/dota2modmanager/dota2-mod-manager/releases/latest" rel="noopener">{copy.dlAll}</a>
   </div>
 </details>
 

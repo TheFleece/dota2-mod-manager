@@ -56,7 +56,7 @@ async function api(pathname, { method = 'GET', body, token }) {
 const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
   const dry = process.argv.includes('--dry');
-  const repo = process.env.GITHUB_REPOSITORY || 'TheFleece/dota2-mod-manager';
+  const repo = process.env.GITHUB_REPOSITORY || 'dota2modmanager/dota2-mod-manager';
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '';
   const current = [];
   for (let page = 1; page <= 5; page++) {

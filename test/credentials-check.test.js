@@ -86,7 +86,7 @@ test('a deleted webhook, a missing secret and a refused deploy key are each name
 
   assert.equal((await CHECKS.BING_API_KEY({}, { http: gone.http })).state, 'missing');
 
-  const greeted = await CHECKS.FINGERPRINTS_DEPLOY_KEY({ FINGERPRINTS_DEPLOY_KEY: 'k' }, { ssh: async () => "Hi TheFleece/dota2-mod-manager! You've successfully authenticated, but GitHub does not provide shell access." });
+  const greeted = await CHECKS.FINGERPRINTS_DEPLOY_KEY({ FINGERPRINTS_DEPLOY_KEY: 'k' }, { ssh: async () => "Hi dota2modmanager/dota2-mod-manager! You've successfully authenticated, but GitHub does not provide shell access." });
   assert.equal(greeted.state, 'ok');
   const refused = await CHECKS.FINGERPRINTS_DEPLOY_KEY({ FINGERPRINTS_DEPLOY_KEY: 'k' }, { ssh: async () => 'git@github.com: Permission denied (publickey).' });
   assert.equal(refused.state, 'failed');

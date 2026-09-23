@@ -642,7 +642,7 @@ _No description in the source._
 ### `FP_URL`
 
 ```js
-const FP_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/fingerprints.json'
+const FP_URL = 'https://raw.githubusercontent.com/dota2modmanager/dota2-mod-manager/main/fingerprints.json'
 ```
 
 _No description in the source._
@@ -2367,7 +2367,7 @@ Somewhere else the archives can be fetched from. A handful at most: the chain is
 ### `CONFIG_URL`
 
 ```js
-const CONFIG_URL = 'https://raw.githubusercontent.com/TheFleece/dota2-mod-manager/main/config/app.json'
+const CONFIG_URL = 'https://raw.githubusercontent.com/dota2modmanager/dota2-mod-manager/main/config/app.json'
 ```
 
 _No description in the source._

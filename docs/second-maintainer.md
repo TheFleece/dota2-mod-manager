@@ -12,13 +12,13 @@ So the project keeps a second maintainer. Who that is at any time is named in
 
 ## What you get
 
-**Collaborator access to the repository.** The repository belongs to a personal GitHub account,
-and GitHub gives such a repository one role besides its owner: collaborator, with write access.
-You can merge pull requests, push tags, edit and close issues, and manage labels and releases. You
-cannot read or change the repository's secrets or its settings, and you cannot delete it.
+**Owner of the [dota2modmanager](https://github.com/dota2modmanager) organization.** The
+repository lives there, and both maintainers own it, so on GitHub you have the same rights as the
+maintainer: merge pull requests, push tags, manage issues, labels and releases, change the branch
+rule, and replace the repository's secrets. Nobody can read a secret back, you included.
 
-The repository is due to move into a GitHub organization with both maintainers as owners. Until
-then, collaborator is the whole of it.
+That is more than day-to-day work needs, and it is on purpose: it is what lets the project carry on
+if the other owner is gone.
 
 Turn on two-factor authentication for your account. It can push a tag, and a tag ships to every
 copy of the app.
@@ -88,10 +88,9 @@ The point of the role. In order:
 
 What you will not be able to do, and what it costs:
 
-- **Merge a change you wrote, until the organization move.** The branch rule wants an approval
-  from somebody other than the author, and only the repository's owner can change the rule. That
-  includes the version bump a release needs, so today step 4 works only for a bump somebody else
-  opened. Once the repository sits in an organization you co-own, you can change the rule yourself.
+- **Merge a change you wrote without switching the approval rule off first.** The rule wants an
+  approval from somebody other than the author. Left alone, you turn it off in the repository's
+  rulesets, say so in the issue from step 2, and turn it back on once there is somebody to review.
 - **Sign `config/app.json`.** The private key stays with the maintainer. That file can switch a
   broken feature off after a release; without the key it cannot change, and every copy of the app carries on with the last signed version, which
   is the same as it being unreachable. Nothing breaks, and one emergency handle is gone.
@@ -99,14 +98,14 @@ What you will not be able to do, and what it costs:
   The app falls back to GitHub when the mirror does not answer, which it already does whenever
   the mirror is behind.
 
-So once the move is done: releases keep coming, and two conveniences stop. That is the difference
+So: releases keep coming, and two conveniences stop. That is the difference
 between a project that stops dead and one that carries a dent.
 
 ## Granting the role
 
 For the maintainer, when somebody accepts:
 
-1. **Settings, Collaborators, Add people.** A personal repository offers one role, write access.
+1. **The organization's People page, Invite member**, then change their role to **Owner**.
 2. Add their handle in [`.github/CODEOWNERS`](../.github/CODEOWNERS), so GitHub asks them for a
    review on its own instead of somebody remembering to.
 3. Add their name to the maintainers list in [GOVERNANCE.md](../GOVERNANCE.md). A test fails if

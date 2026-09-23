@@ -836,7 +836,7 @@ function presenceActivity() {
   return {
     details: t(PRESENCE_VIEWS[presenceView] || PRESENCE_VIEWS.catalog),
     state,
-    buttons: [{ label: t('Скачать Mod Manager'), url: 'https://thefleece.github.io/dota2-mod-manager/' }],
+    buttons: [{ label: t('Скачать Mod Manager'), url: 'https://dota2modmanager.com/' }],
   };
 }
 

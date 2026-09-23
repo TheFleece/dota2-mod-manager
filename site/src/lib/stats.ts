@@ -20,7 +20,7 @@
  */
 
 const CATALOG = 'https://raw.githubusercontent.com/h6rd/Dota2PornFxWeb/main/assets/data/mods.json';
-const RELEASES = 'https://api.github.com/repos/TheFleece/dota2-mod-manager/releases?per_page=100';
+const RELEASES = 'https://api.github.com/repos/dota2modmanager/dota2-mod-manager/releases?per_page=100';
 const UA = { 'User-Agent': 'dota2modmanager-site' };
 
 export interface SiteStats {

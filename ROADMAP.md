@@ -27,11 +27,10 @@ because the catalog grows by tens of megabytes a week and somebody has to pay fo
 reason written out in [DECISIONS.md](DECISIONS.md). A repository this small should exist in more
 than one place, and where is still open.
 
-**The OpenSSF silver badge.** The passing badge is done. Silver needs a project that can keep
-releasing when one person disappears. A second maintainer joined on 2026-09-23 and reviews every
-change; what is left is moving the repository into an organization both of them own, so the
-second one can merge a release without the first. [GOVERNANCE.md](GOVERNANCE.md) says why, at the
-end. Everything else on that list is written down or already true.
+**The OpenSSF silver badge.** The passing badge is done. Silver needed a project that can keep
+releasing when one person disappears. Since 2026-09-23 two maintainers own the organization the
+repository lives in, and the answer on the entry changes to match. The badge follows once the
+form is saved.
 
 ## Later
 

@@ -29,7 +29,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 const API = 'https://www.virustotal.com/api/v3';
-const REPO = process.env.GITHUB_REPOSITORY || 'TheFleece/dota2-mod-manager';
+const REPO = process.env.GITHUB_REPOSITORY || 'dota2modmanager/dota2-mod-manager';
 
 /** Enough engines to be worth reading before anybody downloads anything. */
 export const FLAG_AT = 3;

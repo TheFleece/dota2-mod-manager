@@ -138,7 +138,7 @@ files stay on the page for anyone who needs them:
 
 ```bash
 gh release edit vX.Y.Z --prerelease
-gh api repos/TheFleece/dota2-mod-manager/releases/latest --jq .tag_name
+gh api repos/dota2modmanager/dota2-mod-manager/releases/latest --jq .tag_name
 ```
 
 The second command has to print the previous version. The update mirror holds one version only and

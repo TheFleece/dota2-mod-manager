@@ -4,7 +4,7 @@ Links to Dota 2 Mod Manager from outside this repository. This file exists so th
 
 Two lists, and the difference matters. The first is pages other people wrote. The second is pages the maintainer wrote, each one said openly where it was published. Nothing from the second list is presented as independent.
 
-Every link below was opened on **2026-09-15**. Counts are as of that day. For how far the app itself reaches (downloads, update checks, visits from search, week by week), see [issue #3](https://github.com/TheFleece/dota2-mod-manager/issues/3).
+Every link below was opened on **2026-09-15**. Counts are as of that day. For how far the app itself reaches (downloads, update checks, visits from search, week by week), see [issue #3](https://github.com/dota2modmanager/dota2-mod-manager/issues/3).
 
 ## Written by other people
 
@@ -49,14 +49,14 @@ The code is GPL-3.0, so anyone may take it. These did and say so.
 | Fork | Created |
 |---|---|
 | [h6rd/dota2-mod-manager](https://github.com/h6rd/dota2-mod-manager) | 2026-09-14 |
-| [Omkar-git-hub/dota2-mod-manager](https://github.com/Omkar-git-hub/dota2-mod-manager) | 2026-09-09, the source of merged pull request [#15](https://github.com/TheFleece/dota2-mod-manager/pull/15) |
+| [Omkar-git-hub/dota2-mod-manager](https://github.com/Omkar-git-hub/dota2-mod-manager) | 2026-09-09, the source of merged pull request [#15](https://github.com/dota2modmanager/dota2-mod-manager/pull/15) |
 | [tufukap/celestial_vpk](https://github.com/tufukap/celestial_vpk) | 2026-09-08 |
 | [Dawn-515/dota2-mod-manager](https://github.com/Dawn-515/dota2-mod-manager) | 2026-08-21 |
 | [emre155/dota2-mod-manager](https://github.com/emre155/dota2-mod-manager) | 2026-08-18 |
-| [anupamme/dota2-mod-manager](https://github.com/anupamme/dota2-mod-manager) | 2026-08-10, the source of merged pull request [#1](https://github.com/TheFleece/dota2-mod-manager/pull/1) |
+| [anupamme/dota2-mod-manager](https://github.com/anupamme/dota2-mod-manager) | 2026-08-10, the source of merged pull request [#1](https://github.com/dota2modmanager/dota2-mod-manager/pull/1) |
 | [GaoHui19/dota2-mod-manager](https://github.com/GaoHui19/dota2-mod-manager) | 2026-07-28 |
 
-The live list is [here](https://github.com/TheFleece/dota2-mod-manager/forks).
+The live list is [here](https://github.com/dota2modmanager/dota2-mod-manager/forks).
 
 ## Written by the maintainer
 
@@ -70,9 +70,9 @@ The live list is [here](https://github.com/TheFleece/dota2-mod-manager/forks).
 
 For telling a real copy from a lookalike:
 
-- Repository: <https://github.com/TheFleece/dota2-mod-manager>
+- Repository: <https://github.com/dota2modmanager/dota2-mod-manager>
 - Site: <https://dota2modmanager.com>
-- Downloads, only from the [releases page](https://github.com/TheFleece/dota2-mod-manager/releases) or the buttons on the site
+- Downloads, only from the [releases page](https://github.com/dota2modmanager/dota2-mod-manager/releases) or the buttons on the site
 - Mirror of the code: <https://gitlab.com/TheFleece/dota2-mod-manager>
 - The earlier address <https://thefleece.github.io/dota2-mod-manager/>, which redirects to the site
 

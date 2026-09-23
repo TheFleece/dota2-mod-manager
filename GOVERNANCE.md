@@ -23,15 +23,15 @@ the reason and the date. A decision you can read is a decision you can argue wit
 
 **Maintainer: TheFleece ([@TheFleece](https://github.com/TheFleece)).** Reviews and merges
 pull requests, cuts releases, answers security reports within 48 hours, keeps the app working
-against a game that changes under it, and holds the keys: the signing key for `config/app.json`,
-the release workflow's secrets, the domain and the mirror bucket. Nobody else has them today, and
+against a game that changes under it, and holds the keys that live outside GitHub: the signing
+key for `config/app.json`, the domain and the mirror bucket. Nobody else has those, and
 [Continuity](#continuity) says what that costs.
 
-**Second maintainer: Nersaa ([@Nersaa](https://github.com/Nersaa)).** A collaborator on the
-repository: they can merge pull requests, push tags and close issues, and they cannot reach the
-repository's secrets or its settings. They review the maintainer's pull requests, and the
-maintainer reviews theirs, because the branch rule wants an approval from somebody other than the
-author. They are also the answer to the question "what happens if one person stops".
+**Second maintainer: Nersaa ([@Nersaa](https://github.com/Nersaa)).** An owner of the
+[dota2modmanager](https://github.com/dota2modmanager) organization the repository lives in, with
+the same rights on GitHub as the maintainer: merge, tag, release, change the repository's
+settings and replace its secrets. They review the maintainer's pull requests, and the maintainer
+reviews theirs, because the branch rule wants an approval from somebody other than the author. They are also the answer to the question "what happens if one person stops".
 [docs/second-maintainer.md](docs/second-maintainer.md) is the whole of it, including what to do on
 the day it matters.
 
@@ -69,8 +69,9 @@ list everybody can read.
 
 A project one person can merge into is a project that stops when that person does. The answer
 here is a second maintainer with rights given before they are needed, described in
-[docs/second-maintainer.md](docs/second-maintainer.md): collaborator access, enough to merge, tag
-and release, and not enough to reach a secret.
+[docs/second-maintainer.md](docs/second-maintainer.md). Since 2026-09-23 the repository belongs
+to an organization with both maintainers as owners, so either of them can merge, tag, release and
+change the branch rule without the other.
 
 What survives either way: the code. It is GPL-3.0 and public, so anybody may fork it and carry
 on, and every release carries a provenance attestation that ties its files to the commit they
@@ -85,14 +86,10 @@ the domain and the mirror bucket. Losing those costs two conveniences rather tha
 The switches file stays at its last signed version, which every copy treats exactly as it treats
 an unreachable one, and the app falls back to GitHub when the mirror does not answer.
 
-Since 2026-09-23 the table above has two rows, and "can this project keep releasing if one person
-disappears" is still not a clean yes. The second maintainer can merge and release what other
-people send. They cannot merge a change of their own, a version bump included, because the branch
-rule wants an approval from somebody other than the author and only the owner of a personal
-repository can change that rule. Moving the repository into an organization with both
-maintainers as owners closes it, and until then the project's
-[OpenSSF Best Practices entry](https://www.bestpractices.dev/en/projects/14721) keeps answering
-no.
+So "can this project keep releasing if one person disappears" gets a yes, and the project's
+[OpenSSF Best Practices entry](https://www.bestpractices.dev/en/projects/14721) answers it that
+way. The branch rule still wants an approval from somebody other than the author; a maintainer
+left alone switches that off in the ruleset, says so in an issue, and releases.
 
 The knowledge of how the app keeps up with a game update still sits mostly with one person as
 well. Reading every change before it lands is how that moves.

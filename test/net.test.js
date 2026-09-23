@@ -102,7 +102,7 @@ test('a GitHub raw URL gets mirrors, and a size-capped one only for small files'
 // which is deployed elsewhere, and it carries the four files the app cannot start without.
 test('the four startup files can also come from the site, and nothing else can', () => {
   const catalog = `${RAW_HOST}h6rd/Dota2PornFxWeb/main/assets/data/mods.json`;
-  const prints = `${RAW_HOST}TheFleece/dota2-mod-manager/main/fingerprints.json`;
+  const prints = `${RAW_HOST}dota2modmanager/dota2-mod-manager/main/fingerprints.json`;
   for (const url of [catalog, prints]) {
     const list = net.mirrorsFor(url, { small: true });
     assert.ok(list.includes(`https://dota2modmanager.com/mirror/${url.split('/').pop()}`), url);
@@ -142,7 +142,7 @@ test('a file asked for trusted-only goes to GitHub itself or nowhere', () => {
   assert.deepEqual(net.mirrorsFor(RAW_URL, { small: true, trustedOnly: true }), [RAW_URL]);
   assert.ok(net.mirrorsFor(RAW_URL, { small: true }).length > 1, 'and the ordinary path still has its mirrors');
 
-  const manifest = 'https://github.com/TheFleece/dota2-mod-manager/releases/download/v2.6.11/portable.yml';
+  const manifest = 'https://github.com/dota2modmanager/dota2-mod-manager/releases/download/v2.6.11/portable.yml';
   assert.deepEqual(net.mirrorsFor(manifest, { small: true, trustedOnly: true }), [manifest],
     'the manifest the portable build really asks for this way');
 });
