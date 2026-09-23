@@ -204,6 +204,36 @@ test('RELEASING.md names every job release.yml runs', () => {
   assert.deepEqual(missing, [], `RELEASING.md does not mention: ${missing.join(', ')}`);
 });
 
+test('every required check also runs in the merge queue', () => {
+  /* main has a merge queue since 2026-09-23. It tests a pull request again on top of the newest
+     main and waits for every required check there; a workflow that does not listen to
+     merge_group never reports, and the whole queue stalls behind it. Checked on a probe
+     repository before it was switched on: CodeQL, a skipped pull-request-only job and the code
+     scanning rule all let a queued change through. */
+  const required = json('.github/required-checks.json');
+  const prOnly = new Set(required.pullRequestOnly);
+  const found = new Map();
+  for (const file of workflows) {
+    const text = read(file);
+    for (const m of text.matchAll(/\n {2}([\w-]+):\n {4}name: ([^\n]+)\n((?: {4}[^\n]*\n)*)/g)) {
+      const name = m[2].trim().replace(/^['"]|['"]$/g, '');
+      if (required.branch.includes(name)) found.set(name, { file, text, body: m[3] });
+    }
+    for (const m of text.matchAll(/\n {2}([\w-]+):\n((?: {4}[^\n]*\n)*)/g)) {
+      if (required.branch.includes(m[1]) && !/^ {4}name:/m.test(m[2])) found.set(m[1], { file, text, body: m[2] });
+    }
+  }
+  for (const name of required.branch) {
+    const job = found.get(name);
+    assert.ok(job, `no workflow has a job that reports "${name}"`);
+    assert.match(job.text, /\n {2}merge_group:/, `${job.file} reports "${name}" but does not run in the merge queue`);
+    if (prOnly.has(name)) {
+      assert.match(job.body, /if: github\.event_name == 'pull_request'/,
+        `"${name}" reads the pull request, so it has to skip itself in the merge queue`);
+    }
+  }
+});
+
 test('a dependency update queues itself to merge only when it is minor or patch, and only through the checks', () => {
   /* Majors changed the runtime and the site generator under the project twice in a month
      (Electron 43 to 44, Astro 5 to 7), and the Astro one built green while the site came out

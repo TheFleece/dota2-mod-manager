@@ -9,6 +9,8 @@ on:
       - main
       - v2
   pull_request:
+  # The merge queue runs the suite again on top of the newest main before a change lands.
+  merge_group:
   workflow_dispatch:
 
 # The token reads the repository and nothing more. A job that needs more asks for it itself.

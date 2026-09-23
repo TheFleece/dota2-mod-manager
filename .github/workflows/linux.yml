@@ -22,6 +22,8 @@ on:
       - 'package.json'
       - '.github/workflows/linux.yml'
   pull_request:
+  # No paths filter exists for merge_group, so every change the queue lands is built and started.
+  merge_group:
   workflow_dispatch:
 
 # The token reads the repository and nothing more. A job that needs more asks for it itself.

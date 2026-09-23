@@ -296,7 +296,9 @@ dialog nobody can act on.
 
 Through a pull request, the maintainers' own changes included. It needs an approving review from
 a maintainer who did not write it, and a fresh one after any later push; the maintainers review
-each other. It merges when that approval is on it and the required checks are green: the suite on Linux and on Windows, CodeQL, the Linux build and its start-up run,
+each other. Once that approval is on it and the required checks are green, it joins a merge queue,
+which runs the checks again on top of the newest main and then lands it. The checks: the suite on
+Linux and on Windows, CodeQL, the Linux build and its start-up run,
 installing a mod through the window on Linux and on Windows, and one rule of its own. CodeQL has
 to come back clean as well: a pull request that adds an alert at High or higher does not merge. A pull
 request that fixes something changes a test as well, or carries a line `No-Test-Because: <reason>`

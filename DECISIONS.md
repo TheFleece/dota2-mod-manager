@@ -179,10 +179,16 @@ change, and a fresh one after every new push. Until then an approval was welcome
 gate, so that one person working alone would not wait on anybody for a typo. A second maintainer
 changed the sum: every change now gets a reader besides its author, and OpenSSF Scorecard's
 Code-Review and Branch-Protection checks measure exactly that. The cost is pace. A pull request
-waits for the other maintainer, and so does a Dependabot update that used to merge itself. The
-rule does not require a branch to be up to date with main before it merges: the catalog bot
-pushes to main several times a day, and every open pull request would have to rerun its checks
-after each push.
+waits for the other maintainer, and so does a Dependabot update that used to merge itself.
+
+A pull request also goes through a merge queue since the repository moved into an organization,
+which is where GitHub offers one. The queue puts the change on top of the newest main, runs the
+required checks there once more, and only then lands it. That is what lets the rule require a
+branch to be up to date without the cost it had before: the catalog bot pushes to main several
+times a day, and without the queue every open pull request would have had to be updated and
+rerun by hand after each push. A probe repository showed a pull request left behind by such a push
+going through the queue on its own, with CodeQL, the code scanning rule and a skipped
+pull-request-only check in the way.
 
 The same day the release gate started refusing a tag on a commit that is not on main. Checks run
 on pull request branches as well, so without that a tag on a green, unapproved branch would ship

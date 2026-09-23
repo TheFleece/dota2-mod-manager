@@ -17,6 +17,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # The merge queue asks for an analysis of the change on top of the newest main as well.
+  merge_group:
   schedule:
     # Mondays. A weekly pass catches a rule that was added after the code was written, which
     # is most of what scheduled scanning is actually for.

@@ -13,6 +13,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The merge queue installs a mod through the window again on top of the newest main.
+  merge_group:
   workflow_dispatch:
 
 # The token reads the repository and nothing more.

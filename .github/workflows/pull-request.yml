@@ -6,6 +6,10 @@ name: Pull request rules
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  # The merge queue waits for every required check, this one included. What it reads (the title,
+  # the description, the commits against the base) belongs to the pull request and was already
+  # checked there, so in the queue the job skips itself, and GitHub counts a skipped job as passed.
+  merge_group:
 
 # Reads the commits and the files they change. Writes nothing.
 permissions:
@@ -15,6 +19,7 @@ permissions:
 jobs:
   fix-has-test:
     name: A fix brings its test
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
