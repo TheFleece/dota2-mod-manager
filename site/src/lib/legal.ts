@@ -41,7 +41,14 @@ export function legal(page: LegalPage, lang: Lang): LegalDoc {
     .replace(/<div class="date">[^<]*<\/div>/, '')
     .replace(/<a class="back"[^>]*>[\s\S]*?<\/a>/, '')
     .trim();
-  const first = ((/<p>([\s\S]*?)<\/p>/.exec(body) || [])[1] || title).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  /* Plain text for a meta description. Removing tags with a pattern leaves a stray bracket behind
+     when the markup is odd, so every bracket that survives goes too: a description has no use for
+     one, and CodeQL rightly refuses a string that could still open a tag. */
+  const first = ((/<p>([\s\S]*?)<\/p>/.exec(body) || [])[1] || title)
+    .replace(/<[^>]*>/g, '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const description = first.length > 160 ? `${first.slice(0, 157).replace(/\s+\S*$/, '')}…` : first;
   return { title, date, body, description };
 }
