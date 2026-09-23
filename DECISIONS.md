@@ -174,7 +174,7 @@ request #62 had merged itself the day before with one, because the rule asked fo
 run and nothing about what it found. The deploy key the catalog bot pushes its index with is the
 one bypass: those commits are data, and they never touch code.
 
-Since 23 September it also requires an approving review from a code owner who did not write the
+Since 23 September it also requires an approving review from a maintainer who did not write the
 change, and a fresh one after every new push. Until then an approval was welcome and never a
 gate, so that one person working alone would not wait on anybody for a typo. A second maintainer
 changed the sum: every change now gets a reader besides its author, and OpenSSF Scorecard's
