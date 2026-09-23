@@ -22,7 +22,7 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/dota2modmanager/dota2-mod-manager">
     <img src="https://img.shields.io/ossf-scorecard/github.com/dota2modmanager/dota2-mod-manager?style=flat-square&label=openssf%20scorecard&labelColor=211f26" alt="OpenSSF Scorecard"></a>
   <a href="https://www.bestpractices.dev/en/projects/14721">
-    <img src="https://img.shields.io/cii/level/14721?style=flat-square&label=openssf%20best%20practices&labelColor=211f26&color=2bffa3" alt="OpenSSF Best Practices passing badge"></a>
+    <img src="https://img.shields.io/cii/level/14721?style=flat-square&label=openssf%20best%20practices&labelColor=211f26&color=2bffa3" alt="OpenSSF Best Practices silver badge"></a>
   <a href="https://dota2modmanager.betteruptime.com">
     <img src="https://uptime.betterstack.com/status-badges/v1/monitor/2y6jv.svg" alt="Update feed status"></a>
   <img src="https://img.shields.io/github/last-commit/dota2modmanager/dota2-mod-manager?style=flat-square&label=last%20commit&labelColor=211f26&color=8b6ff0" alt="Last commit">

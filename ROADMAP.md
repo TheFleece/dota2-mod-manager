@@ -27,10 +27,11 @@ because the catalog grows by tens of megabytes a week and somebody has to pay fo
 reason written out in [DECISIONS.md](DECISIONS.md). A repository this small should exist in more
 than one place, and where is still open.
 
-**The OpenSSF silver badge.** The passing badge is done. Silver needed a project that can keep
-releasing when one person disappears. Since 2026-09-23 two maintainers own the organization the
-repository lives in, and the answer on the entry changes to match. The badge follows once the
-form is saved.
+**The OpenSSF gold badge.** Silver was awarded on 2026-09-23, the day two maintainers came to own
+the organization the repository lives in. Gold stands at 30%, and its answers are not written
+yet: it asks for a bus factor of two, a second significant contributor who is not associated
+with the first, reviews on at least half of all changes, and a licence and copyright line in every
+source file.
 
 ## Later
 

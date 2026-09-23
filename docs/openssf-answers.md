@@ -307,6 +307,6 @@ All three are done.
 - `tools/radar.mjs` reads the entry every morning and compares it with `.bestpractices.json`. An
   answer written here that the entry never took is a line in the status issue, because the robot
   on the form fills blanks and leaves saved answers alone, so the two drift apart in silence.
-- Silver is written out above. It stood at 98% until `access_continuity` turned Met with the move
-  to an organization on 2026-09-23; [GOVERNANCE.md](../GOVERNANCE.md), section Continuity, says
-  why. The form needs that one answer edited by hand.
+- Silver is written out above, and was awarded on 2026-09-23. It stood at 98% until
+  `access_continuity` turned Met with the move to an organization that day;
+  [GOVERNANCE.md](../GOVERNANCE.md), section Continuity, says why.
