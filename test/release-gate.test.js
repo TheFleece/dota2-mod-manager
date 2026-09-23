@@ -88,3 +88,29 @@ test('the release list is read from the file the ruleset follows', async () => {
     assert.ok(list.includes(name), `"${name}" is required to merge but not to release`);
   }
 });
+
+test('a commit that is not on main is refused, however green its checks', async () => {
+  /* Checks run on pull request branches too, so a green commit is not yet an approved one. Since
+     main wants an approval from a maintainer who did not write the change, a tag on a branch
+     would be the one way to ship code nobody reviewed. */
+  const { onMain } = await load();
+  assert.equal(onMain('identical'), true, "main's own head is on main");
+  assert.equal(onMain('behind'), true, 'a commit main already contains is on main');
+  assert.equal(onMain('ahead'), false, 'a branch with commits main lacks is not');
+  assert.equal(onMain('diverged'), false, 'a branch that forked off and moved on is not');
+  assert.equal(onMain(undefined), false, 'an answer the gate cannot read is a refusal');
+});
+
+test('where a commit stands is asked of main...sha, and a failed answer stops the gate', async () => {
+  const { compareWithMain } = await load();
+  const asked = [];
+  const answer = (ok, body) => async (url, init) => {
+    asked.push({ url, auth: init.headers.Authorization });
+    return { ok, status: ok ? 200 : 404, json: async () => body, text: async () => 'Not Found' };
+  };
+  assert.equal(await compareWithMain('o/r', 'abc1234', 'tok', answer(true, { status: 'behind' })), 'behind');
+  assert.ok(asked[0].url.endsWith('/repos/o/r/compare/main...abc1234'), asked[0].url);
+  assert.equal(asked[0].auth, 'Bearer tok');
+  await assert.rejects(compareWithMain('o/r', 'abc1234', '', answer(false, {})), /HTTP 404/,
+    'a compare GitHub could not answer has to fail the release, not pass it');
+});

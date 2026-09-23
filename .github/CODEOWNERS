@@ -1,11 +1,13 @@
-# Every pull request goes to the author for review. The modules that write into somebody's game
-# folder are listed again on purpose: a change there is the one that has to be read twice.
+# Every pull request asks both maintainers for a review, and the branch rule on main wants an
+# approval from one of them who is not the author. GitHub never counts an author's approval of
+# their own pull request, so each of the two reviews the other. The modules that write into
+# somebody's game folder are listed again on purpose: a change there is the one to read twice.
 
-*                   @TheFleece
+*                   @TheFleece @Nersaa
 
-src/patcher.js      @TheFleece
-src/vpk.js          @TheFleece
-src/gamelang.js     @TheFleece
-src/schema.js       @TheFleece
-src/file-tx.js      @TheFleece
-.github/workflows/  @TheFleece
+src/patcher.js      @TheFleece @Nersaa
+src/vpk.js          @TheFleece @Nersaa
+src/gamelang.js     @TheFleece @Nersaa
+src/schema.js       @TheFleece @Nersaa
+src/file-tx.js      @TheFleece @Nersaa
+.github/workflows/  @TheFleece @Nersaa

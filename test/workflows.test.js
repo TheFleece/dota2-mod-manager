@@ -204,7 +204,7 @@ test('RELEASING.md names every job release.yml runs', () => {
   assert.deepEqual(missing, [], `RELEASING.md does not mention: ${missing.join(', ')}`);
 });
 
-test('a dependency update merges itself only when it is minor or patch, and only through the checks', () => {
+test('a dependency update queues itself to merge only when it is minor or patch, and only through the checks', () => {
   /* Majors changed the runtime and the site generator under the project twice in a month
      (Electron 43 to 44, Astro 5 to 7), and the Astro one built green while the site came out
      broken. A merge that is not limited to minor and patch, or that skips the required checks,

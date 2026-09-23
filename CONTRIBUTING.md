@@ -252,9 +252,9 @@ dependency is a stranger with write access to a game folder on 27,000 machines.
 That is a bias, not a ban. A pull request that adds one needs to say what it replaces and why
 writing it ourselves is worse. Tools under `tools/` and the tests use no dependencies at all.
 
-Dependabot proposes updates every Monday. A minor or patch update merges itself once every
-required check has passed. A major one gets the `major-update` label and waits for the maintainer,
-because a new major version of Electron or of the site generator can pass every check and still
+Dependabot proposes updates every Monday. A minor or patch update queues itself to merge and goes
+in once every required check has passed and a maintainer has approved it. A major one gets the
+`major-update` label and waits for the maintainer's decision, because a new major version of Electron or of the site generator can pass every check and still
 ship something broken.
 
 ## What will not be merged
@@ -294,8 +294,9 @@ dialog nobody can act on.
 
 ## How a change reaches main
 
-Through a pull request, the maintainer's own changes included. It merges when the required checks
-are green: the suite on Linux and on Windows, CodeQL, the Linux build and its start-up run,
+Through a pull request, the maintainers' own changes included. It needs an approving review from
+a maintainer who did not write it, and a fresh one after any later push; the maintainers review
+each other. It merges when that approval is on it and the required checks are green: the suite on Linux and on Windows, CodeQL, the Linux build and its start-up run,
 installing a mod through the window on Linux and on Windows, and one rule of its own. CodeQL has
 to come back clean as well: a pull request that adds an alert at High or higher does not merge. A pull
 request that fixes something changes a test as well, or carries a line `No-Test-Because: <reason>`

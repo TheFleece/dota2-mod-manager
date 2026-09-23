@@ -2,7 +2,7 @@
 
 What this project intends to do next, and what it will not do at all.
 
-Nothing here is a promise with a date on it. One person works on this, and a Dota patch can take
+Nothing here is a promise with a date on it. One person writes most of this, and a Dota patch can take
 a week that was meant for something else. What the list is good for is knowing whether the thing
 you want is coming, is coming later, or was decided against on purpose.
 
@@ -28,8 +28,10 @@ reason written out in [DECISIONS.md](DECISIONS.md). A repository this small shou
 than one place, and where is still open.
 
 **The OpenSSF silver badge.** The passing badge is done. Silver needs a project that can keep
-releasing when one person disappears, which is the same gap [GOVERNANCE.md](GOVERNANCE.md) names
-at the end. Everything else on that list is written down or already true.
+releasing when one person disappears. A second maintainer joined on 2026-09-23 and reviews every
+change; what is left is moving the repository into an organization both of them own, so the
+second one can merge a release without the first. [GOVERNANCE.md](GOVERNANCE.md) says why, at the
+end. Everything else on that list is written down or already true.
 
 ## Later
 

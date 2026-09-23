@@ -174,6 +174,20 @@ request #62 had merged itself the day before with one, because the rule asked fo
 run and nothing about what it found. The deploy key the catalog bot pushes its index with is the
 one bypass: those commits are data, and they never touch code.
 
+Since 23 September it also requires an approving review from a code owner who did not write the
+change, and a fresh one after every new push. Until then an approval was welcome and never a
+gate, so that one person working alone would not wait on anybody for a typo. A second maintainer
+changed the sum: every change now gets a reader besides its author, and OpenSSF Scorecard's
+Code-Review and Branch-Protection checks measure exactly that. The cost is pace. A pull request
+waits for the other maintainer, and so does a Dependabot update that used to merge itself. The
+rule does not require a branch to be up to date with main before it merges: the catalog bot
+pushes to main several times a day, and every open pull request would have to rerun its checks
+after each push.
+
+The same day the release gate started refusing a tag on a commit that is not on main. Checks run
+on pull request branches as well, so without that a tag on a green, unapproved branch would ship
+it.
+
 *Check:* `curl https://api.github.com/repos/TheFleece/dota2-mod-manager/rules/branches/main`, which
 needs no token, or `gh api repos/TheFleece/dota2-mod-manager/rulesets`. `tools/radar.mjs` compares
 that answer with `.github/required-checks.json` every morning and reports a rule that drifted.
@@ -294,13 +308,17 @@ a public commit, and the update metadata beside it carries a SHA-512 of the file
 <https://github.com/TheFleece/dota2-mod-manager/actions/workflows/release.yml>, and `latest.yml`
 in the release assets.
 
-### One maintainer
+### Two maintainers, and one of them holds the keys
 
-One person writes it, reviews it and releases it. There have been two outside pull requests and
-a handful of issues from users. Nothing about the project survives that person losing interest,
-which is worth knowing before depending on it.
+One person writes most of it and releases it. Since 2026-09-23 a second maintainer reviews every
+change before it merges, which is what [GOVERNANCE.md](GOVERNANCE.md) lists. What does not move
+yet: the second maintainer cannot merge a change of their own while the repository belongs to a
+personal account, so a release still needs the first one. The fix is an organization with both as
+owners. Until it happens, the project does not survive its maintainer losing interest, and that
+is worth knowing before you depend on it.
 
-*Check:* `git shortlog -sne HEAD`, and the contributors list on GitHub.
+*Check:* `git shortlog -sne HEAD`, `.github/CODEOWNERS`, and the "Who can merge" table in
+GOVERNANCE.md.
 
 ### The coverage floor is measured on one platform only
 

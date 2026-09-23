@@ -235,10 +235,12 @@ criterion whose answer is still a question mark from `.bestpractices.json`, so o
 silver page and pressing the robot button carries all of these over at once. It cannot change
 an answer that is already saved.
 
-One of them is a MUST this project does not meet, and will not meet by writing:
-`access_continuity`. Anybody can fork the code and carry it on, and nobody but the maintainer
-can cut a release, sign the config or touch the site. Until somebody else holds those keys the
-silver badge is out of reach, and that is the honest state of a project run by one person.
+One of them is a MUST this project does not meet yet, and will not meet by writing:
+`access_continuity`. Since 2026-09-23 a second maintainer can merge and release what other people
+send. They cannot merge a change of their own, a version bump included, because main wants an
+approval from somebody other than the author and only the owner of a personal repository can
+change that rule. The repository moving into an organization with both maintainers as owners is
+what turns this into Met, and the silver badge waits for it.
 
 | Criterion | Answer | URL to give |
 | --- | --- | --- |
@@ -306,6 +308,7 @@ All three are done.
 - `tools/radar.mjs` reads the entry every morning and compares it with `.bestpractices.json`. An
   answer written here that the entry never took is a line in the status issue, because the robot
   on the form fills blanks and leaves saved answers alone, so the two drift apart in silence.
-- Silver is written out above. It stands at 98%, and the 2% is `access_continuity`: one person
-  holds the release keys. [GOVERNANCE.md](../GOVERNANCE.md) and
-  [second-maintainer.md](second-maintainer.md) are what closes it the day somebody accepts.
+- Silver is written out above. It stands at 98%, and the 2% is `access_continuity`. A second
+  maintainer joined on 2026-09-23, and the move to an organization is what finishes it:
+  [GOVERNANCE.md](../GOVERNANCE.md), section Continuity, and
+  [second-maintainer.md](second-maintainer.md) say why.

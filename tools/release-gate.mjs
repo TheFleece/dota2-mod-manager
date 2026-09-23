@@ -13,6 +13,11 @@
  * the same file the branch ruleset is kept in line with, so "what a merge needs" and "what a
  * release needs" cannot drift apart by being written down twice.
  *
+ * Before any of that it asks whether the commit is on main at all. Since 2026-09-23 a change
+ * reaches main only with an approval from a maintainer who did not write it, and checks also run
+ * on pull request branches, so a green commit is not yet a reviewed one. Anybody who can push a
+ * tag could otherwise ship a branch nobody approved.
+ *
  * Usage:
  *   GH_TOKEN=... GITHUB_REPOSITORY=owner/repo node tools/release-gate.mjs <sha>
  *   node tools/release-gate.mjs <sha> --once      # one look, no waiting (exit 0 pass, 1 fail, 2 still waiting)
@@ -69,15 +74,35 @@ export function describe(result) {
   return `${result.state}  ${parts.join('; ')}`;
 }
 
+/**
+ * Whether a commit is on main, from the status GitHub's compare API gives for main...sha.
+ * "identical" is main's own head and "behind" is a commit main already contains. "ahead" and
+ * "diverged" carry something main does not have, which is a branch, not a release.
+ */
+export function onMain(status) {
+  return status === 'identical' || status === 'behind';
+}
+
+function headers(token) {
+  return {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'dota2-mod-manager-release-gate',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+/** GitHub's word on where a commit stands against main. */
+export async function compareWithMain(repo, sha, token, get = fetch) {
+  const res = await get(`https://api.github.com/repos/${repo}/compare/main...${sha}`, { headers: headers(token) });
+  if (!res.ok) throw new Error(`compare main...${sha}: HTTP ${res.status} ${(await res.text()).slice(0, 160)}`);
+  return (await res.json()).status;
+}
+
 async function checkRunsFor(repo, sha, token) {
   const runs = [];
   for (let page = 1; page <= 10; page++) {
     const res = await fetch(`https://api.github.com/repos/${repo}/commits/${sha}/check-runs?per_page=100&page=${page}`, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'dota2-mod-manager-release-gate',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: headers(token),
     });
     if (!res.ok) throw new Error(`check runs for ${sha}: HTTP ${res.status} ${(await res.text()).slice(0, 160)}`);
     const body = await res.json();
@@ -99,6 +124,12 @@ if (invokedDirectly) {
     console.error('usage: node tools/release-gate.mjs <commit sha> [--once]');
     process.exit(64);
   }
+  const where = await compareWithMain(repo, sha, token);
+  if (!onMain(where)) {
+    console.error(`::error::${sha.slice(0, 7)} is not on main (compare says "${where}"). A release is built only from a commit that reached main through an approved pull request: merge it, then tag the merged commit.`);
+    process.exit(1);
+  }
+  console.log(`${sha.slice(0, 7)} is on main`);
   const required = requiredChecks('release');
   const started = Date.now();
   for (;;) {
