@@ -55,6 +55,26 @@ knows who made it. Everything else works without it.
 - What is kept in `settings.json` afterwards: your Discord id, username, and the avatar as a small embedded picture rather than a link back to Discord. Signing
   out deletes them.
 
+## Your Discord status
+
+While the app is open, it tells the Discord client on your own computer what to put on your
+profile: the app's name, which tab you have open, how many mods are switched on, when the session
+started, and a button that opens dota2modmanager.com. The app sends that over the local
+connection Discord opens for games (a named pipe on Windows, a socket on Linux), not over the
+internet. Discord then shows it to the people who can see your profile, the way it shows any game
+you play. It is on unless you switch it off in Settings, and switching it off closes the
+connection. The code is `src/discord-presence.js`.
+
+## Preset links
+
+A shared preset link carries the preset after the `#` in the address. Browsers never send that
+part to a server, so the page that opens the link on dota2modmanager.com does not learn which
+mods anybody shared.
+
+## Children
+
+The app is not directed at children under 13.
+
 ## What is stored on your computer
 
 All of it in `%APPDATA%\Dota 2 Mod Manager` on Windows, `~/.config/Dota 2 Mod Manager` on Linux.

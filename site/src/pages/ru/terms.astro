@@ -1,11 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Legal from '../../components/Legal.astro';
-import { legal } from '../../lib/legal';
+import { terms } from '../../lib/legal';
 
-const doc = legal('terms', 'ru');
+const doc = terms('ru');
 ---
 
 <Base title={doc.title} description={doc.description} path="/terms/">
-  <Legal page="terms" lang="ru" />
+  <Legal doc={doc} />
 </Base>

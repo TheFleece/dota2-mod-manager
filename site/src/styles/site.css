@@ -814,6 +814,25 @@ section { padding: 44px 0; }
   word-break: break-word;
 }
 
+/* Tables, which only the documents built from the repository carry (PRIVACY.md lists every host
+   the app contacts and every file it keeps). The same border and surface as the code chips above,
+   and a table that scrolls sideways on a phone rather than pushing the column out. */
+.doc table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.4em 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+.doc th, .doc td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.doc th { background: var(--surface-container); color: var(--text); font-weight: 600; }
+
 .crumbs { font-size: 14px; margin-bottom: 18px; }
 .crumbs a { color: var(--text-faint); }
 .crumbs a::before { content: '\2190\00a0'; }
