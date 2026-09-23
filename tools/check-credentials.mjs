@@ -33,7 +33,8 @@ import { googleAccessToken } from './google-auth.mjs';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
-const REPO = process.env.GITHUB_REPOSITORY || 'dota2modmanager/dota2-mod-manager';
+/** The repository the deploy key has to open. GitHub names it in the SSH greeting. */
+export const REPO = process.env.GITHUB_REPOSITORY || 'dota2modmanager/dota2-mod-manager';
 const SITE = 'https://dota2modmanager.com';
 const CF = 'https://api.cloudflare.com/client/v4';
 

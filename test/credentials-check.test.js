@@ -78,7 +78,7 @@ test('the GitLab token reports its own expiry, read from the token inside the pu
 });
 
 test('a deleted webhook, a missing secret and a refused deploy key are each named', async () => {
-  const { CHECKS } = await load();
+  const { CHECKS, REPO } = await load();
   const gone = service([]);
   assert.equal((await CHECKS.RADAR_DISCORD_WEBHOOK({ RADAR_DISCORD_WEBHOOK: 'https://discord.com/api/webhooks/1/abc' }, { http: gone.http })).state, 'failed');
   const alive = service([[/webhooks/, { status: 200, json: { id: '1', name: 'Radar' } }]]);
@@ -86,7 +86,7 @@ test('a deleted webhook, a missing secret and a refused deploy key are each name
 
   assert.equal((await CHECKS.BING_API_KEY({}, { http: gone.http })).state, 'missing');
 
-  const greeted = await CHECKS.FINGERPRINTS_DEPLOY_KEY({ FINGERPRINTS_DEPLOY_KEY: 'k' }, { ssh: async () => "Hi dota2modmanager/dota2-mod-manager! You've successfully authenticated, but GitHub does not provide shell access." });
+  const greeted = await CHECKS.FINGERPRINTS_DEPLOY_KEY({ FINGERPRINTS_DEPLOY_KEY: 'k' }, { ssh: async () => `Hi ${REPO}! You've successfully authenticated, but GitHub does not provide shell access.` });
   assert.equal(greeted.state, 'ok');
   const refused = await CHECKS.FINGERPRINTS_DEPLOY_KEY({ FINGERPRINTS_DEPLOY_KEY: 'k' }, { ssh: async () => 'git@github.com: Permission denied (publickey).' });
   assert.equal(refused.state, 'failed');
