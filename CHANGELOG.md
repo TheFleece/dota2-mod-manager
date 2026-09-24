@@ -55,6 +55,9 @@ and the other two links opened a page that does not exist.
   restart.
 - The download bar stayed on screen after Source 2 Viewer finished downloading, and froze where a
   failed download stopped.
+- Next to Minify, My mods showed a yellow warning that contradicted itself even when nothing was
+  wrong. It now names the folder the game reads, and warns only when your mods are the ones not
+  loading.
 
 ### Thanks
 
