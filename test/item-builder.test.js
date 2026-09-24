@@ -541,3 +541,89 @@ test('choosing other effects for the same item changes its row instead of adding
   assert.equal(picks().length, 2);
   assert.deepEqual(picks().find((r) => r.itemId === '19416'), { ...picks().find((r) => r.itemId === '19416'), enabled: true, effectId: 'bubbles' });
 });
+
+/** The builder's table with sets on top: what a set holds, as items_game lists it. */
+function itemSetTable() {
+  const block = (id, name, prefab, hero, extra = '') => `\t\t"${id}"
+\t\t{
+\t\t\t"name"\t\t"${name}"
+\t\t\t"prefab"\t\t"${prefab}"
+${extra}\t\t\t"used_by_heroes"
+\t\t\t{
+\t\t\t\t"npc_dota_hero_${hero}"\t\t"1"
+\t\t\t}
+\t\t}
+`;
+  const bundle = (id, name, hero, pieces) => block(id, name, 'bundle', hero,
+    `\t\t\t"bundle"\n\t\t\t{\n${pieces.map((p) => `\t\t\t\t"${p}"\t\t"1"\n`).join('')}\t\t\t}\n`);
+  return itemWearableTable().replace(/\t}\n}\n$/, [
+    block('9951', 'Sniper Spare Cape', 'wearable', 'sniper', '\t\t\t"item_slot"\t\t"back"\n'),
+    block('9952', 'Sniper Loading Screen', 'loading_screen', 'sniper'),
+    block('9954', 'Sniper Third Cape', 'wearable', 'sniper', '\t\t\t"item_slot"\t\t"back"\n'),
+    // no item_slot, and a name that reads like a helmet: the game puts it in the hand
+    block('9953', 'Bloodseeker Headmaster Wand', 'wearable', 'bloodseeker'),
+    bundle('9960', 'Sniper Set', 'sniper',
+      ['Golden Full-Bore Bonanza', 'No visuals here', 'Sniper Persona Gun', 'Sniper Loading Screen', 'Sniper Spare Cape']),
+    bundle('9961', 'Bloodseeker Set', 'bloodseeker', ['Bloodseeker Headmaster Wand']),
+    bundle('9962', 'Axe Set', 'axe', ['Unsupported back']),
+    // a store bundle of several sets: more pieces want a taken slot than fit
+    bundle('9963', 'Sniper Big Bundle', 'sniper', ['Golden Full-Bore Bonanza', 'Sniper Spare Cape', 'Sniper Third Cape']),
+    bundle('9964', 'Sniper Set DO NOT USE', 'sniper', ['Golden Full-Bore Bonanza']),
+  ].join('') + '\t}\n}\n');
+}
+
+test('a wearable that names no slot is a weapon, as the game reads it', () => {
+  // Guessed from its words, Oblivion Headmaster Wand went on the head and Emerald Frenzy
+  // Flail on the back, and 99 weapons went nowhere. The game's "wearable" prefab says weapon.
+  const text = itemSetTable();
+  const wand = schema.listItems(text).find((i) => i.name === 'Bloodseeker Headmaster Wand');
+  assert.equal(schema.inferredItemSlot(wand), 'weapon');
+  const slot = builder.itemSlots(text).find((s) => s.options.some((o) => o.id === '9953'));
+  assert.equal(slot.slot, 'item:bloodseeker:weapon');
+});
+
+test('a set lists the hero items the builder puts on, and says why it leaves one out', () => {
+  const sets = builder.itemSets(itemSetTable());
+  assert.deepEqual(sets.map((s) => s.name), ['Bloodseeker Set', 'Sniper Set'],
+    'left out: a set with nothing to put on, a bundle of several sets, one Valve marks DO NOT USE');
+  const sniper = sets.find((s) => s.name === 'Sniper Set');
+  assert.equal(sniper.heroLabel, 'Sniper');
+  assert.equal(sniper.fit, 2);
+  // the loading screen is not a hero item: not listed, not counted
+  assert.deepEqual(sniper.pieces.map((p) => [p.name, p.fits, p.slot || p.reason]), [
+    ['Golden Full-Bore Bonanza', true, 'item:sniper:back'],
+    ['No visuals here', true, 'item:sniper:head'],
+    ['Sniper Persona Gun', false, 'an arcana or persona: the builder leaves those alone'],
+    ['Sniper Spare Cape', false, 'a second item for the same slot'],
+  ]);
+  assert.equal(builder.itemSlots(itemSetTable()).some((s) => s.equipSlot === 'bundle'), false, 'a set is not a slot');
+});
+
+test('a whole set goes on in one write, a row per piece, and a piece already on keeps its effects', (t) => {
+  const { createSchemaService } = require('../src/schema-service.js');
+  const { Library } = require('../src/library.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-sets-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const game = path.join(dir, 'game');
+  fs.mkdirSync(path.join(game, 'dota'), { recursive: true });
+  fs.writeFileSync(path.join(game, 'dota', 'pak01_dir.vpk'), vpk.buildVpk([entry(schema.SCHEMA_REL, itemSetTable())]));
+  const library = new Library(path.join(dir, 'lib'));
+  // schemaPatch off: every write the service makes takes the table away and clears the stamp
+  const values = { dotaGamePath: game, schemaPatch: false };
+  let writes = 0;
+  const settings = { get: (k) => values[k], set: (k, v) => { if (k === 'schemaStamp') writes++; values[k] = v; } };
+  const service = createSchemaService({ settings, library, installer: {}, userDataDir: dir });
+  const picks = () => library.list().filter((r) => r.categoryId === 'cosmetic' && r.enabled !== false);
+
+  service.pickCosmetic('item:sniper:head', '9457', 'No visuals here', 'fire,snow');
+  service.pickCosmetic('item:sniper:back', '9951', 'Sniper Spare Cape', 'ghost');
+  writes = 0;
+  const res = service.pickSet('9960');
+  assert.deepEqual(res, { applied: 2, pieces: 4 });
+  assert.equal(writes, 1, 'one write for the whole set');
+  assert.deepEqual(picks().map((r) => [r.slot, r.itemId, r.effectId || '']).sort(), [
+    ['item:sniper:back', '9455', ''], // the set's cape in place of the spare one, and no effects with it
+    ['item:sniper:head', '9457', 'fire,snow'], // already on: keeps what it had
+  ]);
+  assert.throws(() => service.pickSet('404'), /Set not found/);
+});

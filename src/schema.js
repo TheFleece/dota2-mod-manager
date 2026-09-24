@@ -208,7 +208,7 @@ function toUtf8(s) {
   return /[\x80-\xff]/.test(s) ? Buffer.from(s, 'latin1').toString('utf8') : s;
 }
 
-/** An item's words in one lowercase string, for guessing the slot of a wearable that names none. */
+/** An item's words in one lowercase string, for telling an arcana or persona by its name. */
 function itemSearchText(item) {
   return [item?.slot, item?.prefab, item?.name, item?.itemName, item?.itemDescription, item?.image, item?.model, item?.typeName]
     .filter(Boolean)
@@ -217,34 +217,17 @@ function itemSearchText(item) {
 }
 
 /**
- * A hero wearable's slot, guessed from its words when items_game leaves item_slot out. For the
- * item builder only (src/item-builder.js): run over the whole table it reads "Armor" into a
- * loading screen and "charm" into a courier, which is why slotOf does not use it.
+ * A hero item's slot as the game reads it. A wearable or stock item that names no item_slot is
+ * a weapon: the "wearable" and "default_item" prefabs of items_game both say "item_slot"
+ * "weapon", and on the game of 2026-09-24 that covers 1857 wearables and 96 stock items.
+ *
+ * It used to be guessed from the item's words, which put Oblivion Headmaster Wand on the head,
+ * Emerald Frenzy Flail on the back and 99 other weapons nowhere, so a set carried two heads
+ * and the builder offered a wand for a helmet.
  */
 function inferredItemSlot(item) {
   if (item?.slot) return item.slot;
-  const hay = itemSearchText(item);
-  if (!hay) return '';
-  const rules = [
-    [/offhand_weapon|weapon_offhand/, 'offhand_weapon'],
-    [/(^|[^a-z])offhand([^a-z]|$)|quiver/, 'offhand'],
-    [/weapon|sword|blade|staff|bow|axe|hammer|scythe|spear|dagger|guns|gun|claws|claw|hook|totem|anchor|sickle/, 'weapon'],
-    [/shoulders?|pauldron|necklace|neck/, 'shoulder'],
-    [/helmet|helm|head|hood|mask|hair|face|hat|crown|horn|mane|headwear/, 'head'],
-    [/shield/, 'shield'],
-    [/bracer|glove|arm/, 'arms'],
-    [/cape|cloak|back|wings?/, 'back'],
-    [/tail/, 'tail'],
-    [/skirt|leg|boot|feet|foot/, 'legs'],
-    [/mount/, 'mount'],
-    [/armor|vest|mail|jacket|coat/, 'armor'],
-    [/ambient/, 'ambient'],
-    [/summon|pet|forge spirit|forged spirit/, 'summon'],
-    [/voice/, 'voice'],
-    [/hero_base|persona_selector|shapeshift/, 'hero_base'],
-  ];
-  for (const [re, slot] of rules) if (re.test(hay)) return slot;
-  return '';
+  return item?.prefab === 'wearable' || item?.prefab === 'default_item' ? 'weapon' : '';
 }
 
 // Which slot an item belongs to. Wearables say it outright; the whole-match cosmetics

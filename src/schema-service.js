@@ -11,6 +11,7 @@ const path = require('path');
 const patcher = require('./patcher');
 const schema = require('./schema');
 const itemBuilder = require('./item-builder');
+const { t } = require('./i18n');
 
 /**
  * @param {object} deps
@@ -288,11 +289,12 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
   /**
    * Every slot that has both a free "base item" and something to put on it, in one call.
    * The list comes from the installed game, so a slot Valve adds later appears by itself.
-   * @returns {{ slots: Array<{slot, base, picked, options}> }}
+   * With them, the item builder's sets (item-builder.js itemSets).
+   * @returns {{ slots: Array<{slot, base, picked, options}>, sets: Array<object> }}
    */
   function cosmeticSlots() {
     const game = gamePath();
-    if (!game) return { slots: [] };
+    if (!game) return { slots: [], sets: [] };
     try {
       const text = vanilla();
       const bases = schema.listItems(text).filter((i) => i.baseitem);
@@ -308,6 +310,7 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
         slots.push({ slot, base: base.id, picked: rec ? rec.itemId : null, recordId: rec ? rec.id : null, options });
       }
       const itemSlots = itemBuilder.itemSlots(text);
+      const sets = itemBuilder.itemSets(text, itemSlots);
       const effects = itemBuilder.itemEffects();
       if (itemSlots.length && effects.length) {
         const entries = itemSlots.map((it) => {
@@ -324,9 +327,9 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
         if (at === -1) slots.unshift(...entries);
         else slots.splice(at + 1, 0, ...entries);
       }
-      return { slots };
+      return { slots, sets };
     } catch (err) {
-      return { slots: [], error: String(err.message || err) };
+      return { slots: [], sets: [], error: String(err.message || err) };
     }
   }
 
@@ -335,9 +338,10 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
    * that slot (never deletes it: a preset saved earlier may still point at that record,
    * exactly like disabling a regular mod doesn't erase it) and creates a fresh record — or
    * reactivates a dormant one for that same item, so flipping back and forth between two
-   * looks doesn't spawn a new row each time. Returns the now-live record.
+   * looks doesn't spawn a new row each time. Returns the now-live record. `write: false` leaves
+   * the game alone, for a caller that picks several and writes once (pickSet).
    */
-  function pickCosmetic(slot, itemId, itemName, effectId = null) {
+  function pickCosmetic(slot, itemId, itemName, effectId = null, { write = true } = {}) {
     const id = String(itemId);
     const name = itemName || id;
     const isItem = slot === 'items' || String(slot || '').startsWith('item:');
@@ -351,7 +355,7 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
     // told nobody which was which. One row per item, its effects a property of it.
     if (isItem && live && live.itemId === id) {
       library.update(live.id, { name, effectId: effect || undefined });
-      refresh();
+      if (write) refresh();
       return library.find(live.id);
     }
 
@@ -362,8 +366,27 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
       ? library.update(dormant.id, { name, enabled: true, effectId: effect || undefined })
       : library.add({ name, categoryId: 'cosmetic', styleLabel: null, fileRef: null, preview: null, files: [] });
     if (!dormant) library.update(rec.id, { slot, itemId: id, ...(effect ? { effectId: effect } : {}) });
-    refresh();
+    if (write) refresh();
     return library.find(rec.id);
+  }
+
+  /**
+   * Put a whole set on: each piece the builder has a slot for takes that slot, a row of its own
+   * in My mods, and the game is written once. A set brings no effects, and a piece that is on
+   * already keeps the ones it has (Misha, 2026-09-24).
+   */
+  function pickSet(setId) {
+    const set = itemBuilder.itemSets(vanilla()).find((x) => x.id === String(setId));
+    if (!set) throw new Error(t('Набор не найден'));
+    let applied = 0;
+    for (const p of set.pieces) {
+      if (!p.fits || !p.slot) continue;
+      const live = cosmeticRecordFor(p.slot);
+      pickCosmetic(p.slot, p.itemId, p.name, live && live.itemId === p.itemId ? live.effectId : '', { write: false });
+      applied++;
+    }
+    refresh();
+    return { applied, pieces: set.pieces.length };
   }
 
   // One-time move of picks that used to live in settings.json into library records, from
@@ -386,7 +409,7 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
 
   return {
     backupDir, patches, refresh, heal, setEnabled, harvest, split, migrate, state,
-    cosmeticSlots, pickCosmetic, migrateCosmeticSettings,
+    cosmeticSlots, pickCosmetic, pickSet, migrateCosmeticSettings,
   };
 }
 

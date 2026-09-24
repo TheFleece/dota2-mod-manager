@@ -26,44 +26,44 @@ const {
 const ITEM_EFFECTS = [
   {
     id: 'fire',
-    name: 'Fire',
+    name: 'Огонь',
     type: 'particle_create',
     modifier: 'particles/econ/courier/courier_trail_lava/courier_trail_lava.vpcf',
   },
   {
     id: 'lightnings',
-    name: 'Lightnings',
+    name: 'Молнии',
     type: 'particle_create',
     modifier: 'particles/econ/courier/courier_platinum_roshan/platinum_roshan_ambient.vpcf',
   },
   {
     id: 'frostbloom',
-    name: 'Frostbloom',
+    name: 'Иней',
     type: 'particle_create',
     modifier: 'particles/econ/seasonal/seasonal_ambient_silver.vpcf',
   },
   {
     id: 'snow',
-    name: 'Snow',
+    name: 'Снег',
     type: 'particle_create',
     modifier: 'particles/econ/seasonal/seasonal_ambient_snow.vpcf',
   },
   
   {
     id: 'bubbles',
-    name: 'Bubbles',
+    name: 'Пузыри',
     type: 'particle_create',
     modifier: 'particles/econ/seasonal/seasonal_ambient_bubbles.vpcf',
   },
   {
     id: 'sand-storm',
-    name: 'Sand Storm',
+    name: 'Песчаная буря',
     type: 'particle_create',
     modifier: 'particles/econ/courier/courier_roshan_desert_sands/baby_roshan_desert_sands_ambient.vpcf',
   },
   {
     id: 'ghost',
-    name: 'Ghost',
+    name: 'Призрак',
     type: 'particle_create',
     modifier: 'particles/econ/courier/courier_f2p/courier_f2p_10th_anniversary_ambient.vpcf',
   },
@@ -97,13 +97,13 @@ const ITEM_SLOT_LABEL = {
   shoulder: 'плечи', shoulders: 'плечи', neck: 'шея', belt: 'пояс', arm: 'руки', arms: 'руки', gloves: 'перчатки', back: 'спина',
   wings: 'крылья', tail: 'хвост', legs: 'ноги', mount: 'ездовое', costume: 'костюм', misc: 'разное', ambient: 'эффекты', ambient_effects: 'эффекты',
   ability1: 'способность 1', ability2: 'способность 2', ability3: 'способность 3', ability4: 'способность 4', ability_ultimate: 'ультимейт',
-  summon: 'призыв', voice: 'голос', shapeshift: 'форма', hero_base: 'база героя', bundle: 'набор',
+  summon: 'призыв', voice: 'голос', shapeshift: 'форма', hero_base: 'база героя',
 };
 
 const ITEM_SLOT_ORDER = [
   'head', 'body_head', 'hair', 'neck', 'shoulder', 'shoulders', 'arm', 'arms', 'gloves', 'back', 'weapon', 'offhand', 'offhand_weapon',
   'shield', 'armor', 'belt', 'legs', 'mount', 'wings', 'tail', 'costume', 'ambient', 'ambient_effects', 'ability1', 'ability2', 'ability3',
-  'ability4', 'ability_ultimate', 'summon', 'voice', 'shapeshift', 'misc', 'bundle',
+  'ability4', 'ability_ultimate', 'summon', 'voice', 'shapeshift', 'misc',
 ];
 
 function canonicalHeroId(hero) {
@@ -162,13 +162,13 @@ function itemSlotIcon(slot) {
     shoulder: 'accessibility_new', shoulders: 'accessibility_new', belt: 'checkroom', arm: 'front_hand', arms: 'front_hand', gloves: 'front_hand', back: 'checkroom',
     wings: 'flutter_dash', tail: 'gesture', legs: 'directions_run', mount: 'pets', costume: 'checkroom', ambient: 'auto_awesome', ambient_effects: 'auto_awesome',
     ability1: 'auto_fix_high', ability2: 'auto_fix_high', ability3: 'auto_fix_high', ability4: 'auto_fix_high', ability_ultimate: 'flash_on',
-    summon: 'pets', voice: 'mic', shapeshift: 'pets', misc: 'checkroom', bundle: 'inventory_2',
+    summon: 'pets', voice: 'mic', shapeshift: 'pets', misc: 'checkroom',
   })[canonicalItemSlot(slot)] || 'checkroom';
 }
 
 /** The effect variants the synthetic cosmetics/items picker can apply. */
 function itemEffects() {
-  return [{ id: '', name: t('Без эффекта') }, ...ITEM_EFFECTS.map(({ id, name }) => ({ id, name }))];
+  return [{ id: '', name: t('Без эффекта') }, ...ITEM_EFFECTS.map(({ id, name }) => ({ id, name: t(name) }))];
 }
 
 /** Hero item slots built from real default_item entries, with one donor list per hero part. */
@@ -222,42 +222,6 @@ function itemSlots(text) {
     target.options.push({ id: item.id, name: toUtf8(item.name) });
   }
 
-  // Add bundle slots for heroes
-  for (const item of items) {
-    if (item.prefab !== 'bundle' || !item.bundleItems || item.bundleItems.length === 0) continue;
-    const heroes = heroesOf(item);
-    if (!heroes.length || hiddenItemHeroes(heroes)) continue;
-
-    // Check if bundle contains items with models (not just loading screens)
-    const bundleHasModels = item.bundleItems.some(bundleItemName => {
-      const bundleItem = items.find(i => i.name === bundleItemName);
-      return bundleItem && (bundleItem.model || bundleItem.hasVisuals);
-    });
-
-    if (!bundleHasModels) continue;
-
-    const heroIds = heroes.map(canonicalHeroId);
-    const slotId = itemSlotId(heroIds, 'bundle');
-    let bundleSlot = slots.get(slotId);
-    if (!bundleSlot) {
-      bundleSlot = {
-        slot: slotId,
-        kind: 'item-effect',
-        base: item.id,
-        targetId: item.id,
-        equipSlot: 'bundle',
-        heroIds,
-        heroLabel: heroIds.map((id) => heroDisplayName(canonicalHeroId(id))).join(' / '),
-        slotLabel: slotDisplayLabel('bundle'),
-        label: itemSlotLabel(heroIds, 'bundle'),
-        icon: itemSlotIcon('bundle'),
-        options: [],
-      };
-      slots.set(slotId, bundleSlot);
-    }
-    bundleSlot.options.push({ id: item.id, name: toUtf8(item.name) });
-  }
-
   const order = new Map(ITEM_SLOT_ORDER.map((slot, i) => [slot, i]));
   return [...slots.values()]
     .filter((s) => s.options.length)
@@ -267,6 +231,64 @@ function itemSlots(text) {
       if (byHero && a.heroIds.join(',') !== b.heroIds.join(',')) return byHero;
       return (order.get(a.equipSlot) ?? 999) - (order.get(b.equipSlot) ?? 999) || a.label.localeCompare(b.label);
     });
+}
+
+/**
+ * A hero's sets as the builder puts them on: every wearable of the set that has a slot in the
+ * builder, in one write (schema-service pickSet).
+ *
+ * A set used to be one more slot, "bundle", put on as if it were one item. It is several, with
+ * no stock item to stand in for, so on the game of 2026-09-24 1760 of its 1971 choices did not
+ * build and the other 211 put a model-less block over whichever stock item came first.
+ *
+ * Only hero items are listed. A set's loading screen, cursor, HUD, ward, announcer or taunt
+ * has a tab of its own or is not the app's to set, and nobody puts one on with a set. A hero
+ * item the builder leaves alone (an arcana, a persona) is listed as not fitting, with why: it
+ * is part of what the set looks like. A set with nothing to put on is left out, and so is a store
+ * bundle of several sets ("Bounty Hunter's Big Bundle": 22 items, 7 slots): more of its pieces
+ * want a taken slot than fit, and the first of each would dress the hero in a mix of sets that
+ * are each listed on their own anyway. Valve's "DO NOT USE" is left out as well.
+ * @param {string} text  items_game
+ * @param {Array<{ slot: string, slotLabel: string, options: Array<{ id: string }> }>} [slots]
+ *   itemSlots(text), when the caller has it already
+ */
+function itemSets(text, slots = itemSlots(text)) {
+  const items = listItems(text);
+  const byName = new Map(items.map((i) => [i.name, i]));
+  const home = new Map(); // wearable id -> its slot in the builder
+  for (const s of slots) for (const o of s.options) home.set(o.id, s);
+  const out = [];
+  for (const set of items) {
+    if (set.prefab !== 'bundle' || !set.bundleItems || !set.bundleItems.length || /do not use/i.test(set.name)) continue;
+    const heroes = itemHeroes(text, set);
+    if (!heroes.length || hiddenItemHeroes(heroes)) continue;
+    const pieces = [];
+    const taken = new Set();
+    let collide = 0;
+    for (const name of set.bundleItems) {
+      const it = byName.get(name);
+      if (!it || it.prefab !== 'wearable') continue; // not a hero item
+      const at = home.get(it.id);
+      if (at && !taken.has(at.slot)) {
+        taken.add(at.slot);
+        pieces.push({ name: toUtf8(it.name), itemId: it.id, fits: true, slot: at.slot, slotLabel: at.slotLabel });
+        continue;
+      }
+      if (at) collide++;
+      const reason = at ? t('второй предмет на тот же слот')
+        : isArcanaPersonaItem(it) ? t('аркана или персона: конструктор их не меняет')
+          : t('для него нет слота в конструкторе');
+      pieces.push({ name: toUtf8(it.name), itemId: it.id, fits: false, reason });
+    }
+    const fit = pieces.filter((p) => p.fits).length;
+    if (!fit || collide > fit) continue;
+    const heroIds = heroes.map(canonicalHeroId);
+    out.push({
+      id: set.id, name: toUtf8(set.name), heroIds, fit, pieces,
+      heroLabel: heroIds.map((id) => heroDisplayName(id)).join(' / '),
+    });
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** Wearable items with visuals and a matching stock default_item, offered under cosmetics/items. */
@@ -511,6 +533,7 @@ function gameAssetEntries(gamePath, assetCopies) {
 module.exports = {
   effectKey,
   itemEffects,
+  itemSets,
   itemOptions,
   itemSlots,
   defaultItemForWearable,

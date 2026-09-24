@@ -168,10 +168,14 @@ function signaturesFor(branchText) {
 }
 
 /* What the item builder reads out of pak01 besides the table, copied from the real game so the
- * sandbox can run it: every hero's two portraits (its hub shows them), and for a few wearables the
- * model and particles it copies plus the effect particles it points at. About 3 MB. Only these,
- * rather than the whole archive: the real one is tens of gigabytes. */
-const BUILDER_SAMPLE = ['Blightfall - Head', 'Blightfall - Shoulder', 'Blightfall - Back', 'Compendium Rider of Avarice Helmet'];
+ * sandbox can run it: every hero's two portraits (its hub shows them), and for a whole set
+ * (Blightfall, so "Equip the whole set" builds every piece) and one more wearable the model and
+ * particles it copies plus the effect particles it points at. A few MB. Only these, rather than
+ * the whole archive: the real one is tens of gigabytes. */
+const BUILDER_SAMPLE = [
+  'Blightfall - Head', 'Blightfall - Shoulder', 'Blightfall - Back', 'Blightfall - Weapon', 'Blightfall - Mount',
+  'Compendium Rider of Avarice Helmet',
+];
 
 function builderAssets(real, schemaText) {
   const { openVpkIndex } = require('../src/vpk.js');

@@ -1269,10 +1269,7 @@ function drawModal() {
   const favBtn = $('#modalContent .fav-btn');
   if (favBtn) bindFavButton(favBtn);
 
-  const previewPlay = $('#previewPlayBtn');
-  if (previewPlay) {
-    previewPlay.addEventListener('click', () => openPlayer(playable, mod.name));
-  }
+  $('#previewPlayBtn')?.addEventListener('click', () => openPlayer(playable, mod.name));
 
   bindCreditChips(document, credits, (url) => window.api.misc.openExternal(url));
 
@@ -1318,10 +1315,7 @@ function drawModal() {
     });
   });
 
-  const installBtn = $('#installBtn');
-  if (installBtn) {
-    installBtn.addEventListener('click', () => doInstall(categoryId, mod, styleLabel, fileRef, cur.preview || mod.preview));
-  }
+  $('#installBtn')?.addEventListener('click', () => doInstall(categoryId, mod, styleLabel, fileRef, cur.preview || mod.preview));
   const uninstallBtn = $('#uninstallBtn');
   if (uninstallBtn) {
     uninstallBtn.addEventListener('click', async () => {
@@ -1606,7 +1600,12 @@ async function pickCosmetic(slot, o, remove, effectId = '') {
   }
   installing.delete(k);
   if (r.error) { toast(r.error, 'error'); if (cosModalState) drawCosmeticModal(); redrawItemSlotModal(); return; }
-  toast(remove ? L`Вернули как в игре` : L`Выбрано: ${o.name}`);
+  toast(remove ? L`Вернули как в игре` : isItemCosmeticSlot(slot) ? L`Надето: ${o.name}` : L`Выбрано: ${o.name}`);
+  await afterCosmeticPick();
+}
+
+/** Everything a pick shows on: My mods' index, the badges, the rail's dot, the open window. */
+async function afterCosmeticPick() {
   await refreshInstalledIndex();
   refreshCosmeticBadges();
   if (state.view === 'catalog') renderRail(); // the slot's "picked" dot
@@ -1714,5 +1713,5 @@ export async function loadCatalog(force = false) {
 }
 
 // The item builder lives in views/item-builder.js and reaches the catalog only through this.
-bindItemBuilder({ slotData, cosmeticSlotList, pickCosmetic, openModal, closeModal, filters: () => filters,
+bindItemBuilder({ slotData, cosmeticSlotList, pickCosmetic, afterPick: afterCosmeticPick, openModal, closeModal, filters: () => filters,
   search: () => cosSearch, setSearch: (v) => { cosSearch = v; }, resetModalState: () => { modalState = null; cosModalState = null; } });

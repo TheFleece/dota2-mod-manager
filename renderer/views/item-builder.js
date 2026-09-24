@@ -1,6 +1,7 @@
 /* The item builder in the catalog: a hero's items, each built from one of its wearables with an
- * effect on top. The hub lists heroes, a hero opens its item slots, and a slot opens the picker of
- * wearables and effects. What a pick does to the game is src/item-builder.js; this is the screen.
+ * effect on top. The hub lists heroes, a hero opens its item slots and its sets, and a slot opens
+ * the picker of wearables and effects. What a pick does to the game is src/item-builder.js; this
+ * is the screen.
  *
  * Written by h6rd (https://github.com/h6rd) in #117, developed further with TheFleece
  * (https://github.com/TheFleece).
@@ -21,6 +22,7 @@ import { pickedIn, refreshCosmeticSlots } from '../core/installed.js';
 import { pane } from '../core/router.js';
 import { esc, plural } from '../ui/format.js';
 import { paint } from '../ui/transitions.js';
+import { toast } from '../ui/toast.js';
 import { cosmeticIcon, loadCosmeticIcons, paintCosmeticIcons, watchCosmeticIcons } from '../ui/cosmetic-icons.js';
 
 const viewRoot = pane('catalog');
@@ -29,9 +31,9 @@ const viewRoot = pane('catalog');
 let cat = null;
 
 /**
- * @param {{ slotData: Function, cosmeticSlotList: Function, pickCosmetic: Function, openModal: Function,
- *   closeModal: Function, resetModalState: Function, filters: () => object, search: () => string,
- *   setSearch: (v: string) => void }} ctx
+ * @param {{ slotData: Function, cosmeticSlotList: Function, pickCosmetic: Function, afterPick: Function,
+ *   openModal: Function, closeModal: Function, resetModalState: Function, filters: () => object,
+ *   search: () => string, setSearch: (v: string) => void }} ctx
  */
 export function bindItemBuilder(ctx) {
   cat = ctx;
@@ -55,6 +57,9 @@ export function cosmeticFavValue(slot, o) {
 
 let itemSlotModalState = null;
 
+/** The set window on show, or the list of a hero's sets: { set, back, busy } / { list, back, query }. */
+let itemSetState = null;
+
 let itemSlotPickerIo = null;
 
 let itemHubIo = null;
@@ -66,21 +71,29 @@ function cosmeticThumbSpanHtml(name, fallbackIcon, cls = 'card-thumb') {
     : `<div class="noimg"><span class="ms">${esc(fallbackIcon || 'checkroom')}</span></div>`}</span>`;
 }
 
-// The card the border marks is the one chosen here; "on" is said only of what the game shows,
-// the one live pick or the stock item when there is none. One word for one state: "Выбрано"
-// and "Установлено" named the same card two ways before.
-function itemSlotOptionCardHtml(slot, o, i, selectedId, live) {
-  const selected = o.id === selectedId;
+/** The effects of a pick in the order the slot offers them, as one string: 'fire,snow'. */
+function effectKey(data, ids) {
+  const want = new Set(ids || []);
+  return (data.effects || []).map((fx) => fx.id).filter((id) => id && want.has(id)).join(',');
+}
+
+/** A record's effects as a list (a record keeps them comma separated, src/item-builder.js effectKey). */
+function liveEffects(live) {
+  return live?.effectId ? String(live.effectId).split(',').filter(Boolean) : [];
+}
+
+// The card the border marks is the one chosen here; "Надето" is said only of what the game shows,
+// the one live pick or the stock item when there is none.
+function itemSlotOptionCardHtml(slot, o, i) {
   const isNone = o.id === '';
-  const on = isNone ? !live : live?.itemId === o.id;
-  const uniqueTags = [...new Set((o.tags || []).map((t) => String(t).toLowerCase()))];
-  return `<button class="card item-pick-card ${selected ? 'picked' : ''} ${on ? 'installed' : ''}" data-item-option="${esc(o.id)}" aria-pressed="${selected}" style="--i:${Math.min(i, 24)}">
+  const tags = [...new Set((o.tags || []).map((t) => String(t).toLowerCase()))].join(', ');
+  return `<button class="card item-pick-card" data-item-option="${esc(o.id)}" data-tags="${esc(tags)}" aria-pressed="false" style="--i:${Math.min(i, 24)}">
     <div class="card-media">
       ${isNone ? '<div class="noimg"><span class="ms">block</span></div>' : cosmeticThumbSpanHtml(o.name, cat.slotData(slot)?.icon || 'checkroom')}
     </div>
     <div class="card-body">
       <div class="card-name">${esc(o.name)}</div>
-      <div class="card-meta"><span>${on ? L`Надето` : uniqueTags.length ? esc(uniqueTags.join(', ')) : '&nbsp;'}</span></div>
+      <div class="card-meta"><span></span></div>
     </div>
   </button>`;
 }
@@ -99,6 +112,24 @@ function itemSlotTileHtml(s) {
   </button>`;
 }
 
+/** The header of every builder window: the way back, the title, what it is, the close button. */
+function builderHeadHtml(back, title, sub) {
+  return `<div class="modal-title-row item-picker-head">
+        <div>
+          ${back ? `<button class="btn btn-sm btn-ghost item-back" id="itemBackBtn"><span class="ms">arrow_back</span>${esc(back)}</button>` : ''}
+          <div class="modal-title">${esc(title)}</div>
+          <div class="modal-sub">${sub}</div>
+        </div>
+        <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
+      </div>`;
+}
+
+/** What goes in the bar along the window's bottom: what it will put on, and the one button that does it. */
+function builderFootHtml(summary, act) {
+  return `<div class="item-picker-sum">${summary}</div>
+        <button class="btn btn-primary" id="itemApplyBtn" ${act.off ? 'disabled' : ''}><span class="ms">${act.icon}</span>${esc(act.label)}</button>`;
+}
+
 /**
  * @param {string} slot
  * @param {Element|null} from  the card it grows out of
@@ -110,168 +141,158 @@ export function openItemSlotModal(slot, from, { query = '', back = null } = {}) 
   const data = cat.slotData(slot);
   if (!data) return;
   const live = pickedIn(slot);
-  const selectedId = live?.itemId || '';
-  // a record keeps its effects as one comma separated string (src/item-builder.js effectKey)
-  const selectedEffects = live?.effectId ? String(live.effectId).split(',').filter(Boolean) : [];
-  itemSlotModalState = { slot, selectedId, effectIds: selectedEffects, query, back };
+  itemSlotModalState = { slot, selectedId: live?.itemId || '', effectIds: liveEffects(live), query, back, busy: false };
+  itemSetState = null;
   cat.resetModalState();
   cat.openModal(drawItemSlotModal, from);
   const firstVisible = data.options.slice(0, 36).map((o) => o.name).filter(Boolean);
   loadCosmeticIcons(firstVisible, () => {
-    if (itemSlotModalState?.slot === slot) {
-      paintCosmeticIcons($('#itemPickGrid'));
-      paintCosmeticIcons($('#modalContent'));
-    }
+    if (itemSlotModalState?.slot === slot) paintCosmeticIcons($('#modalContent'));
   });
 }
 
+/**
+ * What the slot window's button does with what is chosen in it. Nothing reaches the game until it
+ * is pressed (Misha, 2026-09-24): a pick used to be written on every click, and choosing three
+ * effects meant three writes and three toasts.
+ */
+function stagedItemAction(data, live, st) {
+  if (st.busy) return { label: L`Надеваю…`, icon: 'hourglass_top', off: true };
+  if (!st.selectedId) {
+    return live ? { label: L`Вернуть стандартный`, icon: 'undo', remove: true } : { label: L`Надето`, icon: 'check', off: true };
+  }
+  if (live?.itemId !== st.selectedId) return { label: L`Надеть`, icon: 'checkroom' };
+  return effectKey(data, st.effectIds) === effectKey(data, liveEffects(live))
+    ? { label: L`Надето`, icon: 'check', off: true }
+    : { label: L`Сохранить эффекты`, icon: 'auto_awesome' };
+}
+
 function drawItemSlotModal() {
-  const { slot, query = '' } = itemSlotModalState;
-  const data = cat.slotData(slot);
+  const st = itemSlotModalState;
+  const data = cat.slotData(st.slot);
   if (!data) return;
-  const live = pickedIn(slot);
-  const slotLabel = data.label || catName(COSMETIC_PREFIX + slot);
-  const effectOptions = (data.effects || []).filter((fx) => {
-    const name = (fx.name || '').toLowerCase();
-    const id = (fx.id || '').toLowerCase();
-    return name !== 'no effect' && name !== 'none' && id !== 'no effect' && id !== 'none' && id !== '';
-  });
-  const selectedEffects = Array.isArray(itemSlotModalState.effectIds) ? itemSlotModalState.effectIds : [];
-
-  // the hero's own item, first: choosing it is how a pick comes off
-  const noneOption = { id: '', name: L`Стандартный`, tags: [] };
-  const allOptions = [noneOption, ...data.options];
-
-  const q = query.trim().toLowerCase();
-  const options = q ? allOptions.filter((o) => o.name.toLowerCase().includes(q)) : allOptions;
-  const selected = allOptions.find((o) => o.id === itemSlotModalState.selectedId) || allOptions[0];
-  const hasItem = !!selected && selected.id !== '';
-  const back = itemSlotModalState.back;
+  const effectOptions = (data.effects || []).filter((fx) => fx.id);
+  const back = st.back;
 
   $('#modalContent').classList.add('item-picker-modal');
   $('#modalContent').innerHTML = `
     <div class="modal-body item-picker-body">
-      <div class="modal-title-row item-picker-head">
-        <div>
-          ${back ? `<button class="btn btn-sm btn-ghost item-back" id="itemBackBtn"><span class="ms">arrow_back</span>${esc(back.heroName)}</button>` : ''}
-          <div class="modal-title">${esc(slotLabel)}</div>
-          <div class="modal-sub">
-            <span>${L`вид для стандартного предмета`}</span>
-            <span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>
-          </div>
-        </div>
-        <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
-      </div>
-      <div class="tb-search item-picker-search"><span class="ms">search</span><input type="text" id="itemSlotSearch" placeholder="${L`Поиск…`}" value="${esc(query)}" autocomplete="off"></div>
-      <div class="item-pick-grid" id="itemPickGrid">
-        ${options.length
-          ? options.map((o, i) => itemSlotOptionCardHtml(slot, o, i, selected?.id || '', live)).join('')
-          : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
-      </div>
+      ${builderHeadHtml(back?.heroName, data.label || catName(COSMETIC_PREFIX + st.slot),
+        `<span>${L`вид для стандартного предмета`}</span><span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>`)}
+      <div class="tb-search item-picker-search"><span class="ms">search</span><input type="text" id="itemSlotSearch" placeholder="${L`Поиск…`}" value="${esc(st.query || '')}" autocomplete="off"></div>
+      <div class="item-pick-grid" id="itemPickGrid"></div>
       ${effectOptions.length ? `
         <div class="section-h item-fx-head"><span class="ms">auto_awesome</span>${L`Эффекты`}</div>
-        <div class="text-meta item-fx-hint">${hasItem
-          ? L`Можно выбрать несколько. Frostbloom и Snow держатся не на всех моделях.`
-          : L`Эффект добавляется к предмету: сначала выбери его выше.`}</div>
+        <div class="text-meta item-fx-hint" id="itemFxHint"></div>
         <div class="item-pick-grid" id="effectGrid">
-          <button class="card item-pick-card ${selectedEffects.length === 0 ? 'picked' : ''}" data-effect-none="true" aria-pressed="${selectedEffects.length === 0}" style="--i:0" ${hasItem ? '' : 'disabled'}>
+          <button class="card item-pick-card" data-effect-none="true" style="--i:0">
             <div class="card-media"><div class="noimg"><span class="ms">block</span></div></div>
             <div class="card-body"><div class="card-name">${L`Без эффектов`}</div></div>
           </button>
           ${effectOptions.map((fx, idx) => {
-            const isSelected = selectedEffects.includes(fx.id);
-            const effectIconPath = getEffectIconPath(fx.id);
-            return `<button class="card item-pick-card ${isSelected ? 'picked' : ''}" data-effect-id="${esc(fx.id)}" aria-pressed="${isSelected}" style="--i:${idx + 1}" ${hasItem ? '' : 'disabled'}>
+            const picture = getEffectIconPath(fx.id);
+            return `<button class="card item-pick-card" data-effect-id="${esc(fx.id)}" style="--i:${idx + 1}">
               <div class="card-media">
-                ${effectIconPath
-                  ? `<span class="card-thumb"><img src="${esc(effectIconPath)}" alt="" loading="lazy"></span>`
-                  : '<div class="noimg"><span class="ms">auto_awesome</span></div>'}
+                ${picture ? `<span class="card-thumb"><img src="${esc(picture)}" alt="" loading="lazy"></span>` : '<div class="noimg"><span class="ms">auto_awesome</span></div>'}
               </div>
               <div class="card-body"><div class="card-name">${esc(fx.name)}</div></div>
             </button>`;
           }).join('')}
         </div>` : ''}
       <div class="modal-note">${L`Вид подставляется в схему предметов игры — стандартный предмет просто рисуется как выбранный. Файлы модов это не трогает, и видно только тебе.`}</div>
+      <div class="item-picker-foot" id="itemPickFoot"></div>
     </div>`;
 
   $('#itemBackBtn')?.addEventListener('click', () => openItemHeroModal(back.heroName, back.slots, null));
-  itemSlotPickerIo?.disconnect();
-  itemSlotPickerIo = null;
   $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
-  $('#itemSlotSearch')?.addEventListener('input', (e) => {
-    itemSlotModalState.query = e.target.value;
-    drawItemSlotModal();
+  $('#itemSlotSearch').addEventListener('input', (e) => {
+    st.query = e.target.value;
+    paintItemOptions();
+    syncItemSlotModal();
   });
-
-  // Handle effect card clicks (multi-select)
-  const effectGrid = $('#effectGrid');
-
-  // Handle "No effects" card
-  effectGrid?.querySelector('[data-effect-none]')?.addEventListener('click', () => {
-    itemSlotModalState.effectIds = [];
-    drawItemSlotModal();
-    // Persist immediately if there's a live item pick
-    if (live && itemSlotModalState.selectedId) {
-      const pick = data.options.find((o) => o.id === itemSlotModalState.selectedId) || null;
-      if (pick) {
-        cat.pickCosmetic(slot, pick, false, '');
-      }
-    }
+  // one listener per grid: the options grid is drawn again as the search changes
+  $('#itemPickGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-item-option]');
+    if (!card || st.busy) return;
+    st.selectedId = card.dataset.itemOption;
+    if (!st.selectedId) st.effectIds = []; // the stock item takes no effects
+    syncItemSlotModal();
   });
+  $('#effectGrid')?.addEventListener('click', (e) => {
+    const card = e.target.closest('[data-effect-id], [data-effect-none]');
+    if (!card || st.busy || !st.selectedId) return;
+    const id = card.dataset.effectId;
+    st.effectIds = !id ? [] : st.effectIds.includes(id) ? st.effectIds.filter((x) => x !== id) : [...st.effectIds, id];
+    syncItemSlotModal();
+  });
+  paintItemOptions();
+  syncItemSlotModal();
+}
 
-  // Handle individual effect cards
-  effectGrid?.querySelectorAll('[data-effect-id]').forEach((card) => {
-    card.addEventListener('click', () => {
-      const effectId = card.dataset.effectId;
-      const currentEffects = itemSlotModalState.effectIds || [];
-      if (currentEffects.includes(effectId)) {
-        itemSlotModalState.effectIds = currentEffects.filter((id) => id !== effectId);
-      } else {
-        itemSlotModalState.effectIds = [...currentEffects, effectId];
-      }
-      drawItemSlotModal();
-      // Persist immediately if there's a live item pick
-      if (live && itemSlotModalState.selectedId) {
-        const pick = data.options.find((o) => o.id === itemSlotModalState.selectedId) || null;
-        if (pick) {
-          cat.pickCosmetic(slot, pick, false, itemSlotModalState.effectIds.join(','));
-        }
-      }
+/** The options the search leaves, the hero's own item first: choosing it is how a pick comes off. */
+function paintItemOptions() {
+  const st = itemSlotModalState;
+  const data = cat.slotData(st.slot);
+  const all = [{ id: '', name: L`Стандартный`, tags: [] }, ...data.options];
+  const q = String(st.query || '').trim().toLowerCase();
+  const options = q ? all.filter((o) => o.name.toLowerCase().includes(q)) : all;
+  const grid = $('#itemPickGrid');
+  grid.innerHTML = options.length
+    ? options.map((o, i) => itemSlotOptionCardHtml(st.slot, o, i)).join('')
+    : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
+  itemSlotPickerIo?.disconnect();
+  paintCosmeticIcons(grid);
+  itemSlotPickerIo = watchCosmeticIcons(grid, null);
+}
+
+// What is chosen and what is on, marked in place: drawing the cards again would play their
+// entrance once more on every click.
+function syncItemSlotModal() {
+  const st = itemSlotModalState;
+  const data = cat.slotData(st.slot);
+  if (!data || !$('#itemPickFoot')) return;
+  const live = pickedIn(st.slot);
+  const hasItem = !!st.selectedId;
+  $('#itemPickGrid').querySelectorAll('[data-item-option]').forEach((card) => {
+    const id = card.dataset.itemOption;
+    const on = id ? live?.itemId === id : !live;
+    card.classList.toggle('picked', id === st.selectedId);
+    card.classList.toggle('installed', on);
+    card.setAttribute('aria-pressed', String(id === st.selectedId));
+    card.querySelector('.card-meta span').innerHTML = on ? L`Надето` : esc(card.dataset.tags) || '&nbsp;';
+  });
+  const fx = $('#effectGrid');
+  if (fx) {
+    fx.querySelectorAll('[data-effect-id], [data-effect-none]').forEach((card) => {
+      const chosen = card.dataset.effectId ? st.effectIds.includes(card.dataset.effectId) : !st.effectIds.length;
+      card.classList.toggle('picked', hasItem && chosen);
+      card.setAttribute('aria-pressed', String(hasItem && chosen));
+      card.disabled = !hasItem;
     });
-  });
+    $('#itemFxHint').textContent = hasItem
+      ? L`Можно выбрать несколько. Иней и Снег держатся не на всех моделях.`
+      : L`Эффект добавляется к предмету: сначала выбери его выше.`;
+  }
+  const chosen = hasItem ? data.options.find((o) => o.id === st.selectedId) : null;
+  const names = (data.effects || []).filter((e) => e.id && st.effectIds.includes(e.id)).map((e) => e.name);
+  const summary = `<b>${esc(chosen ? chosen.name : L`Стандартный`)}</b>${chosen && names.length ? ` · ${esc(names.join(', '))}` : ''}`;
+  const act = stagedItemAction(data, live, st);
+  $('#itemPickFoot').innerHTML = builderFootHtml(summary, act);
+  $('#itemApplyBtn').addEventListener('click', () => applyItemSlot(act, chosen));
+}
 
-  $('#itemPickGrid')?.querySelectorAll('[data-item-option]').forEach((card) => {
-    card.addEventListener('click', () => {
-      const pickId = card.dataset.itemOption;
-
-      // Handle "None" option - remove the slot and clear effects
-      if (pickId === '') {
-        itemSlotModalState.selectedId = '';
-        itemSlotModalState.effectIds = [];
-        drawItemSlotModal(); // Redraw to clear selected effects visually
-        if (live) {
-          cat.pickCosmetic(slot, { id: '', name: L`Стандартный` }, true, '');
-        }
-        return;
-      }
-
-      const pick = data.options.find((o) => o.id === pickId) || null;
-      if (!pick) return;
-      itemSlotModalState.selectedId = pickId;
-      const nextEffectIds = itemSlotModalState.effectIds || [];
-      const alreadyLive = live?.itemId === pick.id && JSON.stringify(String(live.effectId || '').split(',').filter(Boolean).sort()) === JSON.stringify([...nextEffectIds].sort());
-      if (alreadyLive) {
-        drawItemSlotModal();
-        return;
-      }
-      loadCosmeticIcons([pick.name], () => {
-        if (itemSlotModalState?.slot === slot) paintCosmeticIcons($('#itemPickGrid'));
-      });
-      cat.pickCosmetic(slot, pick, false, nextEffectIds.join(','));
-    });
-  });
-  paintCosmeticIcons($('#itemPickGrid'));
-  itemSlotPickerIo = watchCosmeticIcons($('#itemPickGrid'), null);
+async function applyItemSlot(act, chosen) {
+  const st = itemSlotModalState;
+  if (!st || act.off || (!act.remove && !chosen)) return;
+  const data = cat.slotData(st.slot);
+  st.busy = true;
+  syncItemSlotModal();
+  try {
+    await cat.pickCosmetic(st.slot, act.remove ? { id: '', name: L`Стандартный` } : chosen, !!act.remove, effectKey(data, st.effectIds));
+  } finally {
+    st.busy = false;
+    if (itemSlotModalState === st) syncItemSlotModal();
+  }
 }
 
 export async function renderItemCosmeticHub(restoreScrollTop = null) {
@@ -393,21 +414,42 @@ function itemHeroCardHtml(hero, slots, i) {
     </div>`;
 }
 
+// ---------- sets: every piece of one, put on in one write (src/item-builder.js itemSets) ----------
+
+function heroSets(heroName) {
+  return (state.cosmeticSets || []).filter((s) => s.heroLabel === heroName);
+}
+
+/** Each piece the builder puts on is on already, whatever effects it carries. */
+function setIsOn(set) {
+  return set.pieces.every((p) => !p.fits || pickedIn(p.slot)?.itemId === p.itemId);
+}
+
+function setTileHtml(sets) {
+  const shown = sets.find(setIsOn) || sets[0];
+  return `<button class="card item-slot-card ${sets.some(setIsOn) ? 'installed' : ''}" data-item-sets="true" style="--i:0">
+    <div class="card-media">${cosmeticThumbSpanHtml(shown.name, 'inventory_2', 'item-slot-thumb')}</div>
+    <div class="card-body">
+      <div class="card-name">${L`Наборы`}</div>
+      <div class="card-meta"><span>${sets.length} ${plural(sets.length, 'набор', 'набора', 'наборов')}</span></div>
+    </div>
+  </button>`;
+}
+
 function openItemHeroModal(heroName, slots, from) {
   cat.resetModalState();
   itemSlotModalState = null;
+  itemSetState = null;
   itemSlotPickerIo?.disconnect();
   itemSlotPickerIo = null;
   cat.openModal(() => drawItemHeroModal(heroName, slots), from);
-  const firstVisible = slots.slice(0, 12).flatMap((s) => [
-    pickedIn(s.slot)?.name || s.options[0]?.name || ''
-  ].filter(Boolean));
-  loadCosmeticIcons(firstVisible, () => {
-    paintCosmeticIcons($('#modalContent'));
-  });
+  const sets = heroSets(heroName);
+  const firstVisible = [sets[0]?.name, ...slots.slice(0, 12).map((s) => pickedIn(s.slot)?.name || s.options[0]?.name)].filter(Boolean);
+  loadCosmeticIcons(firstVisible, () => paintCosmeticIcons($('#modalContent')));
 }
 
 function drawItemHeroModal(heroName, slots) {
+  const sets = heroSets(heroName);
   $('#modalContent').classList.remove('item-picker-modal');
   $('#modalContent').innerHTML = `
     <div class="modal-body">
@@ -420,14 +462,133 @@ function drawItemHeroModal(heroName, slots) {
         <span>· ${slots.length} ${plural(slots.length, 'слот', 'слота', 'слотов')}</span>
       </div>
       <div class="item-slot-grid item-hero-slots">
+        ${sets.length ? setTileHtml(sets) : ''}
         ${slots.map((s) => itemSlotTileHtml(s)).join('')}
       </div>
     </div>`;
   $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
+  $('#modalContent').querySelector('[data-item-sets]')?.addEventListener('click', () => openItemSetsModal({ heroName, slots }));
   $('#modalContent').querySelectorAll('[data-item-slot]').forEach((btn) => {
     btn.addEventListener('click', () => openItemSlotModal(btn.dataset.itemSlot, null, { back: { heroName, slots } }));
   });
   paintCosmeticIcons($('#modalContent'));
+}
+
+/** A hero's sets. back: the hero window, which the header leads back to. */
+function openItemSetsModal(back, query = '') {
+  itemSlotModalState = null;
+  itemSetState = { list: true, back, query };
+  cat.resetModalState();
+  cat.openModal(drawItemSetsModal, null);
+  loadCosmeticIcons(heroSets(back.heroName).slice(0, 36).map((s) => s.name), () => {
+    if (itemSetState?.list) paintCosmeticIcons($('#modalContent'));
+  });
+}
+
+function setCardHtml(set, i) {
+  const on = setIsOn(set);
+  const n = set.pieces.length;
+  const meta = on ? L`Надето` : set.fit < n ? L`${set.fit} из ${n}` : `${n} ${plural(n, 'деталь', 'детали', 'деталей')}`;
+  return `<button class="card item-pick-card ${on ? 'installed' : ''}" data-item-set="${esc(set.id)}" style="--i:${Math.min(i, 24)}">
+    <div class="card-media">${cosmeticThumbSpanHtml(set.name, 'inventory_2')}</div>
+    <div class="card-body">
+      <div class="card-name">${esc(set.name)}</div>
+      <div class="card-meta"><span>${meta}</span></div>
+    </div>
+  </button>`;
+}
+
+function drawItemSetsModal() {
+  const st = itemSetState;
+  const sets = heroSets(st.back.heroName);
+  $('#modalContent').classList.add('item-picker-modal');
+  $('#modalContent').innerHTML = `
+    <div class="modal-body item-picker-body">
+      ${builderHeadHtml(st.back.heroName, L`Наборы`, `<span>${sets.length} ${plural(sets.length, 'набор', 'набора', 'наборов')}</span>`)}
+      <div class="tb-search item-picker-search"><span class="ms">search</span><input type="text" id="itemSetSearch" placeholder="${L`Поиск…`}" value="${esc(st.query)}" autocomplete="off"></div>
+      <div class="item-pick-grid" id="itemSetGrid"></div>
+    </div>`;
+  const paintSets = () => {
+    const q = st.query.trim().toLowerCase();
+    const shown = q ? sets.filter((s) => [s.name, ...s.pieces.map((p) => p.name)].some((n) => n.toLowerCase().includes(q))) : sets;
+    $('#itemSetGrid').innerHTML = shown.length
+      ? shown.map(setCardHtml).join('')
+      : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
+    itemSlotPickerIo?.disconnect();
+    paintCosmeticIcons($('#itemSetGrid'));
+    itemSlotPickerIo = watchCosmeticIcons($('#itemSetGrid'), null);
+  };
+  $('#itemBackBtn').addEventListener('click', () => openItemHeroModal(st.back.heroName, st.back.slots, null));
+  $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
+  $('#itemSetSearch').addEventListener('input', (e) => { st.query = e.target.value; paintSets(); });
+  $('#itemSetGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-item-set]');
+    const set = card && sets.find((s) => s.id === card.dataset.itemSet);
+    if (set) openItemSetModal(set, { ...st.back, query: st.query });
+  });
+  paintSets();
+}
+
+function openItemSetModal(set, back) {
+  itemSetState = { set, back, busy: false };
+  cat.resetModalState();
+  cat.openModal(drawItemSetModal, null);
+  loadCosmeticIcons(set.pieces.map((p) => p.name), () => {
+    if (itemSetState?.set === set) paintCosmeticIcons($('#modalContent'));
+  });
+}
+
+// A piece the builder cannot put on stays in the picture, dimmed, with why: it is part of what
+// the set looks like, and without it "4 of 6" would not add up.
+function pieceCardHtml(p, i) {
+  const on = p.fits && pickedIn(p.slot)?.itemId === p.itemId;
+  const meta = !p.fits ? esc(p.reason) : on ? `${esc(p.slotLabel)} · ${L`Надето`}` : esc(p.slotLabel);
+  return `<div class="card item-pick-card item-piece ${p.fits ? '' : 'is-disabled'} ${on ? 'installed' : ''}" style="--i:${Math.min(i, 24)}">
+    <div class="card-media">${cosmeticThumbSpanHtml(p.name, 'checkroom')}</div>
+    <div class="card-body">
+      <div class="card-name">${esc(p.name)}</div>
+      <div class="card-meta"><span>${meta}</span></div>
+    </div>
+  </div>`;
+}
+
+function drawItemSetModal() {
+  const st = itemSetState;
+  const { set } = st;
+  const n = set.pieces.length;
+  const count = set.fit < n ? L`${set.fit} из ${n} ${plural(n, 'детали', 'деталей', 'деталей')}` : `${n} ${plural(n, 'деталь', 'детали', 'деталей')}`;
+  const act = st.busy ? { label: L`Надеваю…`, icon: 'hourglass_top', off: true }
+    : setIsOn(set) ? { label: L`Надето`, icon: 'check', off: true } : { label: L`Надеть весь набор`, icon: 'checkroom' };
+  $('#modalContent').classList.add('item-picker-modal');
+  $('#modalContent').innerHTML = `
+    <div class="modal-body item-picker-body">
+      ${builderHeadHtml(L`Наборы`, set.name, `<span>${esc(set.heroLabel)}</span><span>· ${count}</span>`)}
+      <div class="item-pick-grid">${set.pieces.map(pieceCardHtml).join('')}</div>
+      <div class="modal-note">${L`Набор надевается без эффектов. Эффекты добавляются к каждому предмету в его слоте.`}</div>
+      <div class="item-picker-foot">${builderFootHtml(`<b>${esc(set.name)}</b> · ${count}`, act)}</div>
+    </div>`;
+  $('#itemBackBtn').addEventListener('click', () => openItemSetsModal(st.back, st.back.query || ''));
+  $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
+  $('#itemApplyBtn').addEventListener('click', () => applyItemSet(act));
+  paintCosmeticIcons($('#modalContent'));
+}
+
+async function applyItemSet(act) {
+  const st = itemSetState;
+  if (!st?.set || act.off) return;
+  st.busy = true;
+  drawItemSetModal();
+  let r;
+  try {
+    r = await window.api.cosmetics.pickSet(st.set.id);
+  } catch (err) {
+    r = { error: String(err?.message || err) };
+  }
+  st.busy = false;
+  if (r.error) toast(r.error, 'error');
+  else toast(r.applied === r.pieces ? L`Надето: ${st.set.name}` : L`Надето ${r.applied} из ${r.pieces} ${plural(r.pieces, 'детали', 'деталей', 'деталей')}`);
+  if (!r.error) await cat.afterPick();
+  if (itemSetState === st) drawItemSetModal();
 }
 
 /** Stop watching the hub's icons: the catalog is drawing something else. */
@@ -436,11 +597,12 @@ export function forgetItemHub() {
   itemHubIo = null;
 }
 
-/** Let go of an open item slot window: another window is taking the overlay, or it closed. */
+/** Let go of an open builder window: another window is taking the overlay, or it closed. */
 export function forgetItemSlotModal() {
   itemSlotPickerIo?.disconnect();
   itemSlotPickerIo = null;
   itemSlotModalState = null;
+  itemSetState = null;
   $('#modalContent').classList.remove('item-picker-modal');
 }
 
@@ -461,7 +623,7 @@ export async function refreshItemHub() {
   await renderItemCosmeticHub($('#main')?.scrollTop || 0);
 }
 
-/** Draw the item slot window again, when one is open: its pick changed. */
+/** Mark the open item slot window again: its pick changed. */
 export function redrawItemSlotModal() {
-  if (itemSlotModalState) drawItemSlotModal();
+  if (itemSlotModalState) syncItemSlotModal();
 }

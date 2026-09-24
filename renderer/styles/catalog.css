@@ -142,13 +142,16 @@
   width: min(1360px, calc(98vw / var(--content-zoom)));
   max-height: calc(92vh / var(--content-zoom));
 }
-.item-picker-body {
+/* .modal-body is drawn after this file: two classes, so these win and the bar below meets the edges */
+.modal-body.item-picker-body {
   gap: var(--space-4);
+  padding: var(--space-4) var(--space-5) var(--space-5);
 }
+.modal-body.item-picker-body:has(> .item-picker-foot) { padding-bottom: 0; }
 .item-picker-head {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: var(--z-bar);
   align-items: flex-start;
   justify-content: space-between;
   padding-bottom: var(--space-2);
@@ -164,6 +167,35 @@
 .item-fx-head { margin-top: var(--space-5); }
 .item-fx-hint { margin-bottom: var(--space-3); }
 .item-back { margin-bottom: var(--space-2); }
+
+/* What the window will put on, and the one button that does it: it stays in view down a long
+   list, since nothing reaches the game until it is pressed. */
+.item-picker-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-bar);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0 calc(-1 * var(--space-5));
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-solid);
+  border-top: 1px solid var(--border);
+}
+.item-picker-sum {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.item-picker-sum b { color: var(--text); font-weight: 600; }
+.item-picker-foot .btn { flex-shrink: 0; }
+/* a piece of a set is shown, not chosen: the set goes on as a whole */
+.item-piece { cursor: default; }
+.item-piece:hover { transform: none; box-shadow: none; }
 
 .item-pick-grid {
   display: grid;
@@ -197,6 +229,11 @@
   font-size: var(--text-xs);
 }
 .item-pick-card .card-meta span { min-height: 1em; }
+/* The cards' entrance ends holding opacity at 1, over the global dimming of [disabled]: the
+   dimming goes on what is inside instead. An effect before an item is chosen, a piece of a set
+   the builder does not put on. */
+.item-pick-card:disabled > *,
+.item-pick-card.is-disabled > * { opacity: var(--disabled-opacity); }
 @media (max-width: 980px) {
   .item-pick-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

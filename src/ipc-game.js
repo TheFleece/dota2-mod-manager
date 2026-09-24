@@ -190,6 +190,17 @@ function registerGameIpc({
       return { error: String(err.message || err) };
     }
   });
+
+  // A whole set, one write to the game for all its pieces (schema-service pickSet).
+  ipcMain.handle('cosmetics:pickSet', (e, setId) => {
+    const stop = blocked('cosmetics');
+    if (stop) return stop;
+    try {
+      return { ok: true, ...schemaService.pickSet(setId) };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
 }
 
 module.exports = { registerGameIpc };

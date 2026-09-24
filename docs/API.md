@@ -1143,6 +1143,33 @@ function itemEffects()
 
 The effect variants the synthetic cosmetics/items picker can apply.
 
+### `itemSets`
+
+```js
+function itemSets(text, slots = itemSlots(text))
+```
+
+A hero's sets as the builder puts them on: every wearable of the set that has a slot in the
+builder, in one write (schema-service pickSet).
+
+A set used to be one more slot, "bundle", put on as if it were one item. It is several, with
+no stock item to stand in for, so on the game of 2026-09-24 1760 of its 1971 choices did not
+build and the other 211 put a model-less block over whichever stock item came first.
+
+Only hero items are listed. A set's loading screen, cursor, HUD, ward, announcer or taunt
+has a tab of its own or is not the app's to set, and nobody puts one on with a set. A hero
+item the builder leaves alone (an arcana, a persona) is listed as not fitting, with why: it
+is part of what the set looks like. A set with nothing to put on is left out, and so is a store
+bundle of several sets ("Bounty Hunter's Big Bundle": 22 items, 7 slots): more of its pieces
+want a taken slot than fit, and the first of each would dress the hero in a mix of sets that
+are each listed on their own anyway. Valve's "DO NOT USE" is left out as well.
+
+```
+@param {string} text  items_game
+@param {Array<{ slot: string, slotLabel: string, options: Array<{ id: string }> }>} [slots]
+itemSlots(text), when the caller has it already
+```
+
 ### `itemOptions`
 
 ```js
@@ -2653,7 +2680,7 @@ person goes back through UTF-8 first.
 function itemSearchText(item)
 ```
 
-An item's words in one lowercase string, for guessing the slot of a wearable that names none.
+An item's words in one lowercase string, for telling an arcana or persona by its name.
 
 ### `inferredItemSlot`
 
@@ -2661,9 +2688,13 @@ An item's words in one lowercase string, for guessing the slot of a wearable tha
 function inferredItemSlot(item)
 ```
 
-A hero wearable's slot, guessed from its words when items_game leaves item_slot out. For the
-item builder only (src/item-builder.js): run over the whole table it reads "Armor" into a
-loading screen and "charm" into a courier, which is why slotOf does not use it.
+A hero item's slot as the game reads it. A wearable or stock item that names no item_slot is
+a weapon: the "wearable" and "default_item" prefabs of items_game both say "item_slot"
+"weapon", and on the game of 2026-09-24 that covers 1857 wearables and 96 stock items.
+
+It used to be guessed from the item's words, which put Oblivion Headmaster Wand on the head,
+Emerald Frenzy Flail on the back and 99 other weapons nowhere, so a set carried two heads
+and the builder offered a wand for a helmet.
 
 ### `SCHEMA_REL`
 
