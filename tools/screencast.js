@@ -139,7 +139,7 @@ class Cast {
     // and what a new user has - the catalog paints before the settings arrive, so the screen
     // keeps a cached "no game here": the banner stays up and every install refuses, while a
     // fresh IPC call cheerfully reports a valid path. One reload with the settings already on
-    // disk clears it. Worth telling Misha about: the same race is a first-run bug.
+    // disk clears it. Worth a fix of its own: the same race is a first-run bug.
     const ask = () => this.win.webContents.executeJavaScript(`(async () => {
       const s = await window.api.settings.get();
       return {

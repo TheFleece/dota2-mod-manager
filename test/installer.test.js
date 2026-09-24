@@ -59,10 +59,10 @@ const install = (installer, categoryId, local, modName = 'Test Mod') =>
 
 test('a single VPK takes the first free slot, and a category that must load early takes a low one', (t) => {
   const s = stand(t);
-  assert.deepEqual(install(s.installer, 'heroes', s.arrive('Axe.vpk', 'axe')), [{ root: 'lang', relPath: 'pak10_dir.vpk' }]);
-  assert.deepEqual(install(s.installer, 'heroes', s.arrive('Lina.vpk', 'lina')), [{ root: 'lang', relPath: 'pak11_dir.vpk' }]);
+  assert.deepEqual(install(s.installer, 'heroes', s.arrive('Axe.vpk', 'axe')), [{ root: 'lang', relPath: 'pak30_dir.vpk' }]);
+  assert.deepEqual(install(s.installer, 'heroes', s.arrive('Lina.vpk', 'lina')), [{ root: 'lang', relPath: 'pak31_dir.vpk' }]);
   assert.deepEqual(install(s.installer, 'trees', s.arrive('Trees.vpk', 'trees')), [{ root: 'lang', relPath: 'pak02_dir.vpk' }]);
-  assert.equal(s.read('dota_russian', 'pak10_dir.vpk'), 'axe');
+  assert.equal(s.read('dota_russian', 'pak30_dir.vpk'), 'axe');
   assert.equal(s.read('dota_russian', 'pak02_dir.vpk'), 'trees');
 });
 
@@ -82,8 +82,8 @@ test('an archive keeps its volume sets whole, its maps where the game reads them
   const records = install(s.installer, 'heroes', local, 'Arcana');
   const paks = records.map((r) => r.relPath).filter((p) => p.startsWith('pak'));
   assert.deepEqual(paks.map((p) => p.replace(/^pak\d+/, 'pakNN')).sort(), ['pakNN_000.vpk', 'pakNN_dir.vpk', 'pakNN_dir.vpk']);
-  assert.deepEqual([...new Set(paks.map((p) => p.slice(0, 5)))].sort(), ['pak10', 'pak11'], 'two sets, two slots');
-  // which set takes 10 follows the archive's own order; the index and its volume share one
+  assert.deepEqual([...new Set(paks.map((p) => p.slice(0, 5)))].sort(), ['pak30', 'pak31'], 'two sets, two slots');
+  // which set takes 30 follows the archive's own order; the index and its volume share one
   const index = paks.find((p) => s.read('dota_russian', p) === 'index');
   assert.ok(index, 'the index was written');
   assert.equal(s.read('dota_russian', index.replace('_dir.vpk', '_000.vpk')), 'volume', 'the volume moved with its index');
@@ -203,12 +203,12 @@ test('switching a mod off renames its files, on renames them back, and fonts are
   const withFont = [...files, { root: 'fonts', relPath: 'radiance.ttf' }, { root: 'tools', relPath: 'Tool' }];
 
   s.installer.setEnabled(withFont, false);
-  assert.deepEqual(fs.readdirSync(s.lang).filter((f) => f.startsWith('pak')).sort(), ['pak10_000.vpk.off', 'pak10_dir.vpk.off']);
+  assert.deepEqual(fs.readdirSync(s.lang).filter((f) => f.startsWith('pak')).sort(), ['pak30_000.vpk.off', 'pak30_dir.vpk.off']);
   s.installer.setEnabled(withFont, false);
-  assert.ok(s.has('dota_russian', 'pak10_dir.vpk.off'), 'switching off twice changes nothing');
+  assert.ok(s.has('dota_russian', 'pak30_dir.vpk.off'), 'switching off twice changes nothing');
 
   s.installer.setEnabled(withFont, true);
-  assert.deepEqual(fs.readdirSync(s.lang).filter((f) => f.startsWith('pak')).sort(), ['pak10_000.vpk', 'pak10_dir.vpk']);
+  assert.deepEqual(fs.readdirSync(s.lang).filter((f) => f.startsWith('pak')).sort(), ['pak30_000.vpk', 'pak30_dir.vpk']);
 });
 
 test('removing a mod deletes it whether it is on, off or switched off by the master switch', (t) => {
@@ -416,4 +416,112 @@ test('a cursor set another program put in the game is found, folders and all, un
   assert.equal(found[0].size, 'someone else'.length + 'frames'.length);
 
   assert.deepEqual(s.installer.externalFiles([{ root: 'cursor', relPath: 'cursor_default.bmp' }]).filter((x) => x.kind === 'cursor'), []);
+});
+
+// ---------- the load order in two parts ----------
+//
+// Slots 02-29 belong to the categories that must load first, everything else starts at 30
+// (PRIORITY_SLOTS in src/installer.js).
+
+const { Library } = require('../src/library.js');
+
+/** A pak file of ours on disk and the record that owns it. */
+function placed(s, library, { base, categoryId, name = base, suffix = '', volumes = 0 }) {
+  fs.mkdirSync(s.lang, { recursive: true });
+  fs.writeFileSync(path.join(s.lang, `${base}_dir.vpk${suffix}`), name);
+  const files = [{ root: 'lang', relPath: `${base}_dir.vpk` }];
+  for (let v = 0; v < volumes; v++) {
+    const part = `${base}_${String(v).padStart(3, '0')}.vpk`;
+    fs.writeFileSync(path.join(s.lang, part + suffix), `${name} volume ${v}`);
+    files.push({ root: 'lang', relPath: part });
+  }
+  return library.add({ name, categoryId, fileRef: name, files });
+}
+
+const paksIn = (s) => fs.readdirSync(s.lang).filter((f) => f.startsWith('pak') || f.startsWith('mmslot')).sort();
+
+test('the categories that load first get 02-29, the rest start at 30, and a full front spills behind', (t) => {
+  const s = stand(t);
+  const used = new Set();
+  const front = Array.from({ length: 28 }, () => s.installer.allocatePak(used, true));
+  assert.equal(front[0], 'pak02_dir.vpk');
+  assert.equal(front[27], 'pak29_dir.vpk');
+  assert.equal(s.installer.allocatePak(used, true), 'pak30_dir.vpk', 'the 29th still installs, in the first slot after them');
+  assert.equal(s.installer.allocatePak(used, false), 'pak31_dir.vpk');
+  const rest = new Set();
+  for (let i = 0; i < 67; i++) assert.ok(Number(s.installer.allocatePak(rest, false).slice(3, 5)) >= 30, 'the rest never take 02-29');
+  assert.throws(() => s.installer.allocatePak(rest, false), /30-99/);
+});
+
+test('linking to the catalog moves a mod into its part of the order, and leaves it when that part is full', (t) => {
+  const s = stand(t);
+  const library = new Library(path.join(s.dir, 'userdata'));
+  // imported by hand into a slot among the rest, then found to be a shader
+  const shader = placed(s, library, { base: 'pak31', categoryId: 'shaders' });
+  const moved = s.installer.moveToZone(shader);
+  assert.deepEqual(moved, [{ root: 'lang', relPath: 'pak02_dir.vpk' }]);
+  assert.equal(s.read('dota_russian', 'pak02_dir.vpk'), 'pak31');
+  // a file somebody dropped in as pak05 that turns out to be a hero
+  const hero = placed(s, library, { base: 'pak05', categoryId: 'heroes' });
+  assert.deepEqual(s.installer.moveToZone(hero), [{ root: 'lang', relPath: 'pak30_dir.vpk' }]);
+  // already in place: nothing to do
+  assert.equal(s.installer.moveToZone({ ...shader, files: moved }), null);
+  // its part full: better where it is than nowhere
+  for (let n = 3; n <= 29; n++) fs.writeFileSync(path.join(s.lang, `pak${String(n).padStart(2, '0')}_dir.vpk`), 'taken');
+  const late = placed(s, library, { base: 'pak40', categoryId: 'trees' });
+  assert.equal(s.installer.moveToZone(late), null);
+});
+
+test('an existing order is laid out in its two parts once, keeping the order within each', (t) => {
+  const s = stand(t);
+  const library = new Library(path.join(s.dir, 'userdata'));
+  // A load order from before: a hero moved up into 02, a shader switched off at 14, trees at 03
+  // with the master switch off, a hero at 10 with a volume, a file of somebody else's at 12 and
+  // Minify's at 65.
+  placed(s, library, { base: 'pak02', categoryId: 'heroes', name: 'hero moved up' });
+  placed(s, library, { base: 'pak03', categoryId: 'trees', name: 'trees', suffix: '.moff' });
+  placed(s, library, { base: 'pak10', categoryId: 'heroes', name: 'hero with a volume', volumes: 1 });
+  placed(s, library, { base: 'pak14', categoryId: 'shaders', name: 'shader', suffix: '.off' });
+  fs.writeFileSync(path.join(s.lang, 'pak12_dir.vpk'), 'not ours');
+  fs.writeFileSync(path.join(s.lang, 'pak65_dir.vpk'), 'minify');
+
+  assert.deepEqual(s.installer.migrateSlotZones(library), { moved: 4 });
+  assert.deepEqual(paksIn(s), [
+    'pak02_dir.vpk.moff', // trees, first of the front as it was first of them before
+    'pak03_dir.vpk.off', // the shader, after the trees, still off
+    'pak12_dir.vpk', // not ours: where it was
+    'pak30_dir.vpk', // the hero that had been moved up, first of the rest
+    'pak31_000.vpk', 'pak31_dir.vpk', // the other hero, with its volume
+    'pak65_dir.vpk', // Minify's
+  ]);
+  assert.equal(s.read('dota_russian', 'pak02_dir.vpk.moff'), 'trees');
+  assert.equal(s.read('dota_russian', 'pak30_dir.vpk'), 'hero moved up');
+  assert.equal(s.read('dota_russian', 'pak31_000.vpk'), 'hero with a volume volume 0');
+  const byName = Object.fromEntries(library.list().map((r) => [r.name, r.files.map((f) => f.relPath)]));
+  assert.deepEqual(byName['hero with a volume'], ['pak31_dir.vpk', 'pak31_000.vpk'], 'the records follow the files');
+  assert.deepEqual(byName.shader, ['pak03_dir.vpk']);
+
+  assert.deepEqual(s.installer.migrateSlotZones(library), { moved: 0 }, 'a second run finds nothing to move');
+});
+
+test('a layout that fails half way puts every file back where it was', (t) => {
+  const s = stand(t);
+  const library = new Library(path.join(s.dir, 'userdata'));
+  placed(s, library, { base: 'pak02', categoryId: 'heroes', name: 'a' });
+  placed(s, library, { base: 'pak10', categoryId: 'heroes', name: 'b' });
+  placed(s, library, { base: 'pak11', categoryId: 'river', name: 'c' });
+  const before = paksIn(s);
+  const records = JSON.stringify(library.list());
+  // the game holding one file open: the rename that reaches it fails
+  const real = fs.renameSync;
+  let calls = 0;
+  t.after(() => { fs.renameSync = real; });
+  fs.renameSync = (from, to) => {
+    if (++calls === 4) throw Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' });
+    return real(from, to);
+  };
+  assert.throws(() => s.installer.migrateSlotZones(library), /EBUSY/);
+  fs.renameSync = real;
+  assert.deepEqual(paksIn(s), before, 'every file is back under its old name');
+  assert.equal(JSON.stringify(library.list()), records, 'and no record was changed');
 });

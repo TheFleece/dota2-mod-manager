@@ -10,12 +10,12 @@
  * of in the shared store: no other screen has ever read them.
  */
 import { $ } from '../core/dom.js';
-import { COSMETIC_PREFIX, cosmeticMeta } from '../core/constants.js';
+import { COSMETIC_PREFIX } from '../core/constants.js';
 import { state } from '../core/store.js';
 import { registerView, render, pane } from '../core/router.js';
 import { matchLabel, applyInstalled, refreshInstalledIndex } from '../core/installed.js';
 import { catName, catIcon } from '../core/categories.js';
-import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec } from '../core/records.js';
+import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec, effectNames } from '../core/records.js';
 import { minifyNotice } from '../core/minify-notice.js';
 import { esc, fmtMB, plural } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
@@ -38,7 +38,6 @@ let libRecords = [];           // records as of the last draw
 let libExternal = [];          // foreign files found in the mods folder
 let libStuck = [];             // fonts/cursors Steam took back that need downloading again
 let libRepair = { state: 'idle' }; // what the app did about the last Dota patch
-let slotCount = 0;             // mods occupying a numbered pak, so the order arrows know the ends
 
 registerView('library', () => renderLibrary());
 
@@ -131,11 +130,11 @@ function packMenuItems(rec) {
     langDir && { label: L`Сохранить одним файлом`, icon: 'save', onPick: () => exportRecord(rec.id) },
     ordered && { separator: true },
     ordered && {
-      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.slotIndex === 0,
+      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.zoneFirst,
       onPick: () => moveRecord(rec.id, -1),
     },
     ordered && {
-      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.slotIndex === slotCount - 1,
+      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.zoneLast,
       onPick: () => moveRecord(rec.id, 1),
     },
     { separator: true },
@@ -202,13 +201,13 @@ function normalRowHtml(rec, i, masterOff) {
   // own preview, else the catalog's for the same mod, else a recognised hero's own portrait
   // (see libThumbHtml); a cosmetic pick's picture is fetched lazily by the same loader the
   // catalog cards use
-  const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
+  const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) + effectNames(rec) : catName(rec.categoryId);
   return `
     <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" ${rec.slotIndex != null ? `data-order="${rec.slotIndex}"` : ''} style="--i:${Math.min(i, 20)}">
       ${gripHtml(rec)}
       ${selectable ? `<input type="checkbox" class="lib-check" data-check="${esc(rec.id)}" ${selected ? 'checked' : ''} aria-label="${L`Выбрать мод`}">` : '<span class="lib-check-gap"></span>'}
       ${cosmetic
-        ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${cosmeticMeta(rec.slot).icon}</span></div>`
+        ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${catIcon(COSMETIC_PREFIX + rec.slot)}</span></div>`
         : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
         <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}${coveredTagHtml(rec)}</div>
@@ -236,11 +235,11 @@ function rowMenuItems(rec) {
   const ordered = rec.slotIndex != null;
   return [
     ordered && {
-      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.slotIndex === 0,
+      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.zoneFirst,
       onPick: () => moveRecord(rec.id, -1),
     },
     ordered && {
-      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.slotIndex === slotCount - 1,
+      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.zoneLast,
       onPick: () => moveRecord(rec.id, 1),
     },
     ordered && { separator: true },
@@ -901,8 +900,9 @@ async function renderLibrary() {
   // load order: the game mounts pakNN in numeric order, so that IS the priority. The list
   // is shown in it, and each row's arrows step through it (see orderBtnsHtml).
   const ordered = installedAll.filter((r) => slotOf(r) != null).sort((a, b) => slotOf(a) - slotOf(b));
-  slotCount = ordered.length;
   ordered.forEach((r, i) => { r.slot = slotOf(r); r.slotIndex = i; });
+  // the arrows stop at the ends of a mod's own part of the order (src/slot-zones.js)
+  ordered.forEach((r, i) => { r.zoneFirst = ordered[i - 1]?.zone !== r.zone; r.zoneLast = ordered[i + 1]?.zone !== r.zone; });
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Мои моды`}</h1></div>

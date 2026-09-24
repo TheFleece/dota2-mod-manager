@@ -40,7 +40,7 @@ const MINIFY_BORROWED = 'dutch';
  * VPK mods, 66 what it compiles and 67 what its d2pfx browser installs, all three from its
  * ARCHITECTURE.md; 99 is where releases up to v1.14rc6 wrote the English fix.
  *
- * RESERVED is smaller, and the difference is the point. We hand out pak10 to pak99, and a
+ * RESERVED is smaller, and the difference is the point. We hand out pak02 to pak99, and a
  * slot only has to be kept empty when Minify might write it LATER - reading the folder today
  * cannot see a program that gets installed next week. That is why 65 to 67 stay blocked
  * whether or not it is on the machine.

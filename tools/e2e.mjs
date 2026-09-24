@@ -54,7 +54,7 @@ const OWNERSHIP = 'dota2modmanager.json';
 const appAt = process.argv.indexOf('--app');
 const APP = appAt > 0 && process.argv[appAt + 1] ? path.resolve(process.argv[appAt + 1]) : null;
 
-export const MOD = { categoryId: 'heroes', name: 'Brewmaster E2E Fixture', file: 'Brewmaster E2E Fixture.zip' };
+export const MOD = { categoryId: 'heroes', hero: 'Brewmaster', name: 'Brewmaster E2E Fixture', file: 'Brewmaster E2E Fixture.zip' };
 
 /** A zip holding one pak01_dir.vpk with one small file in it: the shape most catalog mods have. */
 export function fixtureArchive() {
@@ -143,6 +143,10 @@ export const EVAL_INSTALL = `
   ${HELPERS}
   await sleep(1000);
   if (!step('no dialog stands in front of the catalog', !dialogs().length, dialogs().join(' | '))) return out;
+  // Heroes opens on a grid of heroes (renderer/views/hero-grid.js): the mod is behind its hero
+  const tile = await until(() => document.querySelector('.hero-tile[data-hero=' + JSON.stringify(${JSON.stringify(MOD.hero)}) + ']'), 20000);
+  if (!step('its hero is on the heroes grid', tile, 'tiles on screen: ' + document.querySelectorAll('.hero-tile').length)) return out;
+  tile.click();
   const card = await until(() => [...document.querySelectorAll('.grid .card')].find((c) => c.textContent.includes(NAME)), 20000);
   if (!step('the fixture mod is in the catalog', card, 'cards on screen: ' + document.querySelectorAll('.grid .card').length)) return out;
   card.click();

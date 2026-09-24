@@ -25,9 +25,10 @@ const { readMinify, isMinifyFile, isMinifyPak } = require('./minify');
  * @param {(p: string) => boolean} deps.validateGamePath
  * @param {() => string} deps.langFolder     read late: the app can move folders while running
  * @param {() => object|null} deps.takeMigration  the one-shot news about a folder move, or null
+ * @param {() => object|null} [deps.takeSlotMigration]  the one-shot news about the load order being laid out, or null
  * @returns {(opts?: { consumeMigration?: boolean }) => object}
  */
-function settingsViewFor({ settings, library, discordAuth, validateGamePath, langFolder, takeMigration }) {
+function settingsViewFor({ settings, library, discordAuth, validateGamePath, langFolder, takeMigration, takeSlotMigration = () => null }) {
   // ----- settings -----
   /**
    * What the renderer means by "settings": the stored values plus the few facts about this
@@ -76,6 +77,7 @@ function settingsViewFor({ settings, library, discordAuth, validateGamePath, lan
     // Only the screen asking for settings gets to hear about the migration, and only once.
     // A save must not swallow the news before anybody has read it.
     const migrated = consumeMigration ? takeMigration() : null;
+    const slotsLaidOut = consumeMigration ? takeSlotMigration() : null;
     return {
       ...settings.all(),
       dotaPathValid: validateGamePath(game),
@@ -102,6 +104,7 @@ function settingsViewFor({ settings, library, discordAuth, validateGamePath, lan
           .map((f) => ({ suffix: f.suffix, modFiles: f.modFiles })),
       },
       langMigration: migrated,
+      slotMigration: slotsLaidOut,
     };
   };
 }

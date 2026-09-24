@@ -27,10 +27,12 @@ the code, not in this page.
 | [`src/fingerprints.js`](#srcfingerprintsjs) | Fingerprint index: fetch + cache the fp -> mod identity map published alongside the |
 | [`src/game-icons.js`](#srcgame-iconsjs) | Item pictures taken from the installed game instead of scraped off a wiki. |
 | [`src/gamelang.js`](#srcgamelangjs) | Which dota_<lang> folder the game actually mounts. |
+| [`src/hero-names.js`](#srchero-namesjs) | Which hero a name means, in the three spellings this app meets: the game's folder id |
 | [`src/i18n.js`](#srci18njs) | Minimal i18n for the main process (main.js, installer.js, vpk.js). |
 | [`src/icons.js`](#srciconsjs) | Pictures for the cosmetics picker, and for the Library where a picture can be found for |
 | [`src/import.js`](#srcimportjs) | Taking in a mod the user already has: a .vpk, a .zip, a folder, or bytes off a drop. |
 | [`src/installer.js`](#srcinstallerjs) | Installer engine: download, extract, pak allocation, per-category install/uninstall |
+| [`src/item-builder.js`](#srcitem-builderjs) | The item builder: a hero's stock item built from one of its wearables, with an effect on top. |
 | [`src/library.js`](#srclibraryjs) | Library: manifest of installed mods + presets |
 | [`src/minify.js`](#srcminifyjs) | Living next to Minify. |
 | [`src/mod-id.js`](#srcmod-idjs) | What a mod actually replaces, asked of the game instead of guessed from folder names. |
@@ -48,6 +50,7 @@ the code, not in this page.
 | [`src/schema-service.js`](#srcschema-servicejs) | Orchestration around the item schema: what goes into it, when it is rebuilt, and how a |
 | [`src/schema.js`](#srcschemajs) | Item-schema engine: the game's own scripts/items/items_game.txt is the only place |
 | [`src/settings.js`](#srcsettingsjs) | Simple JSON settings store in userData |
+| [`src/slot-zones.js`](#srcslot-zonesjs) | The load order in two parts. |
 | [`src/steam.js`](#srcsteamjs) | Finding Steam, and then finding Dota inside it. |
 | [`src/toolchain.js`](#srctoolchainjs) | Tools the app can borrow, fetched only when something actually needs them. |
 | [`src/uninstall-args.js`](#srcuninstall-argsjs) | Whether this run of the app is the uninstaller asking what to take along. |
@@ -920,6 +923,60 @@ current mod and this one is a leftover.
 @returns {number} how many files were actually moved
 ```
 
+## src/hero-names.js
+
+Which hero a name means, in the three spellings this app meets: the game's folder id
+(queenofpain), what an author typed (queen_of_pain, qop), and what people read ("Queen of
+Pain"). Out of src/vpk.js, where it began, because the catalog asks too and vpk.js is at its
+size budget.
+
+### `HERO_DISPLAY`
+
+```js
+const HERO_DISPLAY =
+```
+
+Dota's internal hero folder names differ from the display name for a chunk of the
+roster. Only the mismatches are listed; anything else is title-cased from its id.
+
+### `HERO_ALIAS`
+
+```js
+const HERO_ALIAS =
+```
+
+Short and misspelled folder names authors use for a hero whose canonical id looks
+nothing like the name. Anything that differs only in spacing or punctuation
+(crystalmaiden / crystal_maiden, queenofpain / queen_of_pain) needs no entry — heroKey
+below folds those together on its own.
+
+### `heroDisplayName`
+
+```js
+function heroDisplayName(id)
+```
+
+What people call a hero the game or an author files as `id` (skeleton_king -> Wraith King).
+
+### `heroIdFromName`
+
+```js
+function heroIdFromName(name)
+```
+
+The game's id for a hero the catalog names ("Queen of Pain" -> queenofpain), or null.
+
+### `heroKey`
+
+```js
+function heroKey(id)
+```
+
+Identity of a hero regardless of how the author spelled the folder. Authors mix
+"crystal_maiden", "crystalmaiden" and "CrystalMaiden" inside one pack, and each spelling
+used to count as a separate hero — which turned a single-hero skin into a "bundle of 3"
+and offered to split it into parts that make no sense.
+
 ## src/i18n.js
 
 Minimal i18n for the main process (main.js, installer.js, vpk.js).
@@ -1087,13 +1144,7 @@ _No description in the source._
 
 ### `PRIORITY_CATEGORIES`
 
-```js
-const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-attack', 'hero-items', 'optimization']
-```
-
-Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
-The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
-Dota2PornFx cart zips is a merge-order hint for VPKMerge, not a valid install name.
+_No description in the source._
 
 ### `MERGE_SIZE_CAP`
 
@@ -1104,6 +1155,125 @@ const MERGE_SIZE_CAP = 1200 * 1024 * 1024
 Merging a multi-volume import into one file holds the whole mod in memory once. Well
 above any real skin pack (a Skinchanger export is ~70 MB), but a multi-GB set is left
 in its original volumes rather than risking the allocation.
+
+## src/item-builder.js
+
+The item builder: a hero's stock item built from one of its wearables, with an effect on top.
+
+For each hero and slot the free cosmetics offer that hero's wearables. Picking one rewrites its
+block in items_game under the stock item's id, name and prefab=default_item, drops the styles
+and unlocks a free base item cannot use, adds the chosen particle effect to its visuals, and
+lists the model and particles to copy out of the game's pak01 under the stock paths, so the
+game draws the wearable where the stock item was. src/schema-service.js applies it along with
+the rest of the free cosmetics; src/schema.js reads and merges the table.
+
+Written by h6rd (https://github.com/h6rd) in #117, developed further with TheFleece
+(https://github.com/TheFleece).
+Copyright (C) 2026 h6rd
+Copyright (C) 2026 TheFleece
+SPDX-License-Identifier: GPL-3.0-or-later
+The additional terms in NOTICE apply: whoever carries this code keeps both names here and in
+the credits of the program it goes into.
+
+### `effectKey`
+
+```js
+function effectKey(effectIds)
+```
+
+The effects of one pick as one string: ids in the order ITEM_EFFECTS lists them, each once,
+comma separated, '' for none. A pick carries several (the window says "you can pick several"),
+and this is how a record stores them and how two picks are told apart, so "fire,snow" and
+"snow,fire" are the same pick.
+
+```
+@param {string|string[]|null|undefined} effectIds
+```
+
+### `itemEffects`
+
+```js
+function itemEffects()
+```
+
+The effect variants the synthetic cosmetics/items picker can apply.
+
+### `itemSets`
+
+```js
+function itemSets(text, slots = itemSlots(text))
+```
+
+A hero's sets as the builder puts them on: every wearable of the set that has a slot in the
+builder, in one write (schema-service pickSet).
+
+A set used to be one more slot, "bundle", put on as if it were one item. It is several, with
+no stock item to stand in for, so on the game of 2026-09-24 1760 of its 1971 choices did not
+build and the other 211 put a model-less block over whichever stock item came first.
+
+Only hero items are listed. A set's loading screen, cursor, HUD, ward, announcer or taunt
+has a tab of its own or is not the app's to set, and nobody puts one on with a set. A hero
+item the builder leaves alone (an arcana, a persona) is listed as not fitting, with why: it
+is part of what the set looks like. A set with nothing to put on is left out, and so is a store
+bundle of several sets ("Bounty Hunter's Big Bundle": 22 items, 7 slots): more of its pieces
+want a taken slot than fit, and the first of each would dress the hero in a mix of sets that
+are each listed on their own anyway. Valve's "DO NOT USE" is left out as well.
+
+```
+@param {string} text  items_game
+@param {Array<{ slot: string, slotLabel: string, options: Array<{ id: string }> }>} [slots]
+itemSlots(text), when the caller has it already
+```
+
+### `itemOptions`
+
+```js
+function itemOptions(text)
+```
+
+Wearable items with visuals and a matching stock default_item, offered under cosmetics/items.
+
+### `itemSlots`
+
+```js
+function itemSlots(text)
+```
+
+Hero item slots built from real default_item entries, with one donor list per hero part.
+
+### `defaultItemForWearable`
+
+```js
+function defaultItemForWearable(text, sourceId)
+```
+
+The stock default_item that matches a wearable by slot and by the hero(es) that can equip it.
+
+### `itemEffectPatch`
+
+```js
+function itemEffectPatch(baseText, itemId, effectIds)
+```
+
+Turn one paid wearable into the hero's stock item for that slot.
+
+The block stays the donor item almost verbatim: only the header is rewritten to the matching
+default_item (id + name + prefab), styles/unlocks that cannot be used on a free base item are
+dropped, and the chosen effect is inserted into visuals. The donor model/particles stay named
+as the paid item in items_game, while assetCopies still describe the stock-path overrides the
+built VPK should carry.
+
+```
+@returns {{ id: string, block: string, assetCopies: Array<{from: string, to: string}> }}
+```
+
+### `gameAssetEntries`
+
+```js
+function gameAssetEntries(gamePath, assetCopies)
+```
+
+Read compiled asset bytes out of pak01 and stage them under the renamed path in our VPK.
 
 ## src/library.js
 
@@ -1299,7 +1469,7 @@ switch does not rename it and the foreign-file scan does not offer it up. 65 is 
 VPK mods, 66 what it compiles and 67 what its d2pfx browser installs, all three from its
 ARCHITECTURE.md; 99 is where releases up to v1.14rc6 wrote the English fix.
 
-RESERVED is smaller, and the difference is the point. We hand out pak10 to pak99, and a
+RESERVED is smaller, and the difference is the point. We hand out pak02 to pak99, and a
 slot only has to be kept empty when Minify might write it LATER - reading the folder today
 cannot see a program that gets installed next week. That is why 65 to 67 stay blocked
 whether or not it is on the machine.
@@ -2101,7 +2271,7 @@ function encodePresetLink({ name, author, mods })
 ```
 
 ```
-@param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId}>}} preset
+@param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId, effectId}>}} preset
 @returns {{code: string, web: string, direct: string}} the clickable form and the raw one
 ```
 
@@ -2487,7 +2657,7 @@ The rules it enforces:
 ### `createSchemaService`
 
 ```js
-function createSchemaService({ settings, library, installer, userDataDir })
+function createSchemaService({ settings, library, installer, userDataDir, log = () => {} })
 ```
 
 ```
@@ -2496,6 +2666,7 @@ function createSchemaService({ settings, library, installer, userDataDir })
 @param {import('./library').Library} deps.library
 @param {import('./installer').Installer} deps.installer
 @param {string} deps.userDataDir
+@param {(msg: string) => void} [deps.log]  the app's diagnostics log
 ```
 
 ## src/schema.js
@@ -2512,6 +2683,73 @@ Two rules shape everything here:
 
 The file is ~50 MB of KeyValues with a few non-UTF8 bytes in it, so everything here
 works on latin1 strings: byte-exact in and out, no re-encoding surprises.
+
+### `eachChild`
+
+```js
+function eachChild(text, bounds, fn)
+```
+
+Walk the direct children of a block.
+
+```
+@param {string} text
+@param {[number, number]} bounds  from blockBounds()
+@param {(child: {key: string, start: number, end: number, isBlock: boolean, value: string|null, body: [number, number]|null}) => void} fn
+```
+
+### `blockBounds`
+
+```js
+function blockBounds(text, i)
+```
+
+Bounds of the { ... } block that starts at (or after) i.
+
+```
+@returns {[number, number]} [open, close+1]
+```
+
+### `stripKeyBlocks`
+
+```js
+function stripKeyBlocks(text, key)
+```
+
+Remove every "<key> { … }" sub-block from a KV fragment, with the whitespace in front
+of it, so the result still reads like the file it came from.
+
+### `toUtf8`
+
+```js
+function toUtf8(s)
+```
+
+The table is read as latin1 so every splice stays byte-exact, which leaves names with
+non-ASCII characters (curly quotes, accents) as raw UTF-8 bytes. Anything shown to a
+person goes back through UTF-8 first.
+
+### `itemSearchText`
+
+```js
+function itemSearchText(item)
+```
+
+An item's words in one lowercase string, for telling an arcana or persona by its name.
+
+### `inferredItemSlot`
+
+```js
+function inferredItemSlot(item)
+```
+
+A hero item's slot as the game reads it. A wearable or stock item that names no item_slot is
+a weapon: the "wearable" and "default_item" prefabs of items_game both say "item_slot"
+"weapon", and on the game of 2026-09-24 that covers 1857 wearables and 96 stock items.
+
+It used to be guessed from the item's words, which put Oblivion Headmaster Wand on the head,
+Emerald Frenzy Flail on the back and 99 other weapons nowhere, so a set carried two heads
+and the builder offered a wand for a helmet.
 
 ### `SCHEMA_REL`
 
@@ -2742,7 +2980,7 @@ only: a malformed file is what makes the game die with "ERROR PARSING SCRIPT".
 ### `buildSchemaVpk`
 
 ```js
-function buildSchemaVpk(text)
+function buildSchemaVpk(text, extraEntries = [])
 ```
 
 Pack the merged schema as a one-file VPK holding nothing but items_game.txt.
@@ -2771,6 +3009,119 @@ class Settings
 ```
 
 _No description in the source._
+
+## src/slot-zones.js
+
+The load order in two parts.
+
+The game mounts pakNN_dir.vpk in numeric order and the first copy of a file wins, so a mod's
+slot number is its priority. Some categories have to load before everything else: trees,
+river, shaders, hero effects and a few more replace files other mods ship too, and lose
+otherwise. Slots 02-29 belong to them; every other mod starts at 30.
+
+Since 2026-09-24. Until then only the first install kept the two apart: a mod
+moved up past a shader took the shader's slot, and a shader imported by hand and then linked
+to the catalog stayed wherever the import had put it. 28 slots rather than the old eight
+because those categories hold 217 catalog mods between them, 126 of them hero items, and eight
+ran out after one shader, one set of trees, one river and a few items.
+
+The installer hands out slots through freeSlotIn; moving a mod between the two parts, and the
+one-time layout of an order from before, live here too so the rules sit in one place.
+
+### `PRIORITY_CATEGORIES`
+
+```js
+const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-attack', 'hero-items', 'optimization']
+```
+
+The categories that load before every other mod. The Dota2PornFx cart zips mark them with a
+ "!pak" prefix, a merge-order hint for VPKMerge; the game only mounts pakNN_dir.vpk.
+
+### `PRIORITY_SLOTS`
+
+```js
+const PRIORITY_SLOTS = [2, 29]
+```
+
+The first and last slot of those categories.
+
+### `NORMAL_FIRST`
+
+```js
+const NORMAL_FIRST = 30
+```
+
+Where every other mod starts.
+
+### `isPriorityCategory`
+
+```js
+const isPriorityCategory = (categoryId) => PRIORITY_CATEGORIES.includes(categoryId)
+```
+
+Whether a category is one of those that load first.
+
+### `zoneFor`
+
+```js
+const zoneFor = (categoryId) => (isPriorityCategory(categoryId) ? 'priority' : 'normal')
+```
+
+Which part of the load order a category's mods belong in.
+
+### `slotZone`
+
+```js
+const slotZone = (n) => (n >= PRIORITY_SLOTS[0] && n <= PRIORITY_SLOTS[1] ? 'priority' : 'normal')
+```
+
+Which part of the load order a slot number is in.
+
+### `freeSlotIn`
+
+```js
+function freeSlotIn(zone, used)
+```
+
+The first free slot of a part of the load order, as a file name, or null when it is full.
+
+```
+@param {'priority'|'normal'} zone
+@param {Set<string>} used  lowercased pakNN_dir.vpk names already taken
+```
+
+### `moveToZone`
+
+```js
+function moveToZone(installer, rec)
+```
+
+Move a mod into the part of the load order its category belongs in, when it is not there.
+Linking an import to the catalog is where this matters: the import could not know the
+category and took a slot among the rest.
+
+```
+@returns {Array<object>|null} the record's new files, or null when it stays where it is
+(already in place, no slot, or its part of the order full)
+```
+
+### `migrateSlotZones`
+
+```js
+function migrateSlotZones(installer, library)
+```
+
+Lay an existing load order out in its two parts, once. The order within each part is kept;
+what changes is that every priority mod now comes before every other one, and that the rest
+start at 30. Files that are not ours keep their slots.
+
+Every file is renamed twice, first to a name the game never mounts and then to its new slot,
+so no step lands on a slot another mod still holds. A failure puts back everything already
+renamed and throws; the caller tries again on the next start.
+
+```
+@returns {{ moved: number }|null} null when there is nothing to lay out, or it would not fit
+```
 
 ## src/steam.js
 
@@ -3320,10 +3671,6 @@ Classify what a mod's inner path list actually changes.
 ```
 
 ### `heroDisplayName`
-
-```js
-function heroDisplayName(id)
-```
 
 _No description in the source._
 

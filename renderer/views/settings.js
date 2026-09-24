@@ -162,11 +162,18 @@ export async function renderSettings() {
         <span>${L`hanta снял видео о менеджере`}</span>
         <a class="settings-link" id="thanksLink">youtube.com/@hqnta</a>
       </div>
-      <div class="settings-hint">© 2026 TheFleece · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
+      <!-- Credit NOTICE requires for the item builder (section 7(b)): both names, here. -->
+      <div class="settings-row spaced">
+        <span class="settings-label">${L`Конструктор предметов`}</span>
+        <span>h6rd, TheFleece</span>
+        <a class="settings-link" id="builderLink">github.com/h6rd</a>
+      </div>
+      <div class="settings-hint">© 2026 TheFleece · ${L`конструктор предметов`} © 2026 h6rd, TheFleece · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
     </div>
   `; });
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/dota2modmanager/dota2-mod-manager'));
   $('#thanksLink').addEventListener('click', () => window.api.misc.openExternal('https://www.youtube.com/@hqnta'));
+  $('#builderLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/h6rd'));
   // 48 MB is a real download, so it says so and waits for the press
   $('#toolInstallBtn')?.addEventListener('click', async (ev) => {
     ev.currentTarget.disabled = true;
