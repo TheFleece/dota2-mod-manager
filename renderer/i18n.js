@@ -153,6 +153,7 @@ const EN = {
   'Предметы': 'Items',
   'Стандартный': 'Default',
   'Надето': 'Equipped',
+  'Надетые': 'Equipped',
   'Надето: {0}': 'Equipped: {0}',
   'Надеть': 'Equip',
   'Надеваю…': 'Equipping…',

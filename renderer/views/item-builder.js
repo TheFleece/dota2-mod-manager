@@ -370,7 +370,7 @@ export async function renderItemCosmeticHub(restoreScrollTop = null) {
       <div class="tb-line">
         <div class="tb-search cat-search"><span class="ms">search</span><input type="text" id="cosSearch" placeholder="${L`Поиск…`}" value="${esc(cat.search())}" autocomplete="off"></div>
         <div class="sep"></div>
-        <button class="fchip ${cat.filters().installedOnly ? 'active' : ''}" id="cosInstalledChip"><span class="ms">check_circle</span>${L`Установленные`}</button>
+        <button class="fchip ${cat.filters().installedOnly ? 'active' : ''}" id="cosInstalledChip"><span class="ms">check_circle</span>${L`Надетые`}</button>
         <span class="count" id="cosCount"></span>
       </div>
     </div>
