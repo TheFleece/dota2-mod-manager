@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const { crc32 } = require('node:zlib');
 
 const vpk = require('../src/vpk.js');
+const { heroIdFromName } = require('../src/hero-names.js');
 
 /** One inline-data entry in the shape buildVpk() wants. */
 function entry(relPath, body) {
@@ -276,6 +277,6 @@ test('a hero named the way the catalog names it finds the game id', () => {
     'Natures Prophet': 'furion', 'Wraith King': 'skeleton_king', Io: 'wisp', Doom: 'doom_bringer',
     'Monkey King': 'monkey_king', Abaddon: 'abaddon', 'Treant Protector': 'treant', Centaur: 'centaur',
   };
-  for (const [name, id] of Object.entries(cases)) assert.equal(vpk.heroIdFromName(name), id, name);
-  assert.equal(vpk.heroIdFromName(''), null);
+  for (const [name, id] of Object.entries(cases)) assert.equal(heroIdFromName(name), id, name);
+  assert.equal(heroIdFromName(''), null);
 });

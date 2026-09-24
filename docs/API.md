@@ -27,6 +27,7 @@ the code, not in this page.
 | [`src/fingerprints.js`](#srcfingerprintsjs) | Fingerprint index: fetch + cache the fp -> mod identity map published alongside the |
 | [`src/game-icons.js`](#srcgame-iconsjs) | Item pictures taken from the installed game instead of scraped off a wiki. |
 | [`src/gamelang.js`](#srcgamelangjs) | Which dota_<lang> folder the game actually mounts. |
+| [`src/hero-names.js`](#srchero-namesjs) | Which hero a name means, in the three spellings this app meets: the game's folder id |
 | [`src/i18n.js`](#srci18njs) | Minimal i18n for the main process (main.js, installer.js, vpk.js). |
 | [`src/icons.js`](#srciconsjs) | Pictures for the cosmetics picker, and for the Library where a picture can be found for |
 | [`src/import.js`](#srcimportjs) | Taking in a mod the user already has: a .vpk, a .zip, a folder, or bytes off a drop. |
@@ -921,6 +922,60 @@ current mod and this one is a leftover.
 ```
 @returns {number} how many files were actually moved
 ```
+
+## src/hero-names.js
+
+Which hero a name means, in the three spellings this app meets: the game's folder id
+(queenofpain), what an author typed (queen_of_pain, qop), and what people read ("Queen of
+Pain"). Out of src/vpk.js, where it began, because the catalog asks too and vpk.js is at its
+size budget.
+
+### `HERO_DISPLAY`
+
+```js
+const HERO_DISPLAY =
+```
+
+Dota's internal hero folder names differ from the display name for a chunk of the
+roster. Only the mismatches are listed; anything else is title-cased from its id.
+
+### `HERO_ALIAS`
+
+```js
+const HERO_ALIAS =
+```
+
+Short and misspelled folder names authors use for a hero whose canonical id looks
+nothing like the name. Anything that differs only in spacing or punctuation
+(crystalmaiden / crystal_maiden, queenofpain / queen_of_pain) needs no entry — heroKey
+below folds those together on its own.
+
+### `heroDisplayName`
+
+```js
+function heroDisplayName(id)
+```
+
+What people call a hero the game or an author files as `id` (skeleton_king -> Wraith King).
+
+### `heroIdFromName`
+
+```js
+function heroIdFromName(name)
+```
+
+The game's id for a hero the catalog names ("Queen of Pain" -> queenofpain), or null.
+
+### `heroKey`
+
+```js
+function heroKey(id)
+```
+
+Identity of a hero regardless of how the author spelled the folder. Authors mix
+"crystal_maiden", "crystalmaiden" and "CrystalMaiden" inside one pack, and each spelling
+used to count as a separate hero — which turned a single-hero skin into a "bundle of 3"
+and offered to split it into parts that make no sense.
 
 ## src/i18n.js
 
@@ -3617,19 +3672,7 @@ Classify what a mod's inner path list actually changes.
 
 ### `heroDisplayName`
 
-```js
-function heroDisplayName(id)
-```
-
 _No description in the source._
-
-### `heroIdFromName`
-
-```js
-function heroIdFromName(name)
-```
-
-The game's id for a hero the catalog names ("Queen of Pain" -> queenofpain), or null.
 
 ### `slotDisplayName`
 

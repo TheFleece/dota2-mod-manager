@@ -31,6 +31,7 @@ import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
 import { bindItemBuilder, itemRailHtml, isItemCosmeticSlot, cosmeticFavValue, renderItemCosmeticHub, refreshItemHub,
   forgetItemHub, forgetItemSlotModal, redrawItemSlotModal, openItemSlotModal } from './item-builder.js';
+import { heroOf, heroMatches, heroGridWanted, renderHeroGrid, heroBackHtml, layoutToggleHtml, bindHeroControls } from './hero-grid.js';
 
 const viewRoot = pane('catalog');
 
@@ -259,32 +260,6 @@ function collectGroups(mods) {
     }
   }
   return out;
-}
-
-/* Heroes arrives as one flat list of 463 mods and the eye reads it as heroes: 462 of them
- * carry a hero's name, 121 heroes in all, three mods each on average, and one mod names
- * nobody. Hero items are grouped this way by the catalog itself - this does the same for the
- * category that is not, from the same list of names the filter above it uses.
- *
- * Cached because it is 127 patterns against 463 names on every draw otherwise. */
-let heroPatterns = null;
-const heroByName = new Map();
-
-function heroOf(name) {
-  if (heroByName.has(name)) return heroByName.get(name);
-  if (!heroPatterns) {
-    heroPatterns = (state.catalog?.constants?.HEROES_LIST || [])
-      .map((h) => [h, new RegExp(`\\b${h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')]);
-  }
-  const hit = heroPatterns.find(([, re]) => re.test(name));
-  const hero = hit ? hit[0] : '';
-  heroByName.set(name, hero);
-  return hero;
-}
-
-function heroMatches(hero, name) {
-  const re = new RegExp(`\\b${hero.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-  return re.test(name);
 }
 
 function applyFilters(mods, catForInstalled) {
@@ -621,12 +596,10 @@ async function renderCategory(categoryId) {
     : [];
   const mods = applyFilters(all, categoryId);
   const installable = all.some(canBeInstalled);
-
-  // Heroes opens on the heroes themselves, the way the game's own hero grid does, and a hero
-  // opens its mods. A sort asks for mods in an order, so it gets them; the list is a click away.
-  if (byHero && !filters.hero && filters.sort === 'default' && heroLayout() === 'grid') {
-    await renderHeroGrid(categoryId, mods, { tags, slots, heroes, installable });
-    return;
+  if (byHero && heroGridWanted(filters)) {
+    await renderHeroGrid(viewRoot, catName(categoryId), toolbarHtml(mods.length, { tags, slots, heroes, categoryId, installable }), mods,
+      { isInstalled, pick: (hero) => { filters.hero = hero; renderCatalog(); } });
+    return bindToolbar();
   }
 
   // Picking one hero out of the dropdown already answers the question the headings answer,
@@ -656,104 +629,13 @@ async function renderCategory(categoryId) {
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
-      ${byHero && filters.hero ? `
-        <button class="btn btn-ghost btn-sm hero-back" id="heroBack">
-          <span class="ms">arrow_back</span>${L`Все герои`}
-        </button>` : ''}
-      <h1 class="view-title">${esc(byHero && filters.hero ? filters.hero : catName(categoryId))}</h1>
+      ${byHero && filters.hero ? heroBackHtml() : ''}<h1 class="view-title">${esc((byHero && filters.hero) || catName(categoryId))}</h1>
     </div>
     ${toolbarHtml(mods.length, { tags, slots, groups, heroes, categoryId, installable })}
     <div class="grid" id="modGrid">${gridHtml}</div>
   `; });
   bindToolbar();
-  $('#heroBack')?.addEventListener('click', () => {
-    filters.hero = '';
-    renderCatalog();
-  });
   bindCards(viewRoot, mods);
-}
-
-// --- heroes: a grid of portraits first ---
-
-// Grid or the old flat list: a choice somebody makes once, so it outlives the session. Kept in
-// the window's own storage - it is how this screen looks, not anything the app has to know.
-const HERO_LAYOUT_KEY = 'catalog.heroLayout';
-function heroLayout() {
-  try { return localStorage.getItem(HERO_LAYOUT_KEY) === 'list' ? 'list' : 'grid'; } catch { return 'grid'; }
-}
-function setHeroLayout(v) {
-  try { localStorage.setItem(HERO_LAYOUT_KEY, v); } catch { /* the default then */ }
-}
-
-// Portraits come out of the player's own game (src/game-icons.js heroPortraits), keyed by the
-// name the catalog prints. null means asked and not found, so the tile keeps its stand-in.
-const heroArt = new Map();
-
-async function loadHeroArt(names) {
-  const want = names.filter((n) => !heroArt.has(n));
-  if (!want.length) return false;
-  let got = {};
-  try { got = await window.api.cosmetics.heroPortraitsByName(want); } catch { /* no game: stand-ins */ }
-  for (const n of want) heroArt.set(n, got[n] || null);
-  return want.some((n) => got[n]);
-}
-
-function heroTileHtml(hero, list, i) {
-  const art = heroArt.get(hero);
-  // No portrait (no game found, or one of the newest heroes): the first of its mods' own
-  // pictures stands in, which is still that hero and still not a grey box.
-  const first = list[0];
-  const stand = art ? null : previewUrl(first._cat, first.preview || first.styles?.[0]?.preview);
-  const installed = list.some((m) => isInstalled(m._cat, m));
-  return `
-    <button class="hero-tile ${installed ? 'installed' : ''}" data-hero="${esc(hero)}" style="--i:${Math.min(i, 40)}"
-            title="${esc(hero)}">
-      <span class="hero-art">
-        ${art ? `<img src="${esc(art)}" alt="" loading="lazy">`
-          : stand && !isMedia(stand) ? `<img src="${esc(resolveUrl(stand))}" alt="" loading="lazy" class="stand-in">`
-            : '<span class="ms">person</span>'}
-      </span>
-      <span class="hero-count">${list.length}</span>
-      ${installed ? '<span class="hero-installed ms" aria-hidden="true">check_circle</span>' : ''}
-      <span class="hero-name">${esc(hero || tr('Прочее'))}</span>
-    </button>`;
-}
-
-async function renderHeroGrid(categoryId, mods, { tags, slots, heroes, installable }) {
-  const byHero = new Map();
-  for (const m of mods) {
-    const h = m._group || '';
-    if (!byHero.has(h)) byHero.set(h, []);
-    byHero.get(h).push(m);
-  }
-  // A-Z, with the mods that name no hero last, as the grouped list has them
-  const order = [...byHero.keys()].sort((a, b) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b));
-  await loadHeroArt(order.filter(Boolean));
-
-  const tiles = () => order.map((h, i) => heroTileHtml(h, byHero.get(h), i)).join('');
-  await paint(() => { viewRoot.innerHTML = `
-    <div class="view-header">
-      <h1 class="view-title">${esc(catName(categoryId))}</h1>
-    </div>
-    ${toolbarHtml(mods.length, { tags, slots, heroes, categoryId, installable })}
-    ${order.length
-      ? `<div class="hero-grid" id="heroGrid">${tiles()}</div>`
-      : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
-  `; });
-  bindToolbar();
-  $('#heroGrid')?.addEventListener('click', (e) => {
-    const tile = e.target.closest('.hero-tile');
-    if (!tile) return;
-    const hero = tile.dataset.hero;
-    if (hero) {
-      filters.hero = hero;
-    } else {
-      // the mods no hero claims have no entry in the dropdown: the list, where they sit last
-      setHeroLayout('list');
-    }
-    renderCatalog();
-    $('#main')?.scrollTo({ top: 0 });
-  });
 }
 
 // --- toolbar ---
@@ -816,15 +698,7 @@ function toolbarHtml(resultCount, { tags = [], slots = [], groups = [], heroes =
         <button class="fchip ${f.favOnly ? 'active' : ''}" id="favChip">
           <span class="ms">favorite</span>${L`Избранное`}
         </button>` : ''}
-        ${categoryId === 'heroes' ? `
-          <div class="seg layout-toggle" role="group" aria-label="${L`Вид`}">
-            <button class="seg-btn ${heroLayout() === 'grid' ? 'active' : ''}" data-layout="grid" title="${L`Сеткой героев`}" aria-label="${L`Сеткой героев`}">
-              <span class="ms">grid_view</span>
-            </button>
-            <button class="seg-btn ${heroLayout() === 'list' ? 'active' : ''}" data-layout="list" title="${L`Все моды списком`}" aria-label="${L`Все моды списком`}">
-              <span class="ms">view_agenda</span>
-            </button>
-          </div>` : ''}
+        ${categoryId === 'heroes' ? layoutToggleHtml() : ''}
         ${narrowed() ? `<span class="count">${resultCount} ${plural(resultCount, 'результат', 'результата', 'результатов')}</span>` : ''}
       </div>
       ${tags.length ? `
@@ -838,6 +712,7 @@ function toolbarHtml(resultCount, { tags = [], slots = [], groups = [], heroes =
 }
 
 function bindToolbar() {
+  bindHeroControls(() => { filters.hero = ''; renderCatalog(); });
   $('#sortSelect')?.addEventListener('change', (e) => {
     filters.sort = e.target.value;
     renderCatalog();
@@ -853,13 +728,6 @@ function bindToolbar() {
   $('#slotSelect')?.addEventListener('change', (e) => {
     filters.slot = e.target.value;
     renderCatalog();
-  });
-  document.querySelectorAll('.layout-toggle [data-layout]').forEach((b) => {
-    b.addEventListener('click', () => {
-      setHeroLayout(b.dataset.layout);
-      filters.hero = '';
-      renderCatalog();
-    });
   });
   $('#installedChip')?.addEventListener('click', () => {
     filters.installedOnly = !filters.installedOnly;
