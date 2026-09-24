@@ -20,6 +20,9 @@ const stillness = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 // The router says a screen change is coming; the next paint spends it.
 let running = 0;
+// the screen change on show right now, and a press that landed on it rather than on the window
+let current = null;
+let lost = null;
 let armed = false;
 // Screens keep their own element now, so somebody has to put the new one on screen. Doing
 // it at switch time would show an empty screen for as long as the fetch takes, so it rides
@@ -61,13 +64,36 @@ export function paint(update) {
   running++;
   document.documentElement.classList.add('vt-screen');
   const vt = document.startViewTransition(run);
+  current = vt;
   // an abandoned transition rejects; that is a normal end here, not a fault to report
   vt.finished.catch(() => {}).finally(() => {
     if (--running === 0) document.documentElement.classList.remove('vt-screen');
+    if (current === vt) current = null;
   });
   // the update, not the animation: the screen carries on as soon as its markup exists
   return vt.updateCallbackDone;
 }
+
+/* While the browser animates a screen change it aims every click at the page root, so a tab
+   pressed less than about 300 ms after another did nothing (found by the simulation, tools/sim,
+   2026-09-24). Chromium here ignores pointer-events on ::view-transition, so the way through is
+   by hand: a press on the root cuts the animation short, and its click goes to whatever is
+   under the pointer once the new screen is up. Only a tab or a category: replaying a lost click
+   there just finishes the move the user started, replaying one on Install would not be safe. */
+document.addEventListener('pointerdown', (e) => {
+  if (!current || e.target !== document.documentElement) return;
+  lost = { x: e.clientX, y: e.clientY, vt: current };
+  current.skipTransition();
+}, true);
+document.addEventListener('click', (e) => {
+  if (!lost || e.target !== document.documentElement) return;
+  const { x, y, vt } = lost;
+  lost = null;
+  vt.finished.catch(() => {}).finally(() => {
+    const el = document.elementFromPoint(x, y)?.closest('.tb-tab, .rail-item');
+    if (el instanceof HTMLElement) el.click();
+  });
+}, true);
 
 /* A mod's window used to grow out of the card it was clicked on, as one named box the
    browser moved and resized. It was one movement on paper and two on screen: the picture
