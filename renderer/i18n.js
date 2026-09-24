@@ -152,6 +152,8 @@ const EN = {
   'Выбрано': 'Selected',
   'Выбрать предмет': 'Choose an item',
   'Нажми, чтобы сменить': 'Click to change',
+  'Конструктор предметов': 'Item builder',
+  'конструктор предметов': 'item builder',
   'Нет': 'None',
   'Установлено': 'Installed',
   'Эффекты (можно несколько)': 'Effects (you can pick several)',

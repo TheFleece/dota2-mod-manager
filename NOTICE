@@ -51,6 +51,24 @@ is credit, not use.
 Copies you received under an earlier version keep the terms they came with.
 
 
+The item builder
+
+The item builder turns a hero's stock items into any of that hero's
+wearables, with a particle effect on top. rotten (https://github.com/h6rd)
+wrote it, and develops it further together with TheFleece. It is the code in
+src/item-builder.js and renderer/views/item-builder.js, and the parts of other
+files that say they belong to it.
+
+Copyright (C) 2026 rotten (https://github.com/h6rd)
+Copyright (C) 2026 TheFleece (https://github.com/TheFleece)
+
+The terms above apply to it, and 7(b) asks one more thing. Whoever ships the
+item builder, or code taken from it, in this program or in any other, keeps
+both copyright lines in the source files it came in, and names both authors
+in the credits that program shows its users: its Appropriate Legal Notices,
+which in this program are in Settings under "About".
+
+
 Catalog and content
 
 The mods, previews and guides this app reads are not part of it and are not
