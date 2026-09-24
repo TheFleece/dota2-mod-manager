@@ -18,8 +18,9 @@ const itemBuilder = require('./item-builder');
  * @param {import('./library').Library} deps.library
  * @param {import('./installer').Installer} deps.installer
  * @param {string} deps.userDataDir
+ * @param {(msg: string) => void} [deps.log]  the app's diagnostics log
  */
-function createSchemaService({ settings, library, installer, userDataDir }) {
+function createSchemaService({ settings, library, installer, userDataDir, log = () => {} }) {
   const backupDir = path.join(userDataDir, 'backups', 'patch');
   const gamePath = () => settings.get('dotaGamePath');
 
@@ -56,7 +57,11 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
           const target = schema.baseItemFor(vanillaText, rec.slot);
           if (!target) continue;
           out.push({ id: target.id, block: schema.baseItemPatch(vanillaText, target.id, rec.itemId), source: rec.name });
-        } catch { /* a donor Valve removed simply drops out of the build */ }
+        } catch (err) {
+          // A donor Valve removed drops out of the build, and so does a pick the builder refuses.
+          // Said in the log, because the window cannot tell: it showed "installed" either way.
+          log(`schema: ${rec.name} left out of the build: ${err.message || err}`);
+        }
         continue;
       }
       if (!Array.isArray(rec.schema)) continue;
@@ -335,13 +340,14 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
   function pickCosmetic(slot, itemId, itemName, effectId = null) {
     const id = String(itemId);
     const name = itemName || id;
-    const effect = (slot === 'items' || String(slot || '').startsWith('item:')) ? String(effectId || '') : '';
+    // the item builder's effects, as one string in one order (item-builder.js effectKey)
+    const effect = (slot === 'items' || String(slot || '').startsWith('item:')) ? itemBuilder.effectKey(effectId) : '';
     const live = cosmeticRecordFor(slot);
-    if (live && live.itemId === id && String(live.effectId || '') === effect) return live; // already this
+    if (live && live.itemId === id && itemBuilder.effectKey(live.effectId) === effect) return live; // already this
 
     if (live) library.setEnabled(live.id, false);
     const dormant = library.list().find((r) => r.categoryId === 'cosmetic'
-      && r.slot === slot && r.itemId === id && String(r.effectId || '') === effect);
+      && r.slot === slot && r.itemId === id && itemBuilder.effectKey(r.effectId) === effect);
     const rec = dormant
       ? library.update(dormant.id, { name, enabled: true, effectId: effect || undefined })
       : library.add({ name, categoryId: 'cosmetic', styleLabel: null, fileRef: null, preview: null, files: [] });
