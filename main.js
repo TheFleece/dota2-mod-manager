@@ -629,6 +629,8 @@ app.whenReady().then(async () => {
   patchWatcher = createPatchWatcher({
     getGamePath: () => settings.get('dotaGamePath'),
     onPatch: (evt) => repairAfterPatch(evt),
+    // safe mode off: our search path belongs in the game, so Steam's file check taking it out is a patch too
+    expectsPatch: () => settings.get('schemaPatch') === true,
     log: diag,
   });
   patchWatcher.start(settings.get('gameStamp'));

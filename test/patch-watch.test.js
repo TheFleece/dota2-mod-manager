@@ -137,3 +137,51 @@ test('a repair that failed does not re-report the same patch', async (t) => {
   watcher.check();
   assert.equal(calls, 1, 'retrying is the caller’s job, not the watcher’s');
 });
+
+/* Steam's check of the game's files puts Valve's branch file and signatures back at the same
+   build, and the stamp cannot see it: the simulation's game session found the mods staying off
+   for as long as the app stayed open (2026-09-24). */
+const branchWith = (game, ours) => {
+  const file = patcher.paths(game).branch;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `"GameInfo"\r\n{\r\n\tFileSystem\r\n\t{\r\n${ours ? `\t\tGame dota_mods // ${patcher.MARKER}\r\n` : ''}\t}\r\n}\r\n`, 'latin1');
+};
+
+test('Steam checking the files at the same build is reported once, while the app expects its search path', async (t) => {
+  const game = fakeGame(t);
+  branchWith(game, true);
+  const seen = [];
+  const watcher = createPatchWatcher({ getGamePath: () => game, onPatch: (e) => seen.push(e), expectsPatch: () => true, debounceMs: 20 });
+  t.after(() => watcher.stop());
+  watcher.start(gameStamp(game));
+
+  branchWith(game, false);
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(seen.length, 1, 'the file check is noticed');
+  assert.equal(seen[0].reason, 'files-restored');
+  assert.equal(seen[0].to, gameStamp(game), 'at the build that was already known');
+
+  setInf(game, '6888'); // more events in the folder, nothing new
+  await new Promise((r) => setTimeout(r, 200));
+  watcher.check();
+  assert.equal(seen.length, 1, 'reported once, not on every event while the repair runs');
+
+  branchWith(game, true); // the repair put it back
+  watcher.check();
+  branchWith(game, false); // and another check took it out again
+  watcher.check();
+  assert.equal(seen.length, 2, 'a second file check is a second report');
+});
+
+test('with safe mode on, a branch file without our search path is how it should be', async (t) => {
+  const game = fakeGame(t);
+  branchWith(game, false);
+  const seen = [];
+  const watcher = createPatchWatcher({ getGamePath: () => game, onPatch: (e) => seen.push(e), expectsPatch: () => false, debounceMs: 20 });
+  t.after(() => watcher.stop());
+  watcher.start(gameStamp(game));
+  setInf(game, '6888');
+  await new Promise((r) => setTimeout(r, 200));
+  watcher.check();
+  assert.deepEqual(seen, []);
+});

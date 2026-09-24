@@ -1741,13 +1741,14 @@ _No description in the source._
 ### `createPatchWatcher`
 
 ```js
-function createPatchWatcher({ getGamePath, onPatch, log = () => {}, debounceMs = DEBOUNCE_MS })
+function createPatchWatcher({ getGamePath, onPatch, expectsPatch = () => false, log = () => {}, debounceMs = DEBOUNCE_MS })
 ```
 
 ```
 @param {object} deps
 @param {() => string|null} deps.getGamePath
-@param {(evt: {from: string|null, to: string}) => void} deps.onPatch
+@param {(evt: {from: string|null, to: string, reason?: string}) => void} deps.onPatch
+@param {() => boolean} [deps.expectsPatch] whether the app's search path should be in the game (safe mode off)
 @param {(msg: string) => void} [deps.log]
 @param {number} [deps.debounceMs] shortened by tests, which cannot wait out a real patch
 ```
