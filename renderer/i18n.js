@@ -62,6 +62,7 @@ const EN = {
 
   // ---------- group / link labels ----------
   'Все герои': 'All heroes', 'Все предметы': 'All items', 'Все крипы': 'All creeps',
+  'Вид': 'View', 'Сеткой героев': 'Hero grid', 'Все моды списком': 'All mods as a list',
   'Все башни': 'All towers', 'Все типы': 'All types', 'Все группы': 'All groups',
   'Все категории': 'All categories', 'Все слоты': 'All slots',
 

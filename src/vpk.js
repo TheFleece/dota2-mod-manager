@@ -324,6 +324,26 @@ function heroDisplayName(id) {
   return canon.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// A catalog names a hero the way people do ("Queen of Pain", "Nature's Prophet"); the game
+// files it under an id that can look nothing like that (queenofpain, furion). Display names
+// are matched first, punctuation ignored, and whatever is not among them is taken as a folder
+// name somebody typed.
+const HERO_ID_BY_NAME = new Map();
+for (const [id, name] of Object.entries(HERO_DISPLAY)) {
+  const key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // first listed wins: antimage, the game's own folder, before anti_mage, the common spelling
+  if (!HERO_ID_BY_NAME.has(key)) HERO_ID_BY_NAME.set(key, id);
+}
+
+/** The game's id for a hero the catalog names ("Queen of Pain" -> queenofpain), or null. */
+function heroIdFromName(name) {
+  const text = String(name || '').toLowerCase();
+  const byName = HERO_ID_BY_NAME.get(text.replace(/[^a-z0-9]/g, ''));
+  if (byName) return byName;
+  const slug = text.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return HERO_ALIAS[slug] || slug || null;
+}
+
 // Identity of a hero regardless of how the author spelled the folder. Authors mix
 // "crystal_maiden", "crystalmaiden" and "CrystalMaiden" inside one pack, and each spelling
 // used to count as a separate hero — which turned a single-hero skin into a "bundle of 3"
@@ -962,6 +982,6 @@ module.exports = {
   readVpkEntries, readVpkIndexFile, readVpkEntryFile, buildVpk, buildVpkDir, combineVpksToFiles, entryPath,
   findContentRoot, packFolder, crc32,
   fingerprintVpk, fingerprintEntries, fingerprintFiles,
-  analyzeVpk, analyzeVpkPaths, heroDisplayName, slotDisplayName,
+  analyzeVpk, analyzeVpkPaths, heroDisplayName, heroIdFromName, slotDisplayName,
   describeHero, describeAnalysis, nameFromAnalysis, subjectHeroes,
 };

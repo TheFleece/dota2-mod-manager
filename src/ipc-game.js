@@ -8,6 +8,7 @@
 const { ipcMain } = require('electron');
 
 const { t } = require('./i18n');
+const { heroIdFromName } = require('./vpk');
 
 /** @param {object} ctx  the services and main-process callbacks these channels use */
 function registerGameIpc({
@@ -91,6 +92,21 @@ function registerGameIpc({
       return await gameIcons.heroPortraits((Array.isArray(ids) ? ids : []).slice(0, 300));
     } catch (err) {
       diag('hero portraits failed: ' + err.message);
+      return {};
+    }
+  });
+
+  // the catalog's hero grid: the same portraits, asked for by the name the catalog prints
+  ipcMain.handle('cosmetics:heroPortraitsByName', async (e, names) => {
+    try {
+      const list = (Array.isArray(names) ? names : []).slice(0, 300).map(String);
+      const idOf = new Map(list.map((n) => [n, heroIdFromName(n)]));
+      const got = await gameIcons.heroPortraits([...new Set(idOf.values())].filter(Boolean));
+      const out = {};
+      for (const [n, id] of idOf) if (got[id]) out[n] = got[id];
+      return out;
+    } catch (err) {
+      diag('hero portraits by name failed: ' + err.message);
       return {};
     }
   });

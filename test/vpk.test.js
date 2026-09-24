@@ -267,3 +267,15 @@ test('the seeking index answers exactly what the one-file reader does', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// The catalog's hero grid asks for portraits by the name it prints; the game files them under
+// ids that can look nothing like it.
+test('a hero named the way the catalog names it finds the game id', () => {
+  const cases = {
+    'Anti-Mage': 'antimage', 'Queen of Pain': 'queenofpain', "Nature's Prophet": 'furion',
+    'Natures Prophet': 'furion', 'Wraith King': 'skeleton_king', Io: 'wisp', Doom: 'doom_bringer',
+    'Monkey King': 'monkey_king', Abaddon: 'abaddon', 'Treant Protector': 'treant', Centaur: 'centaur',
+  };
+  for (const [name, id] of Object.entries(cases)) assert.equal(vpk.heroIdFromName(name), id, name);
+  assert.equal(vpk.heroIdFromName(''), null);
+});

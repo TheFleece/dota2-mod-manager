@@ -3623,6 +3623,14 @@ function heroDisplayName(id)
 
 _No description in the source._
 
+### `heroIdFromName`
+
+```js
+function heroIdFromName(name)
+```
+
+The game's id for a hero the catalog names ("Queen of Pain" -> queenofpain), or null.
+
 ### `slotDisplayName`
 
 ```js
