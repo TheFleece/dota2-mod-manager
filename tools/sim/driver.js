@@ -73,14 +73,26 @@ class Sim {
 
   // ---- input -------------------------------------------------------------------------------
 
-  /** A selector's centre in window pixels, or null. "sel@3" is the third match. */
+  /**
+   * A selector's centre in window pixels, or null. "sel@3" is the third match. An element
+   * scrolled out of sight is scrolled to first, as a hand would before clicking it: a click at
+   * its coordinates would otherwise land on whatever is drawn there instead.
+   */
   async find(spec) {
     const at = /@(\d+)$/.exec(spec);
     const sel = at ? spec.slice(0, -at[0].length) : spec;
     const box = await this.js(`(() => {
       const el = document.querySelectorAll(${JSON.stringify(sel)})[${at ? Number(at[1]) - 1 : 0}];
       if (!el) return null;
-      const b = el.getBoundingClientRect();
+      const seen = (r) => {
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!hit && (hit === el || el.contains(hit));
+      };
+      let b = el.getBoundingClientRect();
+      if ((b.width || b.height) && !seen(b)) {
+        el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+        b = el.getBoundingClientRect();
+      }
       return b.width || b.height ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : null;
     })()`);
     return box && { x: Math.round(box.x * this.scale), y: Math.round(box.y * this.scale) };
@@ -120,6 +132,59 @@ class Sim {
       this.win.webContents.sendInputEvent({ type: 'mouseWheel', x: this.x, y: this.y, deltaX: 0, deltaY: -dy, canScroll: true });
       await sleep(gap);
     }
+  }
+
+  /** A key press, with modifiers ('control', 'shift', 'alt'), sent the way a keyboard sends it. */
+  async key(keyCode, modifiers = []) {
+    const wc = this.win.webContents;
+    wc.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
+    // a printable key without Ctrl also types itself, which is what a field listens to
+    if (keyCode.length === 1 && !modifiers.includes('control')) wc.sendInputEvent({ type: 'char', keyCode, modifiers });
+    await sleep(30);
+    wc.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
+    await sleep(30);
+  }
+
+  /** Types text into whatever has focus, one key at a time. */
+  async type(text) {
+    for (const ch of text) await this.key(ch);
+  }
+
+  /**
+   * What would stop a person reading the screen: the page scrolling sideways, or a control
+   * sticking out of the window. Each is a check with what stuck out and by how much.
+   */
+  async layout(where) {
+    const r = await this.js(`(() => {
+      const w = innerWidth, h = innerHeight;
+      const out = [];
+      for (const el of document.querySelectorAll('button, a, input, select, .card, .tb-tab, .rail-item')) {
+        if (el.closest('[hidden], .hidden')) continue;
+        const b = el.getBoundingClientRect();
+        if (!b.width || !b.height) continue;
+        // a control inside a scroller is allowed past the edge of the window, as long as its
+        // scroller is not: that is what scrolling is for
+        let clip = null;
+        for (let p = el.parentElement; p; p = p.parentElement) {
+          const o = getComputedStyle(p);
+          if (/auto|scroll|hidden|clip/.test(o.overflowX + o.overflowY)) { clip = p; break; }
+        }
+        if (clip) continue;
+        if (b.right > w + 1 || b.left < -1) out.push({ el: el.className || el.tagName, left: Math.round(b.left), right: Math.round(b.right) });
+      }
+      return { sideways: document.documentElement.scrollWidth - w, out: out.slice(0, 5) };
+    })()`);
+    this.check(`${where}: the page does not scroll sideways`, r.sideways <= 1, `${r.sideways}px wider than the window`, r);
+    this.check(`${where}: no control sticks out of the window`, !r.out.length, JSON.stringify(r.out), r);
+  }
+
+  /**
+   * Waits for everything that moves on its way somewhere to get there: a window opening, a
+   * screen sliding in. A spinner or a shimmer that loops forever is not waited for.
+   */
+  async still(ms = 3000) {
+    return this.until(`document.getAnimations().every((a) => a.playState !== 'running'
+      || a.effect?.getComputedTiming().endTime === Infinity)`, ms);
   }
 
   /** Waits for the pictures on screen to finish loading, then a little more for anything easing in. */
@@ -203,14 +268,32 @@ async function machine() {
 async function run(win, list, { out }) {
   const started = Date.now();
   const all = { checks: [], pictures: [] };
+  // What the page said while it was being used. An exception in a click handler leaves the
+  // screen looking fine and the button doing nothing, and only the console knows.
+  let said = [];
+  const listen = (/** @type {any} */ e, /** @type {any} */ level, /** @type {any} */ message) => {
+    // Electron 35 moved the fields onto the event; older builds pass them as arguments
+    const lvl = typeof level === 'number' ? ['debug', 'info', 'warning', 'error'][level] : e.level;
+    const text = typeof message === 'string' ? message : e.message;
+    if (lvl === 'error') said.push(String(text).slice(0, 300));
+  };
+  win.webContents.on('console-message', listen);
+  let crashed = null;
+  win.webContents.on('render-process-gone', (_e, details) => { crashed = details; });
+
   for (const name of String(list).split(',').map((s) => s.trim()).filter(Boolean)) {
     const sim = new Sim(win, { out, scenario: name });
+    said = [];
     try {
       await sim.ready();
       await require(`./scenarios/${name}`)(sim);
     } catch (e) {
       sim.check('the scenario ran to its end', false, (e && e.stack) || e);
     }
+    // a picture that failed to download is the network's doing, and the catalog is live
+    const errors = said.filter((m) => !/^Failed to load resource/.test(m));
+    sim.check('the page reported no errors', !errors.length, errors.slice(0, 5).join(' | '), { errors, network: said.length - errors.length });
+    sim.check('the page did not crash', !crashed, JSON.stringify(crashed));
     all.checks.push(...sim.checks);
     all.pictures.push(...sim.pictures);
   }
@@ -221,6 +304,7 @@ async function run(win, list, { out }) {
     passed: all.checks.every((c) => c.ok),
     ...all,
   };
+  win.webContents.off('console-message', listen);
   fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify(result, null, 1));
   return result;
 }
