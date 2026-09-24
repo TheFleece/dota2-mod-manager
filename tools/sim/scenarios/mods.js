@@ -18,9 +18,11 @@
  * left as it was found.
  */
 const { app } = require('electron');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const dota = require('../dota');
+const { lit } = require('../driver');
 const { listVpkPathCrcsFile } = require('../../../src/vpk.js');
 
 const ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -45,36 +47,50 @@ const modalOpen = `!document.getElementById('modalOverlay').classList.contains('
  */
 function listing(dir) {
   const out = {};
-  for (const n of fs.readdirSync(dir)) {
-    const file = path.join(dir, n);
-    const st = fs.statSync(file);
-    if (!st.isFile()) continue;
-    if (n === 'dota2modmanager.json') {
-      try { out[n] = JSON.stringify(JSON.parse(fs.readFileSync(file, 'utf8')).files); } catch { out[n] = 'unreadable'; }
-    } else if (st.size < 1 << 20) {
-      out[n] = require('crypto').createHash('sha1').update(fs.readFileSync(file)).digest('hex');
-    } else {
-      out[n] = `${st.size}:${Math.round(st.mtimeMs)}`;
+  for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (!d.isFile()) continue;
+    const fd = fs.openSync(path.join(dir, d.name), 'r');
+    try {
+      const st = fs.fstatSync(fd);
+      if (d.name === 'dota2modmanager.json') {
+        try { out[d.name] = JSON.stringify(JSON.parse(fs.readFileSync(fd, 'utf8')).files); } catch { out[d.name] = 'unreadable'; }
+      } else if (st.size < 1 << 20) {
+        out[d.name] = crypto.createHash('sha1').update(fs.readFileSync(fd)).digest('hex');
+      } else {
+        out[d.name] = `${st.size}:${Math.round(st.mtimeMs)}`;
+      }
+    } finally {
+      fs.closeSync(fd);
     }
   }
   return out;
 }
 
 /**
- * A mod from the sandbox, fetched and checked against its recorded hash when the sandbox was
- * seeded without them (CI does, to skip ~110 MB it has no use for; these seven are 1.5 MB).
+ * A mod from the sandbox, as tools/sandbox-mods.json recorded it: the sandbox's copy, or fetched
+ * when the sandbox was seeded without mods (CI does, to skip ~110 MB it has no use for; these
+ * seven are 1.5 MB). Either way the bytes must hash to what the list recorded.
+ *
+ * The catalog is somebody else's and its authors replace files. When one has been replaced since
+ * the list was written, the answer is { replaced } and the run goes on without that mod: a check
+ * that fails over a commit in another repository gets switched off within a week (tools/e2e.mjs
+ * says the same about the live catalog).
+ * @returns {Promise<{ file?: string, replaced?: string }>}
  */
 async function sandboxMod(m) {
   const file = path.join(ROOT, 'sandbox', 'mods', `${m.categoryId}__${m.file}`);
-  if (fs.existsSync(file)) return file;
+  const hash = (b) => crypto.createHash('sha256').update(b).digest('hex');
+  let bytes = null;
+  try { bytes = fs.readFileSync(file); } catch { /* not in this sandbox */ }
+  if (bytes && hash(bytes) === m.sha256) return { file };
   const res = await fetch(m.url);
   if (!res.ok) throw new Error(`${m.url}: HTTP ${res.status}`);
-  const bytes = Buffer.from(await res.arrayBuffer());
-  const got = require('crypto').createHash('sha256').update(bytes).digest('hex');
-  if (got !== m.sha256) throw new Error(`${m.file}: sha256 ${got}, the sandbox recorded ${m.sha256}`);
+  bytes = Buffer.from(await res.arrayBuffer());
+  const got = hash(bytes);
+  if (got !== m.sha256) return { replaced: got };
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, bytes);
-  return file;
+  return { file };
 }
 
 /** The mod's own files in its pack, and for each where the game would read it from. */
@@ -113,16 +129,24 @@ module.exports = async function mods(sim) {
   const picked = [];
   for (const name of PICK) {
     const m = MANIFEST.find((x) => x.name === name);
-    let src = null;
+    let got = null;
     let why = 'not in tools/sandbox-mods.json';
-    if (m) { try { src = await sandboxMod(m); } catch (e) { why = e.message; } }
-    if (!sim.check(`${name} is in the sandbox`, src, why)) continue;
+    if (m) { try { got = await sandboxMod(m); } catch (e) { why = e.message; } }
+    if (got && got.replaced) {
+      sim.check(`${name}: the catalog replaced it since tools/sandbox-mods.json was written, so it sits this run out`, true, '',
+        { recorded: m.sha256, now: got.replaced });
+      continue;
+    }
+    if (!sim.check(`${name} is in the sandbox`, got && got.file, why)) continue;
+    const src = got.file;
     fs.mkdirSync(path.join(dl, m.categoryId), { recursive: true });
     fs.copyFileSync(src, path.join(dl, m.categoryId, m.file));
     index[`${m.categoryId}/${m.file}`] = { size: m.bytes, sha256: m.sha256, at: Date.now() };
     picked.push(m);
   }
   fs.writeFileSync(indexFile, JSON.stringify(index, null, 2));
+  if (!sim.check('enough of the picked mods are available to mean something', picked.length >= 5,
+    `${picked.length} of ${PICK.length}: refresh tools/sandbox-mods.json (npm run sandbox:seed)`)) return;
 
   // ---- install, from the card, each checked by the game ----
   const installed = [];
@@ -130,15 +154,20 @@ module.exports = async function mods(sim) {
     await sim.click('.tb-tab[data-view="catalog"]');
     await sim.until(calm, 3000);
     await sim.click(`.rail-item[data-cat="${m.categoryId}"]`);
-    await sim.until(`document.querySelector('.rail-item.active')?.dataset.cat === '${m.categoryId}' && ${calm}`, 8000);
+    await sim.until(`document.querySelector('.rail-item.active')?.dataset.cat === ${lit(m.categoryId)} && ${calm}`, 8000);
     const at = await sim.until(`(() => {
       const names = [...document.querySelectorAll('.view-pane[data-pane="catalog"] .grid .card .card-name')];
-      return names.findIndex((n) => n.textContent.trim() === ${JSON.stringify(m.name)}) + 1;
+      return names.findIndex((n) => n.textContent.trim() === ${lit(m.name)}) + 1;
     })()`, 8000);
     // the catalog is live: a mod taken down upstream since the sandbox was seeded is not a fault here
     if (!at) { sim.check(`${m.name} is still in the catalog`, true); continue; }
-    await sim.click(`.view-pane[data-pane="catalog"] .grid .card .card-name@${at}`);
-    if (!sim.check(`${m.name}: its window opens`, await sim.until(modalOpen, 5000), 'the overlay stayed hidden')) continue;
+    const clicked = await sim.click(`.view-pane[data-pane="catalog"] .grid .card .card-name@${at}`);
+    const title = clicked && await sim.until(modalOpen, 5000);
+    if (!sim.check(`${m.name}: its window opens`, title === m.name,
+      `${!clicked ? 'its card could not be found to click' : title ? `the window is for ${title}` : 'the overlay stayed hidden'}; the last click: ${JSON.stringify(sim.lastClick)}`)) {
+      await sim.shot(`no-window-${m.categoryId}`);
+      continue;
+    }
     await sim.still();
     const before = listing(langDir);
     await sim.click('#installBtn');
@@ -217,7 +246,7 @@ module.exports = async function mods(sim) {
       if (!menuSeen && !sim.check('the row menu offers to load a mod earlier', upAt > 0, `menu: ${menu}`)) break;
       menuSeen = true;
       await sim.click(`.ctx-menu .ctx-item@${upAt}`);
-      await sim.until(`(() => { const r = [...document.querySelectorAll('.lib-row[data-row]')].find((x) => x.textContent.includes(${JSON.stringify(mover)})); return r && Number(r.dataset.order) < ${row.order}; })()`, 10000);
+      await sim.until(`(() => { const r = [...document.querySelectorAll('.lib-row[data-row]')].find((x) => x.textContent.includes(${lit(mover)})); return r && Number(r.dataset.order) < ${row.order}; })()`, 10000);
       await sim.settle(400);
       if ((await standing()).top === mover) break;
     }
@@ -234,14 +263,14 @@ module.exports = async function mods(sim) {
     list = await rows();
     const row = rowOf(list, one.name);
     await sim.click(`.lib-row[data-row="${row.id}"] .toggle[data-id]`);
-    await sim.until(`document.querySelector('.lib-row[data-row="${row.id}"] .toggle[data-id]')?.getAttribute('aria-checked') === 'false'`, 8000);
+    await sim.until(`document.querySelector(${lit(`.lib-row[data-row="${row.id}"] .toggle[data-id]`)})?.getAttribute('aria-checked') === 'false'`, 8000);
     await sim.settle(400);
     const game2 = dota.load(game);
     const mounted = game2.paks.some((p) => p.folder === folder && p.name === row.pak);
     sim.check(`${one.name} switched off: the game no longer loads its pack`, !mounted && fs.existsSync(path.join(langDir, `${row.pak}.off`)),
       `pack still mounted: ${mounted}, files: ${Object.keys(listing(langDir)).filter((n) => n.startsWith(row.pak)).join(', ')}`);
     await sim.click(`.lib-row[data-row="${row.id}"] .toggle[data-id]`);
-    await sim.until(`document.querySelector('.lib-row[data-row="${row.id}"] .toggle[data-id]')?.getAttribute('aria-checked') === 'true'`, 8000);
+    await sim.until(`document.querySelector(${lit(`.lib-row[data-row="${row.id}"] .toggle[data-id]`)})?.getAttribute('aria-checked') === 'true'`, 8000);
     await sim.settle(400);
     const back = whoServes(game, folder, row.pak);
     sim.check(`${one.name} switched on again: the game reads it again`, back.served > 0, JSON.stringify(back));
@@ -272,7 +301,7 @@ module.exports = async function mods(sim) {
       await sim.still();
       await sim.click('.confirm-overlay [data-c="yes"]');
     }
-    const gone = await sim.until(`!document.querySelector('.lib-row[data-row="${row.id}"]')`, 10000);
+    const gone = await sim.until(`!document.querySelector(${lit(`.lib-row[data-row="${row.id}"]`)})`, 10000);
     sim.check(`${m.name}: removed from My mods`, gone, `the row is still there${asked ? '' : ', and no confirmation was asked'}`);
   }
   await sim.settle(600);

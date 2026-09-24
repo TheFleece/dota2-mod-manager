@@ -10,6 +10,8 @@
  * It installs nothing and changes no setting: it can run first, on any machine, and leave the
  * sandbox as it found it.
  */
+const { lit } = require('../driver');
+
 const SECTIONS = ['catalog', 'library', 'presets', 'settings'];
 
 const paneShown = (view) => `(() => {
@@ -132,10 +134,10 @@ module.exports = async function browse(sim) {
   })()`);
   await sim.type(word);
   // the results screen, not the cards of the screen it replaces
-  const found = await sim.until(`document.querySelector('.view-pane[data-pane="catalog"] .view-title')?.textContent.includes(${JSON.stringify(word)})
+  const found = await sim.until(`document.querySelector('.view-pane[data-pane="catalog"] .view-title')?.textContent.includes(${lit(word)})
     && document.querySelectorAll('.view-pane[data-pane="catalog"] .grid .card').length`, 8000);
   const wrong = await sim.js(`[...document.querySelectorAll('.view-pane[data-pane="catalog"] .grid .card')]
-    .filter((c) => !c.textContent.toLowerCase().includes(${JSON.stringify(word.toLowerCase())})).length`);
+    .filter((c) => !c.textContent.toLowerCase().includes(${lit(word.toLowerCase())})).length`);
   sim.check(`searching "${word}" finds mods`, found > 0, 'no cards');
   sim.check(`every card the search shows has "${word}" on it`, wrong === 0, `${wrong} of ${found} do not`, { found, wrong });
   await sim.settle(500);

@@ -22,6 +22,15 @@ const { compareFrames, markChanges } = require('./frames');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* A value written into code the page runs. JSON.stringify leaves characters that end a script
+   or a line in some parsers, and CodeQL's js/bad-code-sanitization asks for those escaped too;
+   this is the fix its documentation gives. Scenarios put catalog names into page code with it. */
+const UNSAFE = {
+  '<': '\\u003C', '>': '\\u003E', '/': '\\u002F', '\\': '\\\\', '\b': '\\b', '\f': '\\f',
+  '\n': '\\n', '\r': '\\r', '\t': '\\t', '\0': '\\0', '\u2028': '\\u2028', '\u2029': '\\u2029',
+};
+const lit = (v) => JSON.stringify(v).replace(/[<>\b\f\n\r\t\0\u2028\u2029]/g, (c) => UNSAFE[c]);
+
 class Sim {
   /**
    * @param {import('electron').BrowserWindow} win
@@ -94,7 +103,7 @@ class Sim {
     const at = /@(\d+)$/.exec(spec);
     const sel = at ? spec.slice(0, -at[0].length) : spec;
     const box = await this.js(`(async () => {
-      const el = document.querySelectorAll(${JSON.stringify(sel)})[${at ? Number(at[1]) - 1 : 0}];
+      const el = document.querySelectorAll(${lit(sel)})[${at ? Number(at[1]) - 1 : 0}];
       if (!el) return null;
       const seen = (r) => {
         const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -135,13 +144,37 @@ class Sim {
     this.y = y;
   }
 
+  /** What is under a window point, and whether it is the element `spec` names or inside it. */
+  async under(spec, p) {
+    const at = /@(\d+)$/.exec(spec);
+    const sel = at ? spec.slice(0, -at[0].length) : spec;
+    return this.js(`(() => {
+      const el = document.querySelectorAll(${lit(sel)})[${at ? Number(at[1]) - 1 : 0}];
+      const hit = document.elementFromPoint(${p.x / this.scale}, ${p.y / this.scale});
+      return { on: !!el && !!hit && (hit === el || el.contains(hit)), hit: hit ? (hit.id ? '#' + hit.id : hit.className || hit.tagName) : null };
+    })()`);
+  }
+
   async click(spec) {
     let p = await this.find(spec);
+    if (!p) {
+      // a list being redrawn is empty for a moment (the catalog redraws after every install);
+      // a hand waits for it to come back rather than clicking at nothing
+      const at = /@(\d+)$/.exec(spec);
+      const sel = at ? spec.slice(0, -at[0].length) : spec;
+      await this.until(`document.querySelectorAll(${lit(sel)}).length >= ${at ? Number(at[1]) : 1}`, 5000);
+      p = await this.find(spec);
+    }
     if (!p) return false;
     await this.move(p.x, p.y);
-    // looked at again with the pointer on it, since moving there takes a tenth of a second
-    const again = await this.find(spec);
-    if (again && Math.hypot(again.x - p.x, again.y - p.y) > 2) {
+    // Aimed, the way a hand is: with the pointer there, is the target under it? Moving takes a
+    // tenth of a second, and a list still settling or a toast arriving can move it off.
+    for (let i = 0; i < 3; i++) {
+      const u = await this.under(spec, p);
+      this.lastClick = { spec, x: p.x, y: p.y, hit: u.hit, on: u.on };
+      if (u.on) break;
+      const again = await this.find(spec);
+      if (!again) return false;
       p = again;
       await this.move(p.x, p.y, 2);
     }
@@ -350,4 +383,4 @@ async function run(win, list, { out }) {
   return result;
 }
 
-module.exports = { Sim, run };
+module.exports = { Sim, run, lit };
