@@ -101,7 +101,7 @@ Shorthand used below: **repo** is `https://github.com/dota2modmanager/dota2-mod-
 | `build` | Met: `npm ci` then `npm run dist` (electron-builder); CI builds the installer, the portable build and the AppImage for every release | repo .github/workflows/release.yml |
 | `build_common_tools` | Met: npm, electron-builder, GitHub Actions | repo package.json |
 | `build_floss_tools` | Met: Node.js, npm and electron-builder are FLOSS | repo package.json |
-| `test` | Met: `npm test`, 80 test files on node:test, released under the project's own licence | repo test/ |
+| `test` | Met: `npm test`, more than 80 test files on node:test, released under the project's own licence | repo test/ |
 | `test_invocation` | Met: `npm test` | repo package.json |
 | `test_most` | Met | repo .github/coverage-baseline.json |
 | `test_continuous_integration` | Met: the suite runs on Linux and Windows for every push and every pull request | repo .github/workflows/test.yml |

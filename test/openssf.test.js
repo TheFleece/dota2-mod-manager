@@ -128,9 +128,11 @@ test('the counted claims match what the repository counts', () => {
   /* Two numbers in the answers are measured elsewhere in this repository, and both have gone stale
      in documents before: the number of test files and the coverage the ratchet holds. */
   const files = fs.readdirSync(path.join(ROOT, 'test')).filter((f) => f.endsWith('.test.js')).length;
-  const said = /(\d+) test files on node:test/.exec(why('test'));
+  // a floor, like ARCHITECTURE.md's: an exact number conflicted between every two open pull
+  // requests that each added a test file
+  const said = /more than (\d+) test files on node:test/.exec(why('test'));
   assert.ok(said, 'the test criterion stopped saying how many test files there are');
-  assert.equal(Number(said[1]), files, 'the number of test files in the answer is not the number there are');
+  assert.ok(files > Number(said[1]), `the answer says more than ${said[1]} test files and test/ has ${files}`);
 
   const baseline = JSON.parse(fs.readFileSync(path.join(ROOT, '.github', 'coverage-baseline.json'), 'utf8'));
   const floor = /floor of (\d+)% of lines/.exec(why('test_most'));
