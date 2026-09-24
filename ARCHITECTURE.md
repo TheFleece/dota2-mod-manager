@@ -295,7 +295,7 @@ build next to the old one instead and says so (`src/portable-update.js`).
 answer whether a line will throw the first time somebody reaches it. It runs before the suite,
 because when it fails there is nothing below it worth reading.
 
-`npm test` is plain `node:test`, no framework, 82 files, run on every push and every pull request
+`npm test` is plain `node:test`, no framework, 85 files, run on every push and every pull request
 on Linux and on Windows. Five of them hold this project against itself rather than testing a
 module: the IPC contract (every channel has a handler, every handler runs, and `main.js` passes
 what each module unpacks), the renderer's imports, the release contract, `DECISIONS.md`
@@ -312,6 +312,17 @@ a fixture archive into the app's caches, starts the app twice, and clicks: insta
 restart, switch on, remove. After each launch it compares the language folder on disk with what
 should be there. No network is involved. `.github/workflows/e2e.yml` runs it on Linux and on
 Windows, and both jobs have to pass before a pull request merges and before a release builds.
+
+`tools/sim/` runs the app on simulated machines. A machine is a screen (the work area and the
+scale Windows would give the window) and a renderer (the Chromium switches that decide how the page
+reaches the graphics card), both listed in `tools/sim/profiles.json`. Scenarios drive the real
+window with real input events and check what a person would see: `scroll` flicks through the
+463 hero mods, then compares each resting frame with a forced repaint of it, which is how stale
+tiles on some graphics drivers show up, and checks that the end of the list is inside the window
+and the window inside the screen. `tools/sim/dota.js` is a model of the game's loader, run over
+the sandbox: what it mounts, which pack wins each file, whether our packs' bytes match their CRCs,
+and whether the item schema points at files the game can load. `npm run sim` runs the set for
+this system and writes `e2e-output/sim/index.html`.
 
 ## On disk
 
