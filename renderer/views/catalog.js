@@ -29,6 +29,10 @@ import { isQueued, toggleQueued, dropFromQueue, useInstaller } from '../ui/queue
 import { refreshSidebarStatus } from '../ui/statusbar.js';
 import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
+import {
+  bindItemBuilder, itemCosmeticSlots, hasItemCosmeticPick, isItemCosmeticSlot, cosmeticFavValue, renderItemCosmeticHub,
+  forgetItemHub, forgetItemSlotModal, redrawItemSlotModal,
+} from './item-builder.js';
 
 const viewRoot = pane('catalog');
 
@@ -71,14 +75,6 @@ function cosmeticSlotList() {
   return state.settings?.schemaPatch ? (state.cosmeticSlots || []) : [];
 }
 
-function itemCosmeticSlots() {
-  return cosmeticSlotList().filter((s) => s.kind === 'item-effect' || String(s.slot || '').startsWith('item:'));
-}
-
-function hasItemCosmeticPick() {
-  return itemCosmeticSlots().some((s) => pickedIn(s.slot));
-}
-
 function slotData(slot) {
   return cosmeticSlotList().find((s) => s.slot === slot) || null;
 }
@@ -88,14 +84,6 @@ function findCosmetic(slot, idOrName) {
   const data = slotData(slot);
   if (!data) return null;
   return data.options.find((o) => o.id === idOrName) || data.options.find((o) => o.name === idOrName) || null;
-}
-
-function isItemCosmeticSlot(slot) {
-  return slotData(slot)?.kind === 'item-effect' || String(slot || '') === 'items' || String(slot || '').startsWith('item:');
-}
-
-function cosmeticFavValue(slot, o) {
-  return isItemCosmeticSlot(slot) ? o.id : o.name;
 }
 
 // starred looks resolved back to slot + option (one Valve dropped is simply skipped)
@@ -132,7 +120,6 @@ function filterCosmetics(list) {
   else if (f.sort === 'name-desc') out = [...out].sort((a, b) => b.o.name.localeCompare(a.o.name));
   return out;
 }
-
 
 // ---------- catalog data helpers ----------
 
@@ -191,7 +178,6 @@ function buildModIndex() {
     }
   }
 }
-
 
 function installTarget(mod) {
   const f = mod.file;
@@ -336,8 +322,6 @@ function favButtonHtml(cat, name) {
     aria-label="${on ? L`Убрать из избранного` : L`В избранное`}"><span class="ms">${on ? 'favorite' : 'favorite_border'}</span></button>`;
 }
 
-
-
 // media the built-in player can show: only a dedicated "preview"-type link.
 // Mods whose card preview is itself a video already play it on hover/in the modal.
 function modPreviewMedia(categoryId, mod) {
@@ -412,8 +396,7 @@ function renderRail() {
 // ===== Catalog =====
 
 async function renderCatalog() {
-  itemHubIo?.disconnect();
-  itemHubIo = null;
+  forgetItemHub();
   if (!state.catalog) {
     await paint(() => { viewRoot.innerHTML = `<div class="empty-note">${L`Загрузка каталога…`}</div>`; });
     return;
@@ -688,7 +671,6 @@ async function renderCategory(categoryId) {
 // --- toolbar ---
 
 const GROUP_LABEL = { 'hero-items': 'Все герои', 'item-effects': 'Все предметы', creeps: 'Все крипы', towers: 'Все башни', 'creep-deny': 'Все типы' };
-
 
 // Is the list in front of you shorter than the category itself? That, and only that, is when
 // a number of results is worth printing: it answers "did that chip do anything". Sorting is
@@ -1106,10 +1088,8 @@ function openModal(draw, from) {
 }
 
 function openModModal(categoryId, mod, from) {
-  itemSlotPickerIo?.disconnect();
-  itemSlotPickerIo = null;
+  forgetItemSlotModal();
   cosModalState = null; // the two share one overlay
-  itemSlotModalState = null;
   // opens on the look the card was showing, which is the one the user was just looking at
   modalState = { categoryId, mod, styleIdx: styleIndex(categoryId, mod) };
   openModal(drawModal, from);
@@ -1128,9 +1108,7 @@ function closeModal() {
     $('#modalContent').innerHTML = '';
     modalState = null;
     cosModalState = null;
-    itemSlotModalState = null;
-    itemSlotPickerIo?.disconnect();
-    itemSlotPickerIo = null;
+    forgetItemSlotModal();
   }, exitMs());
 }
 
@@ -1514,7 +1492,6 @@ useInstaller(async (list) => {
 // ===== Cosmetics: free looks taken from the game's own item schema, browsed as a catalog
 // category like any other (see COSMETIC_SLOTS / cosmeticMeta near the top of the file) =====
 
-
 // One card per look, styled exactly like a catalog mod card (same .card/.grid classes):
 // a picture, a favourite star, and the same green edge on whichever one is live.
 function cosmeticCardHtml(slot, o, i, withCat = false) {
@@ -1559,73 +1536,6 @@ function refreshCosmeticBadges() {
 // ---------- cosmetic modal (the mod modal's twin, same markup and classes) ----------
 
 let cosModalState = null;
-let itemSlotModalState = null;
-let itemSlotPickerIo = null;
-let itemHubIo = null;
-
-function selectedItemSlotOption(stateObj) {
-  const data = slotData(stateObj?.slot);
-  if (!data) return null;
-  return data.options.find((o) => o.id === stateObj.selectedId) || data.options[0] || null;
-}
-
-function cosmeticThumbSpanHtml(name, fallbackIcon, cls = 'card-thumb') {
-  const icon = name ? cosmeticIcon(name) : null;
-  return `<span class="${cls}"${name ? ` data-name="${esc(name)}"` : ''}>${icon
-    ? `<img src="${esc(icon)}" alt="" loading="lazy">`
-    : `<div class="noimg"><span class="ms">${esc(fallbackIcon || 'checkroom')}</span></div>`}</span>`;
-}
-
-function itemSlotOptionCardHtml(slot, o, i, selectedId, live, selectedEffects) {
-  const selected = o.id === selectedId;
-  const installed = live?.itemId === o.id;
-  const isNone = o.id === '';
-  const uniqueTags = [...new Set((o.tags || []).map((t) => String(t).toLowerCase()))];
-  return `<button class="card item-pick-card ${selected ? 'picked' : ''} ${installed ? 'installed' : ''}" data-item-option="${esc(o.id)}" style="--i:${Math.min(i, 24)}">
-    <div class="card-media">
-      ${isNone ? `<div class="noimg"><span class="ms">block</span></div>` : cosmeticThumbSpanHtml(o.name, slotData(slot)?.icon || 'checkroom')}
-    </div>
-    <div class="card-body">
-      <div class="card-name">${esc(o.name)}</div>
-      <div class="card-meta"><span>${selected ? L`Выбрано` : installed ? L`Установлено` : uniqueTags.length ? esc(uniqueTags.join(', ')) : '&nbsp;'}</span></div>
-    </div>
-  </button>`;
-}
-
-function itemSlotTileHtml(s) {
-  const live = pickedIn(s.slot);
-  const previewName = live?.name || '';
-  return `<button class="card item-slot-card ${live ? 'installed' : ''}" data-item-slot="${esc(s.slot)}" style="--i:0">
-    <div class="card-media">
-      ${previewName ? cosmeticThumbSpanHtml(previewName, s.icon || 'checkroom', 'item-slot-thumb') : `<span class="item-slot-thumb"><div class="noimg"><span class="ms">${esc(s.icon || 'checkroom')}</span></div></span>`}
-      <div class="media-tags"><span class="mtag soft">${esc(s.slotLabel || s.label)}</span></div>
-    </div>
-    <div class="card-body">
-      <div class="card-name">${esc(s.slotLabel || s.label)}</div>
-      <div class="card-meta"><span>${live ? esc(live.name) : `${s.options.length} ${plural(s.options.length, 'вариант', 'варианта', 'вариантов')}`}</span></div>
-    </div>
-  </button>`;
-}
-
-function openItemSlotModal(slot, from) {
-  const data = slotData(slot);
-  if (!data) return;
-  const live = pickedIn(slot);
-  const selectedId = live?.itemId || '';
-  const selectedEffects = live?.effectIds ? String(live.effectIds).split(',').filter(Boolean) : [];
-  itemSlotModalState = { slot, selectedId, effectIds: selectedEffects, query: '' };
-  modalState = null;
-  cosModalState = null;
-  openModal(drawItemSlotModal, from);
-  const firstVisible = data.options.slice(0, 36).map((o) => o.name).filter(Boolean);
-  loadCosmeticIcons(firstVisible, () => {
-    if (itemSlotModalState?.slot === slot) {
-      paintCosmeticIcons($('#itemPickGrid'));
-      paintCosmeticIcons($('#modalContent'));
-    }
-  });
-}
-
 function openCosmeticModal(slot, itemId, from) {
   const o = findCosmetic(slot, itemId);
   if (!o) return;
@@ -1633,187 +1543,12 @@ function openCosmeticModal(slot, itemId, from) {
   const effectId = isItemCosmeticSlot(slot)
     ? (live?.itemId === o.id ? String(live.effectId || '') : '')
     : '';
-  itemSlotPickerIo?.disconnect();
-  itemSlotPickerIo = null;
+  forgetItemSlotModal();
   modalState = null;
-  itemSlotModalState = null;
   cosModalState = { slot, o, effectId };
   openModal(drawCosmeticModal, from);
   // the picture may not have been fetched yet if the card was never scrolled into view
   if (!cosmeticIconKnown(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
-}
-
-function drawItemSlotModal() {
-  const { slot, query = '' } = itemSlotModalState;
-  const data = slotData(slot);
-  if (!data) return;
-  const live = pickedIn(slot);
-  const slotLabel = data.label || catName(COSMETIC_PREFIX + slot);
-  const effectOptions = (data.effects || []).filter((fx) => {
-    const name = (fx.name || '').toLowerCase();
-    const id = (fx.id || '').toLowerCase();
-    return name !== 'no effect' && name !== 'none' && id !== 'no effect' && id !== 'none' && id !== '';
-  });
-  const selectedEffects = Array.isArray(itemSlotModalState.effectIds) ? itemSlotModalState.effectIds : [];
-
-  // Add "None" option as the first entry
-  const noneOption = { id: '', name: L`Нет`, tags: [] };
-  const allOptions = [noneOption, ...data.options];
-
-  const q = query.trim().toLowerCase();
-  const options = q ? allOptions.filter((o) => o.name.toLowerCase().includes(q)) : allOptions;
-  const selected = options.find((o) => o.id === itemSlotModalState.selectedId)
-    || allOptions.find((o) => o.id === itemSlotModalState.selectedId)
-    || options[0]
-    || allOptions[0]
-    || null;
-  if (selected && itemSlotModalState.selectedId !== selected.id) itemSlotModalState.selectedId = selected.id;
-  const shown = options;
-
-  $('#modalContent').classList.add('item-picker-modal');
-  $('#modalContent').innerHTML = `
-    <div class="modal-body item-picker-body">
-      <div class="modal-title-row item-picker-head">
-        <div>
-          <div class="modal-title">${esc(slotLabel)}</div>
-          <div class="modal-sub">
-            ${selected ? `<span>${esc(selected.name)}</span>` : ''}
-            <span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>
-          </div>
-        </div>
-        <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
-      </div>
-      <div class="item-picker-toolbar">
-        <div class="modal-note modal-field item-picker-search">
-          <div class="modal-field-label">${L`Предмет`}</div>
-          <input class="input" id="itemSlotSearch" type="text" placeholder="${L`Поиск…`}" value="${esc(query)}" autocomplete="off">
-        </div>
-        <div class="modal-actions item-picker-actions">
-          ${live ? `<button class="btn btn-danger" id="cosRemoveBtn"><span class="ms">delete</span>${L`Убрать`}</button>` : ''}
-        </div>
-      </div>
-      <div class="item-pick-grid" id="itemPickGrid">
-        ${shown.length
-          ? shown.map((o, i) => itemSlotOptionCardHtml(slot, o, i, selected?.id || '', live, selectedEffects)).join('')
-          : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
-      </div>
-      ${effectOptions.length ? `
-        <div class="section-h" style="margin-top: 24px;"><span class="ms">auto_awesome</span>${L`Эффекты (можно несколько)`}</div>
-        <div class="modal-note warn">${L`Некоторые эффекты (например, frostbloom, snow) могут не прикрепляться ко всем моделям.`}</div>
-        <div class="item-pick-grid" id="effectGrid">
-          <button class="card item-pick-card ${selectedEffects.length === 0 ? 'picked' : ''}" data-effect-none="true" style="--i:0">
-            <div class="card-media">
-              <div class="noimg"><span class="ms">block</span></div>
-            </div>
-            <div class="card-body">
-              <div class="card-name">${L`Без эффектов`}</div>
-              <div class="card-meta"><span>${selectedEffects.length === 0 ? L`Выбрано` : L`Эффект`}</span></div>
-            </div>
-          </button>
-          ${effectOptions.map((fx, idx) => {
-            const isSelected = selectedEffects.includes(fx.id);
-            const effectIconPath = getEffectIconPath(fx.id);
-            return `<button class="card item-pick-card ${isSelected ? 'picked' : ''}" data-effect-id="${esc(fx.id)}" style="--i:${idx + 1}">
-              <div class="card-media">
-                ${effectIconPath
-                  ? `<span class="card-thumb"><img src="${esc(effectIconPath)}" alt="${esc(fx.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'noimg\\'><span class=\\'ms\\'>auto_awesome</span></div>'"></span>`
-                  : `<div class="noimg"><span class="ms">auto_awesome</span></div>`}
-              </div>
-              <div class="card-body">
-                <div class="card-name">${esc(fx.name)}</div>
-                <div class="card-meta"><span>${isSelected ? L`Выбрано` : L`Эффект`}</span></div>
-              </div>
-            </button>`;
-          }).join('')}
-        </div>` : ''}
-      <div class="modal-note">
-        ${selected
-          ? L`Стандартный предмет героя сохранит свои id, name и prefab=default_item. Остальная часть блока берётся у выбранного предмета, а выбранные эффекты добавляются в visuals.`
-          : L`Ничего не найдено — сбрось фильтры`}
-      </div>
-    </div>`;
-
-  itemSlotPickerIo?.disconnect();
-  itemSlotPickerIo = null;
-  $('#modalCloseBtn').addEventListener('click', closeModal);
-  $('#itemSlotSearch')?.addEventListener('input', (e) => {
-    itemSlotModalState.query = e.target.value;
-    drawItemSlotModal();
-  });
-
-  // Handle effect card clicks (multi-select)
-  const effectGrid = $('#effectGrid');
-
-  // Handle "No effects" card
-  effectGrid?.querySelector('[data-effect-none]')?.addEventListener('click', () => {
-    itemSlotModalState.effectIds = [];
-    drawItemSlotModal();
-    // Persist immediately if there's a live item pick
-    if (live && itemSlotModalState.selectedId) {
-      const pick = data.options.find((o) => o.id === itemSlotModalState.selectedId) || null;
-      if (pick) {
-        pickCosmetic(slot, pick, false, '');
-      }
-    }
-  });
-
-  // Handle individual effect cards
-  effectGrid?.querySelectorAll('[data-effect-id]').forEach((card) => {
-    card.addEventListener('click', () => {
-      const effectId = card.dataset.effectId;
-      const currentEffects = itemSlotModalState.effectIds || [];
-      if (currentEffects.includes(effectId)) {
-        itemSlotModalState.effectIds = currentEffects.filter((id) => id !== effectId);
-      } else {
-        itemSlotModalState.effectIds = [...currentEffects, effectId];
-      }
-      drawItemSlotModal();
-      // Persist immediately if there's a live item pick
-      if (live && itemSlotModalState.selectedId) {
-        const pick = data.options.find((o) => o.id === itemSlotModalState.selectedId) || null;
-        if (pick) {
-          pickCosmetic(slot, pick, false, itemSlotModalState.effectIds.join(','));
-        }
-      }
-    });
-  });
-
-  $('#itemPickGrid')?.querySelectorAll('[data-item-option]').forEach((card) => {
-    card.addEventListener('click', () => {
-      const pickId = card.dataset.itemOption;
-
-      // Handle "None" option - remove the slot and clear effects
-      if (pickId === '') {
-        itemSlotModalState.selectedId = '';
-        itemSlotModalState.effectIds = [];
-        drawItemSlotModal(); // Redraw to clear selected effects visually
-        if (live) {
-          pickCosmetic(slot, { id: '', name: L`Нет` }, true, '');
-        }
-        return;
-      }
-
-      const pick = data.options.find((o) => o.id === pickId) || null;
-      if (!pick) return;
-      itemSlotModalState.selectedId = pickId;
-      const nextEffectIds = itemSlotModalState.effectIds || [];
-      const alreadyLive = live?.itemId === pick.id && JSON.stringify((live.effectIds || '').split(',').filter(Boolean).sort()) === JSON.stringify([...nextEffectIds].sort());
-      if (alreadyLive) {
-        drawItemSlotModal();
-        return;
-      }
-      loadCosmeticIcons([pick.name], () => {
-        if (itemSlotModalState?.slot === slot) paintCosmeticIcons($('#itemPickGrid'));
-      });
-      pickCosmetic(slot, pick, false, nextEffectIds.join(','));
-    });
-  });
-  paintCosmeticIcons($('#itemPickGrid'));
-  itemSlotPickerIo = watchCosmeticIcons($('#itemPickGrid'), null);
-  $('#cosRemoveBtn')?.addEventListener('click', () => {
-    const pick = selectedItemSlotOption(itemSlotModalState) || { id: live?.itemId || '', name: live?.name || slotLabel };
-    pickCosmetic(slot, pick, true, '');
-  });
 }
 
 function drawCosmeticModal() {
@@ -1906,198 +1641,14 @@ async function pickCosmetic(slot, o, remove, effectId = '') {
     r = { error: String(err?.message || err) };
   }
   installing.delete(k);
-  if (r.error) { toast(r.error, 'error'); if (cosModalState) drawCosmeticModal(); if (itemSlotModalState) drawItemSlotModal(); return; }
+  if (r.error) { toast(r.error, 'error'); if (cosModalState) drawCosmeticModal(); redrawItemSlotModal(); return; }
   toast(remove ? L`Вернули как в игре` : L`Выбрано: ${o.name}`);
   await refreshInstalledIndex();
   refreshCosmeticBadges();
   if (state.view === 'catalog') renderRail(); // the slot's "picked" dot
   if (state.view === 'catalog' && state.activeCategory === COSMETIC_PREFIX + 'items') await renderItemCosmeticHub(keepScroll);
   if (cosModalState) drawCosmeticModal();
-  if (itemSlotModalState) drawItemSlotModal();
-}
-
-async function renderItemCosmeticHub(restoreScrollTop = null) {
-  await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(catName(COSMETIC_PREFIX + 'items'))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
-  await loadHeroIcons();
-  await loadEffectIcons();
-  if (!state.cosmeticSlots) await refreshCosmeticSlots();
-  if (state.activeCategory !== COSMETIC_PREFIX + 'items') return;
-
-  const heroes = new Map();
-  for (const s of itemCosmeticSlots()) {
-    const key = s.heroLabel || s.label || s.slot;
-    if (!heroes.has(key)) heroes.set(key, []);
-    heroes.get(key).push(s);
-  }
-  const list = [...heroes.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  if (!list.length) {
-    await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(catName(COSMETIC_PREFIX + 'items'))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`; });
-    return;
-  }
-
-  const paintHub = (filteredList) => {
-    const count = filteredList.length;
-    $('#cosCount').textContent = (cosSearch || filters.installedOnly)
-      ? `${count} ${plural(count, 'герой', 'героя', 'героев')}`
-      : '';
-    $('#itemHub').innerHTML = filteredList.length
-      ? `<div class="grid">${filteredList.map(([hero, slots], i) => itemHeroCardHtml(hero, slots, i)).join('')}</div>`
-      : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
-    viewRoot.querySelectorAll('[data-item-hero]').forEach((btn) => {
-      const heroName = btn.dataset.itemHero;
-      const heroSlots = heroes.get(heroName) || [];
-      btn.addEventListener('click', () => openItemHeroModal(heroName, heroSlots, btn));
-    });
-    itemHubIo?.disconnect();
-    itemHubIo = null;
-    paintCosmeticIcons($('#itemHub'));
-    itemHubIo = watchCosmeticIcons($('#itemHub'), null);
-  };
-
-  const applyHubFilters = () => {
-    const q = cosSearch.trim().toLowerCase();
-    const filtered = list.filter(([hero, slots]) => {
-      if (q && !hero.toLowerCase().includes(q)) return false;
-      if (filters.installedOnly && !slots.some((s) => pickedIn(s.slot))) return false;
-      return true;
-    });
-    paintHub(filtered);
-  };
-
-  await paint(() => { viewRoot.innerHTML = `
-    <div class="view-header">
-      <h1 class="view-title">${esc(catName(COSMETIC_PREFIX + 'items'))}</h1>
-    </div>
-    <div class="toolbar">
-      <div class="tb-line">
-        <div class="tb-search cat-search"><span class="ms">search</span><input type="text" id="cosSearch" placeholder="${L`Поиск…`}" value="${esc(cosSearch)}" autocomplete="off"></div>
-        <div class="sep"></div>
-        <button class="fchip ${filters.installedOnly ? 'active' : ''}" id="cosInstalledChip"><span class="ms">check_circle</span>${L`Установленные`}</button>
-        <span class="count" id="cosCount"></span>
-      </div>
-    </div>
-    <div id="itemHub"></div>`; });
-
-  filters.favOnly = false;
-
-  $('#cosSearch').addEventListener('input', (e) => { cosSearch = e.target.value; applyHubFilters(); });
-  $('#cosInstalledChip').addEventListener('click', (e) => {
-    filters.installedOnly = !filters.installedOnly;
-    e.currentTarget.classList.toggle('active', filters.installedOnly);
-    applyHubFilters();
-  });
-  applyHubFilters();
-  if (restoreScrollTop !== null && $('#main')) $('#main').scrollTop = restoreScrollTop;
-}
-
-// Hero icon path mapping - auto-populated from renderer/assets/heroes/*.png
-// Files should be named by hero display name (e.g., "Anti-Mage.png", "Dazzle.png")
-const HERO_ICON_BASE = './assets/heroes';
-const HERO_ICONS_LOADED = new Set();
-let HERO_ICON_PATHS = {};
-
-async function loadHeroIcons() {
-  if (HERO_ICONS_LOADED.size > 0) return; // Already loaded
-  try {
-    const files = await window.api.misc.listAssetFiles('heroes');
-    for (const file of files) {
-      if (/\.png$/i.test(file)) {
-        const heroName = file.replace(/\.png$/i, '');
-        HERO_ICON_PATHS[heroName] = `${HERO_ICON_BASE}/${file}`;
-        HERO_ICONS_LOADED.add(heroName);
-      }
-    }
-  } catch {
-    // Folder doesn't exist or is empty - that's fine, icons will fall back to placeholder
-  }
-}
-
-function getHeroIconPath(heroName) {
-  return HERO_ICON_PATHS[heroName] || null;
-}
-
-// Effect icon path mapping - auto-populated from renderer/assets/effects/*.png
-// Files should be named by effect ID (e.g., "frostbloom.png", "snow.png")
-const EFFECT_ICON_BASE = './assets/effects';
-const EFFECT_ICONS_LOADED = new Set();
-let EFFECT_ICON_PATHS = {};
-
-async function loadEffectIcons() {
-  if (EFFECT_ICONS_LOADED.size > 0) return; // Already loaded
-  try {
-    const files = await window.api.misc.listAssetFiles('effects');
-    for (const file of files) {
-      if (/\.png$/i.test(file)) {
-        const effectId = file.replace(/\.png$/i, '');
-        EFFECT_ICON_PATHS[effectId] = `${EFFECT_ICON_BASE}/${file}`;
-        EFFECT_ICONS_LOADED.add(effectId);
-      }
-    }
-  } catch {
-    // Folder doesn't exist or is empty - that's fine, effects will fall back to placeholder
-  }
-}
-
-function getEffectIconPath(effectId) {
-  return EFFECT_ICON_PATHS[effectId] || null;
-}
-
-function itemHeroCardHtml(hero, slots, i) {
-  const hasInstalled = slots.some((s) => pickedIn(s.slot));
-  const iconPath = getHeroIconPath(hero);
-  return `
-    <div class="card ${hasInstalled ? 'installed' : ''}" data-item-hero="${esc(hero)}" style="--i:${Math.min(i, 28)}">
-      <div class="card-media">
-        ${iconPath
-          ? `<span class="card-thumb"><img src="${esc(iconPath)}" alt="${esc(hero)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'noimg\\'><span class=\\'ms\\'>person</span></div>'"></span>`
-          : `<span class="card-thumb"><div class="noimg"><span class="ms">person</span></div></span>`}
-      </div>
-      <div class="card-body">
-        <div class="card-name">${esc(hero)}</div>
-        <div class="card-meta"><span>${slots.length} ${plural(slots.length, 'слот', 'слота', 'слотов')}</span></div>
-      </div>
-    </div>`;
-}
-
-function openItemHeroModal(heroName, slots, from) {
-  modalState = null;
-  cosModalState = null;
-  itemSlotModalState = null;
-  itemSlotPickerIo?.disconnect();
-  itemSlotPickerIo = null;
-  openModal(() => drawItemHeroModal(heroName, slots), from);
-  const firstVisible = slots.slice(0, 12).flatMap((s) => [
-    pickedIn(s.slot)?.name || s.options[0]?.name || ''
-  ].filter(Boolean));
-  loadCosmeticIcons(firstVisible, () => {
-    paintCosmeticIcons($('#modalContent'));
-  });
-}
-
-function drawItemHeroModal(heroName, slots) {
-  $('#modalContent').classList.remove('item-picker-modal');
-  $('#modalContent').innerHTML = `
-    <div class="modal-body">
-      <div class="modal-title-row">
-        <div class="modal-title">${esc(heroName)}</div>
-        <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
-      </div>
-      <div class="modal-sub">
-        <span>${esc(catName(COSMETIC_PREFIX + 'items'))}</span>
-        <span>· ${slots.length} ${plural(slots.length, 'слот', 'слота', 'слотов')}</span>
-      </div>
-      <div class="item-slot-grid" style="margin-top: 16px;">
-        ${slots.map((s) => itemSlotTileHtml(s)).join('')}
-      </div>
-    </div>`;
-  $('#modalCloseBtn').addEventListener('click', closeModal);
-  $('#modalContent').querySelectorAll('[data-item-slot]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      closeModal();
-      setTimeout(() => openItemSlotModal(btn.dataset.itemSlot, null), 200);
-    });
-  });
-  paintCosmeticIcons($('#modalContent'));
+  redrawItemSlotModal();
 }
 
 async function renderCosmeticCategory(slot) {
@@ -2198,3 +1749,12 @@ export async function loadCatalog(force = false) {
     });
   }
 }
+
+// The item builder lives in views/item-builder.js and reaches the catalog only through this.
+bindItemBuilder({
+  slotData, cosmeticSlotList, pickCosmetic, openModal, closeModal,
+  resetModalState: () => { modalState = null; cosModalState = null; },
+  filters: () => filters,
+  search: () => cosSearch,
+  setSearch: (v) => { cosSearch = v; },
+});

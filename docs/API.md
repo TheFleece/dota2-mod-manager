@@ -31,6 +31,7 @@ the code, not in this page.
 | [`src/icons.js`](#srciconsjs) | Pictures for the cosmetics picker, and for the Library where a picture can be found for |
 | [`src/import.js`](#srcimportjs) | Taking in a mod the user already has: a .vpk, a .zip, a folder, or bytes off a drop. |
 | [`src/installer.js`](#srcinstallerjs) | Installer engine: download, extract, pak allocation, per-category install/uninstall |
+| [`src/item-builder.js`](#srcitem-builderjs) | The item builder: a hero's stock item built from one of its wearables, with an effect on top. |
 | [`src/library.js`](#srclibraryjs) | Library: manifest of installed mods + presets |
 | [`src/minify.js`](#srcminifyjs) | Living next to Minify. |
 | [`src/mod-id.js`](#srcmod-idjs) | What a mod actually replaces, asked of the game instead of guessed from folder names. |
@@ -1099,6 +1100,83 @@ const MERGE_SIZE_CAP = 1200 * 1024 * 1024
 Merging a multi-volume import into one file holds the whole mod in memory once. Well
 above any real skin pack (a Skinchanger export is ~70 MB), but a multi-GB set is left
 in its original volumes rather than risking the allocation.
+
+## src/item-builder.js
+
+The item builder: a hero's stock item built from one of its wearables, with an effect on top.
+
+For each hero and slot the free cosmetics offer that hero's wearables. Picking one rewrites its
+block in items_game under the stock item's id, name and prefab=default_item, drops the styles
+and unlocks a free base item cannot use, adds the chosen particle effect to its visuals, and
+lists the model and particles to copy out of the game's pak01 under the stock paths, so the
+game draws the wearable where the stock item was. src/schema-service.js applies it along with
+the rest of the free cosmetics; src/schema.js reads and merges the table.
+
+Written by rotten (https://github.com/h6rd) in #117, developed further with TheFleece
+(https://github.com/TheFleece).
+Copyright (C) 2026 rotten
+Copyright (C) 2026 TheFleece
+SPDX-License-Identifier: GPL-3.0-or-later
+The additional terms in NOTICE apply: whoever carries this code keeps both names here and in
+the credits of the program it goes into.
+
+### `itemEffects`
+
+```js
+function itemEffects()
+```
+
+The effect variants the synthetic cosmetics/items picker can apply.
+
+### `itemOptions`
+
+```js
+function itemOptions(text)
+```
+
+Wearable items with visuals and a matching stock default_item, offered under cosmetics/items.
+
+### `itemSlots`
+
+```js
+function itemSlots(text)
+```
+
+Hero item slots built from real default_item entries, with one donor list per hero part.
+
+### `defaultItemForWearable`
+
+```js
+function defaultItemForWearable(text, sourceId)
+```
+
+The stock default_item that matches a wearable by slot and by the hero(es) that can equip it.
+
+### `itemEffectPatch`
+
+```js
+function itemEffectPatch(baseText, itemId, effectId)
+```
+
+Turn one paid wearable into the hero's stock item for that slot.
+
+The block stays the donor item almost verbatim: only the header is rewritten to the matching
+default_item (id + name + prefab), styles/unlocks that cannot be used on a free base item are
+dropped, and the chosen effect is inserted into visuals. The donor model/particles stay named
+as the paid item in items_game, while assetCopies still describe the stock-path overrides the
+built VPK should carry.
+
+```
+@returns {{ id: string, block: string, assetCopies: Array<{from: string, to: string}> }}
+```
+
+### `gameAssetEntries`
+
+```js
+function gameAssetEntries(gamePath, assetCopies)
+```
+
+Read compiled asset bytes out of pak01 and stage them under the renamed path in our VPK.
 
 ## src/library.js
 
@@ -2508,6 +2586,69 @@ Two rules shape everything here:
 The file is ~50 MB of KeyValues with a few non-UTF8 bytes in it, so everything here
 works on latin1 strings: byte-exact in and out, no re-encoding surprises.
 
+### `eachChild`
+
+```js
+function eachChild(text, bounds, fn)
+```
+
+Walk the direct children of a block.
+
+```
+@param {string} text
+@param {[number, number]} bounds  from blockBounds()
+@param {(child: {key: string, start: number, end: number, isBlock: boolean, value: string|null, body: [number, number]|null}) => void} fn
+```
+
+### `blockBounds`
+
+```js
+function blockBounds(text, i)
+```
+
+Bounds of the { ... } block that starts at (or after) i.
+
+```
+@returns {[number, number]} [open, close+1]
+```
+
+### `stripKeyBlocks`
+
+```js
+function stripKeyBlocks(text, key)
+```
+
+Remove every "<key> { … }" sub-block from a KV fragment, with the whitespace in front
+of it, so the result still reads like the file it came from.
+
+### `toUtf8`
+
+```js
+function toUtf8(s)
+```
+
+The table is read as latin1 so every splice stays byte-exact, which leaves names with
+non-ASCII characters (curly quotes, accents) as raw UTF-8 bytes. Anything shown to a
+person goes back through UTF-8 first.
+
+### `itemSearchText`
+
+```js
+function itemSearchText(item)
+```
+
+An item's words in one lowercase string, for guessing the slot of a wearable that names none.
+
+### `inferredItemSlot`
+
+```js
+function inferredItemSlot(item)
+```
+
+A hero wearable's slot, guessed from its words when items_game leaves item_slot out. For the
+item builder only (src/item-builder.js): run over the whole table it reads "Armor" into a
+loading screen and "charm" into a courier, which is why slotOf does not use it.
+
 ### `SCHEMA_REL`
 
 ```js
@@ -2615,30 +2756,6 @@ adds to the schema later shows up on its own, without an app update.
 @returns {Array<{id, name}>}  name is the schema's own English name, sorted A-Z
 ```
 
-### `itemEffects`
-
-```js
-function itemEffects()
-```
-
-The effect variants the synthetic cosmetics/items picker can apply.
-
-### `itemOptions`
-
-```js
-function itemOptions(text)
-```
-
-Wearable items with visuals and a matching stock default_item, offered under cosmetics/items.
-
-### `itemSlots`
-
-```js
-function itemSlots(text)
-```
-
-Hero item slots built from real default_item entries, with one donor list per hero part.
-
 ### `findItem`
 
 ```js
@@ -2650,14 +2767,6 @@ One item definition, by id. Returns the exact source range so a splice is byte-e
 ```
 @returns {{ id: string, start: number, end: number, text: string } | null}
 ```
-
-### `defaultItemForWearable`
-
-```js
-function defaultItemForWearable(text, sourceId)
-```
-
-The stock default_item that matches a wearable by slot and by the hero(es) that can equip it.
 
 ### `itemFields`
 
@@ -2741,32 +2850,6 @@ Free cosmetics: copy the visuals of a real item onto a "base item" everyone owns
 Styles come along with the visuals, but a paid item locks its extra styles behind
 "unlock { price, item_def }" - on a base item that only produces a "style locked"
 button, so those gates come off.
-
-### `itemEffectPatch`
-
-```js
-function itemEffectPatch(baseText, itemId, effectId)
-```
-
-Turn one paid wearable into the hero's stock item for that slot.
-
-The block stays the donor item almost verbatim: only the header is rewritten to the matching
-default_item (id + name + prefab), styles/unlocks that cannot be used on a free base item are
-dropped, and the chosen effect is inserted into visuals. The donor model/particles stay named
-as the paid item in items_game, while assetCopies still describe the stock-path overrides the
-built VPK should carry.
-
-```
-@returns {{ id: string, block: string, assetCopies: Array<{from: string, to: string}> }}
-```
-
-### `gameAssetEntries`
-
-```js
-function gameAssetEntries(gamePath, assetCopies)
-```
-
-Read compiled asset bytes out of pak01 and stage them under the renamed path in our VPK.
 
 ### `mergeSchema`
 

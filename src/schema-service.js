@@ -10,6 +10,7 @@
 const path = require('path');
 const patcher = require('./patcher');
 const schema = require('./schema');
+const itemBuilder = require('./item-builder');
 
 /**
  * @param {object} deps
@@ -48,8 +49,8 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
       if (rec.categoryId === 'cosmetic') {
         try {
           if (rec.slot === 'items' || String(rec.slot || '').startsWith('item:')) {
-            const built = schema.itemEffectPatch(vanillaText, rec.itemId, rec.effectId);
-            out.push({ id: built.id, block: built.block, assets: schema.gameAssetEntries(game, built.assetCopies), source: rec.name });
+            const built = itemBuilder.itemEffectPatch(vanillaText, rec.itemId, rec.effectId);
+            out.push({ id: built.id, block: built.block, assets: itemBuilder.gameAssetEntries(game, built.assetCopies), source: rec.name });
             continue;
           }
           const target = schema.baseItemFor(vanillaText, rec.slot);
@@ -301,8 +302,8 @@ function createSchemaService({ settings, library, installer, userDataDir }) {
         const rec = cosmeticRecordFor(slot);
         slots.push({ slot, base: base.id, picked: rec ? rec.itemId : null, recordId: rec ? rec.id : null, options });
       }
-      const itemSlots = schema.itemSlots(text);
-      const effects = schema.itemEffects();
+      const itemSlots = itemBuilder.itemSlots(text);
+      const effects = itemBuilder.itemEffects();
       if (itemSlots.length && effects.length) {
         const entries = itemSlots.map((it) => {
           const rec = cosmeticRecordFor(it.slot);
