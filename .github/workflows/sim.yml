@@ -1,0 +1,86 @@
+name: Simulation
+
+# A hand on the app, on simulated machines (tools/sim). Every pull request and every change the
+# merge queue lands runs the "pr" set: one screen per system, a few minutes. Every night, and on
+# demand, the "full" set runs every screen and renderer in tools/sim/profiles.json. The report and
+# every picture are uploaded whether it passed or not, because the picture of a pass is what a
+# failure next week gets compared with.
+#
+# Not a required check yet: it reads the live catalog, and a check that goes red over somebody
+# else's outage gets switched off within a week. It becomes one after a fortnight of runs shows
+# how often that happens.
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+    inputs:
+      set:
+        description: 'Which set of machines: pr or full'
+        default: full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sim-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  windows:
+    name: Simulate on Windows
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Seed the sandbox
+        run: node tools/sandbox.js seed --no-mods
+      - name: Run the simulation
+        shell: bash
+        env:
+          SET: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && (inputs.set || 'full') || 'pr' }}
+        run: node tools/sim/run.mjs --set "$SET"
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: simulation-windows
+          path: e2e-output/sim
+          if-no-files-found: warn
+
+  linux:
+    name: Simulate on Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Electron needs an X server a runner does not have; xvfb-run gives each machine its own
+      # screen of the profile's size (tools/sim/run.mjs).
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Seed the sandbox
+        run: node tools/sandbox.js seed --no-mods
+      - name: Run the simulation
+        env:
+          SET: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && (inputs.set || 'full') || 'pr' }}
+        run: node tools/sim/run.mjs --set "$SET"
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: simulation-linux
+          path: e2e-output/sim
+          if-no-files-found: warn

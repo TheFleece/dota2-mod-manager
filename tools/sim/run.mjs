@@ -56,10 +56,14 @@ export function launch(screenName, rendererName, { scenarios, app = null, platfo
   if (screen.workArea && platform === 'win32') env.MM_WORKAREA = screen.workArea;
   let cmd = app || electron;
   let cmdArgs = args;
-  if (platform === 'linux' && screen.screen) {
-    // a real screen of that size; the scale is left to the page, xvfb has no DPI setting worth trusting
-    cmdArgs = ['-a', '-s', `-screen 0 ${screen.screen}x24`, cmd, ...args];
-    cmd = 'xvfb-run';
+  if (platform === 'linux') {
+    // Chromium's sandbox wants kernel permissions a CI runner does not grant (linux.yml says the same)
+    args.push('--no-sandbox');
+    if (screen.screen) {
+      // a real screen of that size; the scale is left to the page, xvfb has no DPI setting worth trusting
+      cmdArgs = ['-a', '-s', `-screen 0 ${screen.screen}x24`, cmd, ...args];
+      cmd = 'xvfb-run';
+    }
   }
   return { cmd, args: cmdArgs, env, out };
 }

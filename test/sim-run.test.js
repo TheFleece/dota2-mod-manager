@@ -30,6 +30,7 @@ test('a Linux launch gets a real screen of that size from xvfb instead of a stan
   assert.equal(l.cmd, 'xvfb-run');
   assert.deepEqual(l.args.slice(0, 4), ['-a', '-s', '-screen 0 1366x768x24', '/usr/bin/electron']);
   assert.equal(l.env.MM_WORKAREA, undefined);
+  assert.ok(l.args.includes('--no-sandbox'), 'a CI runner will not grant Chromium its sandbox');
 });
 
 test('a packaged build is launched as itself, without the source tree', async () => {
