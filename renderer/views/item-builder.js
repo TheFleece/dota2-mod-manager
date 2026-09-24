@@ -133,10 +133,11 @@ function builderFootHtml(summary, act) {
 /**
  * @param {string} slot
  * @param {Element|null} from  the card it grows out of
- * @param {{ query?: string, select?: string, back?: { label: string, go: () => void } }} [opts]
+ * @param {{ query?: string, select?: string, back?: { label: string, go: () => void, hero?: boolean } }} [opts]
  *   query: typed into the search, for a card found by the catalog's search or in favourites;
  *   select: the item chosen when it opens, for a piece opened from its set; the one on otherwise;
- *   back: the window it was opened from (a hero, a set), which the header then leads back to
+ *   back: the window it was opened from (a hero, a set), which the header then leads back to;
+ *   hero: that window is the hero's, so the button names the hero and the title need not
  */
 export function openItemSlotModal(slot, from, { query = '', select = '', back = null } = {}) {
   const data = cat.slotData(slot);
@@ -180,7 +181,7 @@ function drawItemSlotModal() {
   $('#modalContent').classList.add('item-picker-modal');
   $('#modalContent').innerHTML = `
     <div class="modal-body item-picker-body">
-      ${builderHeadHtml(back?.label, data.label || catName(COSMETIC_PREFIX + st.slot),
+      ${builderHeadHtml(back?.label, (back?.hero && data.slotLabel) || data.label || catName(COSMETIC_PREFIX + st.slot),
         `<span>${L`вид для стандартного предмета`}</span><span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>`)}
       <div class="tb-search item-picker-search"><span class="ms">search</span><input type="text" id="itemSlotSearch" placeholder="${L`Поиск…`}" value="${esc(st.query || '')}" autocomplete="off"></div>
       <div class="item-pick-grid" id="itemPickGrid"></div>
@@ -473,7 +474,7 @@ function drawItemHeroModal(heroName, slots) {
   $('#modalContent').querySelector('[data-item-sets]')?.addEventListener('click', () => openItemSetsModal({ heroName, slots }));
   $('#modalContent').querySelectorAll('[data-item-slot]').forEach((btn) => {
     btn.addEventListener('click', () => openItemSlotModal(btn.dataset.itemSlot, null,
-      { back: { label: heroName, go: () => openItemHeroModal(heroName, slots, null) } }));
+      { back: { label: heroName, hero: true, go: () => openItemHeroModal(heroName, slots, null) } }));
   });
   paintCosmeticIcons($('#modalContent'));
 }
