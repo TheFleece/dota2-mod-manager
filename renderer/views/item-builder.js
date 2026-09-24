@@ -488,7 +488,9 @@ function openItemSetsModal(back, query = '') {
 function setCardHtml(set, i) {
   const on = setIsOn(set);
   const n = set.pieces.length;
-  const meta = on ? L`Надето` : set.fit < n ? L`${set.fit} из ${n}` : `${n} ${plural(n, 'деталь', 'детали', 'деталей')}`;
+  // a line only where it tells something: 1914 of 1925 sets fit whole, and "5 pieces" on every
+  // card said nothing (Misha, 2026-09-24)
+  const meta = on ? L`Надето` : set.fit < n ? L`${set.fit} из ${n}` : '&nbsp;';
   return `<button class="card item-pick-card ${on ? 'installed' : ''}" data-item-set="${esc(set.id)}" style="--i:${Math.min(i, 24)}">
     <div class="card-media">${cosmeticThumbSpanHtml(set.name, 'inventory_2')}</div>
     <div class="card-body">
