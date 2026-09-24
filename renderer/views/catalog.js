@@ -29,10 +29,8 @@ import { isQueued, toggleQueued, dropFromQueue, useInstaller } from '../ui/queue
 import { refreshSidebarStatus } from '../ui/statusbar.js';
 import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
-import {
-  bindItemBuilder, itemCosmeticSlots, hasItemCosmeticPick, isItemCosmeticSlot, cosmeticFavValue, renderItemCosmeticHub,
-  forgetItemHub, forgetItemSlotModal, redrawItemSlotModal,
-} from './item-builder.js';
+import { bindItemBuilder, itemRailHtml, isItemCosmeticSlot, cosmeticFavValue, renderItemCosmeticHub, refreshItemHub,
+  forgetItemHub, forgetItemSlotModal, redrawItemSlotModal, openItemSlotModal } from './item-builder.js';
 
 const viewRoot = pane('catalog');
 
@@ -359,8 +357,7 @@ function renderRail() {
   const cos = cosmeticSlotList();
   if (cos.length) {
     html += `<div class="rail-section">${L`Косметика`}</div>`;
-    const regular = cos.filter((s) => !isItemCosmeticSlot(s.slot));
-    for (const s of regular) {
+    for (const s of cos.filter((x) => !isItemCosmeticSlot(x.slot))) { // the builder's slots have one entry of their own
       const id = COSMETIC_PREFIX + s.slot;
       html += `
         <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
@@ -368,14 +365,7 @@ function renderRail() {
           ${pickedIn(s.slot) ? '<span class="rail-dot"></span>' : ''}
         </button>`;
     }
-    if (itemCosmeticSlots().length) {
-      const id = COSMETIC_PREFIX + 'items';
-      html += `
-        <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
-          <span class="ms">${catIcon(id)}</span>${esc(catName(id))}
-          ${hasItemCosmeticPick() ? '<span class="rail-dot"></span>' : ''}
-        </button>`;
-    }
+    html += itemRailHtml(state.activeCategory);
   }
   rail.innerHTML = html;
   rail.querySelectorAll('.rail-item').forEach((b) => {
@@ -1177,7 +1167,6 @@ function packMembers(mod) {
 }
 
 function drawModal() {
-  $('#modalContent').classList.remove('item-picker-modal');
   const { categoryId, mod, styleIdx } = modalState;
   const styles = mod.styles || null;
   const cur = styles ? styles[styleIdx] : mod;
@@ -1539,13 +1528,11 @@ let cosModalState = null;
 function openCosmeticModal(slot, itemId, from) {
   const o = findCosmetic(slot, itemId);
   if (!o) return;
-  const live = pickedIn(slot);
-  const effectId = isItemCosmeticSlot(slot)
-    ? (live?.itemId === o.id ? String(live.effectId || '') : '')
-    : '';
+  // a hero's item, found by the search or in favourites: the builder's window, with it typed in
+  if (isItemCosmeticSlot(slot)) return openItemSlotModal(slot, from, { query: o.name });
   forgetItemSlotModal();
   modalState = null;
-  cosModalState = { slot, o, effectId };
+  cosModalState = { slot, o };
   openModal(drawCosmeticModal, from);
   // the picture may not have been fetched yet if the card was never scrolled into view
   if (!cosmeticIconKnown(o.name)) loadCosmeticIcons([o.name], () => { if (cosModalState?.o === o) drawCosmeticModal(); });
@@ -1555,21 +1542,16 @@ function drawCosmeticModal() {
   const { slot, o } = cosModalState;
   const meta = cosmeticMeta(slot);
   const data = slotData(slot);
-  const slotLabel = data?.label || catName(COSMETIC_PREFIX + slot);
-  const slotIcon = data?.icon || meta.icon;
   const live = pickedIn(slot);
-  const effectOptions = data?.effects || [];
-  const effectId = isItemCosmeticSlot(slot) ? String(cosModalState.effectId || '') : '';
-  const isLive = live?.itemId === o.id && (!isItemCosmeticSlot(slot) || String(live.effectId || '') === effectId);
+  const isLive = live?.itemId === o.id;
   const icon = cosmeticIcon(o.name);
-  const busy = installing.has(COSMETIC_PREFIX + slot + '|' + o.id + '|' + effectId);
+  const busy = installing.has(COSMETIC_PREFIX + slot + '|' + o.id + '|');
 
-  $('#modalContent').classList.remove('item-picker-modal');
   $('#modalContent').innerHTML = `
     <div class="modal-media cos">
       ${icon
         ? `<img src="${esc(icon)}" alt="">`
-        : `<div class="noimg"><span class="ms">${slotIcon}</span></div>`}
+        : `<div class="noimg"><span class="ms">${meta.icon}</span></div>`}
       <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
     </div>
     <div class="modal-body">
@@ -1578,21 +1560,10 @@ function drawCosmeticModal() {
         ${favButtonHtml(COSMETIC_PREFIX + slot, cosmeticFavValue(slot, o))}
       </div>
       <div class="modal-sub">
-        <span>${esc(slotLabel)}</span>
+        <span>${esc(tr(meta.label))}</span>
         <span>· ${L`вид для стандартного предмета`}</span>
         ${data ? `<span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>` : ''}
       </div>
-      ${isItemCosmeticSlot(slot) && effectOptions.length ? `
-        <div class="modal-note modal-field">
-          <div class="modal-field-label">${L`Эффект`}</div>
-          <div class="select-wrap">
-            <span class="ms">auto_awesome</span>
-            <select id="cosEffectSelect" aria-label="${L`Эффект`}">
-              ${effectOptions.map((fx) => `<option value="${esc(fx.id)}" ${fx.id === effectId ? 'selected' : ''}>${esc(fx.name)}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-        <div class="modal-note">${L`Стандартный предмет героя сохранит свои id, name и prefab=default_item. Остальная часть блока берётся у выбранного предмета, а выбранный эффект добавляется в visuals.`}</div>` : ''}
       <div class="modal-actions">
         ${isLive
           ? `<button class="btn btn-danger" id="cosRemoveBtn"><span class="ms">delete</span>${L`Убрать`}</button>`
@@ -1600,7 +1571,7 @@ function drawCosmeticModal() {
       </div>
       <div class="modal-note">
         ${isLive
-          ? L`Этот вид сейчас стоит в слоте «${slotLabel}». Убрать — вернуть то, что даёт игра; включить обратно можно в «Моих модах».`
+          ? L`Этот вид сейчас стоит в слоте «${tr(meta.label)}». Убрать — вернуть то, что даёт игра; включить обратно можно в «Моих модах».`
           : live
             ? L`На один слот — только один вид: этот заменит «${live.name}». Прошлый выбор останется в «Моих модах» выключенным.`
             : L`Вид подставляется в схему предметов игры — стандартный предмет просто рисуется как выбранный. Файлы модов это не трогает, и видно только тебе.`}
@@ -1610,12 +1581,8 @@ function drawCosmeticModal() {
   $('#modalCloseBtn').addEventListener('click', closeModal);
   const favBtn = $('#modalContent .fav-btn');
   if (favBtn) bindFavButton(favBtn);
-  $('#cosEffectSelect')?.addEventListener('change', (e) => {
-    cosModalState.effectId = e.target.value;
-    drawCosmeticModal();
-  });
-  $('#cosPickBtn')?.addEventListener('click', () => pickCosmetic(slot, o, false, effectId));
-  $('#cosRemoveBtn')?.addEventListener('click', () => pickCosmetic(slot, o, true, effectId));
+  $('#cosPickBtn')?.addEventListener('click', () => pickCosmetic(slot, o, false));
+  $('#cosRemoveBtn')?.addEventListener('click', () => pickCosmetic(slot, o, true));
 }
 
 /**
@@ -1627,9 +1594,6 @@ async function pickCosmetic(slot, o, remove, effectId = '') {
   const k = COSMETIC_PREFIX + slot + '|' + o.id + '|' + effect;
   if (installing.has(k)) return;
   const live = pickedIn(slot);
-  const keepScroll = state.view === 'catalog' && state.activeCategory === COSMETIC_PREFIX + 'items'
-    ? ($('#main')?.scrollTop || 0)
-    : null;
   installing.add(k);
   if (cosModalState) drawCosmeticModal();
   let r;
@@ -1646,7 +1610,7 @@ async function pickCosmetic(slot, o, remove, effectId = '') {
   await refreshInstalledIndex();
   refreshCosmeticBadges();
   if (state.view === 'catalog') renderRail(); // the slot's "picked" dot
-  if (state.view === 'catalog' && state.activeCategory === COSMETIC_PREFIX + 'items') await renderItemCosmeticHub(keepScroll);
+  await refreshItemHub();
   if (cosModalState) drawCosmeticModal();
   redrawItemSlotModal();
 }
@@ -1654,14 +1618,13 @@ async function pickCosmetic(slot, o, remove, effectId = '') {
 async function renderCosmeticCategory(slot) {
   if (slot === 'items') return renderItemCosmeticHub();
   const meta = cosmeticMeta(slot);
-  const fallbackLabel = catName(COSMETIC_PREFIX + slot) || tr(meta.label);
-  await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(fallbackLabel)}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
+  await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
   if (!state.cosmeticSlots) await refreshCosmeticSlots();
   if (state.activeCategory !== COSMETIC_PREFIX + slot) return; // moved on while reading
 
   const data = (state.cosmeticSlots || []).find((s) => s.slot === slot);
   if (!data) {
-    await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(fallbackLabel)}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`; });
+    await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`; });
     return;
   }
 
@@ -1693,7 +1656,7 @@ async function renderCosmeticCategory(slot) {
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
-      <h1 class="view-title">${esc(data.label || fallbackLabel)}</h1>
+      <h1 class="view-title">${esc(tr(meta.label))}</h1>
     </div>
     <div class="toolbar">
       <div class="select-wrap">
@@ -1751,10 +1714,5 @@ export async function loadCatalog(force = false) {
 }
 
 // The item builder lives in views/item-builder.js and reaches the catalog only through this.
-bindItemBuilder({
-  slotData, cosmeticSlotList, pickCosmetic, openModal, closeModal,
-  resetModalState: () => { modalState = null; cosModalState = null; },
-  filters: () => filters,
-  search: () => cosSearch,
-  setSearch: (v) => { cosSearch = v; },
-});
+bindItemBuilder({ slotData, cosmeticSlotList, pickCosmetic, openModal, closeModal, filters: () => filters,
+  search: () => cosSearch, setSearch: (v) => { cosSearch = v; }, resetModalState: () => { modalState = null; cosModalState = null; } });

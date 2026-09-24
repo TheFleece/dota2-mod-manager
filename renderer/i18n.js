@@ -152,6 +152,11 @@ const EN = {
   'Выбрано': 'Selected',
   'Выбрать предмет': 'Choose an item',
   'Нажми, чтобы сменить': 'Click to change',
+  'Стандартный': 'Default',
+  'Надето': 'Equipped',
+  'Можно выбрать несколько. Frostbloom и Snow держатся не на всех моделях.':
+    'You can pick several. Frostbloom and Snow do not hold on every model.',
+  'Эффект добавляется к предмету: сначала выбери его выше.': 'An effect goes on an item: choose one above first.',
   'Конструктор предметов': 'Item builder',
   'конструктор предметов': 'item builder',
   'Нет': 'None',

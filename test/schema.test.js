@@ -447,3 +447,44 @@ test("the game's own table must be where the game keeps it", (t) => {
   ]));
   assert.throws(() => schema.readGameSchema(empty), /items_game/);
 });
+
+test('the built table carries the files the item builder copies, each once', (t) => {
+  // Two picks can stage the same stock path (two wearables of one hero share a model): the pak
+  // holds it once, and the first copy wins, as the builder staged them in the order of the picks.
+  const game = gameWith(t, large(1200));
+  const data = (s) => Buffer.from(s);
+  const asset = (rel, body) => {
+    const d = data(body);
+    const slash = rel.lastIndexOf('/');
+    const dot = rel.lastIndexOf('.');
+    return { ext: rel.slice(dot + 1), folder: rel.slice(0, slash), name: rel.slice(slash + 1, dot), data: d, preload: Buffer.alloc(0), crc: vpk.crc32(d) };
+  };
+  const block = (id) => `"${id}"\r\n{\r\n\t"name"\t\t"Built ${id}"\r\n\t"prefab"\t\t"default_item"\r\n}`;
+  schema.deploy({ gamePath: game, folder: 'dota_mods', patches: [
+    { id: '2', block: block('2'), source: 'head', assets: [asset('models/heroes/abaddon/helmet.vmdl_c', 'first')] },
+    { id: '3', block: block('3'), source: 'again', assets: [asset('models/heroes/abaddon/helmet.vmdl_c', 'second'), asset('models/heroes/abaddon/shoulders.vmdl_c', 'shoulders')] },
+  ] });
+  const packed = vpk.readVpkEntries(fs.readFileSync(path.join(game, 'dota_mods', schema.SCHEMA_VPK)));
+  const byPath = new Map(packed.map((en) => [vpk.entryPath(en), en.data.toString()]));
+  assert.equal(packed.length, 3, 'the table and two models, the shared one once');
+  assert.equal(byPath.get('models/heroes/abaddon/helmet.vmdl_c'), 'first');
+  assert.equal(byPath.get('models/heroes/abaddon/shoulders.vmdl_c'), 'shoulders');
+});
+
+test('a bundle lists the items it holds', () => {
+  const text = small([['1', 'Stock']]).replace('\t}\n}', `\t\t"20010"
+\t\t{
+\t\t\t"name"\t\t"Garments Set"
+\t\t\t"prefab"\t\t"bundle"
+\t\t\t"bundle"
+\t\t\t{
+\t\t\t\t"Garments Head"\t\t"1"
+\t\t\t\t"Garments Arms"\t\t"1"
+\t\t\t\t"Not in it"\t\t"0"
+\t\t\t}
+\t\t}
+\t}
+}`);
+  const set = schema.listItems(text).find((i) => i.id === '20010');
+  assert.deepEqual(set.bundleItems, ['Garments Head', 'Garments Arms']);
+});

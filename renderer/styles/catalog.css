@@ -143,7 +143,7 @@
   max-height: calc(92vh / var(--content-zoom));
 }
 .item-picker-body {
-  gap: 16px;
+  gap: var(--space-4);
 }
 .item-picker-head {
   position: sticky;
@@ -151,42 +151,24 @@
   z-index: 2;
   align-items: flex-start;
   justify-content: space-between;
-  padding-bottom: 6px;
+  padding-bottom: var(--space-2);
   background: linear-gradient(180deg, var(--surface-solid) 82%, transparent);
 }
 .item-picker-head .modal-close {
   position: static;
   flex-shrink: 0;
 }
-.item-picker-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: stretch;
-}
-.item-picker-search {
-  flex: 1 1 340px;
-}
-.item-picker-effect {
-  flex: 0 0 240px;
-}
-.item-picker-search,
-.item-picker-effect {
-  height: 100%;
-}
-.item-picker-effect .select-wrap,
-.item-picker-search .input {
-  width: 100%;
-}
-.item-picker-actions {
-  margin-left: auto;
-  justify-content: flex-end;
-  align-self: stretch;
-}
+/* the catalog's own search field, sized by itself rather than by the column it sits in */
+.item-picker-search { align-self: flex-start; }
+.item-hero-slots { margin-top: var(--space-4); }
+.item-fx-head { margin-top: var(--space-5); }
+.item-fx-hint { margin-bottom: var(--space-3); }
+.item-back { margin-bottom: var(--space-2); }
+
 .item-pick-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
 }
 .item-pick-card {
   padding: 0;
@@ -197,10 +179,10 @@
 }
 .item-pick-card .card-body {
   min-height: 64px;
-  padding: 8px 10px 10px;
+  padding: var(--space-2) var(--space-3) var(--space-3);
 }
 .item-pick-card .card-name {
-  font-size: 13px;
+  font-size: var(--text-sm);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -211,20 +193,13 @@
   box-shadow: 0 0 0 1px var(--primary), 0 0 18px color-mix(in srgb, var(--md-primary) 20%, transparent);
 }
 .item-pick-card .card-meta {
-  gap: 6px;
-  font-size: 11px;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
 }
 .item-pick-card .card-meta span { min-height: 1em; }
 @media (max-width: 980px) {
   .item-pick-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .item-picker-effect {
-    flex-basis: 100%;
-  }
-  .item-picker-actions {
-    margin-left: 0;
-    justify-content: flex-start;
   }
 }
 @media (max-width: 720px) {

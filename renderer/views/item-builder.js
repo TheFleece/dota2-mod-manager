@@ -16,7 +16,7 @@
 import { $ } from '../core/dom.js';
 import { state } from '../core/store.js';
 import { COSMETIC_PREFIX } from '../core/constants.js';
-import { catName } from '../core/categories.js';
+import { catName, catIcon } from '../core/categories.js';
 import { pickedIn, refreshCosmeticSlots } from '../core/installed.js';
 import { pane } from '../core/router.js';
 import { esc, plural } from '../ui/format.js';
@@ -37,11 +37,11 @@ export function bindItemBuilder(ctx) {
   cat = ctx;
 }
 
-export function itemCosmeticSlots() {
+function itemCosmeticSlots() {
   return cat.cosmeticSlotList().filter((s) => s.kind === 'item-effect' || String(s.slot || '').startsWith('item:'));
 }
 
-export function hasItemCosmeticPick() {
+function hasItemCosmeticPick() {
   return itemCosmeticSlots().some((s) => pickedIn(s.slot));
 }
 
@@ -59,12 +59,6 @@ let itemSlotPickerIo = null;
 
 let itemHubIo = null;
 
-function selectedItemSlotOption(stateObj) {
-  const data = cat.slotData(stateObj?.slot);
-  if (!data) return null;
-  return data.options.find((o) => o.id === stateObj.selectedId) || data.options[0] || null;
-}
-
 function cosmeticThumbSpanHtml(name, fallbackIcon, cls = 'card-thumb') {
   const icon = name ? cosmeticIcon(name) : null;
   return `<span class="${cls}"${name ? ` data-name="${esc(name)}"` : ''}>${icon
@@ -72,18 +66,21 @@ function cosmeticThumbSpanHtml(name, fallbackIcon, cls = 'card-thumb') {
     : `<div class="noimg"><span class="ms">${esc(fallbackIcon || 'checkroom')}</span></div>`}</span>`;
 }
 
-function itemSlotOptionCardHtml(slot, o, i, selectedId, live, selectedEffects) {
+// The card the border marks is the one chosen here; "on" is said only of what the game shows,
+// the one live pick or the stock item when there is none. One word for one state: "Выбрано"
+// and "Установлено" named the same card two ways before.
+function itemSlotOptionCardHtml(slot, o, i, selectedId, live) {
   const selected = o.id === selectedId;
-  const installed = live?.itemId === o.id;
   const isNone = o.id === '';
+  const on = isNone ? !live : live?.itemId === o.id;
   const uniqueTags = [...new Set((o.tags || []).map((t) => String(t).toLowerCase()))];
-  return `<button class="card item-pick-card ${selected ? 'picked' : ''} ${installed ? 'installed' : ''}" data-item-option="${esc(o.id)}" style="--i:${Math.min(i, 24)}">
+  return `<button class="card item-pick-card ${selected ? 'picked' : ''} ${on ? 'installed' : ''}" data-item-option="${esc(o.id)}" aria-pressed="${selected}" style="--i:${Math.min(i, 24)}">
     <div class="card-media">
-      ${isNone ? `<div class="noimg"><span class="ms">block</span></div>` : cosmeticThumbSpanHtml(o.name, cat.slotData(slot)?.icon || 'checkroom')}
+      ${isNone ? '<div class="noimg"><span class="ms">block</span></div>' : cosmeticThumbSpanHtml(o.name, cat.slotData(slot)?.icon || 'checkroom')}
     </div>
     <div class="card-body">
       <div class="card-name">${esc(o.name)}</div>
-      <div class="card-meta"><span>${selected ? L`Выбрано` : installed ? L`Установлено` : uniqueTags.length ? esc(uniqueTags.join(', ')) : '&nbsp;'}</span></div>
+      <div class="card-meta"><span>${on ? L`Надето` : uniqueTags.length ? esc(uniqueTags.join(', ')) : '&nbsp;'}</span></div>
     </div>
   </button>`;
 }
@@ -94,7 +91,6 @@ function itemSlotTileHtml(s) {
   return `<button class="card item-slot-card ${live ? 'installed' : ''}" data-item-slot="${esc(s.slot)}" style="--i:0">
     <div class="card-media">
       ${previewName ? cosmeticThumbSpanHtml(previewName, s.icon || 'checkroom', 'item-slot-thumb') : `<span class="item-slot-thumb"><div class="noimg"><span class="ms">${esc(s.icon || 'checkroom')}</span></div></span>`}
-      <div class="media-tags"><span class="mtag soft">${esc(s.slotLabel || s.label)}</span></div>
     </div>
     <div class="card-body">
       <div class="card-name">${esc(s.slotLabel || s.label)}</div>
@@ -103,14 +99,21 @@ function itemSlotTileHtml(s) {
   </button>`;
 }
 
-function openItemSlotModal(slot, from) {
+/**
+ * @param {string} slot
+ * @param {Element|null} from  the card it grows out of
+ * @param {{ query?: string, back?: { heroName: string, slots: Array<object> } }} [opts]
+ *   query: typed into the search, for a card found by the catalog's search or in favourites;
+ *   back: the hero window it was opened from, which the header then leads back to
+ */
+export function openItemSlotModal(slot, from, { query = '', back = null } = {}) {
   const data = cat.slotData(slot);
   if (!data) return;
   const live = pickedIn(slot);
   const selectedId = live?.itemId || '';
   // a record keeps its effects as one comma separated string (src/item-builder.js effectKey)
   const selectedEffects = live?.effectId ? String(live.effectId).split(',').filter(Boolean) : [];
-  itemSlotModalState = { slot, selectedId, effectIds: selectedEffects, query: '' };
+  itemSlotModalState = { slot, selectedId, effectIds: selectedEffects, query, back };
   cat.resetModalState();
   cat.openModal(drawItemSlotModal, from);
   const firstVisible = data.options.slice(0, 36).map((o) => o.name).filter(Boolean);
@@ -135,83 +138,63 @@ function drawItemSlotModal() {
   });
   const selectedEffects = Array.isArray(itemSlotModalState.effectIds) ? itemSlotModalState.effectIds : [];
 
-  // Add "None" option as the first entry
-  const noneOption = { id: '', name: L`Нет`, tags: [] };
+  // the hero's own item, first: choosing it is how a pick comes off
+  const noneOption = { id: '', name: L`Стандартный`, tags: [] };
   const allOptions = [noneOption, ...data.options];
 
   const q = query.trim().toLowerCase();
   const options = q ? allOptions.filter((o) => o.name.toLowerCase().includes(q)) : allOptions;
-  const selected = options.find((o) => o.id === itemSlotModalState.selectedId)
-    || allOptions.find((o) => o.id === itemSlotModalState.selectedId)
-    || options[0]
-    || allOptions[0]
-    || null;
-  if (selected && itemSlotModalState.selectedId !== selected.id) itemSlotModalState.selectedId = selected.id;
-  const shown = options;
+  const selected = allOptions.find((o) => o.id === itemSlotModalState.selectedId) || allOptions[0];
+  const hasItem = !!selected && selected.id !== '';
+  const back = itemSlotModalState.back;
 
   $('#modalContent').classList.add('item-picker-modal');
   $('#modalContent').innerHTML = `
     <div class="modal-body item-picker-body">
       <div class="modal-title-row item-picker-head">
         <div>
+          ${back ? `<button class="btn btn-sm btn-ghost item-back" id="itemBackBtn"><span class="ms">arrow_back</span>${esc(back.heroName)}</button>` : ''}
           <div class="modal-title">${esc(slotLabel)}</div>
           <div class="modal-sub">
-            ${selected ? `<span>${esc(selected.name)}</span>` : ''}
+            <span>${L`вид для стандартного предмета`}</span>
             <span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>
           </div>
         </div>
         <button class="modal-close" id="modalCloseBtn" aria-label="${L`Закрыть`}"><span class="ms">close</span></button>
       </div>
-      <div class="item-picker-toolbar">
-        <div class="modal-note modal-field item-picker-search">
-          <div class="modal-field-label">${L`Предмет`}</div>
-          <input class="input" id="itemSlotSearch" type="text" placeholder="${L`Поиск…`}" value="${esc(query)}" autocomplete="off">
-        </div>
-        <div class="modal-actions item-picker-actions">
-          ${live ? `<button class="btn btn-danger" id="cosRemoveBtn"><span class="ms">delete</span>${L`Убрать`}</button>` : ''}
-        </div>
-      </div>
+      <div class="tb-search item-picker-search"><span class="ms">search</span><input type="text" id="itemSlotSearch" placeholder="${L`Поиск…`}" value="${esc(query)}" autocomplete="off"></div>
       <div class="item-pick-grid" id="itemPickGrid">
-        ${shown.length
-          ? shown.map((o, i) => itemSlotOptionCardHtml(slot, o, i, selected?.id || '', live, selectedEffects)).join('')
+        ${options.length
+          ? options.map((o, i) => itemSlotOptionCardHtml(slot, o, i, selected?.id || '', live)).join('')
           : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`}
       </div>
       ${effectOptions.length ? `
-        <div class="section-h" style="margin-top: 24px;"><span class="ms">auto_awesome</span>${L`Эффекты (можно несколько)`}</div>
-        <div class="modal-note warn">${L`Некоторые эффекты (например, frostbloom, snow) могут не прикрепляться ко всем моделям.`}</div>
+        <div class="section-h item-fx-head"><span class="ms">auto_awesome</span>${L`Эффекты`}</div>
+        <div class="text-meta item-fx-hint">${hasItem
+          ? L`Можно выбрать несколько. Frostbloom и Snow держатся не на всех моделях.`
+          : L`Эффект добавляется к предмету: сначала выбери его выше.`}</div>
         <div class="item-pick-grid" id="effectGrid">
-          <button class="card item-pick-card ${selectedEffects.length === 0 ? 'picked' : ''}" data-effect-none="true" style="--i:0">
-            <div class="card-media">
-              <div class="noimg"><span class="ms">block</span></div>
-            </div>
-            <div class="card-body">
-              <div class="card-name">${L`Без эффектов`}</div>
-              <div class="card-meta"><span>${selectedEffects.length === 0 ? L`Выбрано` : L`Эффект`}</span></div>
-            </div>
+          <button class="card item-pick-card ${selectedEffects.length === 0 ? 'picked' : ''}" data-effect-none="true" aria-pressed="${selectedEffects.length === 0}" style="--i:0" ${hasItem ? '' : 'disabled'}>
+            <div class="card-media"><div class="noimg"><span class="ms">block</span></div></div>
+            <div class="card-body"><div class="card-name">${L`Без эффектов`}</div></div>
           </button>
           ${effectOptions.map((fx, idx) => {
             const isSelected = selectedEffects.includes(fx.id);
             const effectIconPath = getEffectIconPath(fx.id);
-            return `<button class="card item-pick-card ${isSelected ? 'picked' : ''}" data-effect-id="${esc(fx.id)}" style="--i:${idx + 1}">
+            return `<button class="card item-pick-card ${isSelected ? 'picked' : ''}" data-effect-id="${esc(fx.id)}" aria-pressed="${isSelected}" style="--i:${idx + 1}" ${hasItem ? '' : 'disabled'}>
               <div class="card-media">
                 ${effectIconPath
-                  ? `<span class="card-thumb"><img src="${esc(effectIconPath)}" alt="${esc(fx.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'noimg\\'><span class=\\'ms\\'>auto_awesome</span></div>'"></span>`
-                  : `<div class="noimg"><span class="ms">auto_awesome</span></div>`}
+                  ? `<span class="card-thumb"><img src="${esc(effectIconPath)}" alt="" loading="lazy"></span>`
+                  : '<div class="noimg"><span class="ms">auto_awesome</span></div>'}
               </div>
-              <div class="card-body">
-                <div class="card-name">${esc(fx.name)}</div>
-                <div class="card-meta"><span>${isSelected ? L`Выбрано` : L`Эффект`}</span></div>
-              </div>
+              <div class="card-body"><div class="card-name">${esc(fx.name)}</div></div>
             </button>`;
           }).join('')}
         </div>` : ''}
-      <div class="modal-note">
-        ${selected
-          ? L`Стандартный предмет героя сохранит свои id, name и prefab=default_item. Остальная часть блока берётся у выбранного предмета, а выбранные эффекты добавляются в visuals.`
-          : L`Ничего не найдено — сбрось фильтры`}
-      </div>
+      <div class="modal-note">${L`Вид подставляется в схему предметов игры — стандартный предмет просто рисуется как выбранный. Файлы модов это не трогает, и видно только тебе.`}</div>
     </div>`;
 
+  $('#itemBackBtn')?.addEventListener('click', () => openItemHeroModal(back.heroName, back.slots, null));
   itemSlotPickerIo?.disconnect();
   itemSlotPickerIo = null;
   $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
@@ -267,7 +250,7 @@ function drawItemSlotModal() {
         itemSlotModalState.effectIds = [];
         drawItemSlotModal(); // Redraw to clear selected effects visually
         if (live) {
-          cat.pickCosmetic(slot, { id: '', name: L`Нет` }, true, '');
+          cat.pickCosmetic(slot, { id: '', name: L`Стандартный` }, true, '');
         }
         return;
       }
@@ -289,10 +272,6 @@ function drawItemSlotModal() {
   });
   paintCosmeticIcons($('#itemPickGrid'));
   itemSlotPickerIo = watchCosmeticIcons($('#itemPickGrid'), null);
-  $('#cosRemoveBtn')?.addEventListener('click', () => {
-    const pick = selectedItemSlotOption(itemSlotModalState) || { id: live?.itemId || '', name: live?.name || slotLabel };
-    cat.pickCosmetic(slot, pick, true, '');
-  });
 }
 
 export async function renderItemCosmeticHub(restoreScrollTop = null) {
@@ -404,7 +383,7 @@ function itemHeroCardHtml(hero, slots, i) {
     <div class="card ${hasInstalled ? 'installed' : ''}" data-item-hero="${esc(hero)}" style="--i:${Math.min(i, 28)}">
       <div class="card-media">
         ${iconPath
-          ? `<span class="card-thumb"><img src="${esc(iconPath)}" alt="${esc(hero)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'noimg\\'><span class=\\'ms\\'>person</span></div>'"></span>`
+          ? `<span class="card-thumb"><img src="${esc(iconPath)}" alt="" loading="lazy"></span>`
           : `<span class="card-thumb"><div class="noimg"><span class="ms">person</span></div></span>`}
       </div>
       <div class="card-body">
@@ -440,16 +419,13 @@ function drawItemHeroModal(heroName, slots) {
         <span>${esc(catName(COSMETIC_PREFIX + 'items'))}</span>
         <span>· ${slots.length} ${plural(slots.length, 'слот', 'слота', 'слотов')}</span>
       </div>
-      <div class="item-slot-grid" style="margin-top: 16px;">
+      <div class="item-slot-grid item-hero-slots">
         ${slots.map((s) => itemSlotTileHtml(s)).join('')}
       </div>
     </div>`;
   $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
   $('#modalContent').querySelectorAll('[data-item-slot]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      cat.closeModal();
-      setTimeout(() => openItemSlotModal(btn.dataset.itemSlot, null), 200);
-    });
+    btn.addEventListener('click', () => openItemSlotModal(btn.dataset.itemSlot, null, { back: { heroName, slots } }));
   });
   paintCosmeticIcons($('#modalContent'));
 }
@@ -465,6 +441,24 @@ export function forgetItemSlotModal() {
   itemSlotPickerIo?.disconnect();
   itemSlotPickerIo = null;
   itemSlotModalState = null;
+  $('#modalContent').classList.remove('item-picker-modal');
+}
+
+/** The rail's entry for the builder, when the game has items to build: '' otherwise. */
+export function itemRailHtml(activeCategory) {
+  if (!itemCosmeticSlots().length) return '';
+  const id = COSMETIC_PREFIX + 'items';
+  return `
+        <button class="rail-item ${activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
+          <span class="ms">${catIcon(id)}</span>${esc(catName(id))}
+          ${hasItemCosmeticPick() ? '<span class="rail-dot"></span>' : ''}
+        </button>`;
+}
+
+/** Draw the hub again after a pick, where it was scrolled to, when it is the screen on show. */
+export async function refreshItemHub() {
+  if (state.view !== 'catalog' || state.activeCategory !== COSMETIC_PREFIX + 'items') return;
+  await renderItemCosmeticHub($('#main')?.scrollTop || 0);
 }
 
 /** Draw the item slot window again, when one is open: its pick changed. */
