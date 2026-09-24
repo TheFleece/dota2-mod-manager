@@ -15,6 +15,8 @@ import { state } from '../core/store.js';
 import { registerView, render, pane } from '../core/router.js';
 import { keyOf, pickedIn, refreshInstalledIndex, refreshCosmeticSlots } from '../core/installed.js';
 import { catName, catIcon } from '../core/categories.js';
+import { modCredits, CREDIT_ROLES } from '../core/credits.js';
+import { creditChipsHtml, bindCreditChips } from '../ui/credit-chips.js';
 import { esc, fmtDate, plural } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
 import { confirmDialog } from '../ui/dialog.js';
@@ -319,9 +321,6 @@ function favButtonHtml(cat, name) {
 }
 
 
-function authorUrl(name) {
-  return state.catalog?.constants?.MOD_AUTHOR?.[name] || state.catalog?.constants?.MOD_SENDER?.[name] || null;
-}
 
 // media the built-in player can show: only a dedicated "preview"-type link.
 // Mods whose card preview is itself a video already play it on hover/in the modal.
@@ -1184,14 +1183,11 @@ function drawModal() {
   const playable = modPreviewMedia(categoryId, mod);
   const mediaUrl = previewUrl(categoryId, cur.preview || mod.preview);
 
-  // author: mod.author/sender field, or an "author"-type link whose url is a name or URL
-  const authorLink = links.find((l) => l.type === 'author');
-  const authorName = mod.author || mod.sender ||
-    (authorLink && !/^https?:\/\//i.test(authorLink.url) ? authorLink.url : null);
-  const authorHref = (authorLink && /^https?:\/\//i.test(authorLink.url) ? authorLink.url : null) ||
-    (authorName ? authorUrl(authorName) : null);
+  // everybody the catalog credits, not only the first author (core/credits.js says why)
+  const credits = modCredits(mod, state.catalog?.constants);
 
-  const otherLinks = links.filter((l) => !(l.type === 'preview' && isMedia(l.url)) && l.type !== 'author');
+  // people are credits above, not buttons: their "url" is a name, which opened as a 404
+  const otherLinks = links.filter((l) => !(l.type === 'preview' && isMedia(l.url)) && !CREDIT_ROLES.includes(l.type));
 
   // pack contents (with per-session exclusions)
   if (isPack && !modalState.packExcluded) modalState.packExcluded = new Set();
@@ -1217,10 +1213,7 @@ function drawModal() {
         ${mod._group ? `<span>· ${esc(mod._group)}</span>` : ''}
         ${mod._custom ? `<span>${L`· свой пак`}</span>` : ''}
         ${mod.meta?.date ? `<span>· ${fmtDate(mod.meta.date)}</span>` : ''}
-        ${authorName ? `
-          <button class="author-chip ${authorHref ? 'clickable' : ''}" id="authorChip" ${authorHref ? '' : 'disabled'}>
-            <span class="ms">person</span>${esc(authorName)}${authorHref ? '<span class="ms ms-xs">open_in_new</span>' : ''}
-          </button>` : ''}
+        ${creditChipsHtml(credits)}
       </div>
       ${styles ? `
         <div class="style-row">
@@ -1280,10 +1273,7 @@ function drawModal() {
     previewPlay.addEventListener('click', () => openPlayer(playable, mod.name));
   }
 
-  const authorChip = $('#authorChip');
-  if (authorChip && authorHref) {
-    authorChip.addEventListener('click', () => window.api.misc.openExternal(authorHref));
-  }
+  bindCreditChips(document, credits, (url) => window.api.misc.openExternal(url));
 
   // pack interactions
   document.querySelectorAll('.pack-x').forEach((b) => {
