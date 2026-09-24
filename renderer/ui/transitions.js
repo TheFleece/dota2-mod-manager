@@ -65,7 +65,10 @@ export function paint(update) {
   document.documentElement.classList.add('vt-screen');
   const vt = document.startViewTransition(run);
   current = vt;
-  // an abandoned transition rejects; that is a normal end here, not a fault to report
+  // An abandoned or skipped transition rejects; that is a normal end here, not a fault to
+  // report. Both promises: `ready` rejects too when a click cuts the animation short, and
+  // uncaught it lands in the user's log through the unhandledrejection handler in app.js.
+  vt.ready.catch(() => {});
   vt.finished.catch(() => {}).finally(() => {
     if (--running === 0) document.documentElement.classList.remove('vt-screen');
     if (current === vt) current = null;
