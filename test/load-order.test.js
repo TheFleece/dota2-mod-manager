@@ -3,7 +3,7 @@
  * catalog, and the list the screen draws. The rules themselves are src/slot-zones.js and are
  * tested in installer.test.js; this is whether the buttons keep to them.
  *
- * Asked for by Misha on 2026-09-24: shaders, trees, river, hero effects and a few more load
+ * The rule: shaders, trees, river, hero effects and a few more load
  * before everything else, in slots 02-29, and nothing a user does puts another mod among them.
  */
 const test = require('node:test');

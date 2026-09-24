@@ -421,7 +421,7 @@ test('a cursor set another program put in the game is found, folders and all, un
 // ---------- the load order in two parts ----------
 //
 // Slots 02-29 belong to the categories that must load first, everything else starts at 30
-// (PRIORITY_SLOTS in src/installer.js, asked for by Misha on 2026-09-24).
+// (PRIORITY_SLOTS in src/installer.js).
 
 const { Library } = require('../src/library.js');
 

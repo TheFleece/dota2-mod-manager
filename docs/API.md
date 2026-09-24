@@ -2776,7 +2776,7 @@ slot number is its priority. Some categories have to load before everything else
 river, shaders, hero effects and a few more replace files other mods ship too, and lose
 otherwise. Slots 02-29 belong to them; every other mod starts at 30.
 
-Asked for by Misha on 2026-09-24. Until then only the first install kept the two apart: a mod
+Since 2026-09-24. Until then only the first install kept the two apart: a mod
 moved up past a shader took the shader's slot, and a shader imported by hand and then linked
 to the catalog stayed wherever the import had put it. 28 slots rather than the old eight
 because those categories hold 217 catalog mods between them, 126 of them hero items, and eight
