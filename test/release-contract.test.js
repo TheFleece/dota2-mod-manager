@@ -26,6 +26,9 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const version = () => JSON.parse(read('package.json')).version;
 // a release is 2.8.0, a beta 2.8.0-beta.1: the one suffix release.yml knows (its `*-beta.*`)
 const VERSION = String.raw`\d+\.\d+\.\d+(?:-beta\.\d+)?`;
+// every metacharacter, not just the dot: a version is only digits and dots today, and a
+// pre-release tag with a "+" in it would otherwise stop matching its own heading
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const sections = (rel) => [...read(rel).matchAll(new RegExp(`^## (${VERSION})\\s*$`, 'gm'))].map((m) => m[1]);
 
 test('the version in package.json has a section in both changelogs', () => {
@@ -61,9 +64,7 @@ test('a section has something in it', () => {
   /* An empty section is worse than a missing one: CI finds it, publishes nothing, and the
    * release page looks like the release did nothing. */
   const v = version();
-  // every metacharacter, not just the dot: a version is only digits and dots today, and a
-  // pre-release tag with a "+" in it would otherwise stop matching its own heading
-  const heading = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const heading = escapeRe(v);
   for (const file of ['CHANGELOG.md', 'CHANGELOG.ru.md']) {
     const body = read(file).split(new RegExp(`^## ${heading}\\s*$`, 'm'))[1] || '';
     const untilNext = body.split(new RegExp(`^## ${VERSION}\\s*$`, 'm'))[0].trim();
@@ -90,8 +91,8 @@ test('the lookups that read a section find a beta by its own heading', () => {
     const end = rest.findIndex((l) => /^## /.test(l));
     return rest.slice(0, end === -1 ? undefined : end).join('\n').trim();
   };
-  const popup = (v) => { // main.js releaseNotes
-    const m = new RegExp(`^## ${v.replace(/\./g, '\\.')}(?:[^0-9.].*)?$`, 'm').exec(text);
+  const popup = (v) => { // main.js releaseNotes; escaped whole here, where main.js escapes dots
+    const m = new RegExp(`^## ${escapeRe(v)}(?:[^0-9.].*)?$`, 'm').exec(text);
     const rest = text.slice(m.index + m[0].length);
     const next = /^## /m.exec(rest);
     return (next ? rest.slice(0, next.index) : rest).trim();
