@@ -157,14 +157,20 @@ function registerLibraryIpc({
    * amount of filtering told the two cases apart reliably. Which mod wins is a decision
    * only the person looking at the game can make.
    */
+  /* The load order has two parts (installer.js, PRIORITY_SLOTS): the categories that load first,
+   * then everything else. A mod moves among its own part only, so "load earlier" on the first
+   * mod after the shaders stops there instead of trading slots with a shader. */
+  const orderOf = (rec) => library.list()
+    .filter((r) => installer.zoneFor(r.categoryId) === installer.zoneFor(rec.categoryId))
+    .map((r) => ({ r, n: installer.slotNumber(r) }))
+    .filter((x) => x.n != null)
+    .sort((a, b) => a.n - b.n);
+
   ipcMain.handle('mods:move', (e, id, dir) => {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
     try {
-      const ordered = library.list()
-        .map((r) => ({ r, n: installer.slotNumber(r) }))
-        .filter((x) => x.n != null)
-        .sort((a, b) => a.n - b.n);
+      const ordered = orderOf(rec);
       const at = ordered.findIndex((x) => x.r.id === id);
       if (at === -1) return { error: t('У мода нет слота pakNN') };
       const to = at + (dir < 0 ? -1 : 1);
@@ -193,15 +199,21 @@ function registerLibraryIpc({
   ipcMain.handle('mods:reorder', (e, id, toIndex) => {
     const rec = library.find(id);
     if (!rec) return { error: t('Мод не найден') };
-    const orderNow = () => library.list()
+    // toIndex counts the whole list, as the screen shows it; the walk stays inside the mod's part
+    const all = () => library.list()
       .map((r) => ({ r, n: installer.slotNumber(r) }))
       .filter((x) => x.n != null)
       .sort((a, b) => a.n - b.n);
+    const orderNow = () => orderOf(rec);
     try {
       let ordered = orderNow();
       let at = ordered.findIndex((x) => x.r.id === id);
       if (at === -1) return { error: t('У мода нет слота pakNN') };
-      const to = Math.max(0, Math.min(ordered.length - 1, Math.trunc(Number(toIndex))));
+      const target = all()[Math.max(0, Math.min(all().length - 1, Math.trunc(Number(toIndex))))];
+      // a place in the other part means as far as this part goes in that direction
+      const inPart = target ? ordered.findIndex((x) => x.r.id === target.r.id) : -1;
+      const to = inPart !== -1 ? inPart
+        : Math.trunc(Number(toIndex)) < all().findIndex((x) => x.r.id === id) ? 0 : ordered.length - 1;
       let steps = 0;
       while (at !== to && steps <= ordered.length) {
         const step = to > at ? 1 : -1;
@@ -280,6 +292,9 @@ function registerLibraryIpc({
     const fields = { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null };
     if (preview) fields.preview = preview; // catalog thumbnail resolved by the renderer
     library.update(id, fields);
+    // now that its category is known, into its part of the load order (installer.moveToZone)
+    const moved = installer.moveToZone({ ...rec, ...fields });
+    if (moved) library.update(id, { files: moved });
     return { ok: true, name: m.name };
   });
 
@@ -311,7 +326,10 @@ function registerLibraryIpc({
       const identity = m
         ? { name: m.name, categoryId: m.categoryId, styleLabel: m.styleLabel || null, preview: preview || null }
         : { name: installer.displayNameForFile(base) || base.replace(/_dir\.vpk$/i, ''), categoryId: 'imported', styleLabel: null, preview: null };
-      const rec = library.add({ ...identity, fileRef: fileName, files });
+      let rec = library.add({ ...identity, fileRef: fileName, files });
+      // a file dropped in by hand keeps its name until now; its category decides its slot
+      const placed = installer.moveToZone(rec);
+      if (placed) rec = library.update(rec.id, { files: placed }) || { ...rec, files: placed };
       // A file dropped into the folder by something else has never been through an install,
       // so its item blocks are still sitting inside it doing nothing. Adopting is the moment
       // the app takes it over - lift them now, or the mod stays without its effects.

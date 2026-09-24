@@ -215,11 +215,14 @@ function registerModsIpc({
     // shows that a mod has them, and whether the patch that makes them work is on. Copies,
     // never the stored records — dropping the field off those would erase it on save.
     const schemaOn = schemaService.state().enabled;
+    // zone: which part of the load order the mod belongs in (installer.js, PRIORITY_SLOTS), so
+    // the screen knows where "load earlier" stops
     const listed = installed.map((rec) => {
       const by = covered.get(rec.id);
-      if (!Array.isArray(rec.schema)) return by ? { ...rec, coveredBy: by } : rec;
+      const zone = installer.zoneFor(rec.categoryId);
+      if (!Array.isArray(rec.schema)) return { ...rec, zone, ...(by ? { coveredBy: by } : {}) };
       const { schema, ...rest } = rec;
-      return { ...rest, schemaCount: schema.length, schemaLive: schemaOn, ...(by ? { coveredBy: by } : {}) };
+      return { ...rest, zone, schemaCount: schema.length, schemaLive: schemaOn, ...(by ? { coveredBy: by } : {}) };
     });
     return { installed: listed, external, slots, slotCeil: 98, verifyStuck: verifyStuck() };
   });

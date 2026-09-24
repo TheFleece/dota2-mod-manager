@@ -27,10 +27,9 @@ const { RESERVED_PAKS, isMinifyFile, isMinifyPak } = require('./minify');
 const { downloadFile } = require('./net');
 const { t } = require('./i18n');
 
-// Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
-// The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
-// Dota2PornFx cart zips is a merge-order hint for VPKMerge, not a valid install name.
-const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-attack', 'hero-items', 'optimization'];
+// The categories that load before the rest, and the slots they get: src/slot-zones.js.
+const zones = require('./slot-zones');
+const { PRIORITY_CATEGORIES } = zones;
 
 // Merging a multi-volume import into one file holds the whole mod in memory once. Well
 // above any real skin pack (a Skinchanger export is ~70 MB), but a multi-GB set is left
@@ -346,29 +345,28 @@ class Installer {
     return { changed };
   }
 
+  /** Which part of the load order a category's mods belong in (src/slot-zones.js). */
+  zoneFor(categoryId) {
+    return zones.zoneFor(categoryId);
+  }
+
   allocatePak(used, priority) {
-    if (priority) {
-      for (let n = 2; n <= 9; n++) {
-        const name = `pak0${n}_dir.vpk`;
-        if (!used.has(name)) {
-          used.add(name);
-          return name;
-        }
-      }
-    }
-    for (let n = 10; n <= 99; n++) {
-      // Minify writes 65, 66 and 67 into whichever language folder it is set to, and if that
-      // is ours, whoever writes second replaces the other's mod. Three slots out of ninety
-      // buys never having to coordinate - see src/minify.js. A pak it has already written
-      // needs no reserving: it is in `used`, read off the folder.
-      if (RESERVED_PAKS.includes(n)) continue;
-      const name = `pak${n}_dir.vpk`;
-      if (!used.has(name)) {
-        used.add(name);
-        return name;
-      }
-    }
-    throw new Error(t('Свободных слотов pakNN не осталось (10-99 заняты)'));
+    // A priority mod past the 28 slots of its own still goes in, in the first free slot after
+    // them: ahead of nothing, but installed. The rest never take a priority slot.
+    const name = (priority && zones.freeSlotIn('priority', used)) || zones.freeSlotIn('normal', used);
+    if (!name) throw new Error(t('Свободных слотов pakNN не осталось (30-99 заняты)'));
+    used.add(name);
+    return name;
+  }
+
+  /** Into the part of the load order its category belongs in (src/slot-zones.js). */
+  moveToZone(rec) {
+    return zones.moveToZone(this, rec);
+  }
+
+  /** The one-time layout of an order from before the two parts (src/slot-zones.js). */
+  migrateSlotZones(library) {
+    return zones.migrateSlotZones(this, library);
   }
 
   /**
@@ -492,9 +490,8 @@ class Installer {
    * volume numbering of a multi-volume pack.
    * @returns {Array<object>} the record's new files array (caller stores it)
    */
-  moveToSlot(rec, newBase) {
+  moveToSlot(rec, newBase, oldBase = this.slotBase(rec)) {
     const lang = this.langFolder();
-    const oldBase = this.slotBase(rec);
     if (!oldBase) throw new Error(t('У мода нет слота pakNN'));
     const mine = new RegExp(`^${oldBase}(_dir|_\\d{3})\\.vpk$`, 'i');
     return (rec.files || []).map((f) => {

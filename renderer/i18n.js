@@ -601,6 +601,8 @@ const EN = {
   ', менять ничего не пришлось': ', and nothing needed changing',
   '. Можно играть.': '. You are good to play.',
   'Понятно': 'Got it',
+  'Порядок загрузки обновлён: шейдеры, деревья, река, эффекты героев и ещё несколько категорий теперь грузятся раньше остальных модов.':
+    'Load order updated: shaders, trees, river, hero effects and a few more categories now load before the other mods.',
   'Dota обновилась, пока игра запущена': 'Dota updated while the game was running',
   '. Моды в этой сессии не работают: файлы игры заняты. Закрой Dota — приложение вернёт всё само.':
     '. Mods are off for this session because the game holds its files open. Close Dota and the app puts everything back on its own.',

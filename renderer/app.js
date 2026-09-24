@@ -380,6 +380,10 @@ window.api.patch.onRepair((st) => {
 
   // startup put the mods where the game will look for them, and pointed the game there —
   // say so once, because the game has to be restarted before it reads the new folder
+  // the load order was laid out in its two parts on this start (installer.migrateSlotZones)
+  if (cfg.slotMigration) {
+    toast(L`Порядок загрузки обновлён: шейдеры, деревья, река, эффекты героев и ещё несколько категорий теперь грузятся раньше остальных модов.`, 'ok', 9000);
+  }
   if (cfg.langMigration) {
     toast(L`Моды перенесены в dota_${cfg.langMigration.to} — папку, которую монтирует твоя озвучка. Перезапусти игру.`, 'warn', 9000);
   }

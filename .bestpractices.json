@@ -66,7 +66,7 @@
   "build_floss_tools_status": "Met",
   "build_floss_tools_justification": "Node.js, npm and electron-builder are FLOSS.",
   "test_status": "Met",
-  "test_justification": "npm test: 83 test files on node:test, released under the project own licence: https://github.com/dota2modmanager/dota2-mod-manager/tree/main/test",
+  "test_justification": "npm test: 84 test files on node:test, released under the project own licence: https://github.com/dota2modmanager/dota2-mod-manager/tree/main/test",
   "test_invocation_status": "Met",
   "test_invocation_justification": "npm test, which is what CI runs as well.",
   "test_most_status": "Met",

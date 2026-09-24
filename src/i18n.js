@@ -111,7 +111,7 @@ const EN = {
   '{0}: скачанный файл не совпадает с тем, что опубликовал автор мода. Попробуй позже': '{0}: what downloaded is not what the mod\'s author published. Try again later',
   'Эта возможность временно отключена': 'This is switched off for now',
   'перекачиваю повреждённый файл': 'the cached file was damaged, downloading again',
-  'Свободных слотов pakNN не осталось (10-99 заняты)': 'No free pakNN slots left (10-99 are taken)',
+  'Свободных слотов pakNN не осталось (30-99 заняты)': 'No free pakNN slots left (30-99 are taken)',
   'установка': 'installing',
   '{0}: в архиве не найдено assets/custom': '{0}: no assets/custom found in the archive',
   '{0}: в архиве не найдена папка cursor': '{0}: no cursor folder found in the archive',

@@ -115,6 +115,8 @@ let langFolder = gamelang.FALLBACK_FOLDER;
 // set when startup moved mods into that folder from wherever they were; the renderer
 // picks it up once with settings:get and tells the user what happened
 let langMigration = null;
+// how many mods the one-time layout of the load order moved (installer.migrateSlotZones)
+let slotMigration = null;
 // fonts and cursors Steam's file check took back and the app could not put back on its own
 // (the archive they came in is no longer cached), reported by mods:list
 let verifyStuck = [];
@@ -522,6 +524,26 @@ app.whenReady().then(async () => {
     installer.migrateLegacyPriorityPaks(library);
   } catch (e) {
     diag('legacy pak migration skipped: ' + e.message);
+  }
+
+  // The load order in two parts, once: the categories that load first in 02-29, the rest from
+  // 30 (installer.js, PRIORITY_SLOTS). Renames files the game holds open while it runs, so it
+  // waits for a start with Dota closed; a failure puts everything back and tries next time.
+  if (settings.get('slotZones') !== 1) {
+    try {
+      if (await dotaIsRunning()) {
+        diag('load order layout: Dota is running, trying on the next start');
+      } else {
+        const r = installer.migrateSlotZones(library);
+        settings.set('slotZones', 1);
+        if (r && r.moved) {
+          slotMigration = { moved: r.moved };
+          diag(`load order layout: ${r.moved} mod(s) moved into their part of the order`);
+        }
+      }
+    } catch (e) {
+      diag('load order layout skipped: ' + e.message);
+    }
   }
 
   // fold imports that predate single-file merging (pakNN_dir.vpk + pakNN_000.vpk)
@@ -1025,6 +1047,7 @@ function registerIpc() {
     validateGamePath,
     langFolder: () => langFolder,
     takeMigration: () => { const m = langMigration; langMigration = null; return m; },
+    takeSlotMigration: () => { const m = slotMigration; slotMigration = null; return m; },
   });
 
   // ----- settings ----- (src/ipc-settings.js)

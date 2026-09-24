@@ -37,7 +37,6 @@ let libRecords = [];           // records as of the last draw
 let libExternal = [];          // foreign files found in the mods folder
 let libStuck = [];             // fonts/cursors Steam took back that need downloading again
 let libRepair = { state: 'idle' }; // what the app did about the last Dota patch
-let slotCount = 0;             // mods occupying a numbered pak, so the order arrows know the ends
 
 registerView('library', () => renderLibrary());
 
@@ -130,11 +129,11 @@ function packMenuItems(rec) {
     langDir && { label: L`Сохранить одним файлом`, icon: 'save', onPick: () => exportRecord(rec.id) },
     ordered && { separator: true },
     ordered && {
-      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.slotIndex === 0,
+      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.zoneFirst,
       onPick: () => moveRecord(rec.id, -1),
     },
     ordered && {
-      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.slotIndex === slotCount - 1,
+      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.zoneLast,
       onPick: () => moveRecord(rec.id, 1),
     },
     { separator: true },
@@ -235,11 +234,11 @@ function rowMenuItems(rec) {
   const ordered = rec.slotIndex != null;
   return [
     ordered && {
-      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.slotIndex === 0,
+      label: L`Загружать раньше`, icon: 'keyboard_arrow_up', disabled: rec.zoneFirst,
       onPick: () => moveRecord(rec.id, -1),
     },
     ordered && {
-      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.slotIndex === slotCount - 1,
+      label: L`Загружать позже`, icon: 'keyboard_arrow_down', disabled: rec.zoneLast,
       onPick: () => moveRecord(rec.id, 1),
     },
     ordered && { separator: true },
@@ -910,8 +909,9 @@ async function renderLibrary() {
   // load order: the game mounts pakNN in numeric order, so that IS the priority. The list
   // is shown in it, and each row's arrows step through it (see orderBtnsHtml).
   const ordered = installedAll.filter((r) => slotOf(r) != null).sort((a, b) => slotOf(a) - slotOf(b));
-  slotCount = ordered.length;
   ordered.forEach((r, i) => { r.slot = slotOf(r); r.slotIndex = i; });
+  // the arrows stop at the ends of a mod's own part of the order (src/slot-zones.js)
+  ordered.forEach((r, i) => { r.zoneFirst = ordered[i - 1]?.zone !== r.zone; r.zoneLast = ordered[i + 1]?.zone !== r.zone; });
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header"><h1 class="view-title">${L`Мои моды`}</h1></div>

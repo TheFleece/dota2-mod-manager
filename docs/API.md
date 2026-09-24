@@ -48,6 +48,7 @@ the code, not in this page.
 | [`src/schema-service.js`](#srcschema-servicejs) | Orchestration around the item schema: what goes into it, when it is rebuilt, and how a |
 | [`src/schema.js`](#srcschemajs) | Item-schema engine: the game's own scripts/items/items_game.txt is the only place |
 | [`src/settings.js`](#srcsettingsjs) | Simple JSON settings store in userData |
+| [`src/slot-zones.js`](#srcslot-zonesjs) | The load order in two parts. |
 | [`src/steam.js`](#srcsteamjs) | Finding Steam, and then finding Dota inside it. |
 | [`src/toolchain.js`](#srctoolchainjs) | Tools the app can borrow, fetched only when something actually needs them. |
 | [`src/uninstall-args.js`](#srcuninstall-argsjs) | Whether this run of the app is the uninstaller asking what to take along. |
@@ -1087,13 +1088,7 @@ _No description in the source._
 
 ### `PRIORITY_CATEGORIES`
 
-```js
-const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-attack', 'hero-items', 'optimization']
-```
-
-Categories whose VPKs must load with higher priority: lower pak numbers (02-09).
-The game only mounts files named pakNN_dir.vpk — the "!pak" prefix seen in
-Dota2PornFx cart zips is a merge-order hint for VPKMerge, not a valid install name.
+_No description in the source._
 
 ### `MERGE_SIZE_CAP`
 
@@ -1299,7 +1294,7 @@ switch does not rename it and the foreign-file scan does not offer it up. 65 is 
 VPK mods, 66 what it compiles and 67 what its d2pfx browser installs, all three from its
 ARCHITECTURE.md; 99 is where releases up to v1.14rc6 wrote the English fix.
 
-RESERVED is smaller, and the difference is the point. We hand out pak10 to pak99, and a
+RESERVED is smaller, and the difference is the point. We hand out pak02 to pak99, and a
 slot only has to be kept empty when Minify might write it LATER - reading the folder today
 cannot see a program that gets installed next week. That is why 65 to 67 stay blocked
 whether or not it is on the machine.
@@ -2771,6 +2766,119 @@ class Settings
 ```
 
 _No description in the source._
+
+## src/slot-zones.js
+
+The load order in two parts.
+
+The game mounts pakNN_dir.vpk in numeric order and the first copy of a file wins, so a mod's
+slot number is its priority. Some categories have to load before everything else: trees,
+river, shaders, hero effects and a few more replace files other mods ship too, and lose
+otherwise. Slots 02-29 belong to them; every other mod starts at 30.
+
+Asked for by Misha on 2026-09-24. Until then only the first install kept the two apart: a mod
+moved up past a shader took the shader's slot, and a shader imported by hand and then linked
+to the catalog stayed wherever the import had put it. 28 slots rather than the old eight
+because those categories hold 217 catalog mods between them, 126 of them hero items, and eight
+ran out after one shader, one set of trees, one river and a few items.
+
+The installer hands out slots through freeSlotIn; moving a mod between the two parts, and the
+one-time layout of an order from before, live here too so the rules sit in one place.
+
+### `PRIORITY_CATEGORIES`
+
+```js
+const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-attack', 'hero-items', 'optimization']
+```
+
+The categories that load before every other mod. The Dota2PornFx cart zips mark them with a
+ "!pak" prefix, a merge-order hint for VPKMerge; the game only mounts pakNN_dir.vpk.
+
+### `PRIORITY_SLOTS`
+
+```js
+const PRIORITY_SLOTS = [2, 29]
+```
+
+The first and last slot of those categories.
+
+### `NORMAL_FIRST`
+
+```js
+const NORMAL_FIRST = 30
+```
+
+Where every other mod starts.
+
+### `isPriorityCategory`
+
+```js
+const isPriorityCategory = (categoryId) => PRIORITY_CATEGORIES.includes(categoryId)
+```
+
+Whether a category is one of those that load first.
+
+### `zoneFor`
+
+```js
+const zoneFor = (categoryId) => (isPriorityCategory(categoryId) ? 'priority' : 'normal')
+```
+
+Which part of the load order a category's mods belong in.
+
+### `slotZone`
+
+```js
+const slotZone = (n) => (n >= PRIORITY_SLOTS[0] && n <= PRIORITY_SLOTS[1] ? 'priority' : 'normal')
+```
+
+Which part of the load order a slot number is in.
+
+### `freeSlotIn`
+
+```js
+function freeSlotIn(zone, used)
+```
+
+The first free slot of a part of the load order, as a file name, or null when it is full.
+
+```
+@param {'priority'|'normal'} zone
+@param {Set<string>} used  lowercased pakNN_dir.vpk names already taken
+```
+
+### `moveToZone`
+
+```js
+function moveToZone(installer, rec)
+```
+
+Move a mod into the part of the load order its category belongs in, when it is not there.
+Linking an import to the catalog is where this matters: the import could not know the
+category and took a slot among the rest.
+
+```
+@returns {Array<object>|null} the record's new files, or null when it stays where it is
+(already in place, no slot, or its part of the order full)
+```
+
+### `migrateSlotZones`
+
+```js
+function migrateSlotZones(installer, library)
+```
+
+Lay an existing load order out in its two parts, once. The order within each part is kept;
+what changes is that every priority mod now comes before every other one, and that the rest
+start at 30. Files that are not ours keep their slots.
+
+Every file is renamed twice, first to a name the game never mounts and then to its new slot,
+so no step lands on a slot another mod still holds. A failure puts back everything already
+renamed and throws; the caller tries again on the next start.
+
+```
+@returns {{ moved: number }|null} null when there is nothing to lay out, or it would not fit
+```
 
 ## src/steam.js
 
