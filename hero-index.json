@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1377,
+  "mods": 1391,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -113,6 +113,7 @@
         {"name":"Batrider Chubzarik Prime","categoryId":"heroes","styleLabel":null,"slots":["belt","back","head","mount","misc","shoulder"]},
         {"name":"Batrider Night Marauder","categoryId":"heroes","styleLabel":null,"slots":["belt","back","head","mount"]},
         {"name":"Batrider Night Snotty","categoryId":"heroes","styleLabel":null,"slots":["belt","back","head","mount"]},
+        {"name":"Batrider Verna Frostbloom","categoryId":"hero-items","styleLabel":null,"slots":["mount"]},
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -312,6 +313,7 @@
         {"name":"Dark Willow Fairy Godmummer","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","offhand","wings"]},
         {"name":"Dark Willow Saccharine Saboteur","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","offhand","wings"]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Immortal Crimson Dark Willow","categoryId":"heroes","styleLabel":null,"slots":["misc","head","offhand"]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -700,6 +702,7 @@
         {"name":"Juggernaut Bladeform Aesthete","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]},
         {"name":"Juggernaut Fireborn Assault","categoryId":"heroes","styleLabel":null,"slots":["weapon"]},
         {"name":"Juggernaut Ice and Fire","categoryId":"heroes","styleLabel":null,"slots":["misc","back","arms","head","weapon"]},
+        {"name":"Juggernaut Jagged Honor","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon","legs"]},
         {"name":"Juggernaut Okita Souji","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon","legs"]},
         {"name":"Juggernaut Samurai of Wind","categoryId":"heroes","styleLabel":null,"slots":["misc","head","back","weapon","arms"]},
         {"name":"Lollipop Juggernaut","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]}
@@ -922,6 +925,7 @@
     "lycan": {
       "name": "Lycan",
       "mods": [
+        {"name":"Better Lycan","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","weapon","misc","head"]},
         {"name":"Lycan Blood Beast","categoryId":"heroes","styleLabel":null,"slots":["belt","weapon"]},
         {"name":"Lycan Blood Moon","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","weapon","misc"]},
         {"name":"Lycan Frostbloom Claws","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
@@ -1282,6 +1286,7 @@
         {"name":"Pudge Arcana Elephant","categoryId":"heroes","styleLabel":null,"slots":["weapon","belt","misc","head","back","arms"]},
         {"name":"Pudge Candy Cat","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
         {"name":"Pudge CM","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon"]},
+        {"name":"Pudge Dendi Arcana","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
         {"name":"Pudge Gol0vach","categoryId":"heroes","styleLabel":null,"slots":["back","belt","head","arms","weapon","misc"]},
         {"name":"Pudge Hood of Defiance","categoryId":"hero-items","styleLabel":null,"slots":["head"]},
         {"name":"Pudge Immortal Gold","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
@@ -1333,6 +1338,7 @@
       "name": "Clockwerk",
       "mods": [
         {"name":"Clockwerk Apex Automated","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","weapon"]},
+        {"name":"Clockwerk Cogwerk","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","weapon"]},
         {"name":"Clockwerk Immortal","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","weapon"]},
         {"name":"Clockwerk Paraflare Cannon","categoryId":"hero-items","styleLabel":null,"slots":["misc"]},
         {"name":"Clockwerk Rabid Watchcog","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
@@ -1379,6 +1385,7 @@
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Rubick Ancient Magus","categoryId":"heroes","styleLabel":null,"slots":["back","head","weapon","shoulder"]},
         {"name":"Rubick Arcana","categoryId":"heroes","styleLabel":null,"slots":["back","misc"]},
+        {"name":"Rubick Caloedick Mage","categoryId":"heroes","styleLabel":null,"slots":["back","head","weapon","shoulder","base","misc"]},
         {"name":"Rubick Dark Mage","categoryId":"heroes","styleLabel":null,"slots":["back","head","weapon","shoulder"]},
         {"name":"Rubick Immortal Arcana","categoryId":"heroes","styleLabel":null,"slots":["back","head","weapon","shoulder","misc"]},
         {"name":"Rubick Plagueroad Apothacary","categoryId":"heroes","styleLabel":null,"slots":["back","head","weapon","shoulder"]},
@@ -1476,6 +1483,7 @@
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Silencer Oscilla Immortal","categoryId":"heroes","styleLabel":null,"slots":["head","misc","shield","shoulder","weapon","arms","belt"]},
         {"name":"Silencer Whispered Wing","categoryId":"heroes","styleLabel":null,"slots":["head","misc","shield","shoulder","weapon","arms"]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -1702,11 +1710,14 @@
         {"name":"Terrorblade 666 Fractal Horns","categoryId":"heroes","styleLabel":null,"slots":["misc","head"]},
         {"name":"Terrorblade Arcana Midnight Blue","categoryId":"heroes","styleLabel":null,"slots":["misc","head"]},
         {"name":"Terrorblade Arcana Plushy Shag","categoryId":"heroes","styleLabel":null,"slots":["misc","head"]},
+        {"name":"Terrorblade Arcana Sunrise","categoryId":"heroes","styleLabel":null,"slots":["misc","head"]},
+        {"name":"Terrorblade Arcana White","categoryId":"heroes","styleLabel":null,"slots":["misc","head"]},
         {"name":"Terrorblade Foulfell Corruptor","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Terrorblade Immortal Arcana","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","wings"]},
         {"name":"Terrorblade Scythes of Sorrow","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Terrorblade Span Of Sorrow","categoryId":"hero-items","styleLabel":null,"slots":["wings"]},
         {"name":"Terrorblade Unblinking Horror","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","wings"]},
+        {"name":"Terrorblade Wings Foulfell","categoryId":"hero-items","styleLabel":null,"slots":["wings"]},
         {"name":"Terrorblade Wrong Arcana","categoryId":"heroes","styleLabel":null,"slots":["arms","head","weapon","wings"]},
         {"name":"Terrorblade Yatoro Arcana","categoryId":"heroes","styleLabel":null,"slots":["misc","head"]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -1826,6 +1837,7 @@
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI9 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Vengeful Spirit Queen Imperia","categoryId":"heroes","styleLabel":null,"slots":["head","misc","weapon"]},
         {"name":"Vengeful Spirit Seraph Scion","categoryId":"heroes","styleLabel":null,"slots":["head","misc","weapon"]},
         {"name":"Yellow Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]}
       ]
@@ -1935,8 +1947,10 @@
         {"name":"TI12 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI9 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"slots":["misc","weapon","back","head","shoulder"]},
+        {"name":"Windranger Compass Rising Gale","categoryId":"heroes","styleLabel":null,"slots":["weapon","back","head","misc","shoulder"]},
         {"name":"Windranger Papizi","categoryId":"heroes","styleLabel":null,"slots":["head","weapon","back","misc","shoulder","offhand"]},
         {"name":"Windranger Peregrine Flight","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
+        {"name":"Windranger Reflections Of Gale","categoryId":"heroes","styleLabel":null,"slots":["weapon","back","head","misc","shoulder"]},
         {"name":"Yellow Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]}
       ]
     },

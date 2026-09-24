@@ -51,7 +51,7 @@ function normalizeEntry(raw, { allowPack = true } = {}) {
     const slot = str(raw.slot, 60);
     const itemId = str(raw.itemId, 20);
     if (!slot || !itemId) return null;
-    return { kind: 'cosmetic', name, slot, itemId };
+    return { kind: 'cosmetic', name, slot, itemId, effectId: str(raw.effectId, 60) };
   }
   if (raw.kind === 'pack' && allowPack) {
     const members = (Array.isArray(raw.members) ? raw.members : [])

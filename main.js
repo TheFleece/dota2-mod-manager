@@ -115,6 +115,8 @@ let langFolder = gamelang.FALLBACK_FOLDER;
 // set when startup moved mods into that folder from wherever they were; the renderer
 // picks it up once with settings:get and tells the user what happened
 let langMigration = null;
+// how many mods the one-time layout of the load order moved (installer.migrateSlotZones)
+let slotMigration = null;
 // fonts and cursors Steam's file check took back and the app could not put back on its own
 // (the archive they came in is no longer cached), reported by mods:list
 let verifyStuck = [];
@@ -383,15 +385,8 @@ function createWindow() {
     });
   }
 
-  // dev: MM_SIM=<scenarios> drives the window through tools/sim and writes MM_SIM_OUT/results.json
-  if (process.env.MM_SIM) {
-    win.webContents.once('did-finish-load', () => setTimeout(() => {
-      win.show();
-      require('./tools/sim/driver').run(win, process.env.MM_SIM, { out: process.env.MM_SIM_OUT || 'e2e-output/sim' })
-        .catch((e) => process.stdout.write(`sim failed: ${(e && e.stack) || e}\n`))
-        .finally(() => app.quit());
-    }, 4000));
-  }
+  // dev: MM_SIM=<scenarios> drives the window through tools/sim (tools/sim/driver.js attach)
+  if (process.env.MM_SIM) require('./tools/sim/driver').attach(win);
   // dev: MM_REC=<dir> films the app running a scripted scene, one webm per scene. The site
   // needs a clip of the app working and will need a fresh one every release, so it is a
   // script rather than something recorded by hand. MM_SCENE picks scenes by name.
@@ -475,7 +470,7 @@ app.whenReady().then(async () => {
     publishedHash: (categoryId, file) => catalog.publishedHash(categoryId, file),
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
-  schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });
+  schemaService = createSchemaService({ settings, library, installer, userDataDir: userData, log: diag });
   ({ isCursorRecord, disableOtherCursors, disableOtherCosmetics, applyMasterToCursors, reconcileCursors }
     = createCursors({ installer, library, settings }));
   ({ adoptImportedFiles, registerImportResults } = createAdopt({ installer, library, schemaService }));
@@ -533,6 +528,26 @@ app.whenReady().then(async () => {
     installer.migrateLegacyPriorityPaks(library);
   } catch (e) {
     diag('legacy pak migration skipped: ' + e.message);
+  }
+
+  // The load order in two parts, once: the categories that load first in 02-29, the rest from
+  // 30 (installer.js, PRIORITY_SLOTS). Renames files the game holds open while it runs, so it
+  // waits for a start with Dota closed; a failure puts everything back and tries next time.
+  if (settings.get('slotZones') !== 1) {
+    try {
+      if (await dotaIsRunning()) {
+        diag('load order layout: Dota is running, trying on the next start');
+      } else {
+        const r = installer.migrateSlotZones(library);
+        settings.set('slotZones', 1);
+        if (r && r.moved) {
+          slotMigration = { moved: r.moved };
+          diag(`load order layout: ${r.moved} mod(s) moved into their part of the order`);
+        }
+      }
+    } catch (e) {
+      diag('load order layout skipped: ' + e.message);
+    }
   }
 
   // fold imports that predate single-file merging (pakNN_dir.vpk + pakNN_000.vpk)
@@ -1036,6 +1051,7 @@ function registerIpc() {
     validateGamePath,
     langFolder: () => langFolder,
     takeMigration: () => { const m = langMigration; langMigration = null; return m; },
+    takeSlotMigration: () => { const m = slotMigration; slotMigration = null; return m; },
   });
 
   // ----- settings ----- (src/ipc-settings.js)

@@ -11,13 +11,11 @@
  * the screen with a fresh repaint of it (Sim.integrity), with the pointer parked away from the
  * grid so no card is lifted by a hover between the two frames.
  */
+const steps = require('../steps');
+
 module.exports = async function scroll(sim) {
-  if (!await sim.click('.rail-item[data-cat="heroes"]')) {
-    sim.check('the heroes category is in the rail', false, 'no .rail-item[data-cat="heroes"]');
-    return;
-  }
-  const cards = await sim.until(`document.querySelectorAll('.grid .card').length > 50 && document.querySelectorAll('.grid .card').length`, 20000);
-  if (!sim.check('the heroes grid is drawn', cards, 'fewer than 50 cards after 20 s')) return;
+  const cards = await steps.heroesList(sim);
+  if (!sim.check('the list of hero mods is drawn', cards, 'fewer than 100 cards after 15 s')) return;
   // the app remembers where each list was left, and a scenario before this one may have left
   // it at the bottom, where every flick down is a flick that cannot move
   await sim.js(`document.getElementById('main').scrollTop = 0`);

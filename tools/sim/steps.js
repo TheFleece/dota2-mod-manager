@@ -148,6 +148,24 @@ async function openSection(sim, view) {
 }
 
 /**
+ * Heroes as the list of every hero mod, the biggest list there is. The category opens on a grid
+ * of heroes, one tile each (renderer/views/hero-grid.js), and remembers the switch; this presses
+ * "all mods as a list" when the grid is up, after checking the grid came up with its heroes.
+ * @returns {Promise<number|null>} how many cards the list shows, null when it never did
+ */
+async function heroesList(sim) {
+  const cards = `document.querySelectorAll('.view-pane[data-pane="catalog"] .grid .card').length`;
+  await sim.click('.rail-item[data-cat="heroes"]');
+  const shown = await sim.until(`document.querySelector('.rail-item.active')?.dataset.cat === 'heroes'
+    && (document.querySelectorAll('#heroGrid .hero-tile').length > 100 ? 'grid' : ${cards} > 100 ? 'list' : null)`, 15000);
+  if (shown === 'grid') {
+    sim.check('Heroes opens on a grid of heroes', true);
+    await sim.click('.layout-toggle [data-layout="list"]');
+  }
+  return sim.until(`document.querySelector('.rail-item.active')?.dataset.cat === 'heroes' && ${cards} > 100 && ${cards}`, 15000);
+}
+
+/**
  * Installs a mod from its card: the category, the card, Install, and whatever the app asks on
  * the way answered yes and written down. Says what appeared in the language folder.
  * @returns {Promise<{ pak: string|null, added: string[], asked: string|null, ok: boolean }>}
@@ -266,7 +284,7 @@ function whoServes(game, folder, pak) {
 }
 
 module.exports = {
-  calm, modalOpen, listing, listingDiff, readyMods, openSection, installFromCard,
+  calm, modalOpen, listing, listingDiff, readyMods, openSection, heroesList, installFromCard,
   libraryRows, rowOf, setEnabled, removeFromLibrary, gameOf, gameLoads, mountedOurs, whoServes,
   modFile, answerNextDialog,
 };

@@ -57,8 +57,7 @@ module.exports = async function settings(sim) {
   }
   // the mod window too: it is built from the most parts
   await steps.openSection(sim, 'catalog');
-  await sim.click('.rail-item[data-cat="heroes"]');
-  await sim.until(`document.querySelector('.rail-item.active')?.dataset.cat === 'heroes' && document.querySelectorAll('.view-pane[data-pane="catalog"] .grid .card').length > 100`, 10000);
+  await steps.heroesList(sim);
   await sim.click('.view-pane[data-pane="catalog"] .grid .card .card-name@1');
   if (await sim.until(steps.modalOpen, 5000)) {
     await sim.still();

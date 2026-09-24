@@ -104,6 +104,149 @@
   gap: 10px;
 }
 .group-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.item-hero-section {
+  margin-bottom: 24px;
+}
+.item-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+.item-slot-card {
+  padding: 0;
+  text-align: left;
+}
+.item-slot-card .card-media {
+  aspect-ratio: 16 / 10;
+}
+.item-slot-thumb,
+.item-slot-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.item-slot-thumb img {
+  object-fit: cover;
+}
+.item-slot-card .card-body {
+  min-height: 84px;
+}
+.item-slot-card .card-name,
+.item-slot-card .card-meta span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.item-picker-modal {
+  width: min(1360px, calc(98vw / var(--content-zoom)));
+  max-height: calc(92vh / var(--content-zoom));
+}
+/* .modal-body is drawn after this file: two classes, so these win and the bar below meets the edges */
+.modal-body.item-picker-body {
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+.modal-body.item-picker-body:has(> .item-picker-foot) { padding-bottom: 0; }
+.item-picker-head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-bar);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  background: linear-gradient(180deg, var(--surface-solid) 82%, transparent);
+}
+.item-picker-head .modal-close {
+  position: static;
+  flex-shrink: 0;
+}
+/* the catalog's own search field, sized by itself rather than by the column it sits in */
+.item-picker-search { align-self: flex-start; }
+.item-hero-slots { margin-top: var(--space-4); }
+.item-fx-head { margin-top: var(--space-5); }
+.item-fx-hint { margin-bottom: var(--space-3); }
+.item-back { margin-bottom: var(--space-2); }
+.item-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* What the window will put on, and the one button that does it: it stays in view down a long
+   list, since nothing reaches the game until it is pressed. */
+.item-picker-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-bar);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0 calc(-1 * var(--space-5));
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-solid);
+  border-top: 1px solid var(--border);
+}
+.item-picker-sum {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.item-picker-sum b { color: var(--text); font-weight: 600; }
+.item-picker-foot .btn { flex-shrink: 0; }
+
+.item-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.item-pick-card {
+  padding: 0;
+  text-align: left;
+}
+.item-pick-card .card-media {
+  aspect-ratio: 16 / 10;
+}
+.item-pick-card .card-body {
+  min-height: 64px;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+.item-pick-card .card-name {
+  font-size: var(--text-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.item-pick-card.picked {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary), 0 0 18px color-mix(in srgb, var(--md-primary) 20%, transparent);
+}
+.item-pick-card .card-meta {
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+}
+.item-pick-card .card-meta span { min-height: 1em; }
+/* The cards' entrance ends holding opacity at 1, over the global dimming of [disabled]: the
+   dimming goes on what is inside instead. An effect before an item is chosen, a piece of a set
+   the builder does not put on. */
+.item-pick-card:disabled > *,
+.item-pick-card.is-disabled > * { opacity: var(--disabled-opacity); }
+@media (max-width: 980px) {
+  .item-pick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .item-pick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(14px); }
@@ -473,3 +616,112 @@
   border-color: transparent;
   background: rgba(14, 12, 20, 0.6);
 }
+
+/* ============ Heroes: the portrait grid ============
+   The category opens on heroes rather than on 463 mods in a row, laid out like the game's own
+   hero grid: wide portraits, tightly packed, the name only where it does not cover the face. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+}
+.hero-tile {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-elev);
+  cursor: pointer;
+  color: var(--text);
+  text-align: left;
+  animation: cardIn 0.35s var(--ease) both;
+  animation-delay: calc(var(--i) * 12ms);
+  transition: transform 0.2s var(--ease), border-color 0.2s, box-shadow 0.2s var(--ease);
+}
+.hero-tile:hover {
+  transform: translateY(-2px) scale(1.04);
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 30%, transparent);
+  z-index: 1;
+}
+.hero-tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.hero-art {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+}
+.hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* the selection portraits are taller than the tile: keep the face, lose the feet */
+  object-position: center 22%;
+  filter: saturate(0.85) brightness(0.9);
+  transition: filter 0.2s;
+}
+/* a mod's own picture standing in for a missing portrait is a scene, not a face */
+.hero-art img.stand-in { object-position: center 35%; }
+.hero-tile:hover .hero-art img { filter: none; }
+.hero-art .ms { font-size: 28px; }
+.hero-name {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 14px 7px 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+  color: #fff;
+}
+.hero-count {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.hero-installed {
+  position: absolute;
+  top: 4px; left: 4px;
+  font-size: 16px;
+  color: var(--installed);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+.hero-tile.installed { border-color: color-mix(in srgb, var(--installed) 55%, var(--border)); }
+.hero-back .ms { font-size: 16px; }
+
+/* grid / list switch in the heroes toolbar */
+.layout-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.layout-toggle .seg-btn {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.layout-toggle .seg-btn .ms { font-size: 16px; }
+.layout-toggle .seg-btn:hover { color: var(--text); background: var(--surface); }
+.layout-toggle .seg-btn.active { background: var(--primary-dim); color: var(--primary-soft); }
+.layout-toggle .seg-btn:focus-visible { outline: none; box-shadow: var(--focus-ring-inset); }

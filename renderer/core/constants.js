@@ -51,6 +51,7 @@ export const CAT_ICON = {
 // the ones we know a nice label/icon for; an unknown one still works, titled from its id.
 export const COSMETIC_SLOTS = {
   weather: { label: 'Погода', icon: 'rainy' },
+  items: { label: 'Предметы', icon: 'checkroom' },
   terrain: { label: 'Ландшафт', icon: 'terrain' },
   hud_skin: { label: 'Интерфейс игры', icon: 'dashboard' },
   loading_screen: { label: 'Экран загрузки', icon: 'image' },
@@ -70,7 +71,18 @@ export const COSMETIC_SLOTS = {
 };
 export const COSMETIC_PREFIX = 'cosmetic:';
 export function cosmeticMeta(slot) {
-  return COSMETIC_SLOTS[slot] || { label: slot.replace(/_/g, ' '), icon: 'auto_awesome' };
+  if (COSMETIC_SLOTS[slot]) return COSMETIC_SLOTS[slot];
+  if (String(slot).startsWith('item:')) {
+    const equip = String(slot).split(':').pop();
+    const icon = {
+      head: 'face', hair: 'content_cut', weapon: 'swords', offhand: 'shield', shield: 'shield', armor: 'security',
+      shoulder: 'accessibility_new', shoulders: 'accessibility_new', belt: 'checkroom', arms: 'front_hand',
+      arm: 'front_hand', back: 'checkroom', wings: 'flutter_dash', tail: 'gesture', legs: 'directions_run',
+      mount: 'pets', ambient: 'auto_awesome', misc: 'checkroom',
+    }[equip] || 'checkroom';
+    return { label: 'Предметы', icon };
+  }
+  return { label: slot.replace(/_/g, ' '), icon: 'auto_awesome' };
 }
 
 // rail sections: [label, [categoryIds]]

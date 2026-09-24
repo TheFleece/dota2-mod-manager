@@ -33,6 +33,9 @@ window.EN_PLURAL = {
   'косметик': ['cosmetic', 'cosmetics'],
   'из них — копии уже установленных модов': ['of them is a copy of a mod you already have', 'of them are copies of mods you already have'],
   'вариантов': ['option', 'options'],
+  'героев': ['hero', 'heroes'],
+  'наборов': ['set', 'sets'],
+  'деталей': ['piece', 'pieces'],
   'видов': ['look', 'looks'],
 };
 
@@ -59,6 +62,7 @@ const EN = {
 
   // ---------- group / link labels ----------
   'Все герои': 'All heroes', 'Все предметы': 'All items', 'Все крипы': 'All creeps',
+  'Вид': 'View', 'Сеткой героев': 'Hero grid', 'Все моды списком': 'All mods as a list',
   'Все башни': 'All towers', 'Все типы': 'All types', 'Все группы': 'All groups',
   'Все категории': 'All categories', 'Все слоты': 'All slots',
 
@@ -146,11 +150,37 @@ const EN = {
   'Косметика': 'Cosmetics',
   'Моды': 'Mods',
   'вид для стандартного предмета': 'a look for a default item',
+  'Предметы': 'Items',
+  'Стандартный': 'Default',
+  'Надето': 'Equipped',
+  'Надетые': 'Equipped',
+  'Надето: {0}': 'Equipped: {0}',
+  'Надеть': 'Equip',
+  'Надеваю…': 'Equipping…',
+  'Сохранить эффекты': 'Save effects',
+  'Вернуть стандартный': 'Back to default',
+  'Можно выбрать несколько. Иней и Снег держатся не на всех моделях.':
+    'You can pick several. Frostbloom and Snow do not hold on every model.',
+  'Наборы': 'Sets',
+  '{0} из {1}': '{0} of {1}',
+  '{0} из {1} {2}': '{0} of {1} {2}',
+  'Надеть весь набор': 'Equip the whole set',
+  'Ничего не найдено. Очисти поиск': 'Nothing found. Clear the search',
+  'Изменено {0} из {1}': 'Changed {0} of {1}',
+  'Надето {0} из {1} {2}': 'Equipped {0} of {1} {2}',
+  'Набор надевается без эффектов. Чтобы добавить эффект, открой деталь.':
+    'A set goes on without effects. Open a piece to add one.',
+  'Эффект добавляется к предмету: сначала выбери его выше.': 'An effect goes on an item: choose one above first.',
+  'Конструктор предметов': 'Item builder',
+  'конструктор предметов': 'item builder',
+  'Без эффектов': 'No effects',
   'Выбрать всю косметику': 'Select every look',
   'Вернуть все слоты к тому, что даёт игра': 'Put every slot back to what the game gives',
   'Косметика выключена — слоты снова как в игре': 'Cosmetics off — the slots are the game’s own again',
   'Вид подставляется в схему предметов игры — стандартный предмет просто рисуется как выбранный. Файлы модов это не трогает, и видно только тебе.':
     'A look is spliced into the game’s item schema — it touches no mod files, and only you can see it.',
+  'Стандартный предмет героя сохранит свои id, name и prefab=default_item. Остальная часть блока берётся у выбранного предмета, а выбранный эффект добавляется в visuals.':
+    'The hero’s stock item keeps its own id, name and prefab=default_item. The rest of the block comes from the chosen item, and the chosen effect is added to visuals.',
   '…и ещё {0} — уточни запрос': '…and {0} more — narrow the search',
   // cosmetic slot labels
   'Погода': 'Weather', 'Ландшафт': 'Terrain', 'Интерфейс игры': 'Game HUD',
@@ -601,6 +631,8 @@ const EN = {
   ', менять ничего не пришлось': ', and nothing needed changing',
   '. Можно играть.': '. You are good to play.',
   'Понятно': 'Got it',
+  'Порядок загрузки обновлён: шейдеры, деревья, река, эффекты героев и ещё несколько категорий теперь грузятся раньше остальных модов.':
+    'Load order updated: shaders, trees, river, hero effects and a few more categories now load before the other mods.',
   'Dota обновилась, пока игра запущена': 'Dota updated while the game was running',
   '. Моды в этой сессии не работают: файлы игры заняты. Закрой Dota — приложение вернёт всё само.':
     '. Mods are off for this session because the game holds its files open. Close Dota and the app puts everything back on its own.',

@@ -167,6 +167,49 @@ function signaturesFor(branchText) {
   ].join('\n');
 }
 
+/* What the item builder reads out of pak01 besides the table, copied from the real game so the
+ * sandbox can run it: every hero's two portraits (its hub shows them), and for a whole set
+ * (Blightfall, so "Equip the whole set" builds every piece) and one more wearable the model and
+ * particles it copies plus the effect particles it points at. A few MB. Only these, rather than
+ * the whole archive: the real one is tens of gigabytes. */
+const BUILDER_SAMPLE = [
+  'Blightfall - Head', 'Blightfall - Shoulder', 'Blightfall - Back', 'Blightfall - Weapon', 'Blightfall - Mount',
+  'Compendium Rider of Avarice Helmet',
+];
+
+function builderAssets(real, schemaText) {
+  const { openVpkIndex } = require('../src/vpk.js');
+  const builder = require('../src/item-builder.js');
+  const out = [];
+  try {
+    const ix = openVpkIndex(path.join(real, 'dota', 'pak01_dir.vpk'));
+    const want = new Set();
+    const slots = builder.itemSlots(schemaText);
+    for (const id of new Set(slots.flatMap((sl) => sl.heroIds))) {
+      want.add(`panorama/images/heroes/npc_dota_hero_${id}_png.vtex_c`);
+      want.add(`panorama/images/heroes/selection/npc_dota_hero_${id}_png.vtex_c`);
+    }
+    const compiled = (p) => { const c = String(p).toLowerCase().replace(/\\/g, '/'); return c.endsWith('_c') ? c : `${c}_c`; };
+    const effects = builder.itemEffects().map((fx) => fx.id);
+    for (const sl of slots) {
+      for (const o of sl.options.filter((x) => BUILDER_SAMPLE.includes(x.name))) {
+        for (const fx of effects) {
+          const built = builder.itemEffectPatch(schemaText, o.id, fx);
+          for (const m of built.block.matchAll(/"((?:models|particles|materials)\/[^"]+\.(?:vmdl|vpcf|vmat|vtex))"/gi)) want.add(compiled(m[1]));
+          for (const c of built.assetCopies) { want.add(compiled(c.from)); want.add(compiled(c.to)); }
+        }
+      }
+    }
+    for (const rel of want) {
+      const data = ix.read(rel);
+      if (data) out.push(entry(rel, data));
+    }
+  } catch (e) {
+    log('  could not copy the item builder\'s files:', e.message);
+  }
+  return out;
+}
+
 /** One inline-data VPK entry in the shape buildVpk() wants. */
 function entry(relPath, data) {
   const norm = relPath.replace(/\\/g, '/').toLowerCase();
@@ -281,11 +324,13 @@ function buildGameTree() {
       log('  could not read the real schema, using the stub:', e.message);
     }
   }
+  const extras = real && origin !== 'fallback stub' ? builderAssets(real, schema) : [];
   fs.writeFileSync(
     path.join(GAME, 'dota', 'pak01_dir.vpk'),
-    buildVpk([entry(SCHEMA_REL, Buffer.from(schema, 'latin1'))])
+    buildVpk([entry(SCHEMA_REL, Buffer.from(schema, 'latin1')), ...extras])
   );
   log(`  items_game.txt from ${origin}`);
+  if (extras.length) log(`  ${extras.length} files for the item builder (portraits, sample wearables, effects)`);
 
   // dota_russian: Valve's gameinfo plus stand-ins for the voice paks. langFolders() decides
   // "this folder holds Valve content" by the presence of pak01_*, and the 2.0 feature

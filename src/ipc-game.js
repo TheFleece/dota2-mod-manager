@@ -8,6 +8,7 @@
 const { ipcMain } = require('electron');
 
 const { t } = require('./i18n');
+const { heroIdFromName } = require('./hero-names');
 
 /** @param {object} ctx  the services and main-process callbacks these channels use */
 function registerGameIpc({
@@ -85,6 +86,31 @@ function registerGameIpc({
   //
   // Sources: the mod's own files and the game's own pictures when the toolchain is here
   // (exact, offline, no rate limit), the wiki for whatever is left.
+  // the item builder's hub: every hero's portrait, out of the installed game
+  ipcMain.handle('cosmetics:heroPortraits', async (e, ids) => {
+    try {
+      return await gameIcons.heroPortraits((Array.isArray(ids) ? ids : []).slice(0, 300));
+    } catch (err) {
+      diag('hero portraits failed: ' + err.message);
+      return {};
+    }
+  });
+
+  // the catalog's hero grid: the same portraits, asked for by the name the catalog prints
+  ipcMain.handle('cosmetics:heroPortraitsByName', async (e, names) => {
+    try {
+      const list = (Array.isArray(names) ? names : []).slice(0, 300).map(String);
+      const idOf = new Map(list.map((n) => [n, heroIdFromName(n)]));
+      const got = await gameIcons.heroPortraits([...new Set(idOf.values())].filter(Boolean));
+      const out = {};
+      for (const [n, id] of idOf) if (got[id]) out[n] = got[id];
+      return out;
+    } catch (err) {
+      diag('hero portraits by name failed: ' + err.message);
+      return {};
+    }
+  });
+
   ipcMain.handle('cosmetics:icons', async (e, names) => {
     const wanted = (Array.isArray(names) ? names : []).slice(0, 60);
     const chains = new Map(wanted.map((n) => [n, String(n).split('|').filter(Boolean)]));
@@ -170,12 +196,23 @@ function registerGameIpc({
 
   // A pick is a library record like any other mod: mods:setEnabled/mods:remove already
   // handle it (see touchesSchema above), this is only for the initial choice.
-  ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName) => {
+  ipcMain.handle('cosmetics:pick', (e, slot, itemId, itemName, effectId) => {
     const stop = blocked('cosmetics');
     if (stop) return stop;
     try {
-      const rec = schemaService.pickCosmetic(slot, itemId, itemName);
+      const rec = schemaService.pickCosmetic(slot, itemId, itemName, effectId);
       return { ok: true, record: rec };
+    } catch (err) {
+      return { error: String(err.message || err) };
+    }
+  });
+
+  // A whole set, one write to the game for all its pieces (schema-service pickSet).
+  ipcMain.handle('cosmetics:pickSet', (e, setId) => {
+    const stop = blocked('cosmetics');
+    if (stop) return stop;
+    try {
+      return { ok: true, ...schemaService.pickSet(setId) };
     } catch (err) {
       return { error: String(err.message || err) };
     }

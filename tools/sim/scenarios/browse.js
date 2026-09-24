@@ -11,6 +11,7 @@
  * sandbox as it found it.
  */
 const { lit } = require('../driver');
+const steps = require('../steps');
 
 const SECTIONS = ['catalog', 'library', 'presets', 'settings'];
 
@@ -101,6 +102,9 @@ module.exports = async function browse(sim) {
       const pane = document.querySelector('.view-pane[data-pane="catalog"]');
       return {
         cards: pane.querySelectorAll('.grid .card').length,
+        // Heroes opens on one tile per hero, each saying how many mods it holds
+        tiles: pane.querySelector('#heroGrid')
+          ? [...pane.querySelectorAll('#heroGrid .hero-count')].reduce((n, t) => n + Number(t.textContent), 0) : null,
         title: pane.querySelector('.view-title')?.textContent.trim() || '',
         empty: pane.querySelector('.empty-note, .empty-state')?.textContent.trim() || '',
       };
@@ -109,8 +113,9 @@ module.exports = async function browse(sim) {
     // catalog's own lists, and a card missing from one is a mod nobody can find
     const expected = counted[cat];
     if (typeof expected === 'number' && !['tools', 'packs'].includes(cat)) {
-      sim.check(`category ${cat} shows every mod the catalog has in it`, shown.cards === expected,
-        `${shown.cards} cards for ${expected} mods`, shown);
+      const got = shown.tiles ?? shown.cards;
+      sim.check(`category ${cat} shows every mod the catalog has in it`, got === expected,
+        `${got} ${shown.tiles === null ? 'cards' : 'mods on the hero tiles'} for ${expected} mods`, shown);
     }
     await sim.move(sim.x, 8);
     await sim.settle(400);
@@ -148,10 +153,8 @@ module.exports = async function browse(sim) {
   await sim.key('Escape');
 
   // ---- the mod window ----
-  await sim.click('.rail-item[data-cat="heroes"]');
   // hundreds of cards: no other category has that many, so this is not the last one still showing
-  const heroes = await sim.until(`document.querySelector('.rail-item.active')?.dataset.cat === 'heroes'
-    && document.querySelectorAll('.view-pane[data-pane="catalog"] .grid .card').length > 100`, 15000);
+  const heroes = await steps.heroesList(sim);
   if (!sim.check('the heroes category opens for the mod windows', heroes, 'its grid never showed')) return;
   await sim.until(calm, 3000);
   const closers = [

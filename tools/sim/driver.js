@@ -62,8 +62,24 @@ class Sim {
     }
   }
 
+  /**
+   * A window minimized under the run has no size: getContentSize() says [0, 0], every position
+   * worked out from it comes to 0 / 0, and the page is handed NaN for a point. On a machine
+   * somebody is using that is Win+D or a click on the taskbar, and it failed whole runs with
+   * "elementFromPoint: non-finite" in whatever scenario was going. A hand would bring the
+   * window back before touching it, so this does, and says so in the log.
+   */
+  async awake() {
+    if (!this.win.isMinimized() && this.win.getContentSize()[0] > 0) return;
+    process.stdout.write('sim: the window was minimized from outside the run; restored\n');
+    this.win.restore();
+    this.win.show();
+    await sleep(600);
+  }
+
   /** Whether the page is ready to be used: the catalog drawn, the settings read, no dialog up. */
   async ready() {
+    await this.awake();
     const [cw] = this.win.getContentSize();
     this.scale = cw / (await this.js('window.innerWidth'));
     await this.until(`document.querySelector('.rail-item[data-cat]')`, 30000);
@@ -100,6 +116,7 @@ class Sim {
    * its coordinates would otherwise land on whatever is drawn there instead.
    */
   async find(spec) {
+    await this.awake();
     const at = /@(\d+)$/.exec(spec);
     const sel = at ? spec.slice(0, -at[0].length) : spec;
     const box = await this.js(`(async () => {
@@ -131,7 +148,7 @@ class Sim {
     if (!box) return null;
     // measured each time: the app's own scale setting changes how many window pixels a CSS pixel is
     const scale = this.win.getContentSize()[0] / box.iw;
-    if (!Number.isFinite(scale) || !Number.isFinite(box.x) || !Number.isFinite(box.y)) {
+    if (!(scale > 0) || !Number.isFinite(scale) || !Number.isFinite(box.x) || !Number.isFinite(box.y)) {
       throw new Error(`find(${spec}): no usable position (${JSON.stringify({ box, content: this.win.getContentSize(), scale })})`);
     }
     this.scale = scale;
@@ -153,7 +170,7 @@ class Sim {
 
   /** What is under a window point, and whether it is the element `spec` names or inside it. */
   async under(spec, p) {
-    if (![p.x, p.y, this.scale].every(Number.isFinite)) throw new Error(`under(${spec}): ${JSON.stringify({ p, scale: this.scale })}`);
+    if (![p.x, p.y, this.scale].every(Number.isFinite) || !(this.scale > 0)) throw new Error(`under(${spec}): ${JSON.stringify({ p, scale: this.scale })}`);
     const at = /@(\d+)$/.exec(spec);
     const sel = at ? spec.slice(0, -at[0].length) : spec;
     return this.js(`(() => {
@@ -395,4 +412,18 @@ async function run(win, list, { out }) {
   return result;
 }
 
-module.exports = { Sim, run, lit };
+/**
+ * What main.js starts when MM_SIM is set: once the page has loaded and settled, the scenarios it
+ * names, then quit. The results go to MM_SIM_OUT (e2e-output/sim by default).
+ * @param {import('electron').BrowserWindow} win
+ */
+function attach(win) {
+  win.webContents.once('did-finish-load', () => setTimeout(() => {
+    win.show();
+    run(win, process.env.MM_SIM || '', { out: process.env.MM_SIM_OUT || 'e2e-output/sim' })
+      .catch((e) => process.stdout.write(`sim failed: ${(e && e.stack) || e}\n`))
+      .finally(() => app.quit());
+  }, 4000));
+}
+
+module.exports = { Sim, run, attach, lit };
