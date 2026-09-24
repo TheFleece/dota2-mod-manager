@@ -242,6 +242,12 @@ function buildGameTree() {
 
   take(['dota', 'gameinfo.gi'], GAMEINFO);
   take(['dota', 'gameinfo_branchspecific.gi'], BRANCHSPECIFIC);
+  /* The developer's own game may carry this app's search path (safe mode off there), and a copy
+     of it made a sandbox that started with our patch in place while its fresh settings said safe
+     mode was on: the simulation's game session found that on 2026-09-24. Valve ships the file
+     without it, so that is what the sandbox starts from. */
+  const branchFile = path.join(GAME, 'dota', 'gameinfo_branchspecific.gi');
+  fs.writeFileSync(branchFile, require('../src/patcher.js').stripPatch(fs.readFileSync(branchFile, 'latin1')), 'latin1');
 
   /* The signature list, in the one place a real installation keeps one.
    *

@@ -45,7 +45,8 @@ class Sim {
   async until(expr, ms = 15000) {
     const end = Date.now() + ms;
     for (;;) {
-      const v = await this.js(`(() => { try { return (${expr}); } catch { return null; } })()`);
+      // awaited in the page, so an expression can be a call into window.api and not only the DOM
+      const v = await this.js(`(async () => { try { return await (${expr}); } catch { return null; } })()`);
       if (v) return v;
       if (Date.now() > end) return null;
       await sleep(200);
