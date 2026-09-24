@@ -112,6 +112,35 @@ async function readyMods(sim, names) {
   return picked;
 }
 
+/** A sandbox mod's own file, as the list recorded it, or null (with the check saying why). */
+async function modFile(sim, name) {
+  const m = MANIFEST.find((x) => x.name === name);
+  let got = null;
+  let why = 'not in tools/sandbox-mods.json';
+  if (m) { try { got = await sandboxMod(m); } catch (e) { why = e.message; } }
+  if (got && got.replaced) why = 'the catalog replaced it since tools/sandbox-mods.json was written';
+  return sim.check(`${name} is in the sandbox`, got && got.file, why) ? got.file : null;
+}
+
+/**
+ * Plays the person at the other end of a system file dialog: the next one the app opens is
+ * answered with `answer` ({ filePaths } or { canceled: true }) instead of a window. The app's
+ * own handler, button and import code all run as they would; only the choosing is ours, since
+ * a native dialog is outside the page and out of reach of input events.
+ */
+function answerNextDialog(answer) {
+  const { dialog } = require('electron');
+  const real = dialog.showOpenDialog;
+  const asked = [];
+  dialog.showOpenDialog = async (...args) => {
+    dialog.showOpenDialog = real;
+    const opts = args.find((a) => a && typeof a === 'object' && 'properties' in a) || {};
+    asked.push({ title: opts.title, properties: opts.properties });
+    return answer.canceled ? { canceled: true, filePaths: [] } : { canceled: false, filePaths: answer.filePaths };
+  };
+  return { asked, restore: () => { dialog.showOpenDialog = real; } };
+}
+
 async function openSection(sim, view) {
   await sim.click(`.tb-tab[data-view="${view}"]`);
   return sim.until(`document.querySelector('.tb-tab.active')?.dataset.view === ${lit(view)}
@@ -239,4 +268,5 @@ function whoServes(game, folder, pak) {
 module.exports = {
   calm, modalOpen, listing, listingDiff, readyMods, openSection, installFromCard,
   libraryRows, rowOf, setEnabled, removeFromLibrary, gameOf, gameLoads, mountedOurs, whoServes,
+  modFile, answerNextDialog,
 };

@@ -322,7 +322,9 @@ tiles on some graphics drivers show up, and checks that the end of the list is i
 and the window inside the screen. `browse` visits every section, category, the search and the mod
 window. `mods` installs seven real mods from their cards, reorders two that replace the same file,
 switches them off and removes them. `presets` saves a preset, applies it over a changed state and
-again after one of its mods was deleted. `settings` switches the language and reads every screen
+again after one of its mods was deleted. `import` picks renamed catalog mods in the file dialog
+and a folder of them (the dialog's answer is played by `tools/sim/steps.js`), checks the app
+recognises and links them, and cancels once. `settings` switches the language and reads every screen
 for text left in the other one, and changes the scale and the switches. `game-session` plays the
 game starting, quitting and being updated or checked by Steam (`tools/sim/world.js`). The first
 machine of a set runs every scenario; the others run the ones a screen or a renderer can change
