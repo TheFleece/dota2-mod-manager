@@ -130,7 +130,11 @@ class Sim {
     })()`);
     if (!box) return null;
     // measured each time: the app's own scale setting changes how many window pixels a CSS pixel is
-    this.scale = this.win.getContentSize()[0] / box.iw;
+    const scale = this.win.getContentSize()[0] / box.iw;
+    if (!Number.isFinite(scale) || !Number.isFinite(box.x) || !Number.isFinite(box.y)) {
+      throw new Error(`find(${spec}): no usable position (${JSON.stringify({ box, content: this.win.getContentSize(), scale })})`);
+    }
+    this.scale = scale;
     return { x: Math.round(box.x * this.scale), y: Math.round(box.y * this.scale) };
   }
 
@@ -149,6 +153,7 @@ class Sim {
 
   /** What is under a window point, and whether it is the element `spec` names or inside it. */
   async under(spec, p) {
+    if (![p.x, p.y, this.scale].every(Number.isFinite)) throw new Error(`under(${spec}): ${JSON.stringify({ p, scale: this.scale })}`);
     const at = /@(\d+)$/.exec(spec);
     const sel = at ? spec.slice(0, -at[0].length) : spec;
     return this.js(`(() => {
@@ -348,11 +353,13 @@ async function run(win, list, { out }) {
   // What the page said while it was being used. An exception in a click handler leaves the
   // screen looking fine and the button doing nothing, and only the console knows.
   let said = [];
-  const listen = (/** @type {any} */ e, /** @type {any} */ level, /** @type {any} */ message) => {
+  const listen = (/** @type {any} */ e, /** @type {any} */ level, /** @type {any} */ message, /** @type {any} */ line, /** @type {any} */ source) => {
     // Electron 35 moved the fields onto the event; older builds pass them as arguments
     const lvl = typeof level === 'number' ? ['debug', 'info', 'warning', 'error'][level] : e.level;
     const text = typeof message === 'string' ? message : e.message;
-    if (lvl === 'error') said.push(String(text).slice(0, 300));
+    // where it was thrown, so a report names the file and not just the words
+    const at = `${String((typeof source === 'string' ? source : e.sourceId) || '').split('/').slice(-2).join('/')}:${typeof line === 'number' ? line : e.lineNumber}`;
+    if (lvl === 'error') said.push(`${String(text).slice(0, 300)} (${at})`);
   };
   win.webContents.on('console-message', listen);
   let crashed = null;
@@ -366,6 +373,8 @@ async function run(win, list, { out }) {
       await require(`./scenarios/${name}`)(sim);
     } catch (e) {
       sim.check('the scenario ran to its end', false, (e && e.stack) || e);
+      // what was on screen when it stopped: the words of an error rarely say where it was
+      try { await sim.shot('stopped-here'); } catch { /* the window is gone too */ }
     }
     // a picture that failed to download is the network's doing, and the catalog is live
     const errors = said.filter((m) => !/^Failed to load resource/.test(m));
