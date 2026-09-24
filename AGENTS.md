@@ -103,6 +103,11 @@ here is why".
 A pull request should say what broke and how you know it is fixed. "Fixes the thing" with no
 reproduction is a change nobody can review.
 
+Work on a branch of your own, from main, and open your own pull request. Do not push to a
+branch that has a pull request you did not open: main takes a change only after the other
+maintainer approves its last push, so your push throws away an approval somebody already gave,
+and a push from an assistant's account needs one more approval on top.
+
 ## Attribution
 
 **Say what wrote it.** If an assistant helped, put a `Co-Authored-By` trailer on the commit.
