@@ -74,17 +74,6 @@ function registerMiscIpc({
       return { error: String(err.message || err) };
     }
   });
-
-  ipcMain.handle('misc:listAssetFiles', (e, subfolder) => {
-    try {
-      const assetsDir = path.join(__dirname, '..', 'renderer', 'assets');
-      const targetDir = path.join(assetsDir, subfolder);
-      if (!fs.existsSync(targetDir)) return [];
-      return fs.readdirSync(targetDir).filter(f => fs.statSync(path.join(targetDir, f)).isFile());
-    } catch {
-      return [];
-    }
-  });
 }
 
 module.exports = { registerMiscIpc };

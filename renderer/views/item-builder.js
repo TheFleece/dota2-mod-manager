@@ -296,8 +296,6 @@ function drawItemSlotModal() {
 
 export async function renderItemCosmeticHub(restoreScrollTop = null) {
   await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(catName(COSMETIC_PREFIX + 'items'))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
-  await loadHeroIcons();
-  await loadEffectIcons();
   if (!state.cosmeticSlots) await refreshCosmeticSlots();
   if (state.activeCategory !== COSMETIC_PREFIX + 'items') return;
 
@@ -308,6 +306,7 @@ export async function renderItemCosmeticHub(restoreScrollTop = null) {
     heroes.get(key).push(s);
   }
   const list = [...heroes.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  await loadHeroPortraits(list);
   if (!list.length) {
     await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(catName(COSMETIC_PREFIX + 'items'))}</h1></div><div class="empty-note">${L`Схема игры не прочиталась — проверь путь к Dota 2 в настройках.`}</div>`; });
     return;
@@ -368,60 +367,33 @@ export async function renderItemCosmeticHub(restoreScrollTop = null) {
   if (restoreScrollTop !== null && $('#main')) $('#main').scrollTop = restoreScrollTop;
 }
 
-// Hero icon path mapping - auto-populated from renderer/assets/heroes/*.png
-// Files should be named by hero display name (e.g., "Anti-Mage.png", "Dazzle.png")
-const HERO_ICON_BASE = './assets/heroes';
+// A hero's portrait, read out of the installed game (src/game-icons.js heroPortraits): the game
+// keeps them as plain PNG, so this needs no toolchain and no network. Keyed by the label the hub
+// shows. They used to ship inside the app, 132 of Valve's pictures in a GPL repository.
+const heroPortraits = new Map();
 
-const HERO_ICONS_LOADED = new Set();
-
-let HERO_ICON_PATHS = {};
-
-async function loadHeroIcons() {
-  if (HERO_ICONS_LOADED.size > 0) return; // Already loaded
-  try {
-    const files = await window.api.misc.listAssetFiles('heroes');
-    for (const file of files) {
-      if (/\.png$/i.test(file)) {
-        const heroName = file.replace(/\.png$/i, '');
-        HERO_ICON_PATHS[heroName] = `${HERO_ICON_BASE}/${file}`;
-        HERO_ICONS_LOADED.add(heroName);
-      }
-    }
-  } catch {
-    // Folder doesn't exist or is empty - that's fine, icons will fall back to placeholder
+async function loadHeroPortraits(heroes) {
+  const want = new Map(); // hero id -> the labels that show it
+  for (const [label, slots] of heroes) {
+    const id = slots[0]?.heroIds?.[0];
+    if (id && !heroPortraits.has(label)) want.set(id, [...(want.get(id) || []), label]);
   }
+  if (!want.size) return;
+  let got = {};
+  try { got = await window.api.cosmetics.heroPortraits([...want.keys()]); } catch { /* no game: glyphs */ }
+  for (const [id, labels] of want) for (const label of labels) heroPortraits.set(label, got[id] || null);
 }
 
-function getHeroIconPath(heroName) {
-  return HERO_ICON_PATHS[heroName] || null;
+function getHeroIconPath(label) {
+  return heroPortraits.get(label) || null;
 }
 
-// Effect icon path mapping - auto-populated from renderer/assets/effects/*.png
-// Files should be named by effect ID (e.g., "frostbloom.png", "snow.png")
-const EFFECT_ICON_BASE = './assets/effects';
-
-const EFFECT_ICONS_LOADED = new Set();
-
-let EFFECT_ICON_PATHS = {};
-
-async function loadEffectIcons() {
-  if (EFFECT_ICONS_LOADED.size > 0) return; // Already loaded
-  try {
-    const files = await window.api.misc.listAssetFiles('effects');
-    for (const file of files) {
-      if (/\.png$/i.test(file)) {
-        const effectId = file.replace(/\.png$/i, '');
-        EFFECT_ICON_PATHS[effectId] = `${EFFECT_ICON_BASE}/${file}`;
-        EFFECT_ICONS_LOADED.add(effectId);
-      }
-    }
-  } catch {
-    // Folder doesn't exist or is empty - that's fine, effects will fall back to placeholder
-  }
-}
+// The effects that have a picture. A fixed set, the same ids src/item-builder.js offers, so the
+// screen never has to ask what is in a folder.
+const EFFECT_PICTURES = new Set(['bubbles', 'fire', 'frostbloom', 'ghost', 'lightnings', 'sand-storm', 'snow']);
 
 function getEffectIconPath(effectId) {
-  return EFFECT_ICON_PATHS[effectId] || null;
+  return EFFECT_PICTURES.has(effectId) ? `./assets/effects/${effectId}.webp` : null;
 }
 
 function itemHeroCardHtml(hero, slots, i) {

@@ -85,6 +85,16 @@ function registerGameIpc({
   //
   // Sources: the mod's own files and the game's own pictures when the toolchain is here
   // (exact, offline, no rate limit), the wiki for whatever is left.
+  // the item builder's hub: every hero's portrait, out of the installed game
+  ipcMain.handle('cosmetics:heroPortraits', async (e, ids) => {
+    try {
+      return await gameIcons.heroPortraits((Array.isArray(ids) ? ids : []).slice(0, 300));
+    } catch (err) {
+      diag('hero portraits failed: ' + err.message);
+      return {};
+    }
+  });
+
   ipcMain.handle('cosmetics:icons', async (e, names) => {
     const wanted = (Array.isArray(names) ? names : []).slice(0, 60);
     const chains = new Map(wanted.map((n) => [n, String(n).split('|').filter(Boolean)]));
