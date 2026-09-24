@@ -2,6 +2,33 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.7.1
+
+### The project moved to github.com/dota2modmanager
+
+The repository now belongs to an organization with two maintainers, and every change is read by
+the one who did not write it before it ships. This version looks for updates and for the
+project's notices at the new address, and its GitHub link goes there too. Older versions keep
+working: GitHub forwards the old address, so there is nothing for you to do.
+
+The Download button in your Discord status now opens dota2modmanager.com instead of the old page
+on GitHub.
+
+### Your Windows user name stays out of the diagnostic report
+
+The report listed the folders it looked at by their full path, and a path inside your home folder
+carries your Windows user name. That part is now written as `%USERPROFILE%` (`~` on Linux), so
+a report you paste into Discord shows the folder and not who you are.
+
+### Electron 44.4.3
+
+The engine the app runs on moves from 44.3.0 to 44.4.3, with the fixes Electron shipped in
+between.
+
+### Thanks
+
+Omkar Nikam wrote the diagnostic report change. It is the second pull request he has sent here.
+
 ## 2.7.0
 
 ### A beta channel, for the people who asked to be first

@@ -1,50 +1,81 @@
 /**
- * The privacy policy and the terms, read from docs/ when the site is built.
+ * The privacy policy and the terms, taken from the repository when the site is built.
  *
- * docs/privacy/index.html and docs/terms/index.html were written in July 2026 for the Discord
- * application, which asks for both, and were served from thefleece.github.io until the
- * repository moved. They stay the one copy. Each holds an English and a Russian article, and this
- * lifts the article for one language into the site's own layout, the way tools/preset-page.mjs
- * carries the preset page over. The back link goes, because the site has a header of its own.
+ * The privacy policy is PRIVACY.md and its Russian twin PRIVACY.ru.md, the same text the
+ * repository keeps next to the code it describes, so the site never shows a second, older copy.
+ * The pages import the Markdown and hand the rendered HTML here. Its links are written for
+ * GitHub, relative to the repository root, and are pointed back there; the two privacy files
+ * point at each other's page on the site.
  *
- * A heading or a date that goes missing from either file fails the build here, rather than
- * leaving a page without a title on the site.
+ * The terms are still docs/terms/index.html, written in July 2026 for the Discord application,
+ * which holds an English and a Russian article. This lifts the one for a language into the site's
+ * layout, the way tools/preset-page.mjs carries the preset page over, without its back link,
+ * because the site has a header of its own.
+ *
+ * A heading that goes missing from either source fails the build here, rather than leaving a page
+ * without a title on the site.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from './paths';
 import type { Lang } from '../i18n/ui';
 
-export type LegalPage = 'privacy' | 'terms';
-
 export interface LegalDoc {
   title: string;
-  /** The line under the heading, which carries the date the text was last changed. */
-  date: string;
-  /** The article without its heading, date and back link. Our own file, so it is used as HTML. */
+  /** A line under the heading, when the source has one (the terms carry their date there). */
+  date?: string;
+  /** The text without its heading. Our own files, so it is used as HTML. */
   body: string;
   /** The first paragraph as plain text, cut for a meta description. */
   description: string;
 }
 
-export function legal(page: LegalPage, lang: Lang): LegalDoc {
-  const file = path.join(REPO_ROOT, 'docs', page, 'index.html');
-  const html = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
-  const article = new RegExp(`<article data-lang="${lang}">([\\s\\S]*?)</article>`).exec(html);
-  if (!article) throw new Error(`docs/${page}/index.html has no article for "${lang}"`);
-  let body = article[1];
-  const title = (/<h1>([^<]+)<\/h1>/.exec(body) || [])[1];
-  const date = (/<div class="date">([^<]+)<\/div>/.exec(body) || [])[1];
-  if (!title || !date) throw new Error(`docs/${page}/index.html (${lang}) lost its heading or its date line`);
-  body = cut(cut(cut(body, '<h1>', '</h1>'), '<div class="date">', '</div>'), '<a class="back"', '</a>').trim();
-  const first = textOf((/<p>([\s\S]*?)<\/p>/.exec(body) || [])[1] || title);
-  const description = first.length > 160 ? `${first.slice(0, 157).replace(/\s+\S*$/, '')}…` : first;
-  return { title, date, body, description };
+const REPO = 'https://github.com/dota2modmanager/dota2-mod-manager/blob/main/';
+const SITE_PAGES: Record<string, string> = { 'PRIVACY.md': '/privacy/', 'PRIVACY.ru.md': '/ru/privacy/' };
+
+/** PRIVACY.md or PRIVACY.ru.md, rendered by Astro, made into a page. */
+export function fromMarkdown(html: string, source: string): LegalDoc {
+  const heading = between(html, '<h1', '</h1>');
+  const title = textOf(heading.slice(heading.indexOf('>') + 1));
+  if (!title) throw new Error(`${source} has no heading`);
+  const body = cut(html, '<h1', '</h1>')
+    // links relative to the repository root, like [SECURITY.md](SECURITY.md); an address with a
+    // scheme (https:, mailto:) or a fragment is left alone
+    .replace(/href="([^"]*)"/g, (whole, target: string) =>
+      /^([a-z][a-z0-9+.-]*:|#|\/)/i.test(target) ? whole : `href="${SITE_PAGES[target] || REPO + target}"`)
+    .trim();
+  return { title, body, description: describe(body, (text) => !text.includes('PRIVACY.md')) };
 }
 
-/* The heading, the date and the back link are taken out by position rather than by a pattern.
-   These are known elements of our own file, not markup being cleaned, and a pattern-based removal
-   reads to CodeQL as a sanitizer that could leave half a tag behind. */
+/** The terms, from docs/terms/index.html, in one language. */
+export function terms(lang: Lang): LegalDoc {
+  const html = fs.readFileSync(path.join(REPO_ROOT, 'docs', 'terms', 'index.html'), 'utf8').replace(/\r\n/g, '\n');
+  const article = new RegExp(`<article data-lang="${lang}">([\\s\\S]*?)</article>`).exec(html);
+  if (!article) throw new Error(`docs/terms/index.html has no article for "${lang}"`);
+  const title = (/<h1>([^<]+)<\/h1>/.exec(article[1]) || [])[1];
+  const date = (/<div class="date">([^<]+)<\/div>/.exec(article[1]) || [])[1];
+  if (!title || !date) throw new Error(`docs/terms/index.html (${lang}) lost its heading or its date line`);
+  const body = cut(cut(cut(article[1], '<h1>', '</h1>'), '<div class="date">', '</div>'), '<a class="back"', '</a>').trim();
+  return { title, date, body, description: describe(body) };
+}
+
+/* The first paragraph that suits a description, as plain text of search-result length. The
+   Russian privacy file opens by saying it is a translation, which is not what the page is about. */
+function describe(body: string, suits: (text: string) => boolean = () => true): string {
+  let at = 0;
+  for (;;) {
+    const from = body.indexOf('<p>', at);
+    if (from < 0) return '';
+    const to = body.indexOf('</p>', from);
+    const text = textOf(body.slice(from + 3, to < 0 ? undefined : to));
+    at = to < 0 ? body.length : to;
+    if (text && suits(text)) return text.length > 160 ? `${text.slice(0, 157).replace(/\s+\S*$/, '')}…` : text;
+  }
+}
+
+/* Known elements of our own files are taken out by position rather than by a pattern. They are
+   not markup being cleaned, and a pattern-based removal reads to CodeQL as a sanitizer that could
+   leave half a tag behind. */
 function cut(html: string, open: string, close: string): string {
   const from = html.indexOf(open);
   if (from < 0) return html;
@@ -52,8 +83,15 @@ function cut(html: string, open: string, close: string): string {
   return to < 0 ? html : html.slice(0, from) + html.slice(to + close.length);
 }
 
-/* Plain text for a meta description: everything between a < and the next > is skipped, so no
-   bracket can survive into the result whatever the markup looks like. */
+function between(html: string, open: string, close: string): string {
+  const from = html.indexOf(open);
+  if (from < 0) return '';
+  const to = html.indexOf(close, from);
+  return to < 0 ? '' : html.slice(from + open.length, to);
+}
+
+/* Plain text: everything between a < and the next > is skipped, so no bracket can survive into
+   the result whatever the markup looks like. */
 function textOf(html: string): string {
   let out = '';
   let inTag = false;

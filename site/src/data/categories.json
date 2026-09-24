@@ -229,6 +229,14 @@
       "id": "hero-items",
       "mods": [
         {
+          "name": "Phantom Lancer Concord Revers",
+          "styleLabel": null,
+          "image": {"src":"/mods/phantom-lancer-concord-revers.webp","width":854,"height":480},
+          "author": "Harlord",
+          "authorUrl": "https://discord.com/users/436420477511139329",
+          "date": 1790216964
+        },
+        {
           "name": "Invoker Esl Relics Forge",
           "styleLabel": null,
           "image": {"src":"/mods/invoker-esl-relics-forge.webp","width":854,"height":480},
@@ -841,6 +849,14 @@
     {
       "id": "hero-sounds",
       "mods": [
+        {
+          "name": "Dili Tili Bom Pudge",
+          "styleLabel": null,
+          "image": {"src":"/mods/dili-tili-bom-pudge.webp","width":854,"height":480},
+          "author": "Gibus",
+          "authorUrl": "https://steamcommunity.com/id/nqkln/",
+          "date": 1790207087
+        },
         {"name":"Centaur Otday","styleLabel":null,"image":{"src":"/mods/centaur-otday.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1789234312},
         {"name":"Enigma Black Hole Kate Scream","styleLabel":null,"image":{"src":"/mods/enigma-black-hole-kate-scream.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788904050},
         {
@@ -1693,41 +1709,10 @@
       ]
     },
     {
-      "id": "wards",
-      "mods": [
-        {"name":"Monty","styleLabel":null,"image":{"src":"/mods/monty.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763798331},
-        {"name":"Portal","styleLabel":null,"image":{"src":"/mods/portal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763798331},
-        {"name":"Trailgazer","styleLabel":null,"image":{"src":"/mods/trailgazer.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763798331},
-        {"name":"Curious Snaptrap","styleLabel":null,"image":{"src":"/mods/curious-snaptrap.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763698532},
-        {"name":"Floes Tower","styleLabel":null,"image":{"src":"/mods/floes-tower.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763698532}
-      ]
-    },
-    {
-      "id": "optimization",
-      "mods": [
-        {"name":"Tinker Lite Machines","styleLabel":null,"image":{"src":"/mods/tinker-lite-machines.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1773596942},
-        {"name":"Default Wards","styleLabel":null,"image":{"src":"/mods/default-wards.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1769787537},
-        {"name":"Commands","styleLabel":null,"image":null,"author":null,"authorUrl":null,"date":null}
-      ]
-    },
-    {
-      "id": "parts",
-      "mods": [
-        {"name":"Black Top Bar","styleLabel":null,"image":{"src":"/mods/black-top-bar.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790084006},
-        {"name":"Kaneki Search Bar","styleLabel":null,"image":{"src":"/mods/kaneki-search-bar.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790084006},
-        {
-          "name": "Scolopendra Search Bar",
-          "styleLabel": null,
-          "image": {"src":"/mods/scolopendra-search-bar.webp","width":854,"height":480},
-          "author": "XIIIpsiblade",
-          "authorUrl": "https://t.me/XIIIpsiblade",
-          "date": 1790084006
-        }
-      ]
-    },
-    {
       "id": "pings",
       "mods": [
+        {"name":"Love Ping","styleLabel":null,"image":{"src":"/mods/love-ping.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790213331},
+        {"name":"Love Ping II","styleLabel":null,"image":{"src":"/mods/love-ping-ii.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790213331},
         {
           "name": "Skeleton Black Ping",
           "styleLabel": null,
@@ -1752,6 +1737,47 @@
           "authorUrl": "https://t.me/Darkness_Logovo",
           "date": 1765193630
         }
+      ]
+    },
+    {
+      "id": "wards",
+      "mods": [
+        {"name":"Monty","styleLabel":null,"image":{"src":"/mods/monty.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763798331},
+        {"name":"Portal","styleLabel":null,"image":{"src":"/mods/portal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763798331},
+        {"name":"Trailgazer","styleLabel":null,"image":{"src":"/mods/trailgazer.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763798331},
+        {"name":"Curious Snaptrap","styleLabel":null,"image":{"src":"/mods/curious-snaptrap.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763698532},
+        {"name":"Floes Tower","styleLabel":null,"image":{"src":"/mods/floes-tower.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1763698532}
+      ]
+    },
+    {
+      "id": "parts",
+      "mods": [
+        {
+          "name": "Sematary Search Bar",
+          "styleLabel": null,
+          "image": {"src":"/mods/sematary-search-bar.webp","width":854,"height":480},
+          "author": "XIIIpsiblade",
+          "authorUrl": "https://t.me/XIIIpsiblade",
+          "date": 1790213331
+        },
+        {"name":"Black Top Bar","styleLabel":null,"image":{"src":"/mods/black-top-bar.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790084006},
+        {"name":"Kaneki Search Bar","styleLabel":null,"image":{"src":"/mods/kaneki-search-bar.webp","width":854,"height":480},"author":"XIIIpsiblade","authorUrl":"https://t.me/XIIIpsiblade","date":1790084006},
+        {
+          "name": "Scolopendra Search Bar",
+          "styleLabel": null,
+          "image": {"src":"/mods/scolopendra-search-bar.webp","width":854,"height":480},
+          "author": "XIIIpsiblade",
+          "authorUrl": "https://t.me/XIIIpsiblade",
+          "date": 1790084006
+        }
+      ]
+    },
+    {
+      "id": "optimization",
+      "mods": [
+        {"name":"Tinker Lite Machines","styleLabel":null,"image":{"src":"/mods/tinker-lite-machines.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1773596942},
+        {"name":"Default Wards","styleLabel":null,"image":{"src":"/mods/default-wards.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1769787537},
+        {"name":"Commands","styleLabel":null,"image":null,"author":null,"authorUrl":null,"date":null}
       ]
     },
     {
