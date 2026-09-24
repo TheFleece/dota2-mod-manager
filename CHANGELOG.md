@@ -2,6 +2,64 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.8.0-beta.1
+
+A beta for the testers on the list. Everything in it reaches everybody with 2.8.0.
+
+### Items: a hero's default items in the look of any of its wearables
+
+Cosmetics → Items lists every hero. Open one, pick a slot and choose any of that hero's
+wearables: the default item in that slot takes its look. Only you see it, and no mod file
+changes. You can add particle effects on top, one or several: fire, lightnings, frostbloom, snow,
+bubbles, sand storm and ghost. Frostbloom and snow do not hold on every model.
+
+Nothing reaches the game until you press Equip. The bar along the bottom of the window shows what
+goes on, and its button reads Equip, Save effects or Back to default. Each item you put on is a
+row in My mods with its effects named, and turns off like any mod.
+
+### Whole sets in one press
+
+A hero's window opens with Sets. Choose a set to see its pieces by slot, and Equip the whole set
+puts them all on at once, each as its own row in My mods. A set comes without effects: open a
+piece to add them. A piece the builder leaves alone, such as an arcana, stays in the window,
+dimmed, with the reason.
+
+### Heroes opens on a grid of heroes
+
+Heroes in the catalog used to be 463 mod cards in one run. It now opens on one tile per hero,
+with the hero's portrait, how many mods it has and whether you have one installed. Press a hero
+to see its mods. The switch in the toolbar brings the list back.
+
+### Shaders, trees and river load first
+
+Slots 02-29 now belong to shaders, trees, river, hero effects, ranged attacks, hero items and
+optimization, and every other mod starts at 30. Before, moving a hero mod above a shader could
+trade their slots. Moving and dragging now keep a mod inside its own part, and a mod you import
+and then link to the catalog moves to the part its category belongs in. If your order comes from
+an earlier version, the app lays it out once at start, while Dota is closed: it keeps your order
+inside each part and tells you the order changed.
+
+### Every author of a mod
+
+A mod's window credits everybody the catalog names on it: its authors, the people who reworked
+it and the people who sent it in, each linked to their page. Before, it named the first author,
+and the other two links opened a page that does not exist.
+
+### Fixes
+
+- Checking the game's files in Steam while the app was open turned your mods off until a
+  restart. The app now notices the check and puts its patch back.
+- A tab pressed right after switching screens could do nothing, and a search typed on another
+  screen opened the home screen with no results.
+- After switching to English, the sign-in button and the mods switch stayed in Russian until a
+  restart.
+- The download bar stayed on screen after Source 2 Viewer finished downloading, and froze where a
+  failed download stopped.
+
+### Thanks
+
+h6rd wrote the item builder, and develops it further with TheFleece.
+
 ## 2.7.1
 
 ### The project moved to github.com/dota2modmanager

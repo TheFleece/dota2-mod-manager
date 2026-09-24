@@ -24,7 +24,9 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 const version = () => JSON.parse(read('package.json')).version;
-const sections = (rel) => [...read(rel).matchAll(/^## (\d+\.\d+\.\d+)\s*$/gm)].map((m) => m[1]);
+// a release is 2.8.0, a beta 2.8.0-beta.1: the one suffix release.yml knows (its `*-beta.*`)
+const VERSION = String.raw`\d+\.\d+\.\d+(?:-beta\.\d+)?`;
+const sections = (rel) => [...read(rel).matchAll(new RegExp(`^## (${VERSION})\\s*$`, 'gm'))].map((m) => m[1]);
 
 test('the version in package.json has a section in both changelogs', () => {
   /* Both, not either. releaseNotes() in main.js serves CHANGELOG.ru.md to a Russian UI and
@@ -64,14 +66,44 @@ test('a section has something in it', () => {
   const heading = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const file of ['CHANGELOG.md', 'CHANGELOG.ru.md']) {
     const body = read(file).split(new RegExp(`^## ${heading}\\s*$`, 'm'))[1] || '';
-    const untilNext = body.split(/^## \d+\.\d+\.\d+\s*$/m)[0].trim();
+    const untilNext = body.split(new RegExp(`^## ${VERSION}\\s*$`, 'm'))[0].trim();
     assert.ok(untilNext.length > 80, `${file}: the ${v} section is ${untilNext.length} characters`);
   }
 });
 
 test('the version is one CI can turn into a tag', () => {
-  // release.yml triggers on v* and reads the section named by the tag without the v
-  assert.match(version(), /^\d+\.\d+\.\d+$/, 'a suffix would break the tag-to-section lookup');
+  // release.yml triggers on v*, calls a tag with "-beta." in it a beta, and reads the section
+  // named by the tag without the v. Any other suffix would be built and published as a release.
+  assert.match(version(), new RegExp(`^${VERSION}$`), 'only -beta.N is a suffix release.yml knows');
+});
+
+test('the lookups that read a section find a beta by its own heading', () => {
+  /* release.yml's awk and releaseNotes() in main.js both look for "## <version>" followed by
+   * anything but a digit or a dot. So "## 2.8.0" also matches the heading "## 2.8.0-beta.1", and
+   * the right section comes first only because the newest is on top. Both are copied here and run
+   * against a changelog holding a release above its beta, and a beta above the release before. */
+  const text = '## 2.8.0\n\nthe release\n\n## 2.8.0-beta.1\n\nthe beta\n\n## 2.7.1\n\nthe one before\n';
+  const awk = (v) => { // release.yml: $0 ~ "^## " v "([^0-9.]|$)", then up to the next "## "
+    const lines = text.split('\n');
+    const at = lines.findIndex((l) => new RegExp(`^## ${v}([^0-9.]|$)`).test(l));
+    const rest = lines.slice(at + 1);
+    const end = rest.findIndex((l) => /^## /.test(l));
+    return rest.slice(0, end === -1 ? undefined : end).join('\n').trim();
+  };
+  const popup = (v) => { // main.js releaseNotes
+    const m = new RegExp(`^## ${v.replace(/\./g, '\\.')}(?:[^0-9.].*)?$`, 'm').exec(text);
+    const rest = text.slice(m.index + m[0].length);
+    const next = /^## /m.exec(rest);
+    return (next ? rest.slice(0, next.index) : rest).trim();
+  };
+  for (const find of [awk, popup]) {
+    assert.equal(find('2.8.0'), 'the release');
+    assert.equal(find('2.8.0-beta.1'), 'the beta');
+    assert.equal(find('2.7.1'), 'the one before');
+  }
+  assert.match(read('.github/workflows/release.yml'), /\$0 ~ "\^## " v "\(\[\^0-9\.\]\|\$\)"/,
+    'release.yml looks a section up another way now: change the copy above');
+  assert.match(read('main.js'), /\(\?:\[\^0-9\.\]\.\*\)\?\$/, 'releaseNotes looks a section up another way now');
 });
 
 test('both changelogs still reach the two places that read them', () => {
