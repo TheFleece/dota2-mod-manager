@@ -233,6 +233,21 @@ function drawItemSlotModal() {
   syncItemSlotModal();
 }
 
+// What a builder window shows when its search leaves nothing. The catalog's "clear the filters"
+// pointed at controls these windows do not have: the search is the only thing narrowing them.
+function emptySearchHtml() {
+  return `<div class="empty-note item-empty">${L`Ничего не найдено. Очисти поиск`}
+    <button class="btn btn-sm" data-clear-search>${L`Очистить`}</button></div>`;
+}
+
+function bindClearSearch(grid, input, clear) {
+  grid.querySelector('[data-clear-search]')?.addEventListener('click', () => {
+    input.value = '';
+    clear();
+    input.focus();
+  });
+}
+
 /** The options the search leaves, the hero's own item first: choosing it is how a pick comes off. */
 function paintItemOptions() {
   const st = itemSlotModalState;
@@ -243,7 +258,8 @@ function paintItemOptions() {
   const grid = $('#itemPickGrid');
   grid.innerHTML = options.length
     ? options.map((o, i) => itemSlotOptionCardHtml(st.slot, o, i)).join('')
-    : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
+    : emptySearchHtml();
+  bindClearSearch(grid, $('#itemSlotSearch'), () => { st.query = ''; paintItemOptions(); syncItemSlotModal(); });
   itemSlotPickerIo?.disconnect();
   paintCosmeticIcons(grid);
   itemSlotPickerIo = watchCosmeticIcons(grid, null);
@@ -520,7 +536,8 @@ function drawItemSetsModal() {
     const shown = q ? sets.filter((s) => [s.name, ...s.pieces.map((p) => p.name)].some((n) => n.toLowerCase().includes(q))) : sets;
     $('#itemSetGrid').innerHTML = shown.length
       ? shown.map(setCardHtml).join('')
-      : `<div class="empty-note">${L`Ничего не найдено — сбрось фильтры`}</div>`;
+      : emptySearchHtml();
+    bindClearSearch($('#itemSetGrid'), $('#itemSetSearch'), () => { st.query = ''; paintSets(); });
     itemSlotPickerIo?.disconnect();
     paintCosmeticIcons($('#itemSetGrid'));
     itemSlotPickerIo = watchCosmeticIcons($('#itemSetGrid'), null);

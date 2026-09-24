@@ -167,6 +167,12 @@
 .item-fx-head { margin-top: var(--space-5); }
 .item-fx-hint { margin-bottom: var(--space-3); }
 .item-back { margin-bottom: var(--space-2); }
+.item-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
 
 /* What the window will put on, and the one button that does it: it stays in view down a long
    list, since nothing reaches the game until it is pressed. */
