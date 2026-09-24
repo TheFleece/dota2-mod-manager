@@ -111,6 +111,8 @@ function paintAccount() {
     paintAccount();
   });
 }
+// drawn in whichever language was on when it was drawn (see applyLanguage in ui/language.js)
+document.addEventListener('mm:language', () => paintAccount());
 
 
 $('#modsMasterBtn')?.addEventListener('click', async () => {
@@ -171,7 +173,10 @@ $('#globalSearch').addEventListener('input', (e) => {
   searchTimer = setTimeout(() => {
     state.search = e.target.value;
     $('#clearSearch').classList.toggle('hidden', !state.search);
-    if (state.view !== 'catalog') switchView('catalog');
+    // The catalog draws the results, and a catalog opened from another section is shown as it
+    // was left unless it is marked out of date: a search typed on Settings opened the home
+    // screen with no results on it (found by the simulation, tools/sim, 2026-09-24).
+    if (state.view !== 'catalog') { invalidateViews(); switchView('catalog'); }
     else render();
   }, 180);
 });
@@ -180,6 +185,7 @@ $('#clearSearch').addEventListener('click', () => {
   state.search = '';
   $('#clearSearch').classList.add('hidden');
   if (state.view === 'catalog') render();
+  else invalidateViews(); // so the catalog does not come back still showing the old results
 });
 
 // drag & drop of .vpk files anywhere in the window -> import
