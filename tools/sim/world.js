@@ -57,9 +57,9 @@ function putValveFilesBack(gamePath) {
   const p = patcher.paths(gamePath);
   const branch = fs.readFileSync(p.branch, 'latin1');
   fs.writeFileSync(p.branch, patcher.stripPatch(branch), 'latin1');
-  if (fs.existsSync(p.signatures)) {
-    fs.writeFileSync(p.signatures, patcher.stripSignatures(fs.readFileSync(p.signatures, 'latin1')), 'latin1');
-  }
+  let signatures;
+  try { signatures = fs.readFileSync(p.signatures, 'latin1'); } catch { return; } // a game without one
+  fs.writeFileSync(p.signatures, patcher.stripSignatures(signatures), 'latin1');
 }
 
 /** Steam updates the game: a new build number, and Valve's files back in place. */
