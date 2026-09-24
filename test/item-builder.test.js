@@ -508,3 +508,36 @@ test('a pick carries several effects in one order, and an effect nobody offers r
   assert.equal(count('seasonal_ambient_snow.vpcf'), 1, 'snow, once');
   assert.throws(() => builder.itemEffectPatch(text, '9455', 'fire,sparkles'), /sparkles/);
 });
+
+test('choosing other effects for the same item changes its row instead of adding one', (t) => {
+  // My mods showed three rows reading "Blightfall - Head" for one item picked with fire, then
+  // snow, then nothing, and nothing on them said which was which.
+  const { createSchemaService } = require('../src/schema-service.js');
+  const { Library } = require('../src/library.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'd2mm-picks-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const library = new Library(dir);
+  const values = { dotaGamePath: null }; // no game: the pick is recorded, nothing is written
+  const settings = { get: (k) => values[k], set: (k, v) => { values[k] = v; } };
+  const service = createSchemaService({ settings, library, installer: {}, userDataDir: dir });
+  const slot = 'item:abaddon:head';
+  const picks = () => library.list().filter((r) => r.categoryId === 'cosmetic');
+
+  const first = service.pickCosmetic(slot, '19416', 'Blightfall - Head', 'fire');
+  service.pickCosmetic(slot, '19416', 'Blightfall - Head', 'snow,fire');
+  service.pickCosmetic(slot, '19416', 'Blightfall - Head', '');
+  assert.equal(picks().length, 1, 'one row for one item');
+  assert.equal(picks()[0].id, first.id);
+  assert.equal(picks()[0].effectId, undefined, 'its effects are the last ones chosen');
+  service.pickCosmetic(slot, '19416', 'Blightfall - Head', 'snow,fire');
+  assert.equal(picks()[0].effectId, 'fire,snow');
+
+  // another item for the same slot is another pick, and the first one waits switched off
+  service.pickCosmetic(slot, '7365', 'Compendium Rider of Avarice Helmet', 'ghost');
+  assert.deepEqual(picks().map((r) => [r.itemId, r.enabled !== false, r.effectId || '']).sort(),
+    [['19416', false, 'fire,snow'], ['7365', true, 'ghost']]);
+  // back to the first: its row again, with the effects asked for now
+  service.pickCosmetic(slot, '19416', 'Blightfall - Head', 'bubbles');
+  assert.equal(picks().length, 2);
+  assert.deepEqual(picks().find((r) => r.itemId === '19416'), { ...picks().find((r) => r.itemId === '19416'), enabled: true, effectId: 'bubbles' });
+});

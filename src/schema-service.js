@@ -340,14 +340,24 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
   function pickCosmetic(slot, itemId, itemName, effectId = null) {
     const id = String(itemId);
     const name = itemName || id;
+    const isItem = slot === 'items' || String(slot || '').startsWith('item:');
     // the item builder's effects, as one string in one order (item-builder.js effectKey)
-    const effect = (slot === 'items' || String(slot || '').startsWith('item:')) ? itemBuilder.effectKey(effectId) : '';
+    const effect = isItem ? itemBuilder.effectKey(effectId) : '';
     const live = cosmeticRecordFor(slot);
     if (live && live.itemId === id && itemBuilder.effectKey(live.effectId) === effect) return live; // already this
 
+    // Other effects on the same item are that pick changed, not another pick. Each combination
+    // used to become a record of its own, and My mods filled with rows of one item's name that
+    // told nobody which was which. One row per item, its effects a property of it.
+    if (isItem && live && live.itemId === id) {
+      library.update(live.id, { name, effectId: effect || undefined });
+      refresh();
+      return library.find(live.id);
+    }
+
     if (live) library.setEnabled(live.id, false);
     const dormant = library.list().find((r) => r.categoryId === 'cosmetic'
-      && r.slot === slot && r.itemId === id && itemBuilder.effectKey(r.effectId) === effect);
+      && r.slot === slot && r.itemId === id && (isItem || itemBuilder.effectKey(r.effectId) === effect));
     const rec = dormant
       ? library.update(dormant.id, { name, enabled: true, effectId: effect || undefined })
       : library.add({ name, categoryId: 'cosmetic', styleLabel: null, fileRef: null, preview: null, files: [] });

@@ -15,7 +15,7 @@ import { state } from '../core/store.js';
 import { registerView, render, pane } from '../core/router.js';
 import { matchLabel, applyInstalled, refreshInstalledIndex } from '../core/installed.js';
 import { catName, catIcon } from '../core/categories.js';
-import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec } from '../core/records.js';
+import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec, effectNames } from '../core/records.js';
 import { esc, fmtMB, plural } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
 import { confirmDialog, promptDialog } from '../ui/dialog.js';
@@ -200,7 +200,7 @@ function normalRowHtml(rec, i, masterOff) {
   // own preview, else the catalog's for the same mod, else a recognised hero's own portrait
   // (see libThumbHtml); a cosmetic pick's picture is fetched lazily by the same loader the
   // catalog cards use
-  const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) : catName(rec.categoryId);
+  const catLabel = cosmetic ? catName(COSMETIC_PREFIX + rec.slot) + effectNames(rec) : catName(rec.categoryId);
   return `
     <div class="lib-row ${rec.enabled ? '' : 'disabled'} ${selected ? 'selected' : ''}" data-row="${esc(rec.id)}" ${rec.slotIndex != null ? `data-order="${rec.slotIndex}"` : ''} style="--i:${Math.min(i, 20)}">
       ${gripHtml(rec)}

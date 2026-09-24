@@ -1,3 +1,5 @@
+import { state } from './store.js';
+
 /* What kind of thing a library record is.
  *
  * Records are not uniform: a cursor set is loose files over Valve's own, a font pack has no
@@ -27,4 +29,13 @@ export function isCosmeticRec(rec) {
 export function isPackableRec(rec) {
   return !!rec && rec.kind !== 'pack' && !['fonts', 'cursors'].includes(rec.categoryId)
     && (rec.files || []).some((f) => f.root === 'lang' && /_dir\.vpk$/i.test(f.relPath));
+}
+
+/** An item builder pick's effects by name, after its slot: " · Fire, Snow", or '' for none.
+ *  One item keeps one record whatever its effects (src/item-builder.js effectKey), so this is
+ *  what tells two picks of it apart on screen. */
+export function effectNames(rec) {
+  if (!rec || !rec.effectId) return '';
+  const known = (state.cosmeticSlots || []).find((s) => s.slot === rec.slot)?.effects || [];
+  return ` · ${String(rec.effectId).split(',').filter(Boolean).map((id) => known.find((fx) => fx.id === id)?.name || id).join(', ')}`;
 }
