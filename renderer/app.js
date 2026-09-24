@@ -111,6 +111,8 @@ function paintAccount() {
     paintAccount();
   });
 }
+// drawn in whichever language was on when it was drawn (see applyLanguage in ui/language.js)
+document.addEventListener('mm:language', () => paintAccount());
 
 
 $('#modsMasterBtn')?.addEventListener('click', async () => {

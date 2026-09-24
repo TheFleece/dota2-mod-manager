@@ -9,7 +9,7 @@
  */
 import { state } from '../core/store.js';
 import { render } from '../core/router.js';
-import { paintMasterSwitch, refreshSidebarStatus } from './statusbar.js';
+import { paintMasterSwitch, paintSafeModeSwitch, refreshSidebarStatus } from './statusbar.js';
 import { paintPanels, syncNavOverflow } from './chrome.js';
 
 // translate the static app chrome (index.html markup) in place, preserving child nodes
@@ -36,7 +36,13 @@ export async function applyLanguage(lang) {
   try { localStorage.setItem('uiLang', lang); } catch { /* ignore */ }
   await window.api.settings.set('uiLang', lang);
   applyStaticI18n();
+  // Both status bar switches say on or off in words, and the title bar has a sign-in button:
+  // painted once at start, so an English switch left "вкл" and "Войти" on screen until the
+  // next restart (found by the simulation's settings scenario, tools/sim, 2026-09-24). The
+  // button is drawn by app.js, which this module cannot import, so it is told by an event.
   paintMasterSwitch();
+  paintSafeModeSwitch();
+  document.dispatchEvent(new CustomEvent('mm:language', { detail: lang }));
   await refreshSidebarStatus();
   render();
 }
