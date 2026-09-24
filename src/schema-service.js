@@ -373,7 +373,7 @@ function createSchemaService({ settings, library, installer, userDataDir, log = 
   /**
    * Put a whole set on: each piece the builder has a slot for takes that slot, a row of its own
    * in My mods, and the game is written once. A set brings no effects, and a piece that is on
-   * already keeps the ones it has (Misha, 2026-09-24).
+   * already keeps the ones it has.
    */
   function pickSet(setId) {
     const set = itemBuilder.itemSets(vanilla()).find((x) => x.id === String(setId));

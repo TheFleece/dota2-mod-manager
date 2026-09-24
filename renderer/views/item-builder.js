@@ -133,15 +133,18 @@ function builderFootHtml(summary, act) {
 /**
  * @param {string} slot
  * @param {Element|null} from  the card it grows out of
- * @param {{ query?: string, back?: { heroName: string, slots: Array<object> } }} [opts]
+ * @param {{ query?: string, select?: string, back?: { label: string, go: () => void } }} [opts]
  *   query: typed into the search, for a card found by the catalog's search or in favourites;
- *   back: the hero window it was opened from, which the header then leads back to
+ *   select: the item chosen when it opens, for a piece opened from its set; the one on otherwise;
+ *   back: the window it was opened from (a hero, a set), which the header then leads back to
  */
-export function openItemSlotModal(slot, from, { query = '', back = null } = {}) {
+export function openItemSlotModal(slot, from, { query = '', select = '', back = null } = {}) {
   const data = cat.slotData(slot);
   if (!data) return;
   const live = pickedIn(slot);
-  itemSlotModalState = { slot, selectedId: live?.itemId || '', effectIds: liveEffects(live), query, back, busy: false };
+  const selectedId = select || live?.itemId || '';
+  const effectIds = live?.itemId === selectedId ? liveEffects(live) : [];
+  itemSlotModalState = { slot, selectedId, effectIds, query, back, busy: false };
   itemSetState = null;
   cat.resetModalState();
   cat.openModal(drawItemSlotModal, from);
@@ -153,8 +156,8 @@ export function openItemSlotModal(slot, from, { query = '', back = null } = {}) 
 
 /**
  * What the slot window's button does with what is chosen in it. Nothing reaches the game until it
- * is pressed (Misha, 2026-09-24): a pick used to be written on every click, and choosing three
- * effects meant three writes and three toasts.
+ * is pressed: a pick used to be written on every click, and choosing three effects meant three
+ * writes and three toasts.
  */
 function stagedItemAction(data, live, st) {
   if (st.busy) return { label: L`Надеваю…`, icon: 'hourglass_top', off: true };
@@ -177,7 +180,7 @@ function drawItemSlotModal() {
   $('#modalContent').classList.add('item-picker-modal');
   $('#modalContent').innerHTML = `
     <div class="modal-body item-picker-body">
-      ${builderHeadHtml(back?.heroName, data.label || catName(COSMETIC_PREFIX + st.slot),
+      ${builderHeadHtml(back?.label, data.label || catName(COSMETIC_PREFIX + st.slot),
         `<span>${L`вид для стандартного предмета`}</span><span>· ${data.options.length} ${plural(data.options.length, 'вариант', 'варианта', 'вариантов')}</span>`)}
       <div class="tb-search item-picker-search"><span class="ms">search</span><input type="text" id="itemSlotSearch" placeholder="${L`Поиск…`}" value="${esc(st.query || '')}" autocomplete="off"></div>
       <div class="item-pick-grid" id="itemPickGrid"></div>
@@ -203,7 +206,7 @@ function drawItemSlotModal() {
       <div class="item-picker-foot" id="itemPickFoot"></div>
     </div>`;
 
-  $('#itemBackBtn')?.addEventListener('click', () => openItemHeroModal(back.heroName, back.slots, null));
+  $('#itemBackBtn')?.addEventListener('click', () => back.go());
   $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
   $('#itemSlotSearch').addEventListener('input', (e) => {
     st.query = e.target.value;
@@ -469,7 +472,8 @@ function drawItemHeroModal(heroName, slots) {
   $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
   $('#modalContent').querySelector('[data-item-sets]')?.addEventListener('click', () => openItemSetsModal({ heroName, slots }));
   $('#modalContent').querySelectorAll('[data-item-slot]').forEach((btn) => {
-    btn.addEventListener('click', () => openItemSlotModal(btn.dataset.itemSlot, null, { back: { heroName, slots } }));
+    btn.addEventListener('click', () => openItemSlotModal(btn.dataset.itemSlot, null,
+      { back: { label: heroName, go: () => openItemHeroModal(heroName, slots, null) } }));
   });
   paintCosmeticIcons($('#modalContent'));
 }
@@ -489,7 +493,7 @@ function setCardHtml(set, i) {
   const on = setIsOn(set);
   const n = set.pieces.length;
   // a line only where it tells something: 1914 of 1925 sets fit whole, and "5 pieces" on every
-  // card said nothing (Misha, 2026-09-24)
+  // card said nothing
   const meta = on ? L`Надето` : set.fit < n ? L`${set.fit} из ${n}` : '&nbsp;';
   return `<button class="card item-pick-card ${on ? 'installed' : ''}" data-item-set="${esc(set.id)}" style="--i:${Math.min(i, 24)}">
     <div class="card-media">${cosmeticThumbSpanHtml(set.name, 'inventory_2')}</div>
@@ -540,18 +544,20 @@ function openItemSetModal(set, back) {
   });
 }
 
-// A piece the builder cannot put on stays in the picture, dimmed, with why: it is part of what
-// the set looks like, and without it "4 of 6" would not add up.
+// A piece opens its slot's window with it chosen: a set brings no effects, and that is where they
+// go on. A piece the builder cannot put on stays in the picture, dimmed, with why: it is part of
+// what the set looks like, and without it "4 of 6" would not add up.
 function pieceCardHtml(p, i) {
   const on = p.fits && pickedIn(p.slot)?.itemId === p.itemId;
   const meta = !p.fits ? esc(p.reason) : on ? `${esc(p.slotLabel)} · ${L`Надето`}` : esc(p.slotLabel);
-  return `<div class="card item-pick-card item-piece ${p.fits ? '' : 'is-disabled'} ${on ? 'installed' : ''}" style="--i:${Math.min(i, 24)}">
+  const tag = p.fits ? 'button' : 'div';
+  return `<${tag} class="card item-pick-card item-piece ${p.fits ? '' : 'is-disabled'} ${on ? 'installed' : ''}"${p.fits ? ` data-piece="${i}"` : ''} style="--i:${Math.min(i, 24)}">
     <div class="card-media">${cosmeticThumbSpanHtml(p.name, 'checkroom')}</div>
     <div class="card-body">
       <div class="card-name">${esc(p.name)}</div>
       <div class="card-meta"><span>${meta}</span></div>
     </div>
-  </div>`;
+  </${tag}>`;
 }
 
 function drawItemSetModal() {
@@ -566,12 +572,18 @@ function drawItemSetModal() {
     <div class="modal-body item-picker-body">
       ${builderHeadHtml(L`Наборы`, set.name, `<span>${esc(set.heroLabel)}</span><span>· ${count}</span>`)}
       <div class="item-pick-grid">${set.pieces.map(pieceCardHtml).join('')}</div>
-      <div class="modal-note">${L`Набор надевается без эффектов. Эффекты добавляются к каждому предмету в его слоте.`}</div>
+      <div class="modal-note">${L`Набор надевается без эффектов. Чтобы добавить эффект, открой деталь.`}</div>
       <div class="item-picker-foot">${builderFootHtml(`<b>${esc(set.name)}</b> · ${count}`, act)}</div>
     </div>`;
   $('#itemBackBtn').addEventListener('click', () => openItemSetsModal(st.back, st.back.query || ''));
   $('#modalCloseBtn').addEventListener('click', () => cat.closeModal());
   $('#itemApplyBtn').addEventListener('click', () => applyItemSet(act));
+  $('#modalContent').querySelectorAll('[data-piece]').forEach((card) => {
+    const p = set.pieces[Number(card.dataset.piece)];
+    // typed into the search, so the one card sits right above the effects
+    card.addEventListener('click', () => openItemSlotModal(p.slot, null,
+      { query: p.name, select: p.itemId, back: { label: set.name, go: () => openItemSetModal(set, st.back) } }));
+  });
   paintCosmeticIcons($('#modalContent'));
 }
 

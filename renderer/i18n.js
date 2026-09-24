@@ -164,8 +164,8 @@ const EN = {
   '{0} из {1} {2}': '{0} of {1} {2}',
   'Надеть весь набор': 'Equip the whole set',
   'Надето {0} из {1} {2}': 'Equipped {0} of {1} {2}',
-  'Набор надевается без эффектов. Эффекты добавляются к каждому предмету в его слоте.':
-    'A set goes on without effects. Add effects to each item in its own slot.',
+  'Набор надевается без эффектов. Чтобы добавить эффект, открой деталь.':
+    'A set goes on without effects. Open a piece to add one.',
   'Эффект добавляется к предмету: сначала выбери его выше.': 'An effect goes on an item: choose one above first.',
   'Конструктор предметов': 'Item builder',
   'конструктор предметов': 'item builder',

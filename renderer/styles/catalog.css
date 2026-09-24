@@ -193,9 +193,6 @@
 }
 .item-picker-sum b { color: var(--text); font-weight: 600; }
 .item-picker-foot .btn { flex-shrink: 0; }
-/* a piece of a set is shown, not chosen: the set goes on as a whole */
-.item-piece { cursor: default; }
-.item-piece:hover { transform: none; box-shadow: none; }
 
 .item-pick-grid {
   display: grid;
