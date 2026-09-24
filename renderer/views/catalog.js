@@ -29,6 +29,9 @@ import { isQueued, toggleQueued, dropFromQueue, useInstaller } from '../ui/queue
 import { refreshSidebarStatus } from '../ui/statusbar.js';
 import { modGuidesHtml, bindGuides } from '../ui/guide.js';
 import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
+import { bindItemBuilder, itemRailHtml, isItemCosmeticSlot, cosmeticFavValue, renderItemCosmeticHub, refreshItemHub,
+  forgetItemHub, forgetItemSlotModal, redrawItemSlotModal, openItemSlotModal } from './item-builder.js';
+import { heroOf, heroMatches, heroGridWanted, renderHeroGrid, heroBackHtml, layoutToggleHtml, bindHeroControls } from './hero-grid.js';
 
 const viewRoot = pane('catalog');
 
@@ -111,12 +114,11 @@ function searchCosmetics(q) {
 function filterCosmetics(list) {
   const f = filters;
   let out = f.installedOnly ? list.filter(({ slot, o }) => pickedIn(slot)?.itemId === o.id) : list;
-  if (f.favOnly) out = out.filter(({ slot, o }) => isFav(COSMETIC_PREFIX + slot, o.name));
+  if (f.favOnly) out = out.filter(({ slot, o }) => isFav(COSMETIC_PREFIX + slot, cosmeticFavValue(slot, o)));
   if (f.sort === 'name') out = [...out].sort((a, b) => a.o.name.localeCompare(b.o.name));
   else if (f.sort === 'name-desc') out = [...out].sort((a, b) => b.o.name.localeCompare(a.o.name));
   return out;
 }
-
 
 // ---------- catalog data helpers ----------
 
@@ -175,7 +177,6 @@ function buildModIndex() {
     }
   }
 }
-
 
 function installTarget(mod) {
   const f = mod.file;
@@ -261,32 +262,6 @@ function collectGroups(mods) {
   return out;
 }
 
-/* Heroes arrives as one flat list of 463 mods and the eye reads it as heroes: 462 of them
- * carry a hero's name, 121 heroes in all, three mods each on average, and one mod names
- * nobody. Hero items are grouped this way by the catalog itself - this does the same for the
- * category that is not, from the same list of names the filter above it uses.
- *
- * Cached because it is 127 patterns against 463 names on every draw otherwise. */
-let heroPatterns = null;
-const heroByName = new Map();
-
-function heroOf(name) {
-  if (heroByName.has(name)) return heroByName.get(name);
-  if (!heroPatterns) {
-    heroPatterns = (state.catalog?.constants?.HEROES_LIST || [])
-      .map((h) => [h, new RegExp(`\\b${h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')]);
-  }
-  const hit = heroPatterns.find(([, re]) => re.test(name));
-  const hero = hit ? hit[0] : '';
-  heroByName.set(name, hero);
-  return hero;
-}
-
-function heroMatches(hero, name) {
-  const re = new RegExp(`\\b${hero.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-  return re.test(name);
-}
-
 function applyFilters(mods, catForInstalled) {
   const f = filters;
   let out = mods;
@@ -319,8 +294,6 @@ function favButtonHtml(cat, name) {
     aria-pressed="${on}" title="${on ? L`Убрать из избранного` : L`В избранное`}"
     aria-label="${on ? L`Убрать из избранного` : L`В избранное`}"><span class="ms">${on ? 'favorite' : 'favorite_border'}</span></button>`;
 }
-
-
 
 // media the built-in player can show: only a dedicated "preview"-type link.
 // Mods whose card preview is itself a video already play it on hover/in the modal.
@@ -359,7 +332,7 @@ function renderRail() {
   const cos = cosmeticSlotList();
   if (cos.length) {
     html += `<div class="rail-section">${L`Косметика`}</div>`;
-    for (const s of cos) {
+    for (const s of cos.filter((x) => !isItemCosmeticSlot(x.slot))) { // the builder's slots have one entry of their own
       const id = COSMETIC_PREFIX + s.slot;
       html += `
         <button class="rail-item ${state.activeCategory === id ? 'active' : ''}" data-cat="${esc(id)}">
@@ -367,6 +340,7 @@ function renderRail() {
           ${pickedIn(s.slot) ? '<span class="rail-dot"></span>' : ''}
         </button>`;
     }
+    html += itemRailHtml(state.activeCategory);
   }
   rail.innerHTML = html;
   rail.querySelectorAll('.rail-item').forEach((b) => {
@@ -387,6 +361,7 @@ function renderRail() {
 // ===== Catalog =====
 
 async function renderCatalog() {
+  forgetItemHub();
   if (!state.catalog) {
     await paint(() => { viewRoot.innerHTML = `<div class="empty-note">${L`Загрузка каталога…`}</div>`; });
     return;
@@ -621,6 +596,11 @@ async function renderCategory(categoryId) {
     : [];
   const mods = applyFilters(all, categoryId);
   const installable = all.some(canBeInstalled);
+  if (byHero && heroGridWanted(filters)) {
+    await renderHeroGrid(viewRoot, catName(categoryId), toolbarHtml(mods.length, { tags, slots, heroes, categoryId, installable }), mods,
+      { isInstalled, pick: (hero) => { filters.hero = hero; renderCatalog(); } });
+    return bindToolbar();
+  }
 
   // Picking one hero out of the dropdown already answers the question the headings answer,
   // so the grid stops repeating it.
@@ -649,7 +629,7 @@ async function renderCategory(categoryId) {
 
   await paint(() => { viewRoot.innerHTML = `
     <div class="view-header">
-      <h1 class="view-title">${esc(catName(categoryId))}</h1>
+      ${byHero && filters.hero ? heroBackHtml() : ''}<h1 class="view-title">${esc((byHero && filters.hero) || catName(categoryId))}</h1>
     </div>
     ${toolbarHtml(mods.length, { tags, slots, groups, heroes, categoryId, installable })}
     <div class="grid" id="modGrid">${gridHtml}</div>
@@ -661,7 +641,6 @@ async function renderCategory(categoryId) {
 // --- toolbar ---
 
 const GROUP_LABEL = { 'hero-items': 'Все герои', 'item-effects': 'Все предметы', creeps: 'Все крипы', towers: 'Все башни', 'creep-deny': 'Все типы' };
-
 
 // Is the list in front of you shorter than the category itself? That, and only that, is when
 // a number of results is worth printing: it answers "did that chip do anything". Sorting is
@@ -719,6 +698,7 @@ function toolbarHtml(resultCount, { tags = [], slots = [], groups = [], heroes =
         <button class="fchip ${f.favOnly ? 'active' : ''}" id="favChip">
           <span class="ms">favorite</span>${L`Избранное`}
         </button>` : ''}
+        ${categoryId === 'heroes' ? layoutToggleHtml() : ''}
         ${narrowed() ? `<span class="count">${resultCount} ${plural(resultCount, 'результат', 'результата', 'результатов')}</span>` : ''}
       </div>
       ${tags.length ? `
@@ -732,6 +712,7 @@ function toolbarHtml(resultCount, { tags = [], slots = [], groups = [], heroes =
 }
 
 function bindToolbar() {
+  bindHeroControls(() => { filters.hero = ''; renderCatalog(); });
   $('#sortSelect')?.addEventListener('change', (e) => {
     filters.sort = e.target.value;
     renderCatalog();
@@ -1079,6 +1060,7 @@ function openModal(draw, from) {
 }
 
 function openModModal(categoryId, mod, from) {
+  forgetItemSlotModal();
   cosModalState = null; // the two share one overlay
   // opens on the look the card was showing, which is the one the user was just looking at
   modalState = { categoryId, mod, styleIdx: styleIndex(categoryId, mod) };
@@ -1098,6 +1080,7 @@ function closeModal() {
     $('#modalContent').innerHTML = '';
     modalState = null;
     cosModalState = null;
+    forgetItemSlotModal();
   }, exitMs());
 }
 
@@ -1268,10 +1251,7 @@ function drawModal() {
   const favBtn = $('#modalContent .fav-btn');
   if (favBtn) bindFavButton(favBtn);
 
-  const previewPlay = $('#previewPlayBtn');
-  if (previewPlay) {
-    previewPlay.addEventListener('click', () => openPlayer(playable, mod.name));
-  }
+  $('#previewPlayBtn')?.addEventListener('click', () => openPlayer(playable, mod.name));
 
   bindCreditChips(document, credits, (url) => window.api.misc.openExternal(url));
 
@@ -1317,10 +1297,7 @@ function drawModal() {
     });
   });
 
-  const installBtn = $('#installBtn');
-  if (installBtn) {
-    installBtn.addEventListener('click', () => doInstall(categoryId, mod, styleLabel, fileRef, cur.preview || mod.preview));
-  }
+  $('#installBtn')?.addEventListener('click', () => doInstall(categoryId, mod, styleLabel, fileRef, cur.preview || mod.preview));
   const uninstallBtn = $('#uninstallBtn');
   if (uninstallBtn) {
     uninstallBtn.addEventListener('click', async () => {
@@ -1480,7 +1457,6 @@ useInstaller(async (list) => {
 // ===== Cosmetics: free looks taken from the game's own item schema, browsed as a catalog
 // category like any other (see COSMETIC_SLOTS / cosmeticMeta near the top of the file) =====
 
-
 // One card per look, styled exactly like a catalog mod card (same .card/.grid classes):
 // a picture, a favourite star, and the same green edge on whichever one is live.
 function cosmeticCardHtml(slot, o, i, withCat = false) {
@@ -1493,7 +1469,7 @@ function cosmeticCardHtml(slot, o, i, withCat = false) {
         <span class="card-thumb" data-name="${esc(o.name)}">${icon
           ? `<img src="${esc(icon)}" alt="" loading="lazy">`
           : `<div class="noimg"><span class="ms">${cosmeticMeta(slot).icon}</span></div>`}</span>
-        <div class="card-actions">${favButtonHtml(cat, o.name)}</div>
+        <div class="card-actions">${favButtonHtml(cat, cosmeticFavValue(slot, o))}</div>
       </div>
       <div class="card-body">
         <div class="card-name">${esc(o.name)}</div>
@@ -1525,10 +1501,12 @@ function refreshCosmeticBadges() {
 // ---------- cosmetic modal (the mod modal's twin, same markup and classes) ----------
 
 let cosModalState = null;
-
 function openCosmeticModal(slot, itemId, from) {
   const o = findCosmetic(slot, itemId);
   if (!o) return;
+  // a hero's item, found by the search or in favourites: the builder's window, with it typed in
+  if (isItemCosmeticSlot(slot)) return openItemSlotModal(slot, from, { query: o.name });
+  forgetItemSlotModal();
   modalState = null;
   cosModalState = { slot, o };
   openModal(drawCosmeticModal, from);
@@ -1543,7 +1521,7 @@ function drawCosmeticModal() {
   const live = pickedIn(slot);
   const isLive = live?.itemId === o.id;
   const icon = cosmeticIcon(o.name);
-  const busy = installing.has(COSMETIC_PREFIX + slot + '|' + o.id);
+  const busy = installing.has(COSMETIC_PREFIX + slot + '|' + o.id + '|');
 
   $('#modalContent').innerHTML = `
     <div class="modal-media cos">
@@ -1555,7 +1533,7 @@ function drawCosmeticModal() {
     <div class="modal-body">
       <div class="modal-title-row">
         <div class="modal-title">${esc(o.name)}</div>
-        ${favButtonHtml(COSMETIC_PREFIX + slot, o.name)}
+        ${favButtonHtml(COSMETIC_PREFIX + slot, cosmeticFavValue(slot, o))}
       </div>
       <div class="modal-sub">
         <span>${esc(tr(meta.label))}</span>
@@ -1587,8 +1565,9 @@ function drawCosmeticModal() {
  * Put a look on (or take the live one off) and repaint whatever is on screen.
  * @param {boolean} remove  true = back to what the game gives
  */
-async function pickCosmetic(slot, o, remove) {
-  const k = COSMETIC_PREFIX + slot + '|' + o.id;
+async function pickCosmetic(slot, o, remove, effectId = '') {
+  const effect = isItemCosmeticSlot(slot) ? String(effectId || '') : '';
+  const k = COSMETIC_PREFIX + slot + '|' + o.id + '|' + effect;
   if (installing.has(k)) return;
   const live = pickedIn(slot);
   installing.add(k);
@@ -1597,20 +1576,28 @@ async function pickCosmetic(slot, o, remove) {
   try {
     r = remove
       ? (live ? await window.api.mods.remove(live.id) : { ok: true })
-      : await window.api.cosmetics.pick(slot, o.id, o.name);
+      : await window.api.cosmetics.pick(slot, o.id, o.name, effect);
   } catch (err) {
     r = { error: String(err?.message || err) };
   }
   installing.delete(k);
-  if (r.error) { toast(r.error, 'error'); if (cosModalState) drawCosmeticModal(); return; }
-  toast(remove ? L`Вернули как в игре` : L`Выбрано: ${o.name}`);
+  if (r.error) { toast(r.error, 'error'); if (cosModalState) drawCosmeticModal(); redrawItemSlotModal(); return; }
+  toast(remove ? L`Вернули как в игре` : isItemCosmeticSlot(slot) ? L`Надето: ${o.name}` : L`Выбрано: ${o.name}`);
+  await afterCosmeticPick();
+}
+
+/** Everything a pick shows on: My mods' index, the badges, the rail's dot, the open window. */
+async function afterCosmeticPick() {
   await refreshInstalledIndex();
   refreshCosmeticBadges();
   if (state.view === 'catalog') renderRail(); // the slot's "picked" dot
+  await refreshItemHub();
   if (cosModalState) drawCosmeticModal();
+  redrawItemSlotModal();
 }
 
 async function renderCosmeticCategory(slot) {
+  if (slot === 'items') return renderItemCosmeticHub();
   const meta = cosmeticMeta(slot);
   await paint(() => { viewRoot.innerHTML = `<div class="view-header"><h1 class="view-title">${esc(tr(meta.label))}</h1></div><div class="empty-note">${L`Читаем схему игры…`}</div>`; });
   if (!state.cosmeticSlots) await refreshCosmeticSlots();
@@ -1706,3 +1693,7 @@ export async function loadCatalog(force = false) {
     });
   }
 }
+
+// The item builder lives in views/item-builder.js and reaches the catalog only through this.
+bindItemBuilder({ slotData, cosmeticSlotList, pickCosmetic, afterPick: afterCosmeticPick, openModal, closeModal, filters: () => filters,
+  search: () => cosSearch, setSearch: (v) => { cosSearch = v; }, resetModalState: () => { modalState = null; cosModalState = null; } });

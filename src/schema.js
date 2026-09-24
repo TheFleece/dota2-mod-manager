@@ -49,7 +49,10 @@ function readToken(text, i) {
   return { value: text.slice(i, end), start: i, next: end };
 }
 
-// Bounds of the { ... } block that starts at (or after) i. Returns [open, close+1].
+/**
+ * Bounds of the { ... } block that starts at (or after) i.
+ * @returns {[number, number]} [open, close+1]
+ */
 function blockBounds(text, i) {
   const open = text.indexOf('{', i);
   if (open === -1) throw new Error(t('items_game: не найдено открытие блока'));
@@ -67,7 +70,7 @@ function blockBounds(text, i) {
  * Walk the direct children of a block.
  * @param {string} text
  * @param {[number, number]} bounds  from blockBounds()
- * @param {(child: {key: string, start: number, end: number, isBlock: boolean, value: string|null}) => void} fn
+ * @param {(child: {key: string, start: number, end: number, isBlock: boolean, value: string|null, body: [number, number]|null}) => void} fn
  */
 function eachChild(text, bounds, fn) {
   let i = bounds[0] + 1;
@@ -164,9 +167,17 @@ function listItems(text) {
     if (!c.isBlock || !/^\d+$/.test(c.key)) return;
     const fields = new Map();
     let hasVisuals = false;
+    let bundleItems = [];
     eachChild(text, c.body, (f) => {
       if (!f.isBlock) fields.set(f.key.toLowerCase(), f.value);
       else if (f.key.toLowerCase() === 'visuals') hasVisuals = true;
+      else if (f.key.toLowerCase() === 'bundle') {
+        eachChild(text, f.body, (bundleItem) => {
+          if (!bundleItem.isBlock && bundleItem.value === '1') {
+            bundleItems.push(bundleItem.key);
+          }
+        });
+      }
     });
     out.push({
       id: c.key,
@@ -174,9 +185,13 @@ function listItems(text) {
       slot: fields.get('item_slot') || '',
       prefab: fields.get('prefab') || '',
       itemName: fields.get('item_name') || '',
+      itemDescription: fields.get('item_description') || '',
       image: fields.get('image_inventory') || '',
+      model: fields.get('model_player') || '',
+      typeName: fields.get('item_type_name') || '',
       baseitem: fields.get('baseitem') === '1',
       hasVisuals,
+      bundleItems,
       start: c.start,
       end: c.end,
     });
@@ -193,8 +208,31 @@ function toUtf8(s) {
   return /[\x80-\xff]/.test(s) ? Buffer.from(s, 'latin1').toString('utf8') : s;
 }
 
+/** An item's words in one lowercase string, for telling an arcana or persona by its name. */
+function itemSearchText(item) {
+  return [item?.slot, item?.prefab, item?.name, item?.itemName, item?.itemDescription, item?.image, item?.model, item?.typeName]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+/**
+ * A hero item's slot as the game reads it. A wearable or stock item that names no item_slot is
+ * a weapon: the "wearable" and "default_item" prefabs of items_game both say "item_slot"
+ * "weapon", and on the game of 2026-09-24 that covers 1857 wearables and 96 stock items.
+ *
+ * It used to be guessed from the item's words, which put Oblivion Headmaster Wand on the head,
+ * Emerald Frenzy Flail on the back and 99 other weapons nowhere, so a set carried two heads
+ * and the builder offered a wand for a helmet.
+ */
+function inferredItemSlot(item) {
+  if (item?.slot) return item.slot;
+  return item?.prefab === 'wearable' || item?.prefab === 'default_item' ? 'weapon' : '';
+}
+
 // Which slot an item belongs to. Wearables say it outright; the whole-match cosmetics
-// (weather, terrain, HUD...) leave item_slot out and only name their prefab.
+// (weather, terrain, HUD...) leave item_slot out and only name their prefab. No guessing here:
+// the guess moved 22 loading screens, their default among them, into "back" (2026-09-24).
 function slotOf(item) {
   return item.slot || item.prefab || '';
 }
@@ -219,8 +257,6 @@ function cosmeticOptions(text, slot) {
     .map((i) => ({ id: i.id, name: toUtf8(i.name) }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
-
-// ---------- reading the game's own schema ----------
 
 /**
  * Pull scripts/items/items_game.txt out of the game's pak01. This is the base every
@@ -253,30 +289,20 @@ function gameSchemaStamp(gamePath) {
 // Skinchanger exports are written as one endless line; re-indent so the merged file
 // stays readable (and diffable) when someone opens it.
 function reindent(block, indent) {
+  const first = readToken(block, 0);
+  if (!first) return '';
+  const at = skipGap(block, first.next);
+  if (block[at] !== '{') return String(block).trim();
   const nl = '\r\n';
-  let out = '';
-  let depth = 0;
-  let i = 0;
-  const pad = (d) => indent + '\t'.repeat(d);
-  while (i < block.length) {
-    const c = block[i];
-    if (c === '"') {
-      const end = block.indexOf('"', i + 1);
-      if (end === -1) break;
-      out += block.slice(i, end + 1);
-      i = end + 1;
-      let j = i;
-      while (j < block.length && /[ \t]/.test(block[j])) j++;
-      if (block[j] === '"') { out += '\t\t'; i = j; } // key <tab><tab> value on one line
-      continue;
-    }
-    if (c === '{') { out += nl + pad(depth) + '{'; depth++; out += nl + pad(depth); i++; continue; }
-    if (c === '}') { depth--; out += nl + pad(depth) + '}'; i++; if (depth > 0) out += nl + pad(depth); continue; }
-    if (/\s/.test(c)) { i++; continue; }
-    out += c;
-    i++;
-  }
-  return out.trimStart();
+  const formatBlock = (text, key, bounds, pad) => {
+    const rows = [];
+    eachChild(text, bounds, (c) => {
+      if (c.isBlock) rows.push(formatBlock(text, c.key, c.body, pad + '\t'));
+      else rows.push(`${pad}\t"${c.key}"\t\t"${c.value}"`);
+    });
+    return `${pad}"${key}"${nl}${pad}{${rows.length ? `${nl}${rows.join(nl)}${nl}` : nl}${pad}}`;
+  };
+  return formatBlock(block, first.value, blockBounds(block, at), indent).trimStart();
 }
 
 /**
@@ -421,8 +447,6 @@ function baseItemPatch(baseText, targetId, sourceId) {
   return stripped.slice(0, close) + '\t' + visuals.trim() + '\r\n\t\t' + stripped.slice(close);
 }
 
-// ---------- build ----------
-
 /**
  * Splice blocks into the base schema. Later entries win; every patch is applied to the
  * game's current text, so nothing Valve ships is rolled back except the patched blocks.
@@ -487,9 +511,9 @@ function validateSchema(text, baseText) {
 // for everything that was already taking it from here.
 
 // Pack the merged schema as a one-file VPK holding nothing but items_game.txt.
-function buildSchemaVpk(text) {
+function buildSchemaVpk(text, extraEntries = []) {
   const data = Buffer.from(text, 'latin1');
-  return buildVpk([{ ext: 'txt', folder: 'scripts/items', name: 'items_game', crc: crc32(data), preload: Buffer.alloc(0), data }]);
+  return buildVpk([{ ext: 'txt', folder: 'scripts/items', name: 'items_game', crc: crc32(data), preload: Buffer.alloc(0), data }, ...extraEntries]);
 }
 
 /**
@@ -509,7 +533,17 @@ function buildSchemaVpk(text) {
 function deploy({ gamePath, folder, patches, base = readGameSchema(gamePath) }) {
   const merged = mergeSchema(base.text, patches);
   const checked = validateSchema(merged.text, base.text);
-  const buf = buildSchemaVpk(merged.text);
+  const extras = [];
+  const seen = new Set();
+  for (const p of patches || []) {
+    for (const en of p.assets || []) {
+      const key = `${en.folder}/${en.name}.${en.ext}`.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      extras.push(en);
+    }
+  }
+  const buf = buildSchemaVpk(merged.text, extras);
   const dir = path.join(gamePath, folder);
   fs.mkdirSync(dir, { recursive: true });
   const dest = path.join(dir, SCHEMA_VPK);
@@ -548,6 +582,12 @@ function isDeployed(gamePath, folder) {
 }
 
 module.exports = {
+  eachChild,
+  blockBounds,
+  stripKeyBlocks,
+  toUtf8,
+  itemSearchText,
+  inferredItemSlot,
   SCHEMA_REL,
   SCHEMA_VPK,
   deploy,

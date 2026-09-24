@@ -22,12 +22,16 @@ test('a preset written by the app reads back with its mods intact', (t) => {
   share.writePresetFile(out, { name: 'Мой сет', author: { name: 'Misha' } }, [
     { kind: 'catalog', categoryId: 'heroes', name: 'Alien Nyx Assassin', styleLabel: null, fp: 'abc' },
     { kind: 'embedded', name: 'My own mod', categoryId: 'imported', data: Buffer.from('vpk bytes here') },
+    { kind: 'cosmetic', name: 'Golden Full-Bore Bonanza', slot: 'items', itemId: '9455', effectId: 'frostbloom' },
   ]);
 
   const { manifest, readMod } = share.readPresetFile(out);
   assert.equal(manifest.name, 'Мой сет');
   assert.equal(manifest.author, 'Misha');
-  assert.deepEqual(manifest.mods.map((m) => m.kind), ['catalog', 'embedded']);
+  assert.deepEqual(manifest.mods.map((m) => m.kind), ['catalog', 'embedded', 'cosmetic']);
+  assert.deepEqual(manifest.mods[2], {
+    kind: 'cosmetic', name: 'Golden Full-Bore Bonanza', slot: 'items', itemId: '9455', effectId: 'frostbloom',
+  });
   assert.equal(readMod(manifest.mods[1].file).toString(), 'vpk bytes here');
 });
 

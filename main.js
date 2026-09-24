@@ -466,7 +466,7 @@ app.whenReady().then(async () => {
     publishedHash: (categoryId, file) => catalog.publishedHash(categoryId, file),
   });
   presence = new DiscordPresence({ clientId: discordAuth.CLIENT_ID, onDiag: diag });
-  schemaService = createSchemaService({ settings, library, installer, userDataDir: userData });
+  schemaService = createSchemaService({ settings, library, installer, userDataDir: userData, log: diag });
   ({ isCursorRecord, disableOtherCursors, disableOtherCosmetics, applyMasterToCursors, reconcileCursors }
     = createCursors({ installer, library, settings }));
   ({ adoptImportedFiles, registerImportResults } = createAdopt({ installer, library, schemaService }));

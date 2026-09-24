@@ -231,7 +231,36 @@ function createGameIcons({ userDataDir, toolchain, getGamePath, log = () => {} }
     indexStamp = null;
   }
 
-  return { ready, getMany, size, clear, root };
+  /**
+   * Each hero's portrait out of the installed game, as data URIs, for the item builder's hub:
+   * the player's own copy rather than pictures shipped with the app.
+   *
+   * The landscape one first. Measured on the game of 2026-09-24, only 24 of 124 are stored as a
+   * plain PNG, the rest block-compressed, so the toolchain opens those when it is here. Without
+   * it, the portrait from hero selection, which is a PNG for 116 of them. The eight left (the
+   * newest heroes) keep their glyph. Both go into the same cache as item pictures.
+   * @param {string[]} ids  hero ids without the npc_dota_hero_ prefix, e.g. "antimage"
+   * @returns {Promise<Record<string, string>>} the ones a picture was found for
+   */
+  async function heroPortraits(ids) {
+    /** @type {Record<string, string>} */
+    const out = {};
+    if (!ready()) return out;
+    // names, never paths: they go into one
+    const valid = [...new Set(ids)].filter((id) => typeof id === 'string' && /^[a-z0-9_]+$/.test(id));
+    const wide = (id) => `heroes/npc_dota_hero_${id}`;
+    const tall = (id) => `heroes/selection/npc_dota_hero_${id}`;
+    const cached = (imagePath) => fs.existsSync(cacheFile(imagePath));
+    await extract(valid.map(wide).filter((p) => !cached(p)));
+    takeReadyMade(valid.filter((id) => !cached(wide(id))).map(tall).filter((p) => !cached(p)));
+    for (const id of valid) {
+      const hit = [wide(id), tall(id)].find(cached);
+      if (hit) out[id] = `data:image/png;base64,${fs.readFileSync(cacheFile(hit)).toString('base64')}`;
+    }
+    return out;
+  }
+
+  return { ready, getMany, heroPortraits, size, clear, root };
 }
 
 module.exports = { createGameIcons };

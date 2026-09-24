@@ -58,8 +58,9 @@ export function pickedIn(slot) {
 // most of the app's actions (toggling a regular mod, searching the catalog) never need
 // them, so this is fetched only where a cosmetic pick could actually have changed.
 export async function refreshCosmeticSlots() {
-  const { slots } = await window.api.cosmetics.slots();
+  const { slots, sets } = await window.api.cosmetics.slots();
   state.cosmeticSlots = slots || [];
+  state.cosmeticSets = sets || []; // the item builder's sets, read with the slots they fill
   // only called where a cosmetic pick or safe mode could have moved, and both of those
   // change the catalog's rail as well as the screen asking - so nothing kept is still right
   invalidateViews();

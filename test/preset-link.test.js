@@ -48,7 +48,13 @@ test('a build survives the round trip, and comes back in the same order', () => 
 test('a free cosmetic travels too, as a slot and an item id', () => {
   const mods = [{ kind: 'cosmetic', slot: 'courier', itemId: '12345', name: 'Baby Roshan' }];
   const back = decodePresetLink(encodePresetLink({ name: 'Cosmetics', mods }).code);
-  assert.deepEqual(back.mods, [{ kind: 'cosmetic', slot: 'courier', itemId: '12345', name: 'Baby Roshan' }]);
+  assert.deepEqual(back.mods, [{ kind: 'cosmetic', slot: 'courier', itemId: '12345', name: 'Baby Roshan', effectId: '' }]);
+});
+
+test('an item cosmetic keeps its effect id through the link', () => {
+  const mods = [{ kind: 'cosmetic', slot: 'items', itemId: '9455', name: 'Golden Full-Bore Bonanza', effectId: 'frostbloom' }];
+  const back = decodePresetLink(encodePresetLink({ name: 'Items', mods }).code);
+  assert.deepEqual(back.mods, [{ kind: 'cosmetic', slot: 'items', itemId: '9455', name: 'Golden Full-Bore Bonanza', effectId: 'frostbloom' }]);
 });
 
 test('a cosmetic missing its slot or its id is dropped rather than half-installed', () => {

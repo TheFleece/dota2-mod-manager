@@ -27,10 +27,12 @@ the code, not in this page.
 | [`src/fingerprints.js`](#srcfingerprintsjs) | Fingerprint index: fetch + cache the fp -> mod identity map published alongside the |
 | [`src/game-icons.js`](#srcgame-iconsjs) | Item pictures taken from the installed game instead of scraped off a wiki. |
 | [`src/gamelang.js`](#srcgamelangjs) | Which dota_<lang> folder the game actually mounts. |
+| [`src/hero-names.js`](#srchero-namesjs) | Which hero a name means, in the three spellings this app meets: the game's folder id |
 | [`src/i18n.js`](#srci18njs) | Minimal i18n for the main process (main.js, installer.js, vpk.js). |
 | [`src/icons.js`](#srciconsjs) | Pictures for the cosmetics picker, and for the Library where a picture can be found for |
 | [`src/import.js`](#srcimportjs) | Taking in a mod the user already has: a .vpk, a .zip, a folder, or bytes off a drop. |
 | [`src/installer.js`](#srcinstallerjs) | Installer engine: download, extract, pak allocation, per-category install/uninstall |
+| [`src/item-builder.js`](#srcitem-builderjs) | The item builder: a hero's stock item built from one of its wearables, with an effect on top. |
 | [`src/library.js`](#srclibraryjs) | Library: manifest of installed mods + presets |
 | [`src/minify.js`](#srcminifyjs) | Living next to Minify. |
 | [`src/mod-id.js`](#srcmod-idjs) | What a mod actually replaces, asked of the game instead of guessed from folder names. |
@@ -921,6 +923,60 @@ current mod and this one is a leftover.
 @returns {number} how many files were actually moved
 ```
 
+## src/hero-names.js
+
+Which hero a name means, in the three spellings this app meets: the game's folder id
+(queenofpain), what an author typed (queen_of_pain, qop), and what people read ("Queen of
+Pain"). Out of src/vpk.js, where it began, because the catalog asks too and vpk.js is at its
+size budget.
+
+### `HERO_DISPLAY`
+
+```js
+const HERO_DISPLAY =
+```
+
+Dota's internal hero folder names differ from the display name for a chunk of the
+roster. Only the mismatches are listed; anything else is title-cased from its id.
+
+### `HERO_ALIAS`
+
+```js
+const HERO_ALIAS =
+```
+
+Short and misspelled folder names authors use for a hero whose canonical id looks
+nothing like the name. Anything that differs only in spacing or punctuation
+(crystalmaiden / crystal_maiden, queenofpain / queen_of_pain) needs no entry — heroKey
+below folds those together on its own.
+
+### `heroDisplayName`
+
+```js
+function heroDisplayName(id)
+```
+
+What people call a hero the game or an author files as `id` (skeleton_king -> Wraith King).
+
+### `heroIdFromName`
+
+```js
+function heroIdFromName(name)
+```
+
+The game's id for a hero the catalog names ("Queen of Pain" -> queenofpain), or null.
+
+### `heroKey`
+
+```js
+function heroKey(id)
+```
+
+Identity of a hero regardless of how the author spelled the folder. Authors mix
+"crystal_maiden", "crystalmaiden" and "CrystalMaiden" inside one pack, and each spelling
+used to count as a separate hero — which turned a single-hero skin into a "bundle of 3"
+and offered to split it into parts that make no sense.
+
 ## src/i18n.js
 
 Minimal i18n for the main process (main.js, installer.js, vpk.js).
@@ -1099,6 +1155,125 @@ const MERGE_SIZE_CAP = 1200 * 1024 * 1024
 Merging a multi-volume import into one file holds the whole mod in memory once. Well
 above any real skin pack (a Skinchanger export is ~70 MB), but a multi-GB set is left
 in its original volumes rather than risking the allocation.
+
+## src/item-builder.js
+
+The item builder: a hero's stock item built from one of its wearables, with an effect on top.
+
+For each hero and slot the free cosmetics offer that hero's wearables. Picking one rewrites its
+block in items_game under the stock item's id, name and prefab=default_item, drops the styles
+and unlocks a free base item cannot use, adds the chosen particle effect to its visuals, and
+lists the model and particles to copy out of the game's pak01 under the stock paths, so the
+game draws the wearable where the stock item was. src/schema-service.js applies it along with
+the rest of the free cosmetics; src/schema.js reads and merges the table.
+
+Written by h6rd (https://github.com/h6rd) in #117, developed further with TheFleece
+(https://github.com/TheFleece).
+Copyright (C) 2026 h6rd
+Copyright (C) 2026 TheFleece
+SPDX-License-Identifier: GPL-3.0-or-later
+The additional terms in NOTICE apply: whoever carries this code keeps both names here and in
+the credits of the program it goes into.
+
+### `effectKey`
+
+```js
+function effectKey(effectIds)
+```
+
+The effects of one pick as one string: ids in the order ITEM_EFFECTS lists them, each once,
+comma separated, '' for none. A pick carries several (the window says "you can pick several"),
+and this is how a record stores them and how two picks are told apart, so "fire,snow" and
+"snow,fire" are the same pick.
+
+```
+@param {string|string[]|null|undefined} effectIds
+```
+
+### `itemEffects`
+
+```js
+function itemEffects()
+```
+
+The effect variants the synthetic cosmetics/items picker can apply.
+
+### `itemSets`
+
+```js
+function itemSets(text, slots = itemSlots(text))
+```
+
+A hero's sets as the builder puts them on: every wearable of the set that has a slot in the
+builder, in one write (schema-service pickSet).
+
+A set used to be one more slot, "bundle", put on as if it were one item. It is several, with
+no stock item to stand in for, so on the game of 2026-09-24 1760 of its 1971 choices did not
+build and the other 211 put a model-less block over whichever stock item came first.
+
+Only hero items are listed. A set's loading screen, cursor, HUD, ward, announcer or taunt
+has a tab of its own or is not the app's to set, and nobody puts one on with a set. A hero
+item the builder leaves alone (an arcana, a persona) is listed as not fitting, with why: it
+is part of what the set looks like. A set with nothing to put on is left out, and so is a store
+bundle of several sets ("Bounty Hunter's Big Bundle": 22 items, 7 slots): more of its pieces
+want a taken slot than fit, and the first of each would dress the hero in a mix of sets that
+are each listed on their own anyway. Valve's "DO NOT USE" is left out as well.
+
+```
+@param {string} text  items_game
+@param {Array<{ slot: string, slotLabel: string, options: Array<{ id: string }> }>} [slots]
+itemSlots(text), when the caller has it already
+```
+
+### `itemOptions`
+
+```js
+function itemOptions(text)
+```
+
+Wearable items with visuals and a matching stock default_item, offered under cosmetics/items.
+
+### `itemSlots`
+
+```js
+function itemSlots(text)
+```
+
+Hero item slots built from real default_item entries, with one donor list per hero part.
+
+### `defaultItemForWearable`
+
+```js
+function defaultItemForWearable(text, sourceId)
+```
+
+The stock default_item that matches a wearable by slot and by the hero(es) that can equip it.
+
+### `itemEffectPatch`
+
+```js
+function itemEffectPatch(baseText, itemId, effectIds)
+```
+
+Turn one paid wearable into the hero's stock item for that slot.
+
+The block stays the donor item almost verbatim: only the header is rewritten to the matching
+default_item (id + name + prefab), styles/unlocks that cannot be used on a free base item are
+dropped, and the chosen effect is inserted into visuals. The donor model/particles stay named
+as the paid item in items_game, while assetCopies still describe the stock-path overrides the
+built VPK should carry.
+
+```
+@returns {{ id: string, block: string, assetCopies: Array<{from: string, to: string}> }}
+```
+
+### `gameAssetEntries`
+
+```js
+function gameAssetEntries(gamePath, assetCopies)
+```
+
+Read compiled asset bytes out of pak01 and stage them under the renamed path in our VPK.
 
 ## src/library.js
 
@@ -2096,7 +2271,7 @@ function encodePresetLink({ name, author, mods })
 ```
 
 ```
-@param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId}>}} preset
+@param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId, effectId}>}} preset
 @returns {{code: string, web: string, direct: string}} the clickable form and the raw one
 ```
 
@@ -2482,7 +2657,7 @@ The rules it enforces:
 ### `createSchemaService`
 
 ```js
-function createSchemaService({ settings, library, installer, userDataDir })
+function createSchemaService({ settings, library, installer, userDataDir, log = () => {} })
 ```
 
 ```
@@ -2491,6 +2666,7 @@ function createSchemaService({ settings, library, installer, userDataDir })
 @param {import('./library').Library} deps.library
 @param {import('./installer').Installer} deps.installer
 @param {string} deps.userDataDir
+@param {(msg: string) => void} [deps.log]  the app's diagnostics log
 ```
 
 ## src/schema.js
@@ -2507,6 +2683,73 @@ Two rules shape everything here:
 
 The file is ~50 MB of KeyValues with a few non-UTF8 bytes in it, so everything here
 works on latin1 strings: byte-exact in and out, no re-encoding surprises.
+
+### `eachChild`
+
+```js
+function eachChild(text, bounds, fn)
+```
+
+Walk the direct children of a block.
+
+```
+@param {string} text
+@param {[number, number]} bounds  from blockBounds()
+@param {(child: {key: string, start: number, end: number, isBlock: boolean, value: string|null, body: [number, number]|null}) => void} fn
+```
+
+### `blockBounds`
+
+```js
+function blockBounds(text, i)
+```
+
+Bounds of the { ... } block that starts at (or after) i.
+
+```
+@returns {[number, number]} [open, close+1]
+```
+
+### `stripKeyBlocks`
+
+```js
+function stripKeyBlocks(text, key)
+```
+
+Remove every "<key> { … }" sub-block from a KV fragment, with the whitespace in front
+of it, so the result still reads like the file it came from.
+
+### `toUtf8`
+
+```js
+function toUtf8(s)
+```
+
+The table is read as latin1 so every splice stays byte-exact, which leaves names with
+non-ASCII characters (curly quotes, accents) as raw UTF-8 bytes. Anything shown to a
+person goes back through UTF-8 first.
+
+### `itemSearchText`
+
+```js
+function itemSearchText(item)
+```
+
+An item's words in one lowercase string, for telling an arcana or persona by its name.
+
+### `inferredItemSlot`
+
+```js
+function inferredItemSlot(item)
+```
+
+A hero item's slot as the game reads it. A wearable or stock item that names no item_slot is
+a weapon: the "wearable" and "default_item" prefabs of items_game both say "item_slot"
+"weapon", and on the game of 2026-09-24 that covers 1857 wearables and 96 stock items.
+
+It used to be guessed from the item's words, which put Oblivion Headmaster Wand on the head,
+Emerald Frenzy Flail on the back and 99 other weapons nowhere, so a set carried two heads
+and the builder offered a wand for a helmet.
 
 ### `SCHEMA_REL`
 
@@ -2737,7 +2980,7 @@ only: a malformed file is what makes the game die with "ERROR PARSING SCRIPT".
 ### `buildSchemaVpk`
 
 ```js
-function buildSchemaVpk(text)
+function buildSchemaVpk(text, extraEntries = [])
 ```
 
 Pack the merged schema as a one-file VPK holding nothing but items_game.txt.
@@ -3428,10 +3671,6 @@ Classify what a mod's inner path list actually changes.
 ```
 
 ### `heroDisplayName`
-
-```js
-function heroDisplayName(id)
-```
 
 _No description in the source._
 

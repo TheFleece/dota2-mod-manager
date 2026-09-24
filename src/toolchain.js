@@ -134,6 +134,21 @@ function createToolchain({ userDataDir, onProgress = () => {}, log = () => {} })
       log(`toolchain: ${name} ${have.version} was recorded but is gone from disk, fetching again`);
     }
 
+    /* Whatever happens next, the bar at the bottom of the window hears how it ended. It hides
+     * only on 'done' or 'error', and this used to send neither: a finished download left
+     * "Downloading: vrf 50.3 / 50.3 MB" on screen until the app was closed, and a failed one
+     * did the same with the bar stuck wherever the bytes had stopped. */
+    try {
+      const exe = await fetchAndUnpack(name, pin);
+      onProgress({ type: 'done', label: name });
+      return exe;
+    } catch (err) {
+      onProgress({ type: 'error', label: name, message: String(err.message || err) });
+      throw err;
+    }
+  }
+
+  async function fetchAndUnpack(name, pin) {
     const dest = path.join(root, `${name}-${pin.version}.zip`);
     onProgress({ type: 'stage', label: name, stage: 'download' });
     const onBytes = (loaded, total) => onProgress({ type: 'download', label: name, loaded, total });

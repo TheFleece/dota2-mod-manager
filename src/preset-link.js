@@ -30,7 +30,7 @@ const MAX_MODS = 500;
 const COSMETIC_TAG = '$cos';
 
 /**
- * @param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId}>}} preset
+ * @param {{name: string, author?: string, mods: Array<{kind?, categoryId, name, styleLabel, slot, itemId, effectId}>}} preset
  * @returns {{code: string, web: string, direct: string}} the clickable form and the raw one
  */
 function encodePresetLink({ name, author, mods }) {
@@ -38,7 +38,7 @@ function encodePresetLink({ name, author, mods }) {
     v: 1,
     n: String(name || '').slice(0, 120),
     m: mods.map((m) => (m.kind === 'cosmetic'
-      ? [COSMETIC_TAG, m.slot, m.itemId, m.name]
+      ? [COSMETIC_TAG, m.slot, m.itemId, m.name, m.effectId || '']
       : (m.styleLabel ? [m.categoryId, m.name, m.styleLabel] : [m.categoryId, m.name]))),
   };
   if (author) payload.a = String(author).slice(0, 80);
@@ -75,7 +75,13 @@ function decodePresetLink(input) {
   const mods = raw.m
     .filter((e) => Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'string')
     .map((e) => (e[0] === COSMETIC_TAG
-      ? { kind: 'cosmetic', slot: e[1].slice(0, 60), itemId: String(e[2] ?? '').slice(0, 20), name: String(e[3] ?? '').slice(0, 300) }
+      ? {
+        kind: 'cosmetic',
+        slot: e[1].slice(0, 60),
+        itemId: String(e[2] ?? '').slice(0, 20),
+        name: String(e[3] ?? '').slice(0, 300),
+        effectId: typeof e[4] === 'string' ? e[4].slice(0, 60) : '',
+      }
       : {
         kind: 'catalog',
         categoryId: e[0].slice(0, 60),

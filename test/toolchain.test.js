@@ -172,3 +172,23 @@ test('deleting a tool leaves nothing behind', async (t) => {
   assert.equal(fs.existsSync(path.join(dir, 'toolchain', 'vrf')), false);
   assert.equal(tc.state().find((s) => s.name === 'vrf').ready, false);
 });
+
+// The progress bar hides only when it hears 'done' or 'error'. Neither was sent, so the
+// first-run download left "Downloading: vrf 50.3 / 50.3 MB" on screen for good.
+test('a download tells the progress bar it is over, however it ends', async (t) => {
+  const data = toolZip();
+  await serve(t, data);
+  const events = [];
+  const tc = createToolchain({ userDataDir: userDir(t), onProgress: (e) => events.push(e) });
+  BUILT_IN_PINS.vrf.sha256 = crypto.createHash('sha256').update(data).digest('hex');
+  await tc.ensure('vrf');
+  assert.equal(events.at(-1).type, 'done');
+  assert.equal(events.at(-1).label, 'vrf');
+
+  const failed = [];
+  const tc2 = createToolchain({ userDataDir: userDir(t), onProgress: (e) => failed.push(e) });
+  BUILT_IN_PINS.vrf.sha256 = 'f'.repeat(64);
+  await assert.rejects(() => tc2.ensure('vrf'), /checksum/);
+  assert.equal(failed.at(-1).type, 'error');
+  assert.match(failed.at(-1).message, /checksum/);
+});
