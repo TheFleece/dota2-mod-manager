@@ -165,6 +165,7 @@ const EN = {
   '{0} из {1} {2}': '{0} of {1} {2}',
   'Надеть весь набор': 'Equip the whole set',
   'Ничего не найдено. Очисти поиск': 'Nothing found. Clear the search',
+  'Изменено {0} из {1}': 'Changed {0} of {1}',
   'Надето {0} из {1} {2}': 'Equipped {0} of {1} {2}',
   'Набор надевается без эффектов. Чтобы добавить эффект, открой деталь.':
     'A set goes on without effects. Open a piece to add one.',

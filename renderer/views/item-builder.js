@@ -417,6 +417,19 @@ function getEffectIconPath(effectId) {
   return EFFECT_PICTURES.has(effectId) ? `./assets/effects/${effectId}.webp` : null;
 }
 
+// What is on the hero, rather than how many slots it has: 92 of 124 heroes have four to six, so
+// "5 slots" told nobody anything, and a dressed hero said only that it was dressed.
+function heroCardMeta(hero, slots) {
+  const sets = heroSets(hero);
+  const worn = sets.find(setIsOn);
+  if (worn) return esc(worn.name);
+  const changed = slots.filter((s) => pickedIn(s.slot)).length;
+  if (changed) return L`Изменено ${changed} из ${slots.length}`;
+  return sets.length
+    ? `${sets.length} ${plural(sets.length, 'набор', 'набора', 'наборов')}`
+    : `${slots.length} ${plural(slots.length, 'слот', 'слота', 'слотов')}`;
+}
+
 function itemHeroCardHtml(hero, slots, i) {
   const hasInstalled = slots.some((s) => pickedIn(s.slot));
   const iconPath = getHeroIconPath(hero);
@@ -429,7 +442,7 @@ function itemHeroCardHtml(hero, slots, i) {
       </div>
       <div class="card-body">
         <div class="card-name">${esc(hero)}</div>
-        <div class="card-meta"><span>${slots.length} ${plural(slots.length, 'слот', 'слота', 'слотов')}</span></div>
+        <div class="card-meta"><span>${heroCardMeta(hero, slots)}</span></div>
       </div>
     </div>`;
 }
