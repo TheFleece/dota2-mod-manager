@@ -1112,13 +1112,28 @@ lists the model and particles to copy out of the game's pak01 under the stock pa
 game draws the wearable where the stock item was. src/schema-service.js applies it along with
 the rest of the free cosmetics; src/schema.js reads and merges the table.
 
-Written by rotten (https://github.com/h6rd) in #117, developed further with TheFleece
+Written by h6rd (https://github.com/h6rd) in #117, developed further with TheFleece
 (https://github.com/TheFleece).
-Copyright (C) 2026 rotten
+Copyright (C) 2026 h6rd
 Copyright (C) 2026 TheFleece
 SPDX-License-Identifier: GPL-3.0-or-later
 The additional terms in NOTICE apply: whoever carries this code keeps both names here and in
 the credits of the program it goes into.
+
+### `effectKey`
+
+```js
+function effectKey(effectIds)
+```
+
+The effects of one pick as one string: ids in the order ITEM_EFFECTS lists them, each once,
+comma separated, '' for none. A pick carries several (the window says "you can pick several"),
+and this is how a record stores them and how two picks are told apart, so "fire,snow" and
+"snow,fire" are the same pick.
+
+```
+@param {string|string[]|null|undefined} effectIds
+```
 
 ### `itemEffects`
 
@@ -1155,7 +1170,7 @@ The stock default_item that matches a wearable by slot and by the hero(es) that 
 ### `itemEffectPatch`
 
 ```js
-function itemEffectPatch(baseText, itemId, effectId)
+function itemEffectPatch(baseText, itemId, effectIds)
 ```
 
 Turn one paid wearable into the hero's stock item for that slot.
@@ -2560,7 +2575,7 @@ The rules it enforces:
 ### `createSchemaService`
 
 ```js
-function createSchemaService({ settings, library, installer, userDataDir })
+function createSchemaService({ settings, library, installer, userDataDir, log = () => {} })
 ```
 
 ```
@@ -2569,6 +2584,7 @@ function createSchemaService({ settings, library, installer, userDataDir })
 @param {import('./library').Library} deps.library
 @param {import('./installer').Installer} deps.installer
 @param {string} deps.userDataDir
+@param {(msg: string) => void} [deps.log]  the app's diagnostics log
 ```
 
 ## src/schema.js

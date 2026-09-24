@@ -54,12 +54,12 @@ Copies you received under an earlier version keep the terms they came with.
 The item builder
 
 The item builder turns a hero's stock items into any of that hero's
-wearables, with a particle effect on top. rotten (https://github.com/h6rd)
+wearables, with particle effects on top. h6rd (https://github.com/h6rd)
 wrote it, and develops it further together with TheFleece. It is the code in
 src/item-builder.js and renderer/views/item-builder.js, and the parts of other
 files that say they belong to it.
 
-Copyright (C) 2026 rotten (https://github.com/h6rd)
+Copyright (C) 2026 h6rd (https://github.com/h6rd)
 Copyright (C) 2026 TheFleece (https://github.com/TheFleece)
 
 The terms above apply to it, and 7(b) asks one more thing. Whoever ships the

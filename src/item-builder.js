@@ -7,9 +7,9 @@
  * game draws the wearable where the stock item was. src/schema-service.js applies it along with
  * the rest of the free cosmetics; src/schema.js reads and merges the table.
  *
- * Written by rotten (https://github.com/h6rd) in #117, developed further with TheFleece
+ * Written by h6rd (https://github.com/h6rd) in #117, developed further with TheFleece
  * (https://github.com/TheFleece).
- * Copyright (C) 2026 rotten
+ * Copyright (C) 2026 h6rd
  * Copyright (C) 2026 TheFleece
  * SPDX-License-Identifier: GPL-3.0-or-later
  * The additional terms in NOTICE apply: whoever carries this code keeps both names here and in
@@ -307,6 +307,23 @@ function itemEffectById(effectId) {
   return ITEM_EFFECTS.find((e) => e.id === want) || null;
 }
 
+/**
+ * The effects of one pick as one string: ids in the order ITEM_EFFECTS lists them, each once,
+ * comma separated, '' for none. A pick carries several (the window says "you can pick several"),
+ * and this is how a record stores them and how two picks are told apart, so "fire,snow" and
+ * "snow,fire" are the same pick.
+ * @param {string|string[]|null|undefined} effectIds
+ */
+function effectKey(effectIds) {
+  const want = new Set((Array.isArray(effectIds) ? effectIds : String(effectIds || '').split(','))
+    .map((id) => String(id).trim().toLowerCase())
+    .filter(Boolean));
+  const known = ITEM_EFFECTS.map((e) => e.id).filter((id) => want.has(id));
+  // an id nobody offers stays in, at the end, so the build can say which one it did not know
+  const unknown = [...want].filter((id) => !known.includes(id)).sort();
+  return [...known, ...unknown].join(',');
+}
+
 function setBlockId(blockText, id) {
   return String(blockText).replace(/^\s*"\d+"/, `"${id}"`);
 }
@@ -435,13 +452,17 @@ function appendItemEffect(visuals, effect) {
  * built VPK should carry.
  * @returns {{ id: string, block: string, assetCopies: Array<{from: string, to: string}> }}
  */
-function itemEffectPatch(baseText, itemId, effectId) {
+function itemEffectPatch(baseText, itemId, effectIds) {
   const source = findItem(baseText, itemId);
   if (!source) throw new Error(t('items_game: предмет {0} не найден', itemId));
   const target = defaultItemForWearable(baseText, itemId);
   if (!target) throw new Error(t('items_game: default_item для предмета {0} не найден', itemId));
-  const effect = itemEffectById(effectId);
-  if (effectId && !effect) throw new Error(t('items_game: эффект {0} не найден', effectId));
+  // several at once: the window offers them that way, and one unknown id refuses the whole pick
+  const effects = effectKey(effectIds).split(',').filter(Boolean).map((id) => {
+    const effect = itemEffectById(id);
+    if (!effect) throw new Error(t('items_game: эффект {0} не найден', id));
+    return effect;
+  });
 
   const sourceFields = itemFields(baseText, source);
   const targetFields = itemFields(baseText, target);
@@ -457,7 +478,7 @@ function itemEffectPatch(baseText, itemId, effectId) {
 
   visuals = stripKeyBlocks(visuals, 'unlock');
   visuals = stripKeyBlocks(visuals, 'styles');
-  if (effect && effect.id) visuals = appendItemEffect(visuals, effect);
+  for (const effect of effects) visuals = appendItemEffect(visuals, effect);
 
   let patched = setBlockId(itemBlock(baseText, source), target.id);
   patched = setScalarField(patched, 'name', targetFields.get('name') || target.name || target.id);
@@ -488,6 +509,7 @@ function gameAssetEntries(gamePath, assetCopies) {
 // ---------- build ----------
 
 module.exports = {
+  effectKey,
   itemEffects,
   itemOptions,
   itemSlots,

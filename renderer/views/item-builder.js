@@ -2,9 +2,9 @@
  * effect on top. The hub lists heroes, a hero opens its item slots, and a slot opens the picker of
  * wearables and effects. What a pick does to the game is src/item-builder.js; this is the screen.
  *
- * Written by rotten (https://github.com/h6rd) in #117, developed further with TheFleece
+ * Written by h6rd (https://github.com/h6rd) in #117, developed further with TheFleece
  * (https://github.com/TheFleece).
- * Copyright (C) 2026 rotten
+ * Copyright (C) 2026 h6rd
  * Copyright (C) 2026 TheFleece
  * SPDX-License-Identifier: GPL-3.0-or-later
  * The additional terms in NOTICE apply: whoever carries this code keeps both names here and in
@@ -108,7 +108,8 @@ function openItemSlotModal(slot, from) {
   if (!data) return;
   const live = pickedIn(slot);
   const selectedId = live?.itemId || '';
-  const selectedEffects = live?.effectIds ? String(live.effectIds).split(',').filter(Boolean) : [];
+  // a record keeps its effects as one comma separated string (src/item-builder.js effectKey)
+  const selectedEffects = live?.effectId ? String(live.effectId).split(',').filter(Boolean) : [];
   itemSlotModalState = { slot, selectedId, effectIds: selectedEffects, query: '' };
   cat.resetModalState();
   cat.openModal(drawItemSlotModal, from);
@@ -275,7 +276,7 @@ function drawItemSlotModal() {
       if (!pick) return;
       itemSlotModalState.selectedId = pickId;
       const nextEffectIds = itemSlotModalState.effectIds || [];
-      const alreadyLive = live?.itemId === pick.id && JSON.stringify((live.effectIds || '').split(',').filter(Boolean).sort()) === JSON.stringify([...nextEffectIds].sort());
+      const alreadyLive = live?.itemId === pick.id && JSON.stringify(String(live.effectId || '').split(',').filter(Boolean).sort()) === JSON.stringify([...nextEffectIds].sort());
       if (alreadyLive) {
         drawItemSlotModal();
         return;

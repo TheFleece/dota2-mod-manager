@@ -1,5 +1,5 @@
 // The item builder (src/item-builder.js): a hero's stock item built from one of its wearables,
-// with an effect on top. Written with the feature by rotten (#117); moved here from
+// with an effect on top. Written with the feature by h6rd (#117); moved here from
 // schema.test.js when the builder got a module of its own.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -490,4 +490,21 @@ test('game asset entries read donor bytes from pak01 and buildSchemaVpk packs th
   assert.equal(packed.get('models/heroes/sniper/cape.vmdl_c'), 'donor model bytes');
   assert.equal(packed.get('particles/units/heroes/hero_sniper/sniper_headshot_slow.vpcf_c'), 'slow bytes');
   assert.equal(packed.get('particles/units/heroes/hero_sniper/sniper_headshot_slow_caster.vpcf_c'), 'caster bytes');
+});
+
+test('a pick carries several effects in one order, and an effect nobody offers refuses it', () => {
+  // The window offers several ("Effects (you can pick several)") and sent them as "fire,snow" to
+  // a build that looked for one effect by that name. The pick failed there, and the failure was
+  // swallowed with the other free cosmetics' ones: the window said installed, the game got nothing.
+  const text = itemWearableTable();
+  assert.equal(builder.effectKey('snow,fire'), 'fire,snow', 'the order the list offers them in');
+  assert.equal(builder.effectKey(['FIRE', ' fire ', 'snow']), 'fire,snow', 'each once, whatever the case');
+  assert.equal(builder.effectKey(''), '');
+  assert.equal(builder.effectKey(null), '');
+
+  const both = builder.itemEffectPatch(text, '9455', 'snow,fire');
+  const count = (needle) => both.block.split(needle).length - 1;
+  assert.equal(count('courier_trail_lava.vpcf'), 1, 'fire, once');
+  assert.equal(count('seasonal_ambient_snow.vpcf'), 1, 'snow, once');
+  assert.throws(() => builder.itemEffectPatch(text, '9455', 'fire,sparkles'), /sparkles/);
 });

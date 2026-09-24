@@ -165,10 +165,10 @@ export async function renderSettings() {
       <!-- Credit NOTICE requires for the item builder (section 7(b)): both names, here. -->
       <div class="settings-row spaced">
         <span class="settings-label">${L`Конструктор предметов`}</span>
-        <span>rotten, TheFleece</span>
+        <span>h6rd, TheFleece</span>
         <a class="settings-link" id="builderLink">github.com/h6rd</a>
       </div>
-      <div class="settings-hint">© 2026 TheFleece · ${L`конструктор предметов`} © 2026 rotten, TheFleece · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
+      <div class="settings-hint">© 2026 TheFleece · ${L`конструктор предметов`} © 2026 h6rd, TheFleece · GPL-3.0 · ${L`свободная программа без каких-либо гарантий`}</div>
     </div>
   `; });
   $('#repoLink').addEventListener('click', () => window.api.misc.openExternal('https://github.com/dota2modmanager/dota2-mod-manager'));
