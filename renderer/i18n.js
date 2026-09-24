@@ -561,11 +561,18 @@ const EN = {
   'Игра читает моды Minify из dota_{0}': 'The game is reading the Minify mods in dota_{0}',
   ', а наши {0} лежат в dota_{1} и сейчас не грузятся. {2} Какую именно — решает параметр запуска Dota, и сейчас он указывает на папку Minify.':
     ', while our {0} sit in dota_{1} and are not loading. {2} Which one is decided by the Dota launch option, and right now it names the Minify folder.',
-  'Игра читает папку dota_{0}, а модов там нет': 'The game is reading dota_{0}, and there are no mods in it',
-  '. Наши лежат в dota_{0}, Minify собирает в dota_{1}. {2}':
-    '. Ours are in dota_{0} and Minify builds into dota_{1}. {2}',
-  '. Игра читает нашу папку dota_{0}, а он собирает в dota_{1} — его моды сейчас не грузятся. {2}':
-    '. The game reads our dota_{0} while it builds into dota_{1}, so its mods are not loading. {2}',
+  '. Игра читает dota_{0}, куда ставятся наши моды. Minify собирает в dota_{1}, поэтому его моды сейчас не грузятся. {2}':
+    '. The game reads dota_{0}, where our mods go. Minify builds into dota_{1}, so its mods are not loading. {2}',
+  'Игра читает папку Minify dota_{0}, а она пуста': 'The game reads the Minify folder dota_{0}, and it is empty',
+  '. Наши {0} лежат в dota_{1} и сейчас не грузятся. {2} Какую читать, решает параметр запуска Dota.':
+    '. Our {0} sit in dota_{1} and are not loading. {2} Which one it reads is decided by the Dota launch option.',
+  '. Наши моды ставятся в dota_{0}. {1} Какую читать, решает параметр запуска Dota.':
+    '. Our mods go into dota_{0}. {1} Which one it reads is decided by the Dota launch option.',
+  'Игра читает dota_{0}, а там нет ни наших модов, ни модов Minify': 'The game reads dota_{0}, and neither we nor Minify have mods there',
+  '. Наши ставятся в dota_{0}, Minify собирает в dota_{1}. {2}':
+    '. Ours go into dota_{0} and Minify builds into dota_{1}. {2}',
+  '. Он собирает в dota_{0}, наши моды ставятся в dota_{1}. {2}':
+    '. It builds into dota_{0} and our mods go into dota_{1}. {2}',
   'Рядом установлен Minify': 'Minify is installed alongside',
   '. Он собирает в dota_{0}, а {1} Папку с таким именем игра не читает — его моды сейчас не грузятся, и на наши это не влияет. В свежих версиях Minify это решено переходом на голландский.':
     '. It builds into dota_{0}, and {1} No folder by that name is read, so its mods are not loading and ours are unaffected. Newer Minify releases solved this by moving to Dutch.',
