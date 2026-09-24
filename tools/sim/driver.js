@@ -126,9 +126,12 @@ class Sim {
         last = now;
         if (!seen(b)) el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
       }
-      return b.width || b.height ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : null;
+      return b.width || b.height ? { x: b.left + b.width / 2, y: b.top + b.height / 2, iw: innerWidth } : null;
     })()`);
-    return box && { x: Math.round(box.x * this.scale), y: Math.round(box.y * this.scale) };
+    if (!box) return null;
+    // measured each time: the app's own scale setting changes how many window pixels a CSS pixel is
+    this.scale = this.win.getContentSize()[0] / box.iw;
+    return { x: Math.round(box.x * this.scale), y: Math.round(box.y * this.scale) };
   }
 
   async move(x, y, steps = 8) {

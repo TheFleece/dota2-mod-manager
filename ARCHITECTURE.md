@@ -321,8 +321,12 @@ window with real input events and check what a person would see: `scroll` flicks
 tiles on some graphics drivers show up, and checks that the end of the list is inside the window
 and the window inside the screen. `browse` visits every section, category, the search and the mod
 window. `mods` installs seven real mods from their cards, reorders two that replace the same file,
-switches them off and removes them. `game-session` plays the game starting, quitting and being
-updated or checked by Steam (`tools/sim/world.js`). `tools/sim/dota.js` is a model of the game's
+switches them off and removes them. `presets` saves a preset, applies it over a changed state and
+again after one of its mods was deleted. `settings` switches the language and reads every screen
+for text left in the other one, and changes the scale and the switches. `game-session` plays the
+game starting, quitting and being updated or checked by Steam (`tools/sim/world.js`). The first
+machine of a set runs every scenario; the others run the ones a screen or a renderer can change
+(`looks` in the profiles). `tools/sim/dota.js` is a model of the game's
 loader, run over the sandbox after each step: what it mounts, which pack wins each file, whether
 our packs' bytes match their CRCs, and whether the item schema points at files the game can load.
 Every scenario also fails on an error in the page's console. `npm run sim` runs the set for this

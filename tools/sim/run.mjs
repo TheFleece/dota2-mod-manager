@@ -43,6 +43,18 @@ export function plan({ only, set = 'pr', platform = process.platform } = {}) {
   return chosen[platform === 'win32' ? 'win32' : 'linux'] || [];
 }
 
+/**
+ * Which scenarios the i-th machine of a set runs. The first gets all of them; the rest get the
+ * ones whose outcome depends on the screen and the renderer (config.looks). What installing a
+ * mod or applying a preset does to the game folder is the same on every screen, and running
+ * those on all thirteen machines put the nightly set past its hour. A scenario named on the
+ * command line runs everywhere, as asked.
+ */
+export function scenariosFor(i, all, { looks = config.looks, explicit = false } = {}) {
+  if (explicit || i === 0) return all;
+  return all.split(',').filter((s) => looks.includes(s)).join(',') || all;
+}
+
 /** The command line and environment one launch needs. Pure, so the tests can read it. */
 export function launch(screenName, rendererName, { scenarios, app = null, platform = process.platform, electron = 'electron' } = {}) {
   const screen = config.screens[screenName];
@@ -118,13 +130,15 @@ async function main() {
     process.exit(2);
   }
   const pairs = plan({ only: arg('only'), set: arg('set', 'pr') });
-  const scenarios = scenarioList();
+  const all = scenarioList();
+  const explicit = Boolean(arg('scenario'));
   const electron = require('electron');
   const runs = [];
-  for (const [screen, renderer] of pairs) {
+  for (const [i, [screen, renderer]] of pairs.entries()) {
+    const scenarios = scenariosFor(i, all, { explicit });
     const spec = launch(screen, renderer, { scenarios, app: arg('app'), electron });
     console.log(`\n=== ${screen} / ${renderer}: ${scenarios}`);
-    const result = await runOne(spec, Number(arg('timeout', 600)) * 1000);
+    const result = await runOne(spec, Number(arg('timeout', 900)) * 1000);
     runs.push({ screen, renderer, dir: path.basename(spec.out), result });
   }
   fs.mkdirSync(OUT, { recursive: true });

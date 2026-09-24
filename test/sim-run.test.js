@@ -60,6 +60,21 @@ test('every set names screens and renderers that exist, and the pull-request set
   assert.deepEqual(plan({ only: 'fhd:angle-gl,qhd' }), [['fhd', 'angle-gl'], ['qhd', 'default']]);
 });
 
+test('only the first machine of a set runs every scenario, the rest the ones a screen changes', async () => {
+  const { scenariosFor } = await load();
+  const all = 'browse,game-session,mods,presets,scroll,settings';
+  assert.equal(scenariosFor(0, all), all);
+  assert.equal(scenariosFor(3, all), 'browse,scroll,settings');
+  // named on the command line: every machine runs it, even one the screen does not change
+  assert.equal(scenariosFor(3, 'mods', { explicit: true }), 'mods');
+  // a list with nothing the screen changes still runs rather than launching an empty window
+  assert.equal(scenariosFor(2, 'mods,presets'), 'mods,presets');
+  const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'sim', 'profiles.json'), 'utf8'));
+  for (const s of config.looks) {
+    assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools', 'sim', 'scenarios', `${s}.js`)), `looks names ${s}, which is not a scenario`);
+  }
+});
+
 test('the report names each failed check and escapes what the page shows', async () => {
   const { reportHtml } = await load();
   const html = reportHtml([{ screen: 'fhd', renderer: 'default', dir: 'fhd--default', result: {

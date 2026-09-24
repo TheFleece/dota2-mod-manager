@@ -11,6 +11,7 @@
     "qhd-150": { "what": "2560x1440 at 150%", "workArea": "1707x928", "scale": 1.5, "screen": "2560x1440" },
     "uhd-200": { "what": "3840x2160 at 200%", "workArea": "1920x1056", "scale": 2, "screen": "3840x2160" }
   },
+  "looks": ["browse", "scroll", "settings"],
   "renderers": {
     "default": { "what": "What the app does today: Chromium picks", "args": [] },
     "software": { "what": "No GPU at all, the way a broken driver ends up", "args": ["--disable-gpu"] },
