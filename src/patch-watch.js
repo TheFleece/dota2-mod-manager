@@ -55,21 +55,49 @@ function gameStamp(gamePath) {
 }
 
 /**
+ * Steam's check of the game's files is a patch that leaves no stamp.
+ *
+ * It puts Valve's branch file and signature list back and does not touch the build number, and
+ * the stamp reads the signature list with the app's own line taken out, which is exactly the line
+ * the check removed. So the stamp stays the same while the mods stop loading. The simulation's
+ * game session (tools/sim) found it on 2026-09-24: the branch file stayed Valve's for as long as
+ * the app stayed open, until a restart or a press of its own Play button.
+ *
+ * So a second question, asked only when the app expects its search path to be there (safe mode
+ * off): is it? When it has gone, that is reported once, and not again until it is back, so the
+ * repair it starts cannot wake the watcher up in a loop.
+ */
+function searchPathGone(gamePath) {
+  try { return !fs.readFileSync(patcher.paths(gamePath).branch, 'latin1').includes(patcher.MARKER); } catch { return false; }
+}
+
+/**
  * @param {object} deps
  * @param {() => string|null} deps.getGamePath
- * @param {(evt: {from: string|null, to: string}) => void} deps.onPatch
+ * @param {(evt: {from: string|null, to: string, reason?: string}) => void} deps.onPatch
+ * @param {() => boolean} [deps.expectsPatch] whether the app's search path should be in the game (safe mode off)
  * @param {(msg: string) => void} [deps.log]
  * @param {number} [deps.debounceMs] shortened by tests, which cannot wait out a real patch
  */
-function createPatchWatcher({ getGamePath, onPatch, log = () => {}, debounceMs = DEBOUNCE_MS }) {
+function createPatchWatcher({ getGamePath, onPatch, expectsPatch = () => false, log = () => {}, debounceMs = DEBOUNCE_MS }) {
   let handles = [];
   let debounce = null;
   let rearm = null;
   let known = null;
   let running = false;
+  let goneReported = false;
 
   function look() {
-    const stamp = gameStamp(getGamePath());
+    const game = getGamePath();
+    const stamp = gameStamp(game);
+    const gone = Boolean(stamp) && expectsPatch() && searchPathGone(game);
+    if (!gone) goneReported = false;
+    if (stamp && stamp === known && gone && !goneReported) {
+      goneReported = true;
+      log('the search path is gone at the same build: Steam checked the game\'s files');
+      try { onPatch({ from: known, to: stamp, reason: 'files-restored' }); } catch (err) { log('patch handler failed: ' + err.message); }
+      return;
+    }
     if (!stamp || stamp === known) return;
     const from = known;
     // Remembered before the caller is told, so one update is reported once even if the
