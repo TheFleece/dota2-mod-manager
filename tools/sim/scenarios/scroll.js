@@ -18,6 +18,9 @@ module.exports = async function scroll(sim) {
   }
   const cards = await sim.until(`document.querySelectorAll('.grid .card').length > 50 && document.querySelectorAll('.grid .card').length`, 20000);
   if (!sim.check('the heroes grid is drawn', cards, 'fewer than 50 cards after 20 s')) return;
+  // the app remembers where each list was left, and a scenario before this one may have left
+  // it at the bottom, where every flick down is a flick that cannot move
+  await sim.js(`document.getElementById('main').scrollTop = 0`);
   await sim.settle(600);
   await sim.shot('top');
 
