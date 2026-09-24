@@ -20,12 +20,11 @@
     "angle-d3d9": { "what": "The old Direct3D backend", "args": ["--use-angle=d3d9"] },
     "angle-gl": { "what": "OpenGL through the driver: where a lot of driver bugs live", "args": ["--use-angle=gl"] },
     "angle-vulkan": { "what": "Vulkan through the driver", "args": ["--use-angle=vulkan"] },
-    "swiftshader": { "what": "Chromium's own software GPU, what CI runners effectively have", "args": ["--use-angle=swiftshader"] },
-    "unlimited-fps": { "what": "No frame cap and no vsync: closer to a 144-240 Hz screen", "args": ["--disable-frame-rate-limit", "--disable-gpu-vsync"] }
+    "swiftshader": { "what": "Chromium's own software GPU, what CI runners effectively have", "args": ["--use-angle=swiftshader"] }
   },
   "sets": {
     "pr": { "what": "Every pull request: quick, one screen per system", "win32": [["fhd", "default"]], "linux": [["laptop-125", "default"]] },
     "full": { "what": "Nightly and before every beta or release", "win32": [["fhd", "default"], ["fhd-125", "default"], ["fhd-150", "default"], ["laptop", "default"], ["laptop-125", "default"], ["qhd", "default"], ["qhd-150", "default"], ["uhd-200", "default"], ["fhd", "software"], ["fhd", "no-gpu-raster"], ["fhd", "angle-d3d9"], ["fhd", "angle-gl"], ["fhd", "swiftshader"]], "linux": [["fhd", "default"], ["laptop", "default"], ["laptop-125", "default"], ["qhd-150", "default"], ["fhd", "software"]] },
-    "misha": { "what": "Misha's own machine, every renderer: the one place a real card is in the loop", "win32": [["misha", "default"], ["misha", "angle-d3d11"], ["misha", "angle-d3d9"], ["misha", "angle-gl"], ["misha", "angle-vulkan"], ["misha", "no-gpu-raster"], ["misha", "no-compositing"], ["misha", "unlimited-fps"], ["misha", "software"]] }
+    "misha": { "what": "Misha's own machine, every renderer: the one place a real card is in the loop", "win32": [["misha", "default"], ["misha", "angle-d3d11"], ["misha", "angle-d3d9"], ["misha", "angle-gl"], ["misha", "angle-vulkan"], ["misha", "no-gpu-raster"], ["misha", "no-compositing"], ["misha", "software"]] }
   }
 }

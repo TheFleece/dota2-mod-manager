@@ -319,10 +319,14 @@ reaches the graphics card), both listed in `tools/sim/profiles.json`. Scenarios 
 window with real input events and check what a person would see: `scroll` flicks through the
 463 hero mods, then compares each resting frame with a forced repaint of it, which is how stale
 tiles on some graphics drivers show up, and checks that the end of the list is inside the window
-and the window inside the screen. `tools/sim/dota.js` is a model of the game's loader, run over
-the sandbox: what it mounts, which pack wins each file, whether our packs' bytes match their CRCs,
-and whether the item schema points at files the game can load. `npm run sim` runs the set for
-this system and writes `e2e-output/sim/index.html`.
+and the window inside the screen. `browse` visits every section, category, the search and the mod
+window. `mods` installs seven real mods from their cards, reorders two that replace the same file,
+switches them off and removes them. `game-session` plays the game starting, quitting and being
+updated or checked by Steam (`tools/sim/world.js`). `tools/sim/dota.js` is a model of the game's
+loader, run over the sandbox after each step: what it mounts, which pack wins each file, whether
+our packs' bytes match their CRCs, and whether the item schema points at files the game can load.
+Every scenario also fails on an error in the page's console. `npm run sim` runs the set for this
+system and writes `e2e-output/sim/index.html`.
 
 ## On disk
 

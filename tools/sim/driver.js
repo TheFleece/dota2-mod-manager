@@ -58,6 +58,17 @@ class Sim {
     const [cw] = this.win.getContentSize();
     this.scale = cw / (await this.js('window.innerWidth'));
     await this.until(`document.querySelector('.rail-item[data-cat]')`, 30000);
+    // every scenario starts where the app opens: on the catalog, with no window over it,
+    // whatever the one before it left on screen
+    if (await this.js(`!document.getElementById('modalOverlay').classList.contains('hidden')`)) {
+      await this.key('Escape');
+      await this.until(`document.getElementById('modalOverlay').classList.contains('hidden')`, 3000);
+    }
+    if (await this.js(`document.querySelector('.tb-tab.active')?.dataset.view !== 'catalog'`)) {
+      await this.click('.tb-tab[data-view="catalog"]');
+      await this.until(`document.querySelector('.tb-tab.active')?.dataset.view === 'catalog'
+        && !document.documentElement.classList.contains('vt-screen')`, 8000);
+    }
     const blocking = await this.js(`[...document.querySelectorAll('.confirm-overlay, .lang-pick-overlay')].map((d) => d.textContent.trim().slice(0, 80))`);
     this.check('the window opens on the catalog with nothing in front of it', !blocking.length, blocking.join(' | '));
     return { scale: this.scale };
@@ -75,13 +86,14 @@ class Sim {
 
   /**
    * A selector's centre in window pixels, or null. "sel@3" is the third match. An element
-   * scrolled out of sight is scrolled to first, as a hand would before clicking it: a click at
+   * scrolled out of sight, or covered (a toast lies over the bottom of the list after every
+   * install), is scrolled to the middle first, as a hand would before clicking it: a click at
    * its coordinates would otherwise land on whatever is drawn there instead.
    */
   async find(spec) {
     const at = /@(\d+)$/.exec(spec);
     const sel = at ? spec.slice(0, -at[0].length) : spec;
-    const box = await this.js(`(() => {
+    const box = await this.js(`(async () => {
       const el = document.querySelectorAll(${JSON.stringify(sel)})[${at ? Number(at[1]) - 1 : 0}];
       if (!el) return null;
       const seen = (r) => {
@@ -90,8 +102,20 @@ class Sim {
       };
       let b = el.getBoundingClientRect();
       if ((b.width || b.height) && !seen(b)) {
-        el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+        el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+      }
+      // Cards off screen are drawn lazily (content-visibility), so the ones scrolled past take
+      // their real height over the next frames and the target drifts, by up to 60 px on Heroes.
+      // A hand waits for the page to stop moving; so does this, for up to half a second.
+      // bounded: a page that stops producing frames must fail a check, not hang the run
+      const frame = () => new Promise((r) => { requestAnimationFrame(() => r(undefined)); setTimeout(r, 100); });
+      for (let i = 0, last = ''; i < 30; i++) {
+        await frame();
         b = el.getBoundingClientRect();
+        const now = [b.left, b.top, b.width, b.height].map(Math.round).join();
+        if (now === last) break;
+        last = now;
+        if (!seen(b)) el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
       }
       return b.width || b.height ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : null;
     })()`);
@@ -112,12 +136,29 @@ class Sim {
   }
 
   async click(spec) {
-    const p = await this.find(spec);
+    let p = await this.find(spec);
     if (!p) return false;
     await this.move(p.x, p.y);
+    // looked at again with the pointer on it, since moving there takes a tenth of a second
+    const again = await this.find(spec);
+    if (again && Math.hypot(again.x - p.x, again.y - p.y) > 2) {
+      p = again;
+      await this.move(p.x, p.y, 2);
+    }
     this.win.webContents.sendInputEvent({ type: 'mouseDown', x: p.x, y: p.y, button: 'left', clickCount: 1 });
     await sleep(60);
     this.win.webContents.sendInputEvent({ type: 'mouseUp', x: p.x, y: p.y, button: 'left', clickCount: 1 });
+    return true;
+  }
+
+  /** The right button, which is where the app keeps its rare actions (ui/menu.js). */
+  async rightClick(spec) {
+    const p = await this.find(spec);
+    if (!p) return false;
+    await this.move(p.x, p.y);
+    this.win.webContents.sendInputEvent({ type: 'mouseDown', x: p.x, y: p.y, button: 'right', clickCount: 1 });
+    await sleep(60);
+    this.win.webContents.sendInputEvent({ type: 'mouseUp', x: p.x, y: p.y, button: 'right', clickCount: 1 });
     return true;
   }
 
