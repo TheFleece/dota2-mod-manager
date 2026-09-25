@@ -1938,7 +1938,7 @@ so it only happens when something it depends on changed: the game's settings, it
 or any pak in the language folder.
 
 ```
-@param {{ gamePath: () => string|null, langDir: () => string, diag: (msg: string) => void }} ctx
+@param {{ gamePath: () => string|null, langDir: () => string, diag: (msg: string) => void, retryMs?: number }} ctx
 ```
 
 ## src/notice-texts.js

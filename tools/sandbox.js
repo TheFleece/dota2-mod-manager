@@ -210,6 +210,25 @@ function builderAssets(real, schemaText) {
   return out;
 }
 
+/* The chat file of every language the game ships, which src/notice-text.js builds the
+ * anti-cheat notice on. Under half a kilobyte each. */
+function noticeAssets(real) {
+  const { openVpkIndex } = require('../src/vpk.js');
+  const { DOTA_LANGUAGES } = require('../src/gamelang.js');
+  const out = [];
+  try {
+    const ix = openVpkIndex(path.join(real, 'dota', 'pak01_dir.vpk'));
+    for (const lang of DOTA_LANGUAGES) {
+      const rel = `resource/localization/chat_${lang}.txt`;
+      const data = ix.read(rel);
+      if (data) out.push(entry(rel, data));
+    }
+  } catch (e) {
+    log('  could not copy the chat files:', e.message);
+  }
+  return out;
+}
+
 /** One inline-data VPK entry in the shape buildVpk() wants. */
 function entry(relPath, data) {
   const norm = relPath.replace(/\\/g, '/').toLowerCase();
@@ -324,13 +343,13 @@ function buildGameTree() {
       log('  could not read the real schema, using the stub:', e.message);
     }
   }
-  const extras = real && origin !== 'fallback stub' ? builderAssets(real, schema) : [];
+  const extras = real && origin !== 'fallback stub' ? [...builderAssets(real, schema), ...noticeAssets(real)] : [];
   fs.writeFileSync(
     path.join(GAME, 'dota', 'pak01_dir.vpk'),
     buildVpk([entry(SCHEMA_REL, Buffer.from(schema, 'latin1')), ...extras])
   );
   log(`  items_game.txt from ${origin}`);
-  if (extras.length) log(`  ${extras.length} files for the item builder (portraits, sample wearables, effects)`);
+  if (extras.length) log(`  ${extras.length} files for the item builder and the anti-cheat notice (portraits, sample wearables, effects, chat files)`);
 
   // dota_russian: Valve's gameinfo plus stand-ins for the voice paks. langFolders() decides
   // "this folder holds Valve content" by the presence of pak01_*, and the 2.0 feature

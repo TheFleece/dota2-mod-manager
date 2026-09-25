@@ -199,7 +199,7 @@ function applyNotice({ gamePath, langDir }) {
  * The notice kept current from a place that runs often. Rebuilding reads the game's 23 MB index,
  * so it only happens when something it depends on changed: the game's settings, its main pak,
  * or any pak in the language folder.
- * @param {{ gamePath: () => string|null, langDir: () => string, diag: (msg: string) => void }} ctx
+ * @param {{ gamePath: () => string|null, langDir: () => string, diag: (msg: string) => void, retryMs?: number }} ctx
  */
 function createNoticeText({ gamePath, langDir, diag, retryMs = 60_000 }) {
   let lastKey = null;
