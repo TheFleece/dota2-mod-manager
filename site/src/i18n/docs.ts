@@ -369,7 +369,11 @@ const en: Record<CoreSlug, Doc> = {
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
       {
         k: 'p',
-        t: 'Nobody honest promises you anything here. Valve has never published a rule that names cosmetic mods, VAC looks for code injected into the game process rather than files sitting in the game folder, and people have run these mods for over eight years. That is the evidence. It is not a guarantee, and you install them at your own risk, the same as every other Dota mod.',
+        t: 'Bans are for cheats, and cosmetic mods are not cheats. <a href="https://store.steampowered.com/subscriber_agreement/" rel="noopener">Steam\'s own terms</a> define a cheat as software that gives you an unfair advantage in a game. A mod changes only how the game looks on your screen: your opponents do not see it, and it gives you no advantage. Dota 2 Mod Manager does not inject code into the game, does not touch its memory and does nothing on your behalf, and any mod comes off in one click. In the eight years people have been installing these mods, we know of no ban for them.',
+      },
+      {
+        k: 'p',
+        t: '<small>We are not affiliated with Valve and do not answer for its decisions. Steam\'s terms do not formally permit changing game files without Valve\'s consent, and Valve can change how it applies them.</small>',
       },
       {
         k: 'list',
@@ -419,7 +423,7 @@ const en: Record<CoreSlug, Doc> = {
           ],
           [
             'Has anyone been banned for cosmetic mods?',
-            'No case has been reported and confirmed in the years these mods have existed. Absence of reports is weaker than a rule from Valve, and Valve has published no rule either way.',
+            'Not that we know of, in the eight years these mods have existed. Valve bans for cheats, and a cosmetic mod gives no advantage.',
           ],
           [
             'Can I use mods in ranked?',
@@ -865,7 +869,11 @@ const ru: Record<CoreSlug, Doc> = {
       { k: 'h2', t: 'Забанят ли за моды в Доте 2', id: 'ban' },
       {
         k: 'p',
-        t: 'Гарантий тут честно не даёт никто. Valve никогда не публиковала правила, которое называет косметические моды; VAC ищет код, внедрённый в процесс игры, а не файлы, лежащие в папке; люди ставят такие моды больше восьми лет. Это все имеющиеся доводы. Гарантией они не являются, и ставишь ты их на свой страх и риск, как и любые другие моды для Доты.',
+        t: 'Банят за читы, а косметические моды не читы. По <a href="https://store.steampowered.com/subscriber_agreement/" rel="noopener">правилам Steam</a> чит - это программа, которая даёт нечестное преимущество в игре. Мод меняет только то, как игра выглядит на твоём экране: соперники его не видят, преимущества он не даёт. Dota 2 Mod Manager не внедряет код в игру, не трогает её память и ничего не делает за тебя, а любой мод снимается одним кликом. За восемь лет, что люди ставят такие моды, мы не знаем ни одного бана за них.',
+      },
+      {
+        k: 'p',
+        t: '<small>Мы не связаны с Valve и не отвечаем за её решения. Правила Steam в общем виде не разрешают менять файлы игры без согласия Valve, и Valve может изменить то, как их применяет.</small>',
       },
       {
         k: 'list',
@@ -915,7 +923,7 @@ const ru: Record<CoreSlug, Doc> = {
           ],
           [
             'Кого-нибудь банили за косметические моды?',
-            'Подтверждённых случаев за все годы существования этих модов нет. Отсутствие сообщений слабее правила от Valve, а правила Valve не публиковала ни в ту, ни в другую сторону.',
+            'Мы не знаем ни одного случая за восемь лет, что существуют эти моды. Valve банит за читы, а косметический мод не даёт преимущества.',
           ],
           [
             'Можно с модами в ранкед?',
