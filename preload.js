@@ -21,10 +21,12 @@ contextBridge.exposeInMainWorld('api', {
   },
   catalog: {
     load: (force) => ipcRenderer.invoke('catalog:load', force),
+    terrainAges: () => ipcRenderer.invoke('catalog:terrainAges'),
   },
   mods: {
     install: (payload) => ipcRenderer.invoke('mods:install', payload),
     list: () => ipcRenderer.invoke('mods:list'),
+    switchOffStaleTerrains: () => ipcRenderer.invoke('mods:switchOffStaleTerrains'),
     setEnabled: (id, enabled) => ipcRenderer.invoke('mods:setEnabled', id, enabled),
     remove: (id) => ipcRenderer.invoke('mods:remove', id),
     // a selection at once: one rebuild of the item schema for the batch, not one per mod

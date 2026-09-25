@@ -382,6 +382,12 @@
 .card-meta-split { flex-wrap: nowrap; justify-content: space-between; }
 .card-pills { display: flex; gap: 5px; min-width: 0; }
 .card-meta-split .mtag { backdrop-filter: none; background: var(--surface); }
+/* a whole-map terrain built for an older map than the game's: read over the picture */
+.mtag.warn {
+  color: var(--warning);
+  background: rgba(40, 30, 6, 0.78);
+  border-color: rgba(251, 191, 36, 0.45);
+}
 .card-meta-split .mtag.danger {
   color: var(--warning);
   background: rgba(251, 191, 36, 0.11);

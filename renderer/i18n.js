@@ -165,6 +165,11 @@ const EN = {
   '{0} из {1}': '{0} of {1}',
   '{0} из {1} {2}': '{0} of {1} {2}',
   'Надеть весь набор': 'Equip the whole set',
+  'старая карта': 'old map',
+  'Ландшафт собран под карту старше той, что сейчас в игре. С ним могут пропасть деревья, упасть FPS и заблокироваться поиск матча, пока автор его не обновит.':
+    'This terrain was built for an older map than the one in the game. Until its author updates it, it can remove trees, cost frames and get matchmaking refused.',
+  'Выключено: {0}. Игра обновила карту, а этот ландшафт собран под прежнюю: с ним пропадают деревья и может не работать поиск матча.':
+    'Switched off: {0}. The game updated its map, and this terrain was built for the old one: with it the trees go missing and matchmaking may refuse you.',
   'Ничего не найдено. Очисти поиск': 'Nothing found. Clear the search',
   'Изменено {0} из {1}': 'Changed {0} of {1}',
   'Надето {0} из {1} {2}': 'Equipped {0} of {1} {2}',

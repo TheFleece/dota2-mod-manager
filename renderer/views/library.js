@@ -16,6 +16,7 @@ import { registerView, render, pane } from '../core/router.js';
 import { matchLabel, applyInstalled, refreshInstalledIndex } from '../core/installed.js';
 import { catName, catIcon } from '../core/categories.js';
 import { isCursorRec, isFontRec, isCosmeticRec, isPackableRec, effectNames } from '../core/records.js';
+import { staleMapTagHtml } from '../core/terrain-age.js';
 import { minifyNotice } from '../core/minify-notice.js';
 import { esc, fmtMB, plural } from '../ui/format.js';
 import { toast } from '../ui/toast.js';
@@ -210,7 +211,7 @@ function normalRowHtml(rec, i, masterOff) {
         ? `<div class="lib-thumb" data-name="${esc(rec.name)}"><span class="ms thumb-glyph">${catIcon(COSMETIC_PREFIX + rec.slot)}</span></div>`
         : libThumbHtml(rec, 'lib-thumb')}
       <div class="lib-info">
-        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}${coveredTagHtml(rec)}</div>
+        <div class="lib-name">${esc(rec.name)}${rec.styleLabel ? ` <span class="lib-style-label">(${esc(rec.styleLabel)})</span>` : ''}${rec.match ? ` <span class="lib-tag match">${esc(matchLabel(rec.match))}</span>` : rec.info ? ` <span class="lib-tag">${esc(rec.info)}</span>` : ''}${schemaTagHtml(rec)}${coveredTagHtml(rec)}${staleMapTagHtml(rec)}</div>
         <div class="lib-meta"><span>${esc(catLabel)}</span>${pakFileHtml(rec)}</div>
       </div>
       <div class="lib-actions">

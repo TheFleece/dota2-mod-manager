@@ -20,6 +20,7 @@ import { toast } from './ui/toast.js';
 import { watchMedia } from './ui/media.js';
 import { render, switchView, invalidateViews } from './core/router.js';
 import { refreshInstalledIndex, refreshCosmeticSlots } from './core/installed.js';
+import { switchOffStaleTerrains } from './core/terrain-age.js';
 import { refreshPatchState, paintMasterSwitch, refreshMasterSwitch, refreshSidebarStatus } from './ui/statusbar.js';
 import { applyContentZoom, readPanels, bindPanels } from './ui/chrome.js';
 import { applyStaticI18n, showLanguagePicker } from './ui/language.js';
@@ -348,6 +349,8 @@ window.api.update.onUpdate((evt) => {
 // let it speak; anywhere else a toast, because a patch that ate the mods is news wherever
 // you happen to be standing.
 window.api.patch.onRepair((st) => {
+  // an update can change the map under a whole-map terrain (renderer/core/terrain-age.js)
+  if (st.state === 'done') switchOffStaleTerrains().then((off) => { if (off.length && state.view === 'library') render(); });
   if (state.view === 'library') { render(); return; }
   if (st.state === 'waiting') toast(L`Dota обновилась — вернём моды, как только закроешь игру`, 'warn', 8000);
   else if (st.state === 'failed') toast(L`Dota обновилась, вернуть моды не вышло — загляни в «Мои моды»`, 'error', 8000);
@@ -393,6 +396,7 @@ window.api.patch.onRepair((st) => {
   await refreshSidebarStatus();
   await refreshMasterSwitch();
   await refreshPatchState();
+  await switchOffStaleTerrains();
   await refreshInstalledIndex();
   await refreshCosmeticSlots();
   await loadCatalog();

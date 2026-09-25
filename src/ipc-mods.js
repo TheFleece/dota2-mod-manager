@@ -10,6 +10,9 @@ const path = require('path');
 const { dialog, ipcMain } = require('electron');
 
 const { t } = require('./i18n');
+const { fetchMirrored } = require('./net');
+const { RAW_BASE } = require('./catalog');
+const { createTerrainAges, TAIL_BYTES } = require('./terrain-age');
 
 /** @param {object} ctx  the services and main-process callbacks these channels use */
 function registerModsIpc({
@@ -18,6 +21,19 @@ function registerModsIpc({
   // `win` arrives as a getter, not as the window. These are registered before the window
   // is created, so a value captured here would be undefined forever - which is exactly
   // what win:isMaximized did on the first run after this file was split out.
+
+  // whole-map terrains against the game's own map (src/terrain-age.js)
+  const terrainAges = createTerrainAges({
+    downloadsDir: installer.downloadsDir,
+    gamePath: () => (installer.getGamePath ? installer.getGamePath() : null),
+    storeFile: installer.downloadsDir && path.join(path.dirname(installer.downloadsDir), 'terrain-ages.json'),
+    fetchTail: async (categoryId, file) => {
+      const url = `${RAW_BASE}/assets/files/${categoryId}/${encodeURIComponent(file)}`; // as installer.js fileUrl
+      const res = await fetchMirrored(url, { headers: { Range: `bytes=-${TAIL_BYTES}` } });
+      return res.ok ? Buffer.from(await res.arrayBuffer()) : null;
+    },
+  });
+  const switchOff = (rec) => { installer.setEnabled(rec.files, false, rec.id); library.setEnabled(rec.id, false); };
   ipcMain.handle('mods:install', async (e, payload) => {
     // payload: { categoryId, name, styleLabel, fileRef, preview }
     const stop = blocked('install');
@@ -34,6 +50,9 @@ function registerModsIpc({
         fileRef: payload.fileRef,
       });
       const rec = library.add({ ...payload, files });
+      // a whole-map terrain keeps the date its map was built, while the archive is at hand
+      const mapBuiltAt = terrainAges.builtAtOf(rec);
+      if (Number.isFinite(mapBuiltAt)) library.update(rec.id, { mapBuiltAt });
       // lift any item-schema changes out of the mod and rebuild the schema pak
       const harvest = schemaService.harvest(rec);
       if (harvest && harvest.deltas) schemaService.refresh();
@@ -201,6 +220,17 @@ function registerModsIpc({
     } catch { /* no game path — nothing is mounted, nothing covers anything */ }
     external = external.map((f) => (covered.has(f.key) ? { ...f, coveredBy: covered.get(f.key) } : f));
 
+    // a whole-map terrain built for an older map than the game's: marked on its row, and its
+    // build date kept on the record once found, so a cleared download cache does not lose it
+    let terrains = new Map();
+    try {
+      terrains = terrainAges.forRecords(installed);
+      for (const [id, a] of terrains) {
+        const rec = library.find(id);
+        if (rec && Number.isFinite(a.builtAt) && rec.mapBuiltAt !== a.builtAt) library.update(id, { mapBuiltAt: a.builtAt });
+      }
+    } catch { /* no game path */ }
+
     let slots = 0;
     try { slots = installer.usedModSlots(); } catch { /* no game path */ }
     /* Leave a note on disk saying which files here are ours. This handler already reconciles
@@ -220,11 +250,33 @@ function registerModsIpc({
     const listed = installed.map((rec) => {
       const by = covered.get(rec.id);
       const zone = installer.zoneFor(rec.categoryId);
-      if (!Array.isArray(rec.schema)) return { ...rec, zone, ...(by ? { coveredBy: by } : {}) };
+      const staleMap = !!terrains.get(rec.id)?.stale;
+      if (!Array.isArray(rec.schema)) return { ...rec, zone, staleMap, ...(by ? { coveredBy: by } : {}) };
       const { schema, ...rest } = rec;
-      return { ...rest, zone, schemaCount: schema.length, schemaLive: schemaOn, ...(by ? { coveredBy: by } : {}) };
+      return { ...rest, zone, staleMap, schemaCount: schema.length, schemaLive: schemaOn, ...(by ? { coveredBy: by } : {}) };
     });
     return { installed: listed, external, slots, slotCeil: 98, verifyStuck: verifyStuck() };
+  });
+
+  /* Once per map the game has: a whole-map terrain older than it goes off, and the window says
+   * which. Asked at start and after the game updates (renderer/core/terrain-age.js). */
+  ipcMain.handle('mods:switchOffStaleTerrains', () => {
+    try {
+      return { names: terrainAges.switchOffStale(library.list(), switchOff) };
+    } catch (err) {
+      return { names: [], error: String(err.message || err) };
+    }
+  });
+
+  // When each whole-map terrain in the catalog was built, for the mark on its card.
+  ipcMain.handle('catalog:terrainAges', async () => {
+    try {
+      const c = await catalog.load();
+      const terrains = (c.mods && (c.mods.modsData || c.mods).terrains) || [];
+      return await terrainAges.forCatalog(terrains, (file) => catalog.publishedHash('terrains', file));
+    } catch (err) {
+      return { mapAt: null, ages: {}, stale: {}, error: String(err.message || err) };
+    }
   });
 }
 

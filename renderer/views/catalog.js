@@ -32,6 +32,7 @@ import { refreshNotices, noticeBannerHtml, bindNotice } from '../ui/notice.js';
 import { bindItemBuilder, itemRailHtml, isItemCosmeticSlot, cosmeticFavValue, renderItemCosmeticHub, refreshItemHub,
   forgetItemHub, forgetItemSlotModal, redrawItemSlotModal, openItemSlotModal } from './item-builder.js';
 import { heroOf, heroMatches, heroGridWanted, renderHeroGrid, heroBackHtml, layoutToggleHtml, bindHeroControls } from './hero-grid.js';
+import { staleTerrainPillHtml } from '../core/terrain-age.js';
 
 const viewRoot = pane('catalog');
 
@@ -607,9 +608,7 @@ async function renderCategory(categoryId) {
   const grouped = (isGrouped(categoryId) || byHero) && !filters.group && !filters.hero && filters.sort === 'default';
   // hero groups are ours rather than the catalog's, so the order is ours to make: A-Z, with
   // the mod that names no hero at the end rather than in the middle of the alphabet
-  if (grouped && byHero) {
-    mods.sort((a, b) => (a._group ? 0 : 1) - (b._group ? 0 : 1) || a._group.localeCompare(b._group));
-  }
+  if (grouped && byHero) mods.sort((a, b) => (a._group ? 0 : 1) - (b._group ? 0 : 1) || a._group.localeCompare(b._group));
 
   let gridHtml = '';
   if (!mods.length) {
@@ -836,9 +835,7 @@ function toolMetaHtml(m, installed) {
   // red instead of calling it a guide, and it is the one thing worth reading before a download
   const unsafe = m.guideId === 'warning';
   const pills = [];
-  if (!unsafe && (m.links || []).some((l) => l.type === 'source-code')) {
-    pills.push(`<span class="mtag soft">${L`Исходники`}</span>`);
-  }
+  if (!unsafe && (m.links || []).some((l) => l.type === 'source-code')) pills.push(`<span class="mtag soft">${L`Исходники`}</span>`);
   if (unsafe) pills.push(`<span class="mtag danger">${L`Небезопасно`}</span>`);
   else if (m.guideId && state.catalog?.guides?.[m.guideId]) pills.push(`<span class="mtag soft">${L`Гайд`}</span>`);
 
@@ -900,7 +897,7 @@ function cardMediaHtml(cat, m) {
         <span class="ms">play_arrow</span>${L`Превью`}
       </button>` : ''}
     <div class="media-tags" style="--looks:${looks}">
-      ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}
+      ${isPack ? `<span class="mtag">${L`Пак`}</span>` : ''}${staleTerrainPillHtml(cat, m)}
       ${m._custom ? `<span class="mtag custom">${L`Свой`}</span>` : ''}
       ${external ? `<span class="mtag">${L`Ссылка`}</span>` : ''}
       ${tags.map((t) => `<span class="mtag soft">${esc(tagLabel(cat, t))}</span>`).join('')}
