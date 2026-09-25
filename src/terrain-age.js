@@ -80,10 +80,10 @@ function mapTimeInZip(buf) {
 function mapTimeInArchive(file) {
   let fd = null;
   try {
-    const size = fs.statSync(file).size;
+    fd = fs.openSync(file, 'r');
+    const size = fs.fstatSync(fd).size; // the open file, not the path again (js/file-system-race)
     const len = Math.min(size, TAIL_BYTES);
     const buf = Buffer.alloc(len);
-    fd = fs.openSync(file, 'r');
     fs.readSync(fd, buf, 0, len, size - len);
     return mapTimeInZip(buf);
   } catch {
