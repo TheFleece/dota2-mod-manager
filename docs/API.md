@@ -52,6 +52,7 @@ the code, not in this page.
 | [`src/settings.js`](#srcsettingsjs) | Simple JSON settings store in userData |
 | [`src/slot-zones.js`](#srcslot-zonesjs) | The load order in two parts. |
 | [`src/steam.js`](#srcsteamjs) | Finding Steam, and then finding Dota inside it. |
+| [`src/terrain-age.js`](#srcterrain-agejs) | Terrains that replace the whole map, and whether the game's own map has moved on since. |
 | [`src/toolchain.js`](#srctoolchainjs) | Tools the app can borrow, fetched only when something actually needs them. |
 | [`src/uninstall-args.js`](#srcuninstall-argsjs) | Whether this run of the app is the uninstaller asking what to take along. |
 | [`src/updater.js`](#srcupdaterjs) | Where an installed copy looks for a new version, and on which channel. |
@@ -3181,6 +3182,100 @@ function steamappsDir(lib)
 
 Steam spelled it SteamApps for years and steamapps after that. Windows does not care and
 Linux does, so the folder that is actually on disk decides.
+
+## src/terrain-age.js
+
+Terrains that replace the whole map, and whether the game's own map has moved on since.
+
+A terrain in the catalog is one of two things. Most are paks that recolour the ground and leave
+the map alone. The rest, the TI and Dota+ ones among them, are a whole map: they install as
+<language>\maps\dota.vpk, and the game loads that file instead of its own. Such a map is Valve's
+as it was on the day it was built, and when Valve changes the map the old copy keeps being
+served. On 2026-09-23 a player got a map with no trees, a third of the frame rate and
+matchmaking refused (issue #122), from a Dota+ Autumn built on 19 August over a map Valve had
+updated on 3 September.
+
+Nothing inside a map pack says which build of the map it was made from, so the date its file
+carries in the archive stands in for it. A terrain built before the game's current map is
+marked, in the catalog and in My mods, and switched off once when the game's map changes.
+
+### `MAP_REL`
+
+```js
+const MAP_REL = 'maps/dota.vpk'
+```
+
+Where a whole-map terrain puts its map, under the language folder.
+
+### `TAIL_BYTES`
+
+```js
+const TAIL_BYTES = 64 * 1024
+```
+
+The end of a zip holds its table of contents. A terrain archive has two or three files, so
+ the table is a few hundred bytes; this much reaches it even behind a long archive comment.
+
+### `mapFileOf`
+
+```js
+function mapFileOf(rec)
+```
+
+The record's map file, when the record is a whole-map terrain.
+
+### `gameMapTime`
+
+```js
+function gameMapTime(gamePath)
+```
+
+When Steam last wrote the game's own map, or null with no game or no map.
+
+### `mapTimeInZip`
+
+```js
+function mapTimeInZip(buf)
+```
+
+When the map inside a zip was packed, read from the zip's table of contents, which sits at the
+end: `buf` may be the whole archive or only its last bytes. null when there is no map in it or
+the bytes are not a zip.
+
+```
+@param {Buffer} buf
+```
+
+### `mapTimeInArchive`
+
+```js
+function mapTimeInArchive(file)
+```
+
+The same, for an archive on disk: only its tail is read.
+
+### `isStale`
+
+```js
+function isStale(builtAt, mapAt)
+```
+
+Built for a map older than the one the game has. Unknown either way is not old.
+
+### `createTerrainAges`
+
+```js
+function createTerrainAges({ downloadsDir, gamePath, storeFile, fetchTail = async () => null })
+```
+
+```
+@param {object} deps
+@param {string} [deps.downloadsDir]       where downloaded archives are kept, <category>/<file>
+@param {() => string|null} deps.gamePath
+@param {string} [deps.storeFile]          a small JSON file of what has been worked out
+@param {(categoryId: string, fileRef: string) => Promise<Buffer|null>} [deps.fetchTail]
+the last bytes of a catalog archive, for a terrain nobody has downloaded yet
+```
 
 ## src/toolchain.js
 
