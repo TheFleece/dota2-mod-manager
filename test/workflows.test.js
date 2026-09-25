@@ -169,6 +169,24 @@ test('a beta tag is published as a prerelease, and never as the latest release',
   assert.match(yml, /is a beta - installed copies follow that endpoint/, 'nothing checks that the stable endpoint was left alone');
 });
 
+test('a beta goes out with the feed its testers read', () => {
+  /* electron-builder writes latest.yml and latest-linux.yml for a beta too, and a tester reads
+     beta.yml. v2.8.0-beta.1 was published without it: the check after publishing caught it, and
+     not one tester was offered the build. The publish job now copies the feed under the beta
+     names, between taking the draft out and checking it. */
+  const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
+  const publish = jobs.find((j) => j.startsWith('publish:')) || '';
+  const at = (s) => publish.indexOf(s);
+  const copy = at('- name: Give a beta the feed its testers read');
+  assert.ok(copy > 0, 'nothing gives a beta its beta.yml');
+  assert.ok(at('- name: Publish the draft') < copy && copy < at('- name: Check the release is one release'),
+    'the feed is copied before there is a release to copy from, or after the check that wants it');
+  const step = publish.slice(copy, at('- name: Check the release is one release'));
+  assert.match(step, /if: needs\.gate\.outputs\.beta == 'true'/, 'a release would get a second beta feed here as well');
+  assert.match(step, /latest\.yml beta\.yml/);
+  assert.match(step, /latest-linux\.yml beta-linux\.yml/, 'Linux testers would be offered nothing');
+});
+
 test('a beta reaches the mirror in its own folder, and is not announced', () => {
   /* A tester whose GitHub is down needs the second route as much as anybody. What a beta must
      never do is land beside the release: the file names carry no version, so it would replace the

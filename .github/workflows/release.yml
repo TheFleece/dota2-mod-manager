@@ -438,6 +438,25 @@ jobs:
             echo "release $id ($TAG) is public"
           fi
 
+      # electron-builder names the update feed latest.yml whatever the version says, 2.8.0-beta.1
+      # included, and a tester's copy reads beta.yml. So a beta's own feed goes up a second time
+      # under the names the beta channel reads, the way beta-feed does it for a release. The first
+      # beta, v2.8.0-beta.1, came out without them and its testers were offered nothing.
+      - name: Give a beta the feed its testers read
+        if: needs.gate.outputs.beta == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          for pair in "latest.yml beta.yml" "latest-linux.yml beta-linux.yml"; do
+            set -- $pair
+            gh release download "$TAG" --repo "$REPO" --pattern "$1" --output "$2" --clobber
+            gh release upload "$TAG" "$2" --repo "$REPO" --clobber
+            echo "$1 is also on the beta as $2"
+          done
+
       # What broke on 2.2.0 was invisible until somebody looked at the API by hand: the workflow was
       # green, the installer was on a page, and the app could not update. This is that look, taken
       # by the machine once the release is public.
