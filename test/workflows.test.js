@@ -294,17 +294,40 @@ test('CI runs the same gate as a person and the commit hook', () => {
   assert.match(read('test.yml'), /npm run verify/, 'test.yml runs its own list of steps instead of npm run verify');
 });
 
+test('a job with no checkout tells gh which repository it means', () => {
+  /* gh finds the repository in the .git of the working directory, and a job that never checked
+     the code out has none: "fatal: not a git repository". That failed the publish job of 2.7.1
+     and of 2.8.0-beta.1 on its last step, after the release was public, and everything after it
+     was skipped. gh pr takes the pull request's own address, which carries the repository. */
+  const bad = [];
+  for (const f of fs.readdirSync(path.join(ROOT, '.github', 'workflows')).filter((n) => /\.ya?ml$/.test(n))) {
+    const body = read(f).replace(/\r\n/g, '\n').split(/\njobs:\n/)[1] || '';
+    for (const job of body.split(/\n(?= {2}[\w-]+:\n)/)) {
+      if (/uses: actions\/checkout@/.test(job)) continue;
+      const name = (/^\s*([\w-]+):/.exec(job) || [])[1];
+      for (const line of job.split('\n')) {
+        if (/^\s*#/.test(line) || !/\bgh (workflow|release|run|issue|label|secret|variable|cache)\b/.test(line)) continue;
+        if (!/--repo\b|\s-R\s/.test(line)) bad.push(`${f} ${name}: ${line.trim()}`);
+      }
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('\n'));
+});
+
 test('the release asks for the antivirus check by name, because the event never comes', () => {
   /* virustotal.yml listens for `release: published`, and that event is never raised: the release
      is published by a workflow using GITHUB_TOKEN, and GitHub refuses to start workflows from
      events its own token created. On its first chance, 2.7.0, it did not run, and the changelog
      of that release said every release is scanned. */
-  const release = read('release.yml');
-  const publish = release.split(/^  publish:$/m)[1] || '';
-  assert.match(publish, /gh workflow run virustotal\.yml -f tag="\$TAG"/,
-    'publish does not start the antivirus check, and nothing else will');
-  assert.match(publish, /permissions:[\s\S]{0,120}actions: write/,
-    'starting another workflow needs actions: write');
+  const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
+  const job = jobs.find((j) => j.startsWith('antivirus:')) || '';
+  assert.match(job, /gh workflow run virustotal\.yml --repo "\$REPO" -f tag="\$TAG"/,
+    'nothing starts the antivirus check, or it starts it without saying which repository');
+  assert.match(job, /needs: \[gate, publish\]/, 'the check is asked for before there is a release to check');
+  assert.match(job, /permissions:\s*\n\s*actions: write/, 'starting another workflow needs actions: write');
+  // not a step of publish: a failed request there skipped mirror-update and notify on 2.7.1
+  const publish = jobs.find((j) => j.startsWith('publish:')) || '';
+  assert.doesNotMatch(publish, /gh workflow run/, 'a failed request would fail publish and skip the mirror');
   assert.match(read('virustotal.yml'), /workflow_dispatch:[\s\S]{0,200}tag:/,
     'virustotal.yml no longer takes the tag it is asked about');
 });

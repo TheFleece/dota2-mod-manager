@@ -414,7 +414,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
     steps:
       # By id: the tag endpoint does not see a draft, and `gh release edit` sends the tag along with
       # the change, which GitHub refuses whenever a second release shares it.
@@ -505,20 +504,34 @@ jobs:
           done
           echo "one release, it is the latest, and it carries every file the updater and a person checking a download read"
 
-      # The antivirus check, asked for by name.
-      #
-      # virustotal.yml listens for `release: published` as well, and that event never comes: this
-      # release was published by a workflow using GITHUB_TOKEN, and GitHub refuses to start
-      # workflows from events its own token created. So the file sat there active and correct, and
-      # on its first chance, 2.7.0, it did not run: the release was public with a changelog saying
-      # every release is scanned. A dispatch is an API call rather than an event, so it runs.
+  # The antivirus check, asked for by name.
+  #
+  # virustotal.yml listens for `release: published` as well, and that event never comes: this
+  # release was published by a workflow using GITHUB_TOKEN, and GitHub refuses to start
+  # workflows from events its own token created. So the file sat there active and correct, and
+  # on its first chance, 2.7.0, it did not run: the release was public with a changelog saying
+  # every release is scanned. A dispatch is an API call rather than an event, so it runs.
+  #
+  # A job of its own, after publish. It used to be the last step of publish, where it failed on
+  # 2.7.1 and 2.8.0-beta.1 alike: there is no checkout there, and gh looks for the repository in a
+  # .git that is not there unless it is told. A failed step failed publish, so mirror-update,
+  # beta-feed and notify were skipped, and the release that was already public reached neither the
+  # mirror nor Discord. Here a failed request is a red job and nothing more.
+  antivirus:
+    needs: [gate, publish]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
       - name: Ask for the antivirus check on this tag
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh workflow run virustotal.yml -f tag="$TAG"
+          gh workflow run virustotal.yml --repo "$REPO" -f tag="$TAG"
           echo "asked VirusTotal to look at $TAG"
 
   # A second place to get the update from.

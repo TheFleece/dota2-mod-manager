@@ -23,6 +23,7 @@ The tag starts `.github/workflows/release.yml`:
 | `try-linux` | Downloads the AppImage from the draft, checks it against `SHA256SUMS`, unpacks it, and runs `tools/e2e.mjs` against it | the maintainer |
 | `publish` | Takes the release out of draft, then checks it is the latest and carries every file the updater reads | everybody |
 | `beta-feed` | Uploads the release's own `latest.yml` and `latest-linux.yml` a second time as `beta.yml` and `beta-linux.yml`, so the beta channel points at this release too | everybody |
+| `antivirus` | Asks `virustotal.yml` to scan the release and put the verdict in its notes | everybody |
 | `mirror-update` | Copies the release to the update mirror | everybody |
 | `notify` | Posts the changelog section to Discord | everybody |
 
