@@ -168,12 +168,14 @@ test('the pak slots Minify writes are never handed to one of our mods', () => {
   });
   const used = new Set();
   const handed = [];
-  for (let i = 0; i < 66; i++) handed.push(installer.allocatePak(used, false));
+  // 30-98, less Minify's three and the app's own pak64 (src/notice-text.js)
+  for (let i = 0; i < 65; i++) handed.push(installer.allocatePak(used, false));
   for (const n of [65, 66, 67, 99]) {
     assert.equal(handed.includes(`pak${n}_dir.vpk`), false, `pak${n} belongs to Minify`);
   }
+  assert.equal(handed.includes('pak64_dir.vpk'), false, 'pak64 is the app\'s own');
   // and everything either side of them is still offered, so nothing else was lost
-  for (const n of [64, 68, 30, 98]) {
+  for (const n of [63, 68, 30, 98]) {
     assert.equal(handed.includes(`pak${n}_dir.vpk`), true, `pak${n} should still be available`);
   }
 });

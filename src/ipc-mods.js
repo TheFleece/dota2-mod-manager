@@ -13,6 +13,8 @@ const { t } = require('./i18n');
 const { fetchMirrored } = require('./net');
 const { RAW_BASE } = require('./catalog');
 const { createTerrainAges, TAIL_BYTES } = require('./terrain-age');
+const { createNoticeText } = require('./notice-text');
+const zones = require('./slot-zones');
 
 /** @param {object} ctx  the services and main-process callbacks these channels use */
 function registerModsIpc({
@@ -34,6 +36,8 @@ function registerModsIpc({
     },
   });
   const switchOff = (rec) => { installer.setEnabled(rec.files, false, rec.id); library.setEnabled(rec.id, false); };
+  // the anti-cheat notice in plain words (src/notice-text.js)
+  const notice = createNoticeText({ gamePath: () => (installer.getGamePath ? installer.getGamePath() : null), langDir: () => installer.langFolder(), diag });
   ipcMain.handle('mods:install', async (e, payload) => {
     // payload: { categoryId, name, styleLabel, fileRef, preview }
     const stop = blocked('install');
@@ -141,6 +145,8 @@ function registerModsIpc({
   ipcMain.handle('mods:importBuffers', (e, items) => importVpkBuffers(items));
 
   ipcMain.handle('mods:list', () => {
+    // a mod still on the slot the notice text took moves off it (src/slot-zones.js)
+    try { if (zones.vacateAppPak(installer, library)) diag('a mod moved off the notice slot'); } catch (err) { diag(`notice slot not freed: ${err.message}`); }
     // folder sync: a mod deleted straight from the game folder drops out of the library
     try {
       for (const rec of [...library.list()]) {
@@ -237,7 +243,11 @@ function registerModsIpc({
      * the library against the folder and the renderer re-lists after every install, toggle,
      * preset and bulk action, so it is the one place that keeps the note honest without
      * hooking a dozen handlers - the same reason refreshPresence() sits here. */
-    try { installer.writeOwnership(library.knownLangRelPaths()); } catch (err) { diag(`ownership note skipped: ${err.message}`); }
+    try { installer.writeOwnership([...library.knownLangRelPaths(), ...notice.ownedFiles()]); } catch (err) { diag(`ownership note skipped: ${err.message}`); }
+    // The anti-cheat notice in plain words (src/notice-text.js), kept current from here for the
+    // same reason. After the reply: a rebuild reads the game's own index, and the list is what
+    // the screen is waiting for.
+    setImmediate(() => notice.refresh());
     // the renderer re-lists after every install, toggle, preset and bulk action, so this is
     // the one place that keeps the Discord status honest without hooking a dozen handlers
     refreshPresence();
