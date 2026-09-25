@@ -151,7 +151,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
           'It does not change the game rules and gives you no advantage. The mods are what you see on your own screen; nobody else in the match sees them.',
           'It does not touch your Steam account, and never asks for a password or a Steam Guard code.',
           'It collects nothing. There is no telemetry and no analytics in the app.',
-          'It does not promise you will not be banned. These are client-side mods and you run them at your own risk, the same as any other Dota mod.',
+          'It does not inject code into the game or touch its memory, and does nothing on your behalf in a match.',
           'It is not affiliated with Valve. Valve has not endorsed it and takes no part in it.',
         ],
       },
@@ -169,7 +169,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
       {
         k: 'p',
-        t: 'Nobody honest promises anything here. What can be said precisely: Valve has never published a rule that names cosmetic mods; VAC looks for code injected into the running game rather than files sitting in a folder; people have been installing these for over eight years. That is every argument there is, and none of them is a guarantee. The app never touches your account, and the risk is yours. <a href="~/docs/safe/#ban">The long answer</a>.',
+        t: 'Bans are for cheats, and cosmetic mods are not cheats: Steam\'s terms define a cheat as software that gives an unfair advantage, and a mod changes only what your own screen shows. In the eight years people have been installing these mods, we know of no ban for them. We are not affiliated with Valve, Steam\'s terms do not formally permit changing game files without Valve\'s consent, and Valve can change how it applies them. <a href="~/docs/safe/#ban">The long answer</a>.',
       },
 
       { k: 'h2', t: 'How to check any of this', id: 'verify' },
@@ -322,7 +322,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
           'Не меняет правила игры и не даёт преимущества. Моды - это картинка на твоём экране, соперники и союзники её не видят.',
           'Не трогает аккаунт Steam и никогда не просит пароль или код Steam Guard.',
           'Ничего не собирает. Телеметрии и аналитики в программе нет.',
-          'Не обещает, что не забанят. Это клиентские моды, ставишь на свой страх и риск, как и любые другие моды для Доты.',
+          'Не внедряет код в игру, не трогает её память и ничего не делает за тебя в матче.',
           'Не связана с Valve. Valve её не одобряла и к ней не причастна.',
         ],
       },
@@ -340,7 +340,7 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       { k: 'h2', t: 'Забанят ли', id: 'ban' },
       {
         k: 'p',
-        t: 'Гарантий тут честно не даёт никто. Что можно сказать точно: Valve никогда не публиковала правила, которое называет косметические моды; VAC ищет код, внедрённый в процесс игры, а не файлы, лежащие в папке; такие моды ставят больше восьми лет. Это все доводы, какие есть, и гарантией они не являются. Программа не касается твоего аккаунта, риск твой. <a href="~/docs/safe/#ban">Развёрнутый ответ</a>.',
+        t: 'Банят за читы, а косметические моды не читы: по правилам Steam чит даёт нечестное преимущество, а мод меняет только то, что видно на твоём экране. За восемь лет, что люди ставят такие моды, мы не знаем ни одного бана за них. Мы не связаны с Valve, правила Steam в общем виде не разрешают менять файлы игры без её согласия, и Valve может изменить то, как их применяет. <a href="~/docs/safe/#ban">Развёрнутый ответ</a>.',
       },
 
       { k: 'h2', t: 'Как всё это проверить', id: 'verify' },

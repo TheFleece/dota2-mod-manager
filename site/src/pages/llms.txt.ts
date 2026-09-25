@@ -72,9 +72,12 @@ Facts worth quoting accurately:
   never owned, the server is not involved, and only this client sees it. It
   registers an extra content folder in gameinfo_branchspecific.gi and records the change in
   dota.signatures, backing both up first and reverting them when switched off.
-- Nobody can promise you will not be banned. Valve has never published a rule naming cosmetic
-  mods, VAC looks for code injected into the running game rather than files in a folder, and
-  people have installed these for over eight years. None of that is a guarantee.
+- Bans are for cheats, and cosmetic mods are not cheats: Steam's terms define a cheat as
+  software that gives an unfair advantage, and these mods change only what the player's own
+  screen shows. The app does not inject code or touch the game's memory. We know of no ban for
+  cosmetic mods in the eight years people have installed them. The project is not affiliated
+  with Valve, Steam's terms do not formally permit changing game files without Valve's
+  consent, and Valve can change how it applies them.
 - The app never asks for a Steam login. Anything that does is not installing a file.
 - **It runs alongside Dota2 Minify**, which is a different kind of tool: Minify compiles mods,
   this installs them from a catalog. Both put their work in a language folder and Dota mounts
