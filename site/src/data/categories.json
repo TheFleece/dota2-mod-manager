@@ -4,6 +4,14 @@
       "id": "hero-items",
       "mods": [
         {
+          "name": "Techies Arcana Shanachnetsya",
+          "styleLabel": null,
+          "image": {"src":"/mods/techies-arcana-shanachnetsya.webp","width":854,"height":480},
+          "author": "Harlord",
+          "authorUrl": "https://discord.com/users/436420477511139329",
+          "date": 1790392857
+        },
+        {
           "name": "Keeper Of The Light - Snowdrift",
           "styleLabel": null,
           "image": {"src":"/mods/keeper-of-the-light-snowdrift.webp","width":854,"height":480},
@@ -1632,22 +1640,16 @@
       ]
     },
     {
-      "id": "ranged-attack",
-      "mods": [
-        {"name":"Aghanim Ranged Attack","styleLabel":null,"image":{"src":"/mods/aghanim-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"Blue Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/blue-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"Green Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/green-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"Nemestice Ranged Attack","styleLabel":null,"image":{"src":"/mods/nemestice-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"Red Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/red-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"TI10 Ranged Attack","styleLabel":null,"image":{"src":"/mods/ti10-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"TI12 Ranged Attack","styleLabel":null,"image":{"src":"/mods/ti12-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"TI9 Ranged Attack","styleLabel":null,"image":{"src":"/mods/ti9-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
-        {"name":"Yellow Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/yellow-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644}
-      ]
-    },
-    {
       "id": "pedestal",
       "mods": [
+        {
+          "name": "Pedestal Feast Abscession",
+          "styleLabel": null,
+          "image": {"src":"/mods/pedestal-feast-abscession.webp","width":854,"height":480},
+          "author": "J0nathan550",
+          "authorUrl": "https://github.com/J0nathan550",
+          "date": 1790392857
+        },
         {
           "name": "Pedestal Grand Abscession",
           "styleLabel": null,
@@ -1684,6 +1686,20 @@
         {"name":"Earthshaker Pedestal","styleLabel":null,"image":{"src":"/mods/earthshaker-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788940775},
         {"name":"Snow Pedestal","styleLabel":null,"image":{"src":"/mods/snow-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788940775},
         {"name":"Windranger Pedestal","styleLabel":null,"image":{"src":"/mods/windranger-pedestal.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1788940775}
+      ]
+    },
+    {
+      "id": "ranged-attack",
+      "mods": [
+        {"name":"Aghanim Ranged Attack","styleLabel":null,"image":{"src":"/mods/aghanim-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"Blue Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/blue-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"Green Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/green-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"Nemestice Ranged Attack","styleLabel":null,"image":{"src":"/mods/nemestice-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"Red Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/red-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"TI10 Ranged Attack","styleLabel":null,"image":{"src":"/mods/ti10-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"TI12 Ranged Attack","styleLabel":null,"image":{"src":"/mods/ti12-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"TI9 Ranged Attack","styleLabel":null,"image":{"src":"/mods/ti9-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644},
+        {"name":"Yellow Diretide Ranged Attack","styleLabel":null,"image":{"src":"/mods/yellow-diretide-ranged-attack.webp","width":1280,"height":720},"author":null,"authorUrl":null,"date":1764003644}
       ]
     },
     {

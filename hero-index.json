@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1406,
+  "mods": 1409,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -82,6 +82,7 @@
       "name": "Axe",
       "mods": [
         {"name":"Axe Automaton","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","head","tail","weapon"]},
+        {"name":"Axe Automaton Reborn","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","tail","weapon","back"]},
         {"name":"Axe Gawr Gura","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","head","tail","weapon","misc","shoulder","back","legs","shield"]},
         {"name":"Axe Heracles","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","head","tail","weapon","misc","shoulder","back","legs","shield"]},
         {"name":"Axe Immortal Bootblack","categoryId":"heroes","styleLabel":null,"slots":["arms","belt","tail","weapon","misc","head"]},
@@ -1300,6 +1301,7 @@
         {"name":"Pudge Candy Cat","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
         {"name":"Pudge CM","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon"]},
         {"name":"Pudge Dendi Arcana","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
+        {"name":"Pudge Feast Immortal","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
         {"name":"Pudge Gol0vach","categoryId":"heroes","styleLabel":null,"slots":["back","belt","head","arms","weapon","misc"]},
         {"name":"Pudge Hood of Defiance","categoryId":"hero-items","styleLabel":null,"slots":["head"]},
         {"name":"Pudge Immortal Gold","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
@@ -1687,6 +1689,7 @@
         {"name":"Techies Alien","categoryId":"heroes","styleLabel":null,"slots":["misc","weapon"]},
         {"name":"Techies Arab","categoryId":"heroes","styleLabel":null,"slots":["misc","weapon"]},
         {"name":"Techies Arcana","categoryId":"hero-items","styleLabel":null,"slots":["misc","mount","arms"]},
+        {"name":"Techies Arcana Shanachnetsya","categoryId":"hero-items","styleLabel":null,"slots":["misc","mount","arms"]},
         {"name":"Techies Frostbloom Weapon","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Techies Mine Radius","categoryId":"other","styleLabel":null,"slots":[]},
         {"name":"Techies Sodbustin Saboteurs","categoryId":"heroes","styleLabel":null,"slots":["misc","weapon"]},

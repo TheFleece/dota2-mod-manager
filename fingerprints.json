@@ -1,5 +1,5 @@
 {
-  "count": 1430,
+  "count": 1434,
   "mods": {
     "0000ecb27ee7db1063087b627a7cdb94651a4655": [{"name":"Windranger Autumn Arcana","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "002fe0eee5ace922f363486ddc1f979d8f2c232e": [{"name":"Gold River","categoryId":"river","styleLabel":null,"type":"vpk"}],
@@ -165,6 +165,7 @@
     "1b82f271771f95f9896742efec1f91c2c290afcc": [{"name":"Meepo Diretide","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "1baab76a8de47c1ee5f35bdc302cb3f946d5738e": [{"name":"Riki Hunger Howling Wilds","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "1bce79b9baa83f95e787a4207cfc7d002e57d75b": [{"name":"Anti-Mage Illidan","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "1c9d926f8f379c09e9d27e94a9830b3a3c5b9687": [{"name":"Axe Automaton Reborn","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "1ceefe37a2d38ba814b37b6025f2e74b85b91a1b": [{"name":"TI7 Blink Dagger","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "1d4d8a969f4cc506488af4a990ce5aa66d54b371": [{"name":"Darkness Phase Boots","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "1d54a288721a364772d21d147ad790bd1876a296": [{"name":"Night Stalker Frost Walker","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -225,6 +226,7 @@
     "27f243992cabe5601d018a2576c5ad2c5ddfb037": [{"name":"Legion Commander Chen","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "27fc548d613f438a4ec396d53b08befad0f6c3a0": [{"name":"TI9 Fountain Regen III","categoryId":"item-effects","styleLabel":null,"type":"vpk"}],
     "2801e69af6afe4bcdbffddf858f4e852722e0a70": [{"name":"SpearMa Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],
+    "2830a56a60895281de7a8000f34548d6b027f7b2": [{"name":"Pedestal Feast Abscession","categoryId":"pedestal","styleLabel":null,"type":"vpk"}],
     "286323d5ea92e5c1ef18dcba641e516f94c700a0": [{"name":"Pudge Candy Cat","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "286798d64cb2f27589edecb95b3fb97824c8a4bd": [{"name":"Nikaido Hiro","categoryId":"backgrounds","styleLabel":null,"type":"vpk"}],
     "2885ff2fbce442a2d869777ed3fd4e350edb21b3": [{"name":"Sven Immortal Indomitable Legacy","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
@@ -352,6 +354,7 @@
     "3ef4fcce52c2cc80248c9d61cd1310100d71e986": [{"name":"White Necronub Cursor","categoryId":"cursors","styleLabel":null,"type":"files"}],
     "3f0eb23a2c3678196a50632825f74fe3f9761808": [{"name":"Abaddon Fallen King","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3f5c617eae9ab55791407b8b0adf6b2269145f97": [{"name":"Cosmic Zeus","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "3f5f2aa3c79039fc3873e3289ac8f2d03d4b43a9": [{"name":"Pudge Feast Immortal","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3f755d707c1ecf5f63606313342240a5de883d77": [{"name":"Bare Hoodwink","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "3fe88cb832556fb9dd74eb1b2f75026391dedded": [{"name":"Custom Slark","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "40126316ce47b268f9914840e9838316615fd390": [{"name":"High Five Aghanim Puppet","categoryId":"high-five","styleLabel":null,"type":"vpk"}],
@@ -477,6 +480,7 @@
     "58ccb02aa33cb5ee385f4015badba1fd950e80d6": [{"name":"Immortal Jakiro","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "594927136275a639412cd362b6c37691d56d940b": [{"name":"Ursa Roshan Hunter","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "598d05a14afc7963d0ab8f129019085ea1b294eb": [{"name":"Sniper Howling Wolf","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
+    "5a0080607fa5fc441db40a17491f64ca69a52be3": [{"name":"Techies Arcana Shanachnetsya","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
     "5a0757497d2114d27eb3d12f43d2ccce4e9ae70e": [{"name":"Windranger Peregrine Flight","categoryId":"hero-items","styleLabel":null,"type":"vpk"}],
     "5a387b147ebb7bc5763aa15d129a10772cf445cc": [{"name":"Arc Warden Sakura Winter","categoryId":"heroes","styleLabel":null,"type":"vpk"}],
     "5ab19cf2c4471b3a868f58d8969a7d72e2d0528a": [{"name":"Humanity Last Breath","categoryId":"music","styleLabel":null,"type":"vpk"}],
