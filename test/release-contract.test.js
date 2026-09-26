@@ -80,31 +80,41 @@ test('the version is one CI can turn into a tag', () => {
 
 test('the lookups that read a section find a beta by its own heading', () => {
   /* release.yml's awk and releaseNotes() in main.js both look for "## <version>" followed by
-   * anything but a digit or a dot. So "## 2.8.0" also matches the heading "## 2.8.0-beta.1", and
-   * the right section comes first only because the newest is on top. Both are copied here and run
-   * against a changelog holding a release above its beta, and a beta above the release before. */
-  const text = '## 2.8.0\n\nthe release\n\n## 2.8.0-beta.1\n\nthe beta\n\n## 2.7.1\n\nthe one before\n';
-  const awk = (v) => { // release.yml: $0 ~ "^## " v "([^0-9.]|$)", then up to the next "## "
+   * anything that cannot continue a version. Until 2026-09-26 that was "anything but a digit or a
+   * dot", so "## 2.8.0" also matched the heading "## 2.8.0-beta.1", and the right section came first
+   * only while the newest was on top: a beta section left above the release would have gone out as
+   * the release's notes, on its page, in Discord and in the "What's new" window. Both are copied
+   * here and run against a changelog with the release above its beta, and with the beta above. */
+  const texts = [
+    '## 2.8.0\n\nthe release\n\n## 2.8.0-beta.1\n\nthe beta\n\n## 2.7.1\n\nthe one before\n',
+    '## 2.8.0-beta.1\n\nthe beta\n\n## 2.8.0\n\nthe release\n\n## 2.7.1\n\nthe one before\n',
+  ];
+  let text = texts[0];
+  const awk = (v) => { // release.yml: $0 ~ "^## " v "([^-0-9A-Za-z.]|$)", then up to the next "## "
     const lines = text.split('\n');
-    const at = lines.findIndex((l) => new RegExp(`^## ${v}([^0-9.]|$)`).test(l));
+    const at = lines.findIndex((l) => new RegExp(`^## ${v}([^-0-9A-Za-z.]|$)`).test(l));
     const rest = lines.slice(at + 1);
     const end = rest.findIndex((l) => /^## /.test(l));
     return rest.slice(0, end === -1 ? undefined : end).join('\n').trim();
   };
   const popup = (v) => { // main.js releaseNotes; escaped whole here, where main.js escapes dots
-    const m = new RegExp(`^## ${escapeRe(v)}(?:[^0-9.].*)?$`, 'm').exec(text);
+    const m = new RegExp(`^## ${escapeRe(v)}(?:[^-0-9A-Za-z.].*)?$`, 'm').exec(text);
     const rest = text.slice(m.index + m[0].length);
     const next = /^## /m.exec(rest);
     return (next ? rest.slice(0, next.index) : rest).trim();
   };
-  for (const find of [awk, popup]) {
-    assert.equal(find('2.8.0'), 'the release');
-    assert.equal(find('2.8.0-beta.1'), 'the beta');
-    assert.equal(find('2.7.1'), 'the one before');
+  const { changelogSection } = require('../tools/release-state.js');
+  const preflight = (v) => changelogSection(text, v); // what the gate checks before building
+  for (text of texts) {
+    for (const find of [awk, popup, preflight]) {
+      assert.equal(find('2.8.0'), 'the release');
+      assert.equal(find('2.8.0-beta.1'), 'the beta');
+      assert.equal(find('2.7.1'), 'the one before');
+    }
   }
-  assert.match(read('.github/workflows/release.yml'), /\$0 ~ "\^## " v "\(\[\^0-9\.\]\|\$\)"/,
+  assert.match(read('.github/workflows/release.yml'), /\$0 ~ "\^## " v "\(\[\^-0-9A-Za-z\.\]\|\$\)"/,
     'release.yml looks a section up another way now: change the copy above');
-  assert.match(read('main.js'), /\(\?:\[\^0-9\.\]\.\*\)\?\$/, 'releaseNotes looks a section up another way now');
+  assert.match(read('main.js'), /\(\?:\[\^-0-9A-Za-z\.\]\.\*\)\?\$/, 'releaseNotes looks a section up another way now');
 });
 
 test('both changelogs still reach the two places that read them', () => {

@@ -1,0 +1,50 @@
+# After every release, and every three hours: is everything a release should leave behind in place,
+# and if not, put it there. tools/release-watch.mjs says what it checks and what it can repair.
+#
+# Until 2026-09-26 a release that went wrong after publishing stayed wrong until somebody read a
+# red run and started the right job by hand. 2.7.1 left the update mirror on 2.7.0 for days that
+# way, and no Discord post went out. This does not wait for somebody.
+name: Release watch
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+
+# One at a time: two runs bringing the mirror up to date at once would upload the same files twice
+# and could remove what the other just put there.
+concurrency:
+  group: release-watch
+  cancel-in-progress: false
+
+# The token reads the repository and nothing more. The job below asks for what it writes.
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      # the release notes: the line saying the Discord post went out
+      contents: write
+      # reading the release run, and asking for the antivirus check
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Check what the last release left behind, and put right what is not
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: node tools/release-watch.mjs --repair
