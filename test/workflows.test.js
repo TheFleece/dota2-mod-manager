@@ -498,3 +498,13 @@ test('every workflow is YAML GitHub can read', () => {
   assert.deepEqual(yamlShapeProblems(merged), ['9: <!-- announced in Discord -->', "10: ' >> body.md", '11: fi']);
 });
 
+test('no commit on main has its analysis cancelled by the next one', () => {
+  /* One group per ref with cancel-in-progress cancelled the analysis of #134 and #145 when the next
+     merge landed: a red cross on main that meant nothing, and a commit Scorecard's SAST check
+     counts as never analysed. A pull request may still replace its own older run. */
+  const text = read('codeql.yml');
+  const block = (/\nconcurrency:\n((?: {2}[^\n]*\n)+)/.exec(text) || [])[1] || '';
+  assert.match(block, /group: [^\n]*github\.sha/, 'commits on main share a group, so one waits on or cancels another');
+  assert.match(block, /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/, 'a push to main can cancel an analysis still running');
+});
+

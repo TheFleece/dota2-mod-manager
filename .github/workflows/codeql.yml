@@ -29,9 +29,13 @@ on:
 permissions:
   contents: read
 
+# A pull request's newer push replaces its older analysis. A commit on main never does: each one is
+# analysed to the end. Until 2026-09-26 main shared one group with cancel-in-progress, so a merge
+# landing a minute after another cancelled its analysis, the commit list showed a red cross that
+# meant nothing, and OpenSSF Scorecard's SAST check counted that commit as never analysed.
 concurrency:
-  group: codeql-${{ github.ref }}
-  cancel-in-progress: true
+  group: codeql-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   analyze:
