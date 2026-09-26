@@ -32,7 +32,7 @@ Shorthand used below: **repo** is `https://github.com/dota2modmanager/dota2-mod-
 | `interact` | Met | repo README.md (Download, Report a bug, Contributing) |
 | `contribution` | Met | repo CONTRIBUTING.md |
 | `contribution_requirements` | Met | repo CONTRIBUTING.md |
-| `floss_license` | Met: GPL-3.0-only | repo LICENSE |
+| `floss_license` | Met: GPL-3.0-or-later | repo LICENSE, NOTICE ("version 3 of the License, or any later version") |
 | `floss_license_osi` | Met: GPL-3.0 is OSI approved | repo LICENSE |
 | `license_location` | Met: LICENSE in the repository root | repo LICENSE |
 | `documentation_basics` | Met | site, and repo README.md |

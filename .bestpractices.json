@@ -8,7 +8,7 @@
   "contribution_requirements_status": "Met",
   "contribution_requirements_justification": "CONTRIBUTING.md states what a change has to carry: npm run verify, a test or a No-Test-Because line, and the style the repository keeps: https://github.com/dota2modmanager/dota2-mod-manager/blob/main/CONTRIBUTING.md",
   "floss_license_status": "Met",
-  "floss_license_justification": "GPL-3.0-only: https://github.com/dota2modmanager/dota2-mod-manager/blob/main/LICENSE",
+  "floss_license_justification": "GPL-3.0-or-later (NOTICE says: version 3 of the License, or any later version): https://github.com/dota2modmanager/dota2-mod-manager/blob/main/NOTICE",
   "floss_license_osi_status": "Met",
   "floss_license_osi_justification": "GPL-3.0 is approved by the Open Source Initiative.",
   "license_location_status": "Met",
