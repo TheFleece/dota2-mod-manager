@@ -27,6 +27,7 @@ All in Russian. View counts here were read again on 2026-09-22; the rest of this
 |---|---|---|---|
 | [Как ставить любые моды, шмотки и карты в Dota 2 еще легче? \| Dota 2 Mod Manager](https://www.youtube.com/watch?v=Z_yalpuP6pA) | [hanta](https://www.youtube.com/@hqnta), YouTube | 2026-08-21 | A walkthrough of the app. 9,189 views |
 | [Ставлю моды на Dota 2 за 5 минут \| Dota 2 Mod Manager](https://www.youtube.com/watch?v=RWBGYSjN-Ow) | [dricsy66](https://www.youtube.com/@dricsy66), YouTube | 2026-08-18 | Installing mods with the app, four minutes. 1,259 views |
+| [Бесплатные скины, звуки и курьеры в Dota 2 \| Dota 2 Mod Manager в ПАРУ кликов](https://www.youtube.com/watch?v=xS-KDa670yQ) | [wwwwex](https://www.youtube.com/@wex.w66), YouTube | 2026-08-20 | Skins, sounds and couriers put on with the app, five minutes. 199 views, read on 2026-09-26 |
 | [Short clip](https://www.tiktok.com/@romantic_9991/video/7683011914242313492) | [romantic_9991](https://www.tiktok.com/@romantic_9991), TikTok | 2026-09-08 | The app's catalog on screen, tagged as a guide to replacement skins |
 | [Short clip](https://www.tiktok.com/@romantic_9991/video/7682934300328660245) | [romantic_9991](https://www.tiktok.com/@romantic_9991), TikTok | 2026-09-07 | A second clip from the same account |
 
@@ -35,6 +36,13 @@ All in Russian. View counts here were read again on 2026-09-22; the rest of this
 | Where | Started by | Date | What it is about |
 |---|---|---|---|
 | [Steam Community, Dota 2 General Discussions: Банят ли за Dota 2 Mod Manager / Do you get banned for using Dota 2 Mod Manager?](https://steamcommunity.com/app/570/discussions/0/617711086156701153/) | A Dota 2 player on Steam | 2026-09-13 | A player asks, in Russian and English, whether using the app can get an account banned, having noticed how many people in their games run it. 5 posts |
+| [Reddit: Dota2PornFx & Dota2ModManager](https://www.reddit.com/user/TIdDolbaiob/comments/1vo4k47/dota2pornfx_dota2modmanager/) | [u/TIdDolbaiob](https://www.reddit.com/user/TIdDolbaiob/), on their own profile | August 2026 | In Russian: the catalog and this app as two connected community projects, open source, with their Telegram channels and Discord server, and a link to each. Added on 2026-09-26 |
+
+### Guides
+
+| Guide | Where | Updated | What it covers |
+|---|---|---|---|
+| [Dota 2 Mod Manager v2.3.0: download, install, and use it safely](https://dota2pornfx.blog/guide/dota-2-mod-manager/) | dota2pornfx.blog, a guide site about the D2PFX catalog | 2026-08-16 | An English guide to downloading, checking and using the app, written for 2.3.0. It links the release by the repository's earlier address, which redirects here. Added on 2026-09-26 |
 
 ### Projects built from this one
 
