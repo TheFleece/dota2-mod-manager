@@ -775,7 +775,7 @@ if (!app.requestSingleInstanceLock()) {
  */
 function releaseNotes(version, lang) {
   const files = lang === 'ru' ? ['CHANGELOG.ru.md', 'CHANGELOG.md'] : ['CHANGELOG.md'];
-  const head = new RegExp(`^## ${version.replace(/\./g, '\\.')}(?:[^0-9.].*)?$`, 'm');
+  const head = new RegExp(`^## ${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[^-0-9A-Za-z.].*)?$`, 'm');
   for (const name of files) {
     let text;
     try { text = fs.readFileSync(path.join(app.getAppPath(), name), 'utf-8'); } catch { continue; }

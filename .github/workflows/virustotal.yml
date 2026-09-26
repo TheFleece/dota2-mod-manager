@@ -8,6 +8,8 @@
 # Without VIRUSTOTAL_API_KEY the job says so and stops. A release is not held up by a check
 # nobody has set up yet, and the daily credential run reports the key as not set.
 name: VirusTotal
+# The tag in the run's title is how tools/release-watch.mjs tells which release a run was for.
+run-name: VirusTotal ${{ inputs.tag || github.event.release.tag_name }}
 
 on:
   release:

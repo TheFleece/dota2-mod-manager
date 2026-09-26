@@ -165,51 +165,43 @@ test('a beta tag is published as a prerelease, and never as the latest release',
   const yml = read('release.yml');
   assert.match(yml, /\*-beta\.\*\) echo 'beta=true'/, 'nothing decides what a beta tag looks like');
   assert.match(yml, /-F prerelease=true -f make_latest=false/, 'a beta is published like a release');
-  assert.match(yml, /beta\.yml beta-linux\.yml portable\.yml/, 'the beta feed is not checked after publishing');
+  assert.match(yml, /tools\/release-state\.js missing/, 'the files are not checked against the one list tools/release-state.js keeps');
   assert.match(yml, /is a beta - installed copies follow that endpoint/, 'nothing checks that the stable endpoint was left alone');
 });
 
-test('a beta goes out with the feed its testers read', () => {
-  /* electron-builder writes latest.yml and latest-linux.yml for a beta too, and a tester reads
-     beta.yml. v2.8.0-beta.1 was published without it: the check after publishing caught it, and
-     not one tester was offered the build. The publish job now copies the feed under the beta
-     names, between taking the draft out and checking it. */
+test('the beta feed goes on the draft, fingerprinted with everything else, for a beta and a release alike', () => {
+  /* electron-builder writes latest.yml and latest-linux.yml whatever the version says, and a tester
+     reads beta.yml. Until 2026-09-26 the copy was made after publishing: v2.8.0-beta.1 came out
+     without it, and on 2.7.1 the job making it was skipped. A published release is immutable and
+     cannot gain a file, so the copy is made on the draft, before SHA256SUMS, and uploaded with it. */
   const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
-  const publish = jobs.find((j) => j.startsWith('publish:')) || '';
-  const at = (s) => publish.indexOf(s);
-  const copy = at('- name: Give a beta the feed its testers read');
-  assert.ok(copy > 0, 'nothing gives a beta its beta.yml');
-  assert.ok(at('- name: Publish the draft') < copy && copy < at('- name: Check the release is one release'),
-    'the feed is copied before there is a release to copy from, or after the check that wants it');
-  const step = publish.slice(copy, at('- name: Check the release is one release'));
-  assert.match(step, /if: needs\.gate\.outputs\.beta == 'true'/, 'a release would get a second beta feed here as well');
-  assert.match(step, /latest\.yml beta\.yml/);
-  assert.match(step, /latest-linux\.yml beta-linux\.yml/, 'Linux testers would be offered nothing');
+  const checksums = jobs.find((j) => j.startsWith('checksums:')) || '';
+  const at = (s) => checksums.indexOf(s);
+  const copy = at('- name: Give the beta channel its feed');
+  assert.ok(copy > 0, 'nothing gives the beta channel its feed');
+  assert.ok(at('- name: Download every file on the draft') < copy && copy < at('- name: Write SHA256SUMS'),
+    'the feed is copied before the files are on the runner, or after they were fingerprinted');
+  const step = checksums.slice(copy, at('- name: Write the SBOM'));
+  assert.doesNotMatch(step, /if: /, 'only one kind of release gets the beta feed');
+  assert.match(step, /cp release\/latest\.yml release\/beta\.yml/);
+  assert.match(step, /cp release\/latest-linux\.yml release\/beta-linux\.yml/, 'Linux testers would be offered nothing');
+  assert.match(checksums, /gh release upload[^\n]*SHA256SUMS[\s\S]{0,200}release\/beta\.yml release\/beta-linux\.yml/, 'the beta feed is made and never uploaded');
+  assert.ok(!jobs.some((j) => j.startsWith('beta-feed:')), 'a job still adds the beta feed after publishing');
 });
 
-test('a beta reaches the mirror in its own folder, and is not announced', () => {
-  /* A tester whose GitHub is down needs the second route as much as anybody. What a beta must
-     never do is land beside the release: the file names carry no version, so it would replace the
-     installer latest.yml describes. */
+test('the update mirror is brought to what GitHub serves, a beta included, and a beta is not announced', () => {
+  /* A tester whose GitHub is down needs the second route as much as anybody. --current puts the
+     whole folder in the state GitHub is in rather than uploading one version, so a run that was
+     skipped once is made good by the next one, and checks what it serves by version and size. */
   const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
   const mirror = jobs.find((j) => j.startsWith('mirror-update:')) || '';
   assert.ok(mirror, 'no mirror-update job');
   assert.equal(/needs\.gate\.outputs\.beta != 'true'/.test(mirror), false, 'a beta has no second route');
-  assert.match(mirror, /Dota-2-Mod-Manager-Setup-beta\.exe/, 'the check does not know the beta carries its own names');
-  assert.match(mirror, /WANT="latest\.yml latest-linux\.yml portable\.yml beta\.yml beta-linux\.yml/,
-    'a release has to leave the beta feed pointing at itself');
+  assert.match(mirror, /node tools\/r2-release\.mjs --current/, 'the mirror is given one version rather than the state GitHub is in');
+  assert.doesNotMatch(mirror, /continue-on-error/, 'a mirror that failed would look like one that worked');
 
   const notify = jobs.find((j) => j.startsWith('notify:')) || '';
   assert.match(notify, /needs\.gate\.outputs\.beta != 'true'/, 'a beta would be announced to everybody');
-});
-
-test('a release points the beta channel at itself, so a tester is not left behind it', () => {
-  const jobs = read('release.yml').split(/\n {2}(?=[a-z][\w-]*:\n)/);
-  const job = jobs.find((j) => j.startsWith('beta-feed:')) || '';
-  assert.ok(job, 'no beta-feed job');
-  assert.match(job, /needs\.gate\.outputs\.beta != 'true'/, 'a beta would republish itself as the beta feed');
-  assert.match(job, /latest\.yml beta\.yml/);
-  assert.match(job, /latest-linux\.yml beta-linux\.yml/, 'Linux testers would stay on the beta for ever');
 });
 
 test('RELEASING.md names every job release.yml runs', () => {
@@ -330,5 +322,111 @@ test('the release asks for the antivirus check by name, because the event never 
   assert.doesNotMatch(publish, /gh workflow run/, 'a failed request would fail publish and skip the mirror');
   assert.match(read('virustotal.yml'), /workflow_dispatch:[\s\S]{0,200}tag:/,
     'virustotal.yml no longer takes the tag it is asked about');
+});
+
+/** The jobs of release.yml by name, and the jobs each one waits for. */
+function releaseJobs() {
+  const text = read('release.yml');
+  const body = text.split(/\njobs:\n/)[1] || '';
+  const jobs = new Map();
+  for (const part of body.split(/\n(?= {2}[a-z][\w-]*:\n)/)) {
+    const name = (/^ {2}([a-z][\w-]*):\n/.exec(`\n${part}`.slice(1)) || /^\s*([a-z][\w-]*):/.exec(part) || [])[1];
+    if (!name) continue;
+    const m = /(?:^|\n) {4}needs:\s*(\[[^\]]*\]|[\w-]+)/.exec(part);
+    jobs.set(name, { text: part, needs: m ? m[1].replace(/[[\]\s]/g, '').split(',') : [] });
+  }
+  // every job that runs once the release is public: publish's own later steps are dealt with apart
+  const after = new Set();
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const [name, j] of jobs) {
+      if (after.has(name) || name === 'publish') continue;
+      if (j.needs.some((n) => n === 'publish' || after.has(n))) { after.add(name); grew = true; }
+    }
+  }
+  return { jobs, after };
+}
+
+test('nothing after publishing adds, replaces or removes a file of the release', () => {
+  /* Releases are immutable: once one is out its files and its tag are fixed, and an upload after
+     publishing fails. Two did exactly that until 2026-09-26 (the beta feed, twice). Every file goes
+     on the draft, and the draft is checked for every file before it is published. */
+  const { jobs, after } = releaseJobs();
+  const publish = jobs.get('publish').text;
+  const out = publish.indexOf('- name: Publish the draft');
+  assert.ok(out > 0, 'publish has no step that publishes');
+  const check = publish.indexOf('- name: Check the draft carries every file');
+  assert.ok(check > 0 && check < out, 'the draft is published without being checked for every file first');
+  assert.match(publish.slice(check, out), /node tools\/release-state\.js missing/);
+  const bad = [];
+  const writes = /gh release (upload|delete-asset|delete)\b|--clobber|releases\/assets\/[^\n]*(DELETE|PATCH)|uploads\.github\.com/;
+  for (const line of publish.slice(out).split('\n')) if (writes.test(line)) bad.push(`publish: ${line.trim()}`);
+  for (const name of after) {
+    for (const line of jobs.get(name).text.split('\n')) if (writes.test(line)) bad.push(`${name}: ${line.trim()}`);
+  }
+  const watch = fs.readFileSync(path.join(ROOT, 'tools', 'release-watch.mjs'), 'utf8');
+  if (/uploads\.github\.com|releases\/assets/.test(watch)) bad.push('tools/release-watch.mjs touches release files');
+  assert.deepEqual(bad, [], bad.join('\n'));
+});
+
+test('a job after publishing runs whatever another one did', () => {
+  /* On 2.7.1 one failed step after publishing skipped every job after it: the mirror and the
+     Discord post never happened. A job may wait for another to finish, never for it to succeed. */
+  const { jobs, after } = releaseJobs();
+  const bad = [];
+  for (const name of after) {
+    const j = jobs.get(name);
+    const waits = j.needs.filter((n) => after.has(n));
+    if (!waits.length) continue;
+    const cond = (/\n {4}if: ([^\n]*)/.exec(j.text) || [])[1] || '';
+    if (!/always\(\)/.test(cond) || !/needs\.publish\.result == 'success'/.test(cond)) {
+      bad.push(`${name} waits for ${waits.join(', ')} and is skipped when that fails: its if needs always() and needs.publish.result == 'success'`);
+    }
+  }
+  assert.ok(after.has('notify') && after.has('mirror-update') && after.has('antivirus'), 'the jobs after publishing are not where this test looks');
+  assert.deepEqual(bad, [], bad.join('\n'));
+});
+
+test('a post to Discord fails on a refusal, and asks again before it does', () => {
+  /* curl without --fail exits 0 on any answer, so a deleted webhook answering 404 would have left
+     the job green and the release unannounced, with nothing to say so. */
+  const bad = [];
+  for (const f of workflows) {
+    read(f).split('\n').forEach((line, i) => {
+      if (!/\bcurl\b/.test(line) || !/WEBHOOK/.test(line + (read(f).split('\n')[i + 1] || ''))) return;
+      const call = `${line} ${read(f).split('\n')[i + 1] || ''}`;
+      if (!/--fail/.test(call) || !/--retry\b/.test(call)) bad.push(`${f}:${i + 1} ${line.trim()}`);
+    });
+  }
+  assert.deepEqual(bad, [], bad.join('\n'));
+});
+
+test('the gate checks what publishing will need, before anything is built', () => {
+  /* Every secret a job after publishing reads is handed to the preflight in the gate, so a missing
+     or refused one stops the release while it is still a tag. */
+  const { jobs, after } = releaseJobs();
+  const gate = jobs.get('gate').text;
+  const step = gate.slice(gate.indexOf('- name: Check that everything after publishing will work'));
+  assert.match(step, /run: node tools\/release-preflight\.mjs/, 'the gate does not run the preflight');
+  assert.match(gate, /actions: read/, 'the preflight cannot see whether the workflows it relies on are switched on');
+  const needed = new Set();
+  for (const name of after) for (const m of jobs.get(name).text.matchAll(/secrets\.([A-Z0-9_]+)/g)) needed.add(m[1]);
+  const missing = [...needed].filter((n) => !step.includes(`secrets.${n}`));
+  assert.deepEqual(missing, [], `read after publishing but not checked before building: ${missing.join(', ')}`);
+});
+
+test('what a release left undone is put right without anybody starting it', () => {
+  /* 2.7.1 left the mirror on 2.7.0 for days: the run was red and nobody re-ran the job. */
+  const text = read('release-watch.yml');
+  assert.match(text, /workflow_run:\n\s+workflows: \[Release\]\n\s+types: \[completed\]/, 'the watch does not run when a release run ends');
+  assert.match(text, /schedule:\n\s+- cron:/, 'the watch does not run on its own either');
+  assert.match(text, /concurrency:\n\s+group: release-watch\n\s+cancel-in-progress: false/, 'two watches could repair the mirror at once');
+  assert.match(text, /node tools\/release-watch\.mjs --repair/, 'the watch looks and repairs nothing');
+  const watch = fs.readFileSync(path.join(ROOT, 'tools', 'release-watch.mjs'), 'utf8');
+  assert.match(watch, /'--current'/, 'the watch does not bring the mirror up to date');
+  assert.match(watch, /postToDiscord\(stable\)/, 'the watch does not send a post the release run did not');
+  assert.match(watch, /virustotal\.yml\/dispatches/, 'the watch does not ask for an antivirus check nothing ran');
+  assert.match(read('virustotal.yml'), /run-name: VirusTotal \$\{\{ inputs\.tag/, 'the watch cannot tell which release an antivirus run was for');
 });
 

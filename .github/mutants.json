@@ -565,9 +565,9 @@
     {
       "name": "a workflow step an incident names is renamed",
       "file": ".github/workflows/release.yml",
-      "anchor": "- name: Check the mirror carries both platforms",
-      "from": "both platforms",
-      "to": "every platform",
+      "anchor": "- name: Bring the update mirror to what GitHub serves now",
+      "from": "what GitHub serves now",
+      "to": "what GitHub serves",
       "test": "test/incidents.test.js"
     },
     {
@@ -737,6 +737,30 @@
       "lineStartsWith": "const isUninstallRun = ",
       "to": "const isUninstallRun = (argv = []) => argv.includes('--uninstall');",
       "test": "test/uninstall-args.test.js"
+    },
+    {
+      "name": "the Discord post waits for the mirror to succeed",
+      "file": ".github/workflows/release.yml",
+      "anchor": "  notify:",
+      "from": "if: always() && needs.publish.result == 'success' && ",
+      "to": "if: ",
+      "test": "test/workflows.test.js"
+    },
+    {
+      "name": "a release goes out without the beta feed",
+      "file": "tools/release-state.js",
+      "anchor": "const FEEDS = [",
+      "from": "'beta.yml', 'beta-linux.yml'",
+      "to": "'beta-linux.yml'",
+      "test": "test/release-state.test.js"
+    },
+    {
+      "name": "the mirror is taken to be right when an old feed answers",
+      "file": "tools/release-state.js",
+      "anchor": "function mirrorDrift(want, seen) {",
+      "from": "} else if (w.version && s.version !== w.version) {",
+      "to": "} else if (false) {",
+      "test": "test/release-state.test.js"
     }
   ]
 }

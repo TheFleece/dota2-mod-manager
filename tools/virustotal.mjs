@@ -95,7 +95,11 @@ export function withReport(body, section) {
   const text = String(body || '').replace(/\r\n/g, '\n');
   const at = text.indexOf(MARK);
   const kept = (at === -1 ? text : text.slice(0, at)).replace(/\s+$/, '');
-  return kept ? `${kept}\n\n${section}\n` : `${section}\n`;
+  // Lines other jobs leave after the report, out of sight: release.yml notes there that the Discord
+  // post went out, and tools/release-watch.mjs reads that line so the post is sent once.
+  const hidden = at === -1 ? [] : text.slice(at + MARK.length).split('\n').map((l) => l.trim()).filter((l) => l.startsWith('<!--') && l.endsWith('-->'));
+  const tail = hidden.length ? `\n${hidden.join('\n')}\n` : '';
+  return kept ? `${kept}\n\n${section}\n${tail}` : `${section}\n${tail}`;
 }
 
 /* ---------- the part that talks to VirusTotal and GitHub ---------- */

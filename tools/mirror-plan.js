@@ -183,7 +183,26 @@ function staleReleaseFiles(keys, kept, beta) {
   });
 }
 
+/**
+ * The whole folder as it has to stand now: the release everybody is on, and the beta a tester is
+ * on when one newer than it is out. One run of this puts the mirror right from any state, a version
+ * or two behind included, which a run per version could not: a release run clears the beta's
+ * binaries, so a beta that came before it had to be uploaded again, and nobody did.
+ * @param {string} stable        2.7.1
+ * @param {string|null} beta     2.8.0-beta.1, or null when no beta is newer than the release
+ * @returns {{uploads: Array<{version: string, asset: string, name: string, type: string, retarget?: boolean}>, keep: Set<string>}}
+ */
+function currentPlan(stable, beta) {
+  const uploads = releasePlan(stable).uploads.map((u) => ({ ...u, version: stable }));
+  if (beta) {
+    const theirs = releasePlan(beta).uploads.map((u) => ({ ...u, version: beta }));
+    const names = new Set(theirs.map((u) => u.name));
+    return { uploads: [...uploads.filter((u) => !names.has(u.name)), ...theirs], keep: new Set([...uploads, ...theirs].map((u) => `${UPDATES}${u.name}`)) };
+  }
+  return { uploads, keep: new Set(uploads.map((u) => `${UPDATES}${u.name}`)) };
+}
+
 module.exports = {
-  staleCopies, publishedHash, checkBody, budgetNote, releasePlan, retargetFeed, staleReleaseFiles,
+  staleCopies, publishedHash, checkBody, budgetNote, releasePlan, retargetFeed, staleReleaseFiles, currentPlan,
   UPDATES, BETA_MARK, betaName,
 };

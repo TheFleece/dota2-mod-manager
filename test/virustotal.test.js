@@ -67,3 +67,15 @@ test('running it twice replaces the report instead of stacking two of them', asy
   assert.ok(second.startsWith('### A technical release'), 'the release notes keep their own text');
   assert.ok(withReport('', reportSection([])).startsWith(MARK), 'notes that were empty start with the report, not with blank lines');
 });
+
+test('a second report keeps the line saying the Discord post went out', async () => {
+  // tools/release-watch.mjs reads that line to send the post once; a report written over it would
+  // have the release announced again three hours later.
+  const { reportSection, withReport } = await load();
+  const first = withReport('Notes.', reportSection([{ name: 'a.exe', url: 'u', flagged: 0, engines: 72 }]));
+  const announced = `${first}\n<!-- announced in Discord -->\n`;
+  const second = withReport(announced, reportSection([{ name: 'a.exe', url: 'u', flagged: 1, engines: 72 }]));
+  assert.equal(second.split('<!-- announced in Discord -->').length, 2, 'the line is there once');
+  assert.match(second, /1 of 72/);
+  assert.equal(withReport(second, reportSection([])).split('<!-- announced in Discord -->').length, 2, 'and stays once');
+});

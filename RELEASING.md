@@ -15,21 +15,48 @@ The tag starts `.github/workflows/release.yml`:
 
 | Job | What it does | Who can see it |
 |---|---|---|
-| `gate` | Refuses a tagged commit that is not on main, then waits until it has passed every check in `.github/required-checks.json`, and fails if one failed | nobody |
+| `gate` | Refuses a tagged commit that is not on main, then waits until it has passed every check in `.github/required-checks.json`, and fails if one failed. Then `tools/release-preflight.mjs` checks what the jobs after `publish` will need: `package.json` carries the tag's version, the tag is not published already, both changelogs have the section, the Discord webhook answers, the mirror's bucket takes the keys, and `virustotal.yml` and `release-watch.yml` are switched on | nobody |
 | `build` | Opens the release as a draft with its changelog section, builds the installer and the portable exe into it, and checks the draft is the only release on the tag | the maintainer |
 | `linux` | Builds the AppImage into the same draft | the maintainer |
-| `checksums` | Downloads every file on the draft, writes `SHA256SUMS` and an SBOM, attests the build provenance of every file and the SBOM through Sigstore, and puts `SHA256SUMS`, the SBOM and the provenance bundle on the draft | the maintainer |
+| `checksums` | Downloads every file on the draft, copies `latest.yml` and `latest-linux.yml` to `beta.yml` and `beta-linux.yml` for the beta channel, writes `SHA256SUMS` and an SBOM, attests the build provenance of every file and the SBOM through Sigstore, and puts all of it on the draft | the maintainer |
 | `try-windows` | Downloads the installer from the draft, checks it against `SHA256SUMS`, installs it, and runs `tools/e2e.mjs` against the installed app | the maintainer |
 | `try-linux` | Downloads the AppImage from the draft, checks it against `SHA256SUMS`, unpacks it, and runs `tools/e2e.mjs` against it | the maintainer |
-| `publish` | Takes the release out of draft, then checks it is the latest and carries every file the updater reads | everybody |
-| `beta-feed` | Uploads the release's own `latest.yml` and `latest-linux.yml` a second time as `beta.yml` and `beta-linux.yml`, so the beta channel points at this release too | everybody |
+| `publish` | Checks the draft carries every file in `tools/release-state.js`, takes it out of draft, then checks it is the latest | everybody |
 | `antivirus` | Asks `virustotal.yml` to scan the release and put the verdict in its notes | everybody |
-| `mirror-update` | Copies the release to the update mirror | everybody |
-| `notify` | Posts the changelog section to Discord | everybody |
+| `mirror-update` | Brings the update mirror to what GitHub serves, the release and a newer beta together, and reads back each file's version and size | everybody |
+| `notify` | Posts the changelog section to Discord, whatever `mirror-update` did, and notes in the release that it was announced | everybody |
 
 Installed copies look for updates at `/releases/latest`, and a draft never shows up there. So nobody
 receives a version before both builds of it installed a mod and removed it, and after `publish`
 everybody receives it together.
+
+Releases are **immutable**: once one is published its files and its tag are fixed, and its tag
+cannot be used again, even after the release is deleted. That is why every file goes on the draft
+and the draft is checked for all of them before `publish`. Nothing after `publish` adds a file, and
+`test/workflows.test.js` fails a pull request that tries. A published release that turns out wrong
+is followed by a new version, never replaced under the same number.
+
+## After the release: `release-watch.yml`
+
+The three jobs after `publish` do not wait on each other succeeding, and a failure in one is a red
+job, not a skipped release. What they leave undone, `release-watch.yml` does. It runs when a release
+run ends and every three hours, and `tools/release-watch.mjs` checks:
+
+- the release and the beta the updater reads carry every file;
+- the update mirror serves the same versions and the same sizes as GitHub, and if not, brings it up
+  to date with `tools/r2-release.mjs --current`;
+- the release was announced in Discord, and if the release run did not post it, posts it once;
+- the antivirus report is in the notes, and if nothing ran the check, asks for it.
+
+What it cannot put right turns its run red and shows on the radar: a published release missing a
+file, a webhook Discord keeps refusing, a check that ran and wrote nothing. Releases published before
+2026-09-26 are held to the mirror only.
+
+To see where the mirror stands without changing anything:
+
+```bash
+node tools/r2-release.mjs --check
+```
 
 ## Betas
 
@@ -39,8 +66,9 @@ installed is not worth handing to a tester either. After that it parts company w
 
 - it stays a **prerelease** and never becomes `/releases/latest`, which is the endpoint every copy
   on the stable channel follows;
-- it carries `beta.yml` and `beta-linux.yml` instead of the `latest` pair, and that is what the
-  app reads for somebody on the beta channel;
+- it carries `beta.yml` and `beta-linux.yml`, and that is what the app reads for somebody on the
+  beta channel. It carries the `latest` pair too, because electron-builder writes it for every
+  version, and nobody on the stable channel reads a prerelease;
 - it goes to the update mirror beside the release, with `-beta` in the name of every binary and
   its two manifests rewritten to ask for those, so it can never stand where the installer
   `latest.yml` describes. A tester whose GitHub is down reads `beta.yml` there;
@@ -61,10 +89,12 @@ is not ours to publish. The file and its `.sig` go in one pull request, like any
 A tester taken off the list, or signed out of Discord, is back on the stable channel at the next
 check without anybody touching their machine, and the switch in their settings disappears.
 
-When a release goes out, `beta-feed` points the beta channel at it on GitHub, and `mirror-update`
-writes `beta.yml` beside it on the mirror, pointing at the release's own files, so a tester moves
-on to the released version whether they reach GitHub or the mirror. The same run clears the beta's
-binaries out of the bucket.
+A release carries `beta.yml` and `beta-linux.yml` too, copies of its own feed, and `mirror-update`
+writes the same beside it on the mirror, so a tester moves on to the released version whether they
+reach GitHub or the mirror. Once no beta is newer than the release, the beta's binaries leave the
+bucket.
+
+A beta that went out wrong is followed by the next number (`-beta.2`): its tag cannot be used again.
 
 ## A job before `publish` failed
 
@@ -87,7 +117,7 @@ people with write access.
    ```
 
 4. Fix it through a pull request and tag the new merge commit with the same version. No copy ever
-   received that version, so there is no number to skip.
+   received that version, and a draft was never published, so the number is still free.
 
 Do not publish the draft by hand. The jobs that stopped it are the only thing that ran the build
 about to go out.
@@ -142,6 +172,9 @@ gh release edit vX.Y.Z --prerelease
 gh api repos/dota2modmanager/dota2-mod-manager/releases/latest --jq .tag_name
 ```
 
-The second command has to print the previous version. The update mirror holds one version only and
-still has the broken one, so run `.github/workflows/r2.yml` by hand with `release` set to the previous
-version.
+The second command has to print the previous version. `release-watch.yml` then brings the update
+mirror back to that version on its next run; start it by hand to have it now:
+
+```bash
+gh workflow run release-watch.yml --repo dota2modmanager/dota2-mod-manager
+```
