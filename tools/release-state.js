@@ -169,7 +169,7 @@ const watched = (release) => Boolean(release && release.published_at && release.
 /** Whether the notes say the Discord post went out. */
 const announced = (release) => String((release && release.body) || '').includes(ANNOUNCED);
 /** Whether the notes carry the antivirus report tools/virustotal.mjs writes. */
-const scanned = (release) => /virustotal\.com\/gui\/file\//.test(String((release && release.body) || ''));
+const scanned = (release) => String((release && release.body) || '').includes('https://www.virustotal.com/gui/file/');
 
 module.exports = {
   FEEDS, BINARIES, PROOF, REQUIRED_ASSETS, NOTES_LIMIT, ANNOUNCED, WATCH_FROM,

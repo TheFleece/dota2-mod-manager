@@ -116,13 +116,16 @@ test('two mods go into one slot, and every file of both is in it', (t) => {
 test('the pack takes a slot no mod is sitting in', (t) => {
   /* Deploying over an occupied slot would replace somebody else's mod with the pack, and the
      library would go on showing the mod that is no longer there. */
+  /* 30 and 31 are the first two slots a pack can be given (src/slot-zones.js): mods sitting in
+     02-29 would be skipped whether or not deployPack looked at the folder, so the test would pass
+     against a pack that never did. That is what it did from 2026-09-24 to 2026-09-26. */
   const { installer, put } = stand(t);
-  const a = put('pak10', 'A', [[HOOK, 'a']]);
-  const b = put('pak11', 'B', [[BLADE, 'b']]);
+  const a = put('pak30', 'A', [[HOOK, 'a']]);
+  const b = put('pak31', 'B', [[BLADE, 'b']]);
 
   const { files } = installer.deployPack(packOf(installer, [a, b]));
   const base = files[0].relPath.replace(/_dir\.vpk$/i, '');
-  assert.ok(!['pak10', 'pak11'].includes(base), `the pack took ${base}, where a mod already is`);
+  assert.ok(!['pak30', 'pak31'].includes(base), `the pack took ${base}, where a mod already is`);
   assert.match(base, /^pak\d+$/);
 });
 
@@ -132,19 +135,20 @@ test('a rebuild stays in the slot the pack already has', (t) => {
      rest of the library behind the user's back. */
   const { installer, lang, put } = stand(t);
   const pack = packOf(installer, [
-    put('pak10', 'A', [[HOOK, 'a']]),
-    put('pak11', 'B', [[BLADE, 'b']]),
+    put('pak30', 'A', [[HOOK, 'a']]),
+    put('pak31', 'B', [[BLADE, 'b']]),
   ]);
 
   pack.files = installer.deployPack(pack).files;
   const first = installer.packBase(pack);
 
   /* The user then deletes the two mods the pack was built beside, which frees the slots below
-     it. From here a pack that allocated a slot instead of reusing its own would drop to pak10
-     and start mounting ahead of everything it used to sit behind. */
-  for (const slot of ['pak10', 'pak11']) fs.rmSync(path.join(lang, `${slot}_dir.vpk`));
-  assert.equal(fs.existsSync(path.join(lang, 'pak10_dir.vpk')), false);
-  assert.notEqual(first, 'pak10', 'the pack has to be somewhere a fresh allocation would not land');
+     it. From here a pack that allocated a slot instead of reusing its own would drop to pak30,
+     the first slot a pack can be given, and start mounting ahead of everything it used to sit
+     behind. */
+  for (const slot of ['pak30', 'pak31']) fs.rmSync(path.join(lang, `${slot}_dir.vpk`));
+  assert.equal(fs.existsSync(path.join(lang, 'pak30_dir.vpk')), false);
+  assert.notEqual(first, 'pak30', 'the pack has to be somewhere a fresh allocation would not land');
 
   pack.members[1].enabled = false;
   pack.files = installer.deployPack(pack).files;

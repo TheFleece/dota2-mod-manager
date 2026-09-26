@@ -24,7 +24,6 @@
  * Usage: node tools/release-watch.mjs            look, change nothing
  *        node tools/release-watch.mjs --repair   look, and put right what can be
  */
-import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
@@ -67,8 +66,7 @@ async function postToDiscord(release) {
 
 const problems = [];
 const done = [];
-const lines = [];
-const say = (s) => { console.log(s); lines.push(s); };
+const say = (s) => console.log(s);
 
 const releases = await api('releases?per_page=30');
 const { stable, beta } = channelHeads(releases);
@@ -139,9 +137,5 @@ if (!stable) {
 
 for (const d of done) say(`fixed: ${d}`);
 for (const p of problems) console.log(`::error::${p}`);
-if (process.env.GITHUB_STEP_SUMMARY) {
-  const out = ['## After the release', '', ...lines.map((l) => `- ${l}`), ...problems.map((p) => `- **Not right:** ${p}`), ''];
-  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out.join('\n'));
-}
 if (!problems.length) console.log('everything a release should leave behind is in place');
 process.exit(problems.length ? 1 : 0);
