@@ -694,9 +694,6 @@ jobs:
           id=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.id')
           gh api "repos/$REPO/releases/$id" --jq '.body // ""' > body.md
           if ! grep -qF '<!-- announced in Discord -->' body.md; then
-            printf '
-
-<!-- announced in Discord -->
-' >> body.md
+            { echo; echo; echo '<!-- announced in Discord -->'; } >> body.md
             gh api --method PATCH "repos/$REPO/releases/$id" --field body=@body.md > /dev/null
           fi

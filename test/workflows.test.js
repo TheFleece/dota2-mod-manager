@@ -430,3 +430,58 @@ test('what a release left undone is put right without anybody starting it', () =
   assert.match(read('virustotal.yml'), /run-name: VirusTotal \$\{\{ inputs\.tag/, 'the watch cannot tell which release an antivirus run was for');
 });
 
+/**
+ * Lines GitHub's YAML parser would refuse, found without a YAML library. A `run: |` block holds
+ * every line indented deeper than its first one; a line less indented ends it, and has to be a key,
+ * a list item or a comment of the level it falls back to. Text that is none of those makes the whole
+ * file unreadable, and the workflow does not start at all.
+ * @returns {string[]} "line: text" for each line that breaks the file
+ */
+function yamlShapeProblems(text) {
+  const bad = [];
+  let block = null; // { parent, content } while inside a block scalar
+  text.split('\n').forEach((line, i) => {
+    if (!line.trim()) return;
+    const indent = line.length - line.trimStart().length;
+    if (block) {
+      if (block.content === null) block.content = indent > block.parent ? indent : -1;
+      if (block.content >= 0 && indent >= block.content) return;
+      block = null;
+    }
+    const body = line.trimStart();
+    if (/\t/.test(line.slice(0, indent))) bad.push(`${i + 1}: a tab in the indentation`);
+    const shaped = body.startsWith('#') || body === '-' || body.startsWith('- ')
+      || /^[^\s#'"{[\]][^:]*:(\s|$)/.test(body) || /^(['"]).*\1:(\s|$)/.test(body);
+    if (!shaped) bad.push(`${i + 1}: ${body.slice(0, 70)}`);
+    if (/^(?:- )?[^#\s][^:]*:\s*[|>][-+0-9]*\s*(#.*)?$/.test(body) || /^- [|>][-+0-9]*\s*$/.test(body)) {
+      block = { parent: indent + (body.startsWith('- ') ? 2 : 0), content: null };
+    }
+  });
+  return bad;
+}
+
+test('every workflow is YAML GitHub can read', () => {
+  /* On 2026-09-26 an edit put a printf with real line breaks into release.yml: two lines at column
+     zero in the middle of a run block. Every test above reads the file as text and passed; OpenSSF
+     Scorecard could not parse it, and the next tag would have started no release at all, because
+     GitHub refuses a workflow file it cannot read before running a single job. */
+  const bad = [];
+  for (const f of workflows) for (const p of yamlShapeProblems(read(f))) bad.push(`${f}:${p}`);
+  assert.deepEqual(bad, [], bad.join('\n'));
+  // and the check knows the break when it sees it: the step as it was merged
+  const merged = [
+    'jobs:',
+    '  notify:',
+    '    steps:',
+    '      - name: Note in the release that it was announced',
+    '        run: |',
+    "          if ! grep -qF 'x' body.md; then",
+    "            printf '",
+    '',
+    '<!-- announced in Discord -->',
+    "' >> body.md",
+    '          fi',
+  ].join('\n');
+  assert.deepEqual(yamlShapeProblems(merged), ['9: <!-- announced in Discord -->', "10: ' >> body.md", '11: fi']);
+});
+
