@@ -36,6 +36,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The workflows, read the way GitHub reads them.
+      #
+      # test/workflows.test.js reads these files as text. On 2026-09-26 release.yml reached main
+      # with two lines at column zero inside a run block: every test passed, GitHub could not read
+      # the file, and the next tag would have started no release. actionlint parses each workflow,
+      # checks every expression, `needs` and output against the jobs that exist, and hands each run
+      # block to shellcheck, held to errors only: a script that cannot run, not a style note.
+      #
+      # A binary rather than an action, pinned by version and by the SHA-256 in the release's own
+      # checksums file, so a change upstream cannot run here without a pull request saying so.
+      - name: Check the workflows with actionlint
+        env:
+          ACTIONLINT_VERSION: '1.7.12'
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+          SHELLCHECK_OPTS: --severity=error
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum -c -
+          tar -xzf actionlint.tar.gz actionlint
+          ./actionlint -color
+
       # A name that is not there is not something a test can see.
       #
       # Splitting registerIpc on 2026-09-06 moved a call into one file and left the function it
