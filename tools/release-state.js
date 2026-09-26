@@ -168,8 +168,9 @@ const WATCH_FROM = '2026-09-26T00:00:00Z';
 const watched = (release) => Boolean(release && release.published_at && release.published_at >= WATCH_FROM);
 /** Whether the notes say the Discord post went out. */
 const announced = (release) => String((release && release.body) || '').includes(ANNOUNCED);
-/** Whether the notes carry the antivirus report tools/virustotal.mjs writes. */
-const scanned = (release) => String((release && release.body) || '').includes('https://www.virustotal.com/gui/file/');
+/** Whether the notes carry the antivirus report: tools/virustotal.mjs opens it with this line. */
+const VIRUSTOTAL_MARK = '<!-- virustotal -->';
+const scanned = (release) => String((release && release.body) || '').includes(VIRUSTOTAL_MARK);
 
 module.exports = {
   FEEDS, BINARIES, PROOF, REQUIRED_ASSETS, NOTES_LIMIT, ANNOUNCED, WATCH_FROM,

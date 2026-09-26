@@ -110,11 +110,15 @@ test('the changelog section is the one release.yml puts on the page', () => {
   assert.equal(state.changelogSection('## 2.8.0\r\n\r\nWindows lines.\r\n', '2.8.0'), 'Windows lines.');
 });
 
-test('what the watch holds a release to: published after it began, announced once, scanned', () => {
+test('what the watch holds a release to: published after it began, announced once, scanned', async () => {
   assert.equal(state.watched(rel('v2.8.0')), true);
   assert.equal(state.watched(rel('v2.7.1', { published_at: '2026-09-24T12:58:26Z' })), false, '2.7.1 went out unannounced on purpose');
   assert.equal(state.announced({ body: `x\n\n${state.ANNOUNCED}\n` }), true);
   assert.equal(state.announced({ body: 'x' }), false);
-  assert.equal(state.scanned({ body: '[a.exe](https://www.virustotal.com/gui/file/abc)' }), true);
+  // the notes as tools/virustotal.mjs writes them, so the two cannot drift apart unnoticed
+  const { withReport, reportSection } = await import('../tools/virustotal.mjs');
+  const body = withReport('Notes.', reportSection([{ name: 'a.exe', url: 'u', flagged: 0, engines: 72 }]));
+  assert.equal(state.scanned({ body }), true);
+  assert.equal(state.scanned({ body: 'Notes.' }), false);
   assert.equal(state.scanned({ body: null }), false);
 });
