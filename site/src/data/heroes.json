@@ -3439,6 +3439,183 @@
       ]
     },
     {
+      "id": "phantom_lancer",
+      "name": "Phantom Lancer",
+      "slug": "phantom-lancer",
+      "mods": [
+        {
+          "name": "Phantom Lancer Ame",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon","arms"],
+          "image": {"src":"/mods/phantom-lancer-ame.webp","width":854,"height":480},
+          "author": "J0nathan550",
+          "authorUrl": "https://github.com/J0nathan550",
+          "date": 1790424886
+        },
+        {
+          "name": "Anubis Phantom Lancer",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/anubis-phantom-lancer.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1764486398
+        },
+        {
+          "name": "Crimson Phantom Lancer",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/crimson-phantom-lancer.webp","width":854,"height":480},
+          "author": "CeoMods",
+          "authorUrl": "https://t.me/modsceo",
+          "date": 1783783068
+        },
+        {
+          "name": "Immortal Phantom Lancer",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/immortal-phantom-lancer.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1779348987
+        },
+        {
+          "name": "Phantom Lancer Crimson v2",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-crimson-v2.webp","width":854,"height":480},
+          "author": "CeoMods",
+          "authorUrl": "https://t.me/modsceo",
+          "date": 1784711927
+        },
+        {
+          "name": "Phantom Lancer Dark Carnival",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-dark-carnival.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1783870835
+        },
+        {
+          "name": "Phantom Lancer Epileptick1d Mod",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-epileptick1d-mod.webp","width":854,"height":480},
+          "author": "Tenkay",
+          "authorUrl": "https://t.me/dota2Tenkay",
+          "date": 1786848392
+        },
+        {
+          "name": "Phantom Lancer Immortal Felidae",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-immortal-felidae.webp","width":854,"height":480},
+          "author": "Ромчик",
+          "authorUrl": "https://watchmy.bio/shidehara",
+          "date": 1783870835
+        },
+        {
+          "name": "Phantom Lancer Immortal Fire",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-immortal-fire.webp","width":1280,"height":720},
+          "author": "Tenkay",
+          "authorUrl": "https://t.me/dota2Tenkay",
+          "date": 1786302632
+        },
+        {
+          "name": "Phantom Lancer Purple Avilliva",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-purple-avilliva.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1782847214
+        },
+        {
+          "name": "Phantom Lancer Humble Drifter",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-humble-drifter.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1780845953
+        },
+        {
+          "name": "Phantom Lancer Sun Warrior",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["belt","misc","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-sun-warrior.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1784702480
+        },
+        {
+          "name": "Phantom Lancer Immortal Avilliva",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-lancer-immortal-avilliva.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1777361234
+        },
+        {
+          "name": "Phantom Lancer Concord Dominion",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["shoulder"],
+          "image": {"src":"/mods/phantom-lancer-concord-dominion.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1780059063
+        },
+        {
+          "name": "Phantom Lancer Concord Revers",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["head"],
+          "image": {"src":"/mods/phantom-lancer-concord-revers.webp","width":854,"height":480},
+          "author": "Harlord",
+          "authorUrl": "https://discord.com/users/436420477511139329",
+          "date": 1790216964
+        },
+        {
+          "name": "Phantom Lancer Immortal Frost",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["weapon"],
+          "image": {"src":"/mods/phantom-lancer-immortal-frost.webp","width":854,"height":480},
+          "author": "Harlord",
+          "authorUrl": "https://discord.com/users/436420477511139329",
+          "date": 1790424886
+        },
+        {
+          "name": "Phantom Lancer Pose",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": [],
+          "image": {"src":"/mods/phantom-lancer-pose.webp","width":854,"height":480},
+          "author": "Dota2VPK",
+          "authorUrl": "https://t.me/dota2freevpk",
+          "date": 1787730188
+        }
+      ]
+    },
+    {
       "id": "skywrath_mage",
       "name": "Skywrath Mage",
       "slug": "skywrath-mage",
@@ -4735,163 +4912,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1764003644
-        }
-      ]
-    },
-    {
-      "id": "phantom_lancer",
-      "name": "Phantom Lancer",
-      "slug": "phantom-lancer",
-      "mods": [
-        {
-          "name": "Anubis Phantom Lancer",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/anubis-phantom-lancer.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1764486398
-        },
-        {
-          "name": "Crimson Phantom Lancer",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/crimson-phantom-lancer.webp","width":854,"height":480},
-          "author": "CeoMods",
-          "authorUrl": "https://t.me/modsceo",
-          "date": 1783783068
-        },
-        {
-          "name": "Immortal Phantom Lancer",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/immortal-phantom-lancer.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1779348987
-        },
-        {
-          "name": "Phantom Lancer Crimson v2",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-crimson-v2.webp","width":854,"height":480},
-          "author": "CeoMods",
-          "authorUrl": "https://t.me/modsceo",
-          "date": 1784711927
-        },
-        {
-          "name": "Phantom Lancer Dark Carnival",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-dark-carnival.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1783870835
-        },
-        {
-          "name": "Phantom Lancer Epileptick1d Mod",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-epileptick1d-mod.webp","width":854,"height":480},
-          "author": "Tenkay",
-          "authorUrl": "https://t.me/dota2Tenkay",
-          "date": 1786848392
-        },
-        {
-          "name": "Phantom Lancer Immortal Felidae",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-immortal-felidae.webp","width":854,"height":480},
-          "author": "Ромчик",
-          "authorUrl": "https://watchmy.bio/shidehara",
-          "date": 1783870835
-        },
-        {
-          "name": "Phantom Lancer Immortal Fire",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-immortal-fire.webp","width":1280,"height":720},
-          "author": "Tenkay",
-          "authorUrl": "https://t.me/dota2Tenkay",
-          "date": 1786302632
-        },
-        {
-          "name": "Phantom Lancer Purple Avilliva",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-purple-avilliva.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1782847214
-        },
-        {
-          "name": "Phantom Lancer Humble Drifter",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-humble-drifter.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1780845953
-        },
-        {
-          "name": "Phantom Lancer Sun Warrior",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["belt","misc","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-sun-warrior.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1784702480
-        },
-        {
-          "name": "Phantom Lancer Immortal Avilliva",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-lancer-immortal-avilliva.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1777361234
-        },
-        {
-          "name": "Phantom Lancer Concord Dominion",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["shoulder"],
-          "image": {"src":"/mods/phantom-lancer-concord-dominion.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1780059063
-        },
-        {
-          "name": "Phantom Lancer Concord Revers",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["head"],
-          "image": {"src":"/mods/phantom-lancer-concord-revers.webp","width":854,"height":480},
-          "author": "Harlord",
-          "authorUrl": "https://discord.com/users/436420477511139329",
-          "date": 1790216964
-        },
-        {
-          "name": "Phantom Lancer Pose",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": [],
-          "image": {"src":"/mods/phantom-lancer-pose.webp","width":854,"height":480},
-          "author": "Dota2VPK",
-          "authorUrl": "https://t.me/dota2freevpk",
-          "date": 1787730188
         }
       ]
     },
@@ -10817,6 +10837,123 @@
       ]
     },
     {
+      "id": "phantom_assassin",
+      "name": "Phantom Assassin",
+      "slug": "phantom-assassin",
+      "mods": [
+        {
+          "name": "Phantom Assassin Persona",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","back","head","shoulder","weapon","belt","arms"],
+          "image": {"src":"/mods/phantom-assassin-persona.webp","width":854,"height":480},
+          "author": "Kisilev",
+          "authorUrl": "https://vk.com/id363951132",
+          "date": 1766149492
+        },
+        {
+          "name": "Phantom Assassin Yor Forger",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["arms","misc","weapon","back","head","shoulder","belt"],
+          "image": {"src":"/mods/phantom-assassin-yor-forger.webp","width":854,"height":480},
+          "author": "Pinkpapa",
+          "authorUrl": "https://www.patreon.com/Pinkpapa",
+          "date": null
+        },
+        {
+          "name": "Phantom Assassin Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["weapon","back","misc","head","shoulder","belt"],
+          "image": {"src":"/mods/phantom-assassin-arcana.webp","width":854,"height":480},
+          "author": "Haruma",
+          "authorUrl": "https://t.me/DotA_2_Mods",
+          "date": 1778331617
+        },
+        {
+          "name": "Phantom Assassin Rory",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["misc","weapon","back","head","shoulder","belt"],
+          "image": {"src":"/mods/phantom-assassin-rory.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1767093656
+        },
+        {
+          "name": "Warden Phantom Assassin",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["weapon","back","misc","head","shoulder","belt"],
+          "image": {"src":"/mods/warden-phantom-assassin.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1773556978
+        },
+        {
+          "name": "Phantom Assassin Athena",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-assassin-athena.webp","width":854,"height":480},
+          "author": "J0nathan550",
+          "authorUrl": "https://github.com/J0nathan550",
+          "date": 1790424886
+        },
+        {
+          "name": "Phantom Assassin Skull Arcana",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phantom-assassin-skull-arcana.webp","width":1280,"height":720},
+          "author": "Defiree",
+          "authorUrl": "https://vk.com/defiree2mods",
+          "date": 1764105388
+        },
+        {
+          "name": "Phite Phantom Assassin",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["back","misc","head","shoulder","weapon"],
+          "image": {"src":"/mods/phite-phantom-assassin.webp","width":854,"height":480},
+          "author": "Darkness",
+          "authorUrl": "https://t.me/Darkness_Logovo",
+          "date": 1775454991
+        },
+        {
+          "name": "Phantom Assassin Avowance",
+          "categoryId": "hero-items",
+          "styleLabel": "Crimson",
+          "slots": ["shoulder"],
+          "image": {"src":"/mods/phantom-assassin-avowance-crimson.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1780692007
+        },
+        {
+          "name": "Phantom Assassin Avowance",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["shoulder"],
+          "image": {"src":"/mods/phantom-assassin-avowance.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1780692007
+        },
+        {
+          "name": "Phantom Assassin Codicil",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["head"],
+          "image": {"src":"/mods/phantom-assassin-codicil.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1780692007
+        }
+      ]
+    },
+    {
       "id": "shadow_demon",
       "name": "Shadow Demon",
       "slug": "shadow-demon",
@@ -11592,113 +11729,6 @@
           "author": "Kliromin",
           "authorUrl": "https://www.youtube.com/@mrkliromin7723",
           "date": 1763042018
-        }
-      ]
-    },
-    {
-      "id": "phantom_assassin",
-      "name": "Phantom Assassin",
-      "slug": "phantom-assassin",
-      "mods": [
-        {
-          "name": "Phantom Assassin Persona",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","back","head","shoulder","weapon","belt","arms"],
-          "image": {"src":"/mods/phantom-assassin-persona.webp","width":854,"height":480},
-          "author": "Kisilev",
-          "authorUrl": "https://vk.com/id363951132",
-          "date": 1766149492
-        },
-        {
-          "name": "Phantom Assassin Yor Forger",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["arms","misc","weapon","back","head","shoulder","belt"],
-          "image": {"src":"/mods/phantom-assassin-yor-forger.webp","width":854,"height":480},
-          "author": "Pinkpapa",
-          "authorUrl": "https://www.patreon.com/Pinkpapa",
-          "date": null
-        },
-        {
-          "name": "Phantom Assassin Arcana",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["weapon","back","misc","head","shoulder","belt"],
-          "image": {"src":"/mods/phantom-assassin-arcana.webp","width":854,"height":480},
-          "author": "Haruma",
-          "authorUrl": "https://t.me/DotA_2_Mods",
-          "date": 1778331617
-        },
-        {
-          "name": "Phantom Assassin Rory",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["misc","weapon","back","head","shoulder","belt"],
-          "image": {"src":"/mods/phantom-assassin-rory.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1767093656
-        },
-        {
-          "name": "Warden Phantom Assassin",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["weapon","back","misc","head","shoulder","belt"],
-          "image": {"src":"/mods/warden-phantom-assassin.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1773556978
-        },
-        {
-          "name": "Phantom Assassin Skull Arcana",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phantom-assassin-skull-arcana.webp","width":1280,"height":720},
-          "author": "Defiree",
-          "authorUrl": "https://vk.com/defiree2mods",
-          "date": 1764105388
-        },
-        {
-          "name": "Phite Phantom Assassin",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["back","misc","head","shoulder","weapon"],
-          "image": {"src":"/mods/phite-phantom-assassin.webp","width":854,"height":480},
-          "author": "Darkness",
-          "authorUrl": "https://t.me/Darkness_Logovo",
-          "date": 1775454991
-        },
-        {
-          "name": "Phantom Assassin Avowance",
-          "categoryId": "hero-items",
-          "styleLabel": "Crimson",
-          "slots": ["shoulder"],
-          "image": {"src":"/mods/phantom-assassin-avowance-crimson.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1780692007
-        },
-        {
-          "name": "Phantom Assassin Avowance",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["shoulder"],
-          "image": {"src":"/mods/phantom-assassin-avowance.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1780692007
-        },
-        {
-          "name": "Phantom Assassin Codicil",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["head"],
-          "image": {"src":"/mods/phantom-assassin-codicil.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1780692007
         }
       ]
     },
@@ -12820,6 +12850,93 @@
       ]
     },
     {
+      "id": "kunkka",
+      "name": "Kunkka",
+      "slug": "kunkka",
+      "mods": [
+        {
+          "name": "Kunkka Sea Spirit",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["legs","head","arms","shoulder","misc","weapon","back","belt"],
+          "image": {"src":"/mods/kunkka-sea-spirit.webp","width":854,"height":480},
+          "author": "J0nathan550",
+          "authorUrl": "https://github.com/J0nathan550",
+          "date": 1790424886
+        },
+        {
+          "name": "Immortal Kunkka",
+          "categoryId": "heroes",
+          "styleLabel": null,
+          "slots": ["legs","head","arms","shoulder","misc","weapon"],
+          "image": {"src":"/mods/immortal-kunkka.webp","width":854,"height":480},
+          "author": "Arthas",
+          "authorUrl": "https://t.me/ArthasModMaker",
+          "date": 1785232049
+        },
+        {
+          "name": "Kunkka Saltworn Mariner",
+          "categoryId": "hero-items",
+          "styleLabel": "I",
+          "slots": ["misc","shoulder"],
+          "image": {"src":"/mods/kunkka-saltworn-mariner-i.webp","width":854,"height":480},
+          "author": "Harlord",
+          "authorUrl": "https://discord.com/users/436420477511139329",
+          "date": 1790294026
+        },
+        {
+          "name": "Kunkka Saltworn Mariner",
+          "categoryId": "hero-items",
+          "styleLabel": "II",
+          "slots": ["misc","shoulder"],
+          "image": {"src":"/mods/kunkka-saltworn-mariner-ii.webp","width":854,"height":480},
+          "author": "Harlord",
+          "authorUrl": "https://discord.com/users/436420477511139329",
+          "date": 1790294026
+        },
+        {
+          "name": "Kunkka Shadow Blade",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["weapon"],
+          "image": {"src":"/mods/kunkka-shadow-blade.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1775190022
+        },
+        {
+          "name": "Kunkka Whale Blade",
+          "categoryId": "hero-items",
+          "styleLabel": "Eminent Revival",
+          "slots": ["weapon"],
+          "image": {"src":"/mods/kunkka-whale-blade-eminent-revival.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1775195016
+        },
+        {
+          "name": "Kunkka Whale Blade",
+          "categoryId": "hero-items",
+          "styleLabel": "Eminent Revival Exceptional",
+          "slots": ["weapon"],
+          "image": {"src":"/mods/kunkka-whale-blade-eminent-revival-exceptional.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1775195016
+        },
+        {
+          "name": "Kunkka Whale Blade",
+          "categoryId": "hero-items",
+          "styleLabel": null,
+          "slots": ["weapon"],
+          "image": {"src":"/mods/kunkka-whale-blade.webp","width":854,"height":480},
+          "author": null,
+          "authorUrl": null,
+          "date": 1775195016
+        }
+      ]
+    },
+    {
       "id": "legion_commander",
       "name": "Legion Commander",
       "slug": "legion-commander",
@@ -13231,83 +13348,6 @@
           "author": null,
           "authorUrl": null,
           "date": 1780214981
-        }
-      ]
-    },
-    {
-      "id": "kunkka",
-      "name": "Kunkka",
-      "slug": "kunkka",
-      "mods": [
-        {
-          "name": "Immortal Kunkka",
-          "categoryId": "heroes",
-          "styleLabel": null,
-          "slots": ["legs","head","arms","shoulder","misc","weapon"],
-          "image": {"src":"/mods/immortal-kunkka.webp","width":854,"height":480},
-          "author": "Arthas",
-          "authorUrl": "https://t.me/ArthasModMaker",
-          "date": 1785232049
-        },
-        {
-          "name": "Kunkka Saltworn Mariner",
-          "categoryId": "hero-items",
-          "styleLabel": "I",
-          "slots": ["misc","shoulder"],
-          "image": {"src":"/mods/kunkka-saltworn-mariner-i.webp","width":854,"height":480},
-          "author": "Harlord",
-          "authorUrl": "https://discord.com/users/436420477511139329",
-          "date": 1790294026
-        },
-        {
-          "name": "Kunkka Saltworn Mariner",
-          "categoryId": "hero-items",
-          "styleLabel": "II",
-          "slots": ["misc","shoulder"],
-          "image": {"src":"/mods/kunkka-saltworn-mariner-ii.webp","width":854,"height":480},
-          "author": "Harlord",
-          "authorUrl": "https://discord.com/users/436420477511139329",
-          "date": 1790294026
-        },
-        {
-          "name": "Kunkka Shadow Blade",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["weapon"],
-          "image": {"src":"/mods/kunkka-shadow-blade.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1775190022
-        },
-        {
-          "name": "Kunkka Whale Blade",
-          "categoryId": "hero-items",
-          "styleLabel": "Eminent Revival",
-          "slots": ["weapon"],
-          "image": {"src":"/mods/kunkka-whale-blade-eminent-revival.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1775195016
-        },
-        {
-          "name": "Kunkka Whale Blade",
-          "categoryId": "hero-items",
-          "styleLabel": "Eminent Revival Exceptional",
-          "slots": ["weapon"],
-          "image": {"src":"/mods/kunkka-whale-blade-eminent-revival-exceptional.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1775195016
-        },
-        {
-          "name": "Kunkka Whale Blade",
-          "categoryId": "hero-items",
-          "styleLabel": null,
-          "slots": ["weapon"],
-          "image": {"src":"/mods/kunkka-whale-blade.webp","width":854,"height":480},
-          "author": null,
-          "authorUrl": null,
-          "date": 1775195016
         }
       ]
     },
