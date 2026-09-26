@@ -224,37 +224,78 @@ function duplicateKeys(file) {
   return [...at].filter(([, seen]) => seen.length > 1);
 }
 
-let missing = 0;
-for (const side of SIDES) {
-  const dupes = duplicateKeys(side.dict);
-  if (dupes.length) {
-    missing += dupes.length;
-    console.log(`\n${dupes.length} key(s) written more than once in ${side.dict}:`);
-    for (const [key, seen] of dupes) console.log(`  ${JSON.stringify(key)}  lines ${seen.join(', ')}`);
+/* An English twin that is there and still not a translation: the Russian key copied across
+ * unchanged, or English with Russian letters left in it. A missing twin was caught before; these
+ * two looked translated to the checker and showed an English player Russian all the same. The
+ * few strings that read the same in both languages are allowed by name. */
+const SAME_IN_BOTH = ['Dota 2', 'VPK', '18+'];
+
+/** @returns {{ unchanged: string[], cyrillic: Array<{ ru: string, en: string }> }} */
+function checkTranslations(dict) {
+  const unchanged = [];
+  const cyrillic = [];
+  for (const [ru, en] of Object.entries(dict)) {
+    if (ru === en && !SAME_IN_BOTH.includes(en)) unchanged.push(ru);
+    else if (/[А-Яа-яЁё]/.test(en)) cyrillic.push({ ru, en });
   }
-  const dict = readDict(side.dict);
-  const used = new Set();
-  const gaps = [];
-  for (const file of side.files) {
-    for (const h of scan(fs.readFileSync(path.join(ROOT, file), 'utf8'), side.calls)) {
-      used.add(h.key);
-      // A key with no Russian letters is already language-neutral (a name, a number, a path).
-      if (dict[h.key] == null && /[А-Яа-яЁё]/.test(h.key)) gaps.push({ ...h, file });
-    }
-  }
-  if (gaps.length) {
-    missing += gaps.length;
-    console.log(`\n${gaps.length} string(s) with no English twin in ${side.dict}:`);
-    for (const g of gaps) console.log(`  ${g.file}:${g.line}  ${g.call}  ${JSON.stringify(g.key)}`);
-  }
-  if (process.argv.includes('--unused')) {
-    const dead = Object.keys(dict).filter((k) => !used.has(k));
-    if (dead.length) console.log(`\n${dead.length} key(s) in ${side.dict} that no literal call site uses (data-driven lookups land here too):\n  ${dead.map((k) => JSON.stringify(k)).join('\n  ')}`);
-  }
+  return { unchanged, cyrillic };
 }
 
-if (missing) {
-  console.log(`\nAdd the English text to the EN dictionary, keyed by the exact Russian string.`);
-  process.exit(1);
+/** What checkTranslations found, as the lines the checker prints, and how many problems. */
+function translationReport(dict, file) {
+  const { unchanged, cyrillic } = checkTranslations(dict);
+  const lines = [];
+  if (unchanged.length) {
+    lines.push(`\n${unchanged.length} English twin(s) in ${file} are the Russian key unchanged:`);
+    for (const key of unchanged) lines.push(`  ${JSON.stringify(key)}`);
+  }
+  if (cyrillic.length) {
+    lines.push(`\n${cyrillic.length} English twin(s) in ${file} still contain Cyrillic:`);
+    for (const item of cyrillic) lines.push(`  ${JSON.stringify(item.ru)}: ${JSON.stringify(item.en)}`);
+  }
+  return { count: unchanged.length + cyrillic.length, lines };
 }
-console.log(`i18n: every Russian string in ${rel(path.join(ROOT, 'renderer'))}/ and main has an English twin.`);
+
+function main() {
+  let missing = 0;
+  for (const side of SIDES) {
+    const dupes = duplicateKeys(side.dict);
+    if (dupes.length) {
+      missing += dupes.length;
+      console.log(`\n${dupes.length} key(s) written more than once in ${side.dict}:`);
+      for (const [key, seen] of dupes) console.log(`  ${JSON.stringify(key)}  lines ${seen.join(', ')}`);
+    }
+    const dict = readDict(side.dict);
+    const used = new Set();
+    const gaps = [];
+    for (const file of side.files) {
+      for (const h of scan(fs.readFileSync(path.join(ROOT, file), 'utf8'), side.calls)) {
+        used.add(h.key);
+        // A key with no Russian letters is already language-neutral (a name, a number, a path).
+        if (dict[h.key] == null && /[А-Яа-яЁё]/.test(h.key)) gaps.push({ ...h, file });
+      }
+    }
+    if (gaps.length) {
+      missing += gaps.length;
+      console.log(`\n${gaps.length} string(s) with no English twin in ${side.dict}:`);
+      for (const g of gaps) console.log(`  ${g.file}:${g.line}  ${g.call}  ${JSON.stringify(g.key)}`);
+    }
+    const untranslated = translationReport(dict, side.dict);
+    missing += untranslated.count;
+    for (const line of untranslated.lines) console.log(line);
+    if (process.argv.includes('--unused')) {
+      const dead = Object.keys(dict).filter((k) => !used.has(k));
+      if (dead.length) console.log(`\n${dead.length} key(s) in ${side.dict} that no literal call site uses (data-driven lookups land here too):\n  ${dead.map((k) => JSON.stringify(k)).join('\n  ')}`);
+    }
+  }
+  if (missing) {
+    console.log(`\nAdd the English text to the EN dictionary, keyed by the exact Russian string.`);
+    process.exit(1);
+  }
+  console.log(`i18n: every Russian string in ${rel(path.join(ROOT, 'renderer'))}/ and main has an English twin.`);
+}
+
+// Run as a command; required by a test, it only hands over the functions above.
+if (require.main === module) main();
+
+module.exports = { checkTranslations, translationReport };
