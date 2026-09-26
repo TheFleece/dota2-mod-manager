@@ -29,6 +29,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-GPL--3.0-c4b5fd?style=flat-square&labelColor=211f26" alt="Лицензия"></a>
   <a href="https://dota2modmanager.com/ru/"><img src="https://img.shields.io/badge/%D1%81%D0%B0%D0%B9%D1%82-dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Сайт"></a>
   <a href="mailto:hello@dota2modmanager.com"><img src="https://img.shields.io/badge/%D0%BF%D0%BE%D1%87%D1%82%D0%B0-hello%40dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Почта: hello@dota2modmanager.com"></a>
+  <a href="https://discord.gg/PBvG8D9MxT"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv10%2Finvites%2FPBvG8D9MxT%3Fwith_counts%3Dtrue&query=%24.approximate_presence_count&label=discord&suffix=%20%D0%BE%D0%BD%D0%BB%D0%B0%D0%B9%D0%BD&style=flat-square&labelColor=211f26&color=5865f2&logo=discord&logoColor=white" alt="Discord: сколько человек онлайн на сервере каталога D2PFX, где у приложения свой канал"></a>
+  <a href="https://discord.gg/PBvG8D9MxT"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv10%2Finvites%2FPBvG8D9MxT%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&label=%D1%83%D1%87%D0%B0%D1%81%D1%82%D0%BD%D0%B8%D0%BA%D0%BE%D0%B2&style=flat-square&labelColor=211f26&color=5865f2" alt="Discord: участников на сервере каталога D2PFX"></a>
 </p>
 
 <p>
@@ -196,7 +198,7 @@ v1.14rc7 проверяет принадлежность перед чистко
 | [Баг](https://github.com/dota2modmanager/dota2-mod-manager/issues/new?template=bug_report.yml) | Что-то сломалось. **Настройки → Диагностика → Экспортировать отчёт** соберёт всё нужное в один файл |
 | [Идея](https://github.com/dota2modmanager/dota2-mod-manager/issues/new?template=feature_request.yml) | Предложение, как приложение должно работать |
 | [Обсуждения](https://github.com/dota2modmanager/dota2-mod-manager/discussions) | Вопросы, сборки, которые не грех показать, и всё, что пока не баг |
-| [Discord](https://discord.gg/PBvG8D9MxT) | Быстрая помощь, в сообществе каталога |
+| [Discord](https://discord.gg/PBvG8D9MxT) | Быстрая помощь в посте Mod Manager в разделе #utilities на сервере каталога D2PFX, новые версии в #mod-manager. Мейнтейнер там под ником Fleece, с ролью Dota 2 Mod Manager Dev и привязанным к профилю GitHub |
 | [Безопасность](SECURITY.md) | Уязвимости — лично, никогда публичным issue |
 | [hello@dota2modmanager.com](mailto:hello@dota2modmanager.com) | Всё, чему не место в публичном трекере: пресса, лицензия, вопросы от компании |
 

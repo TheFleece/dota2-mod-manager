@@ -29,6 +29,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-c4b5fd?style=flat-square&labelColor=211f26" alt="License"></a>
   <a href="https://dota2modmanager.com"><img src="https://img.shields.io/badge/site-dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Website"></a>
   <a href="mailto:hello@dota2modmanager.com"><img src="https://img.shields.io/badge/email-hello%40dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Email: hello@dota2modmanager.com"></a>
+  <a href="https://discord.gg/PBvG8D9MxT"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv10%2Finvites%2FPBvG8D9MxT%3Fwith_counts%3Dtrue&query=%24.approximate_presence_count&label=discord&suffix=%20online&style=flat-square&labelColor=211f26&color=5865f2&logo=discord&logoColor=white" alt="Discord: people online on the D2PFX catalog's server, where the app has its own channel"></a>
+  <a href="https://discord.gg/PBvG8D9MxT"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv10%2Finvites%2FPBvG8D9MxT%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&label=members&style=flat-square&labelColor=211f26&color=5865f2" alt="Discord: members of the D2PFX catalog's server"></a>
 </p>
 
 <p>
@@ -198,7 +200,7 @@ installed here survives its uninstall.
 | [Bug report](https://github.com/dota2modmanager/dota2-mod-manager/issues/new?template=bug_report.yml) | Something is broken. **Settings → Diagnostics → Export report** puts everything needed in one file |
 | [Feature request](https://github.com/dota2modmanager/dota2-mod-manager/issues/new?template=feature_request.yml) | An idea for how the app should work |
 | [Discussions](https://github.com/dota2modmanager/dota2-mod-manager/discussions) | Questions, setups worth showing, and anything that is not yet a bug |
-| [Discord](https://discord.gg/PBvG8D9MxT) | Quick help, in the catalog's own community |
+| [Discord](https://discord.gg/PBvG8D9MxT) | Quick help in the Mod Manager post under #utilities on the D2PFX catalog's server, and new versions in #mod-manager. The maintainer is there as Fleece, with the Dota 2 Mod Manager Dev role and this GitHub account linked on the profile |
 | [Security](SECURITY.md) | Vulnerabilities, privately — never a public issue |
 | [hello@dota2modmanager.com](mailto:hello@dota2modmanager.com) | Anything that does not fit a public tracker: press, licensing, a company asking questions |
 
