@@ -197,7 +197,7 @@ v1.14rc7 проверяет принадлежность перед чистко
 | [Баг](https://github.com/dota2modmanager/dota2-mod-manager/issues/new?template=bug_report.yml) | Что-то сломалось. **Настройки → Диагностика → Экспортировать отчёт** соберёт всё нужное в один файл |
 | [Идея](https://github.com/dota2modmanager/dota2-mod-manager/issues/new?template=feature_request.yml) | Предложение, как приложение должно работать |
 | [Обсуждения](https://github.com/dota2modmanager/dota2-mod-manager/discussions) | Вопросы, сборки, которые не грех показать, и всё, что пока не баг |
-| [Discord](https://discord.gg/PBvG8D9MxT) | Быстрая помощь в канале #mod-manager на сервере каталога D2PFX. Мейнтейнер там под ником Fleece, с ролью Dota 2 Mod Manager Dev |
+| [Discord](https://discord.gg/PBvG8D9MxT) | Быстрая помощь в посте Mod Manager в разделе #utilities на сервере каталога D2PFX, новые версии в #mod-manager. Мейнтейнер там под ником Fleece, с ролью Dota 2 Mod Manager Dev и привязанным к профилю GitHub |
 | [Безопасность](SECURITY.md) | Уязвимости — лично, никогда публичным issue |
 | [hello@dota2modmanager.com](mailto:hello@dota2modmanager.com) | Всё, чему не место в публичном трекере: пресса, лицензия, вопросы от компании |
 
