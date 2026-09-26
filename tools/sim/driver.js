@@ -286,8 +286,15 @@ class Sim {
       || a.effect?.getComputedTiming().endTime === Infinity)`, ms);
   }
 
-  /** Waits for the pictures on screen to finish loading, then a little more for anything easing in. */
+  /**
+   * Waits for the pictures on screen to finish loading, then a little more for anything easing in.
+   * A part of the page still waiting on an answer from main carries data-awaiting (the old-map
+   * mark on a terrain card is one), and is waited for first: an answer landing between the two
+   * frames of integrity() changed the picture, and a check that passes or fails by network timing
+   * teaches everybody to ignore it.
+   */
   async settle(ms = 800) {
+    await this.until(`!document.querySelector('[data-awaiting]')`, 8000);
     await this.until(`[...document.querySelectorAll('img')].filter((i) => {
       const b = i.getBoundingClientRect();
       return b.bottom > 0 && b.top < innerHeight && b.width > 0;
