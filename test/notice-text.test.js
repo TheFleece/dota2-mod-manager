@@ -84,10 +84,10 @@ test('a pak read before ours that carries the chat file wins: ours goes, and a f
   notice.applyNotice({ gamePath: s.game, langDir: s.langDir });
   fs.writeFileSync(path.join(s.langDir, 'pak03_dir.vpk'), pak({ 'resource/localization/chat_russian.txt': chatFile('russian') }));
   assert.match(notice.applyNotice({ gamePath: s.game, langDir: s.langDir }), /^removed: pak03_dir\.vpk carries/);
-  assert.ok(!fs.existsSync(s.target));
 
   fs.rmSync(path.join(s.langDir, 'pak03_dir.vpk'));
-  fs.writeFileSync(s.target, 'somebody else\'s mod');
+  // 'wx' creates the file or throws: ours being gone is checked by the same call that writes
+  fs.writeFileSync(s.target, 'somebody else\'s mod', { flag: 'wx' });
   assert.match(notice.applyNotice({ gamePath: s.game, langDir: s.langDir }), /^skipped: /);
   assert.equal(notice.removeNotice(s.langDir), false);
   assert.equal(fs.readFileSync(s.target, 'utf8'), 'somebody else\'s mod');
