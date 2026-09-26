@@ -761,6 +761,14 @@
       "from": "} else if (w.version && s.version !== w.version) {",
       "to": "} else if (false) {",
       "test": "test/release-state.test.js"
+    },
+    {
+      "name": "a line falls out of a run block and breaks the workflow file",
+      "file": ".github/workflows/release.yml",
+      "anchor": "- name: Note in the release that it was announced",
+      "from": "{ echo; echo; echo '<!-- announced in Discord -->'; } >> body.md",
+      "to": "printf '\n<!-- announced in Discord -->\n' >> body.md",
+      "test": "test/workflows.test.js"
     }
   ]
 }
