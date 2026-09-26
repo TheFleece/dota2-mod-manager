@@ -165,6 +165,10 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
         k: 'p',
         t: 'Putting a look on a default item is the one exception, and it is optional and off until you turn it on. It means overriding the item table, which the engine only reads through one path, so the app registers an extra content folder in <code>gameinfo_branchspecific.gi</code> and records the patched file in <code>dota.signatures</code>. Both are backed up before the first write and put back when you turn the feature off. <a href="~/docs/cosmetics/#patch">Why that patch is needed</a>.',
       },
+      {
+        k: 'p',
+        t: 'One file there is the app\'s own and not a mod: <code>pak64_dir.vpk</code>. It gives the game\'s anti-cheat notice, the window that says the game could not verify your machine, a text that says what to do instead. The text follows the language the game shows, the file changes nothing else, and uninstalling the app removes it.',
+      },
 
       { k: 'h2', t: 'Will you get banned', id: 'ban' },
       {
@@ -335,6 +339,10 @@ export const facts: Record<'en' | 'ru', FactsPage> = {
       {
         k: 'p',
         t: 'Единственное исключение - виды для стандартных предметов, и они выключены, пока ты сам их не включишь. Подставить вид значит перекрыть таблицу предметов, а её движок читает ровно одним путём, поэтому программа регистрирует дополнительную папку контента в <code>gameinfo_branchspecific.gi</code> и вписывает изменённый файл в <code>dota.signatures</code>. Оба файла копируются до первой записи и возвращаются, когда функцию выключаешь. <a href="~/docs/cosmetics/#patch">Зачем нужен этот патч</a>.',
+      },
+      {
+        k: 'p',
+        t: 'Один файл там принадлежит самой программе, а не моду: <code>pak64_dir.vpk</code>. Он меняет текст предупреждения античита, того окна, где игра пишет, что не смогла проверить компьютер, на понятный: что сделать, чтобы поиск матча снова работал. Текст на языке игры, больше файл ничего не меняет, и при удалении программы он удаляется.',
       },
 
       { k: 'h2', t: 'Забанят ли', id: 'ban' },

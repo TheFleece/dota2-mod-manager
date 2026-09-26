@@ -24,6 +24,8 @@ const fs = require('fs');
 const path = require('path');
 const { app, BrowserWindow, ipcMain } = require('electron');
 
+const { removeNotice } = require('./notice-text');
+
 const UNINSTALL_CANCELLED = 3;
 const UNINSTALL_WIPE_DATA = 4;
 
@@ -101,6 +103,10 @@ function uninstallFlow({ settings, library, installer, schemaService, diag, appR
           errors.push(`${rec.name}: ${err.message || err}`);
         }
       }
+    }
+    // The notice text goes whatever the answer: it names this app's switch, and the app is going.
+    if (settings.get('dotaGamePath')) {
+      try { removeNotice(installer.langFolder()); } catch (err) { errors.push(`notice: ${err.message || err}`); }
     }
     diag(`uninstall: revert=${revert} mods=${mods} errors=${errors.length}`);
     return errors;

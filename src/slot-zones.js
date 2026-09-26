@@ -23,6 +23,15 @@ const PRIORITY_CATEGORIES = ['trees', 'river', 'shaders', 'herofx', 'ranged-atta
 const PRIORITY_SLOTS = [2, 29];
 /** Where every other mod starts. */
 const NORMAL_FIRST = 30;
+/* The app's own pak, not a mod: the clearer text for the game's anti-cheat notice
+ * (src/notice-text.js). One below Minify's 65-67, so that it wins over a Minify "English fix"
+ * carrying the same localization file, and never handed to a mod, counted as a slot, listed as
+ * somebody else's file or renamed by the master switch. A mod that had it before is moved off
+ * by vacateAppPak. */
+const APP_PAK = 64;
+
+/** Whether a lowercased file name in the language folder is the app's own pak. */
+const isAppPak = (baseLower) => baseLower === `pak${APP_PAK}_dir.vpk`;
 
 /** Whether a category is one of those that load first. */
 const isPriorityCategory = (categoryId) => PRIORITY_CATEGORIES.includes(categoryId);
@@ -45,7 +54,7 @@ function freeSlotIn(zone, used) {
     // ours, whoever writes second replaces the other's mod. Three slots out of ninety buys never
     // having to coordinate - see src/minify.js. A pak it has already written needs no
     // reserving: it is in `used`, read off the folder.
-    if (RESERVED_PAKS.includes(n)) continue;
+    if (RESERVED_PAKS.includes(n) || n === APP_PAK) continue;
     const name = `pak${String(n).padStart(2, '0')}_dir.vpk`;
     if (!used.has(name)) return name;
   }
@@ -121,7 +130,38 @@ function migrateSlotZones(installer, library) {
   return { moved: moving.length };
 }
 
+/**
+ * Move a mod off the app's own slot. Until the notice claimed 64, a library of 34 mods or more
+ * could have one there. It goes to the first free slot after 64, so it stays behind the mods it
+ * was behind, or to the first free one of its part when those are full. A rename the running
+ * game refuses puts back what already moved and throws; the next call tries again.
+ * @returns {boolean} whether a mod moved
+ */
+function vacateAppPak(installer, library) {
+  const rec = library.list().find((r) => installer.slotNumber(r) === APP_PAK);
+  if (!rec) return false;
+  const used = installer.usedPakNames();
+  let to = null;
+  for (let n = APP_PAK + 1; n <= 99 && !to; n++) {
+    const name = `pak${n}_dir.vpk`;
+    if (!RESERVED_PAKS.includes(n) && !used.has(name)) to = name;
+  }
+  to = to || freeSlotIn(zoneFor(rec.categoryId), used) || freeSlotIn('normal', used);
+  if (!to) return false;
+  const from = `pak${APP_PAK}`;
+  const base = to.replace(/_dir\.vpk$/i, '');
+  try {
+    library.update(rec.id, { files: installer.moveToSlot(rec, base, from) });
+  } catch (err) {
+    // the files that did move carry the new name; moving the record from there takes them back
+    const moved = (rec.files || []).map((f) => (f.root === 'lang' && f.relPath.toLowerCase().startsWith(`${from}_`) ? { ...f, relPath: base + f.relPath.slice(from.length) } : f));
+    try { installer.moveToSlot({ ...rec, files: moved }, from, base); } catch { /* nothing else to try */ }
+    throw err;
+  }
+  return true;
+}
+
 module.exports = {
-  PRIORITY_CATEGORIES, PRIORITY_SLOTS, NORMAL_FIRST,
-  isPriorityCategory, zoneFor, slotZone, freeSlotIn, moveToZone, migrateSlotZones,
+  PRIORITY_CATEGORIES, PRIORITY_SLOTS, NORMAL_FIRST, APP_PAK, isAppPak,
+  isPriorityCategory, zoneFor, slotZone, freeSlotIn, moveToZone, migrateSlotZones, vacateAppPak,
 };

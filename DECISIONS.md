@@ -295,6 +295,21 @@ to stop offering the major version until somebody does it.
 
 *Check:* `.github/dependabot.yml`, the `ignore` block for the app's dependencies.
 
+### The anti-cheat notice is rewritten, and there is no switch for it
+
+When Dota cannot verify the game before matchmaking, Valve's window says the anti-cheat "was
+unable to verify that your machine is secure". Players with mods read that as a ban coming, open
+issues with a screenshot of it, and the usual cause is a damaged install or a Steam that needs a
+restart. The app replaces the four strings of that window with text that says what to do,
+in all 28 languages the game ships, through its own `pak64` in the language folder.
+
+It has no setting. A switch would be one more thing to explain for text that only ever says what
+to do next, and turning it off would put back the wording that caused the issues. The pak is
+never listed as a mod either, so nobody removes it by accident; the site says it is there, and
+the uninstaller takes it out.
+
+*Check:* `node --test test/notice-text.test.js`, and `src/notice-texts.js` for every word of it.
+
 ---
 
 ## Known gaps

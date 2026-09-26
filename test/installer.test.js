@@ -449,7 +449,11 @@ test('the categories that load first get 02-29, the rest start at 30, and a full
   assert.equal(s.installer.allocatePak(used, true), 'pak30_dir.vpk', 'the 29th still installs, in the first slot after them');
   assert.equal(s.installer.allocatePak(used, false), 'pak31_dir.vpk');
   const rest = new Set();
-  for (let i = 0; i < 67; i++) assert.ok(Number(s.installer.allocatePak(rest, false).slice(3, 5)) >= 30, 'the rest never take 02-29');
+  // 30-99 is seventy slots: Minify keeps 65-67 and the app's own pak64 (src/notice-text.js)
+  for (let i = 0; i < 66; i++) {
+    const n = Number(s.installer.allocatePak(rest, false).slice(3, 5));
+    assert.ok(n >= 30 && n !== 64, 'the rest never take 02-29, nor pak64');
+  }
   assert.throws(() => s.installer.allocatePak(rest, false), /30-99/);
 });
 
@@ -524,4 +528,38 @@ test('a layout that fails half way puts every file back where it was', (t) => {
   fs.renameSync = real;
   assert.deepEqual(paksIn(s), before, 'every file is back under its old name');
   assert.equal(JSON.stringify(library.list()), records, 'and no record was changed');
+});
+
+test('a mod on the slot the notice text took moves to the first free one behind it, volumes and state kept', (t) => {
+  const { vacateAppPak } = require('../src/slot-zones.js');
+  const s = stand(t);
+  const library = new Library(path.join(s.dir, 'userdata'));
+  placed(s, library, { base: 'pak64', categoryId: 'heroes', name: 'was on 64', suffix: '.off', volumes: 1 });
+  placed(s, library, { base: 'pak68', categoryId: 'heroes', name: 'behind it' });
+  fs.writeFileSync(path.join(s.lang, 'pak65_dir.vpk'), 'minify');
+  assert.equal(vacateAppPak(s.installer, library), true);
+  assert.deepEqual(paksIn(s), ['pak65_dir.vpk', 'pak68_dir.vpk', 'pak69_000.vpk.off', 'pak69_dir.vpk.off']);
+  const rec = library.list().find((r) => r.name === 'was on 64');
+  assert.deepEqual(rec.files.map((f) => f.relPath), ['pak69_dir.vpk', 'pak69_000.vpk']);
+  assert.equal(vacateAppPak(s.installer, library), false, 'nothing left on 64');
+});
+
+test('a move off the notice slot that the game refuses puts the files back and changes no record', (t) => {
+  const { vacateAppPak } = require('../src/slot-zones.js');
+  const s = stand(t);
+  const library = new Library(path.join(s.dir, 'userdata'));
+  placed(s, library, { base: 'pak64', categoryId: 'heroes', name: 'held open', volumes: 1 });
+  const before = paksIn(s);
+  const records = JSON.stringify(library.list());
+  const real = fs.renameSync;
+  let calls = 0;
+  t.after(() => { fs.renameSync = real; });
+  fs.renameSync = (from, to) => {
+    if (++calls === 2) throw Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' });
+    return real(from, to);
+  };
+  assert.throws(() => vacateAppPak(s.installer, library), /EBUSY/);
+  fs.renameSync = real;
+  assert.deepEqual(paksIn(s), before);
+  assert.equal(JSON.stringify(library.list()), records);
 });

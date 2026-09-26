@@ -63,7 +63,7 @@ const MASTER_OFF = '.moff';
  */
 const OWNERSHIP_FILE = 'dota2modmanager.json';
 function isOfficialLangFile(baseLower) {
-  return /^pak01_/.test(baseLower) || baseLower === 'gameinfo.gi';
+  return /^pak01_/.test(baseLower) || baseLower === 'gameinfo.gi' || zones.isAppPak(baseLower);
 }
 
 // What a FileTx parks next to a file it is about to replace or delete (see src/file-tx.js).
@@ -478,7 +478,7 @@ class Installer {
       // `used` is read off the folder, so Minify's paks are already in it once it has run.
       // Skipped by number as well, for the machine where it is installed but has not patched
       // yet: taking 66 today means losing that mod the first time it does.
-      if (RESERVED_PAKS.includes(i)) continue;
+      if (RESERVED_PAKS.includes(i) || i === zones.APP_PAK) continue;
       const base = `pak${String(i).padStart(2, '0')}`;
       if (!used.has(`${base}_dir.vpk`)) return base;
     }
@@ -1086,7 +1086,7 @@ class Installer {
     const bases = new Set();
     for (const f of fs.readdirSync(lang)) {
       const m = f.toLowerCase().replace(/\.moff$/, '').replace(/\.off$/, '').match(/^(pak\d+)_dir\.vpk$/);
-      if (m && !/^pak01$/.test(m[1])) bases.add(m[1]);
+      if (m && !isOfficialLangFile(`${m[1]}_dir.vpk`)) bases.add(m[1]);
     }
     return bases.size;
   }

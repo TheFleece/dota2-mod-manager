@@ -380,6 +380,7 @@ const en: Record<CoreSlug, Doc> = {
         items: [
           'Your Steam inventory stays as it is. Nothing here trades, buys or unlocks an item on Valve\'s side.',
           'Turning mods off before a tournament match or a client update costs you one click and removes the question.',
+          'If the game says before a match that it could not verify your machine, that is not a ban. The app gives that window a text that says what usually fixes it: verify the game files in Steam, restart Steam, and turn mods off with the <b>Mods</b> switch.',
           'Any tool asking for your Steam login is not a mod manager. Nothing about installing a file needs your account.',
         ],
       },
@@ -880,6 +881,7 @@ const ru: Record<CoreSlug, Doc> = {
         items: [
           'Инвентарь Steam остаётся как был. Ничего здесь не торгует, не покупает и не открывает предмет на стороне Valve.',
           'Выключить моды перед турнирным матчем или обновлением клиента стоит одного клика и снимает вопрос.',
+          'Если перед матчем игра пишет, что не смогла проверить компьютер, это не бан. Программа заменяет текст этого окна тем, что обычно помогает: проверь целостность файлов в Steam, перезапусти Steam и выключи моды переключателем <b>Моды</b>.',
           'Любой инструмент, просящий логин Steam, - не менеджер модов. Установке файла твой аккаунт не нужен.',
         ],
       },

@@ -38,6 +38,8 @@ the code, not in this page.
 | [`src/mod-id.js`](#srcmod-idjs) | What a mod actually replaces, asked of the game instead of guessed from folder names. |
 | [`src/mod-preview.js`](#srcmod-previewjs) | A picture for a mod that came with none, taken out of the mod itself. |
 | [`src/net.js`](#srcnetjs) | Getting bytes from the internet, on a connection that may not want to cooperate. |
+| [`src/notice-text.js`](#srcnotice-textjs) | The game's anti-cheat notice, in words that say what to do. |
+| [`src/notice-texts.js`](#srcnotice-textsjs) | The game's anti-cheat notice, rewritten in every language Dota ships (src/notice-text.js puts |
 | [`src/overlays.js`](#srcoverlaysjs) | Fonts and cursors: loose files written over the game's own. |
 | [`src/patch-watch.js`](#srcpatch-watchjs) | Noticing that Dota was patched, while the app is open. |
 | [`src/patcher.js`](#srcpatcherjs) | Search-path patch: registers an extra content folder ahead of the game's own, which |
@@ -1822,6 +1824,163 @@ function setMirrors(list)
 
 Point the chain at local servers for a test. Pass nothing to put the real list back.
 
+## src/notice-text.js
+
+The game's anti-cheat notice, in words that say what to do.
+
+When Dota cannot verify the game before matchmaking it says "Valve Anti-Cheat was unable to
+verify that your machine is secure", and a player with mods reads that as a ban on the way.
+It is not one: the usual cause is a damaged install or a Steam that needs a restart. The app
+replaces the four strings of that window with src/notice-texts.js, in the language the game
+shows, and names the one switch that takes every mod out.
+
+How: a localization file in the language folder the game mounts, inside the app's own pak
+(APP_PAK, src/slot-zones.js). Measured on a live game on 2026-09-25: the engine reads its
+localization by a fixed list of names and ignores any other, and chat_<lang>.txt is read after
+dota_<lang>.txt, so a string defined in it replaces the one Valve ships. So the pak carries the
+chat file the game would have read anyway, with the four strings added at the end.
+
+The pak is not a mod. It is never listed, switched off by the master switch or counted as a
+slot, so nobody turns the notice back into Valve's words by accident. It is rebuilt when the
+game, its language or a pak in that folder changes, removed by the uninstaller, and left
+alone when somebody else's file already holds its name.
+
+### `NOTICE_PAK`
+
+```js
+const NOTICE_PAK = `pak${APP_PAK}_dir.vpk`
+```
+
+The file name of the app's pak in the language folder.
+
+### `MARKER`
+
+```js
+const MARKER = 'dota2modmanager/notice.json'
+```
+
+An entry that marks the pak as ours: a pak64 without it belongs to somebody else.
+
+### `uiLanguage`
+
+```js
+function uiLanguage(gamePath)
+```
+
+The language the game shows its interface in: a launch option, then its own setting, then Steam's.
+
+### `declaredLanguage`
+
+```js
+function declaredLanguage(text)
+```
+
+The `"Language"` a localization file declares, lowercased, or null.
+
+### `withTokens`
+
+```js
+function withTokens(text, tokens)
+```
+
+A localization file with our strings at the end of its Tokens block, in the file's own line
+ending. Any earlier definition of the same keys is taken out first, so the file says each
+thing once. Returns null for a file with no Tokens block, which is not one to build on.
+
+```
+@param {string} text
+@param {Record<string, string>} tokens  key -> value, no double quotes in either
+```
+
+### `plan`
+
+```js
+function plan({ gamePath, langDir })
+```
+
+What the language folder should hold, worked out from the game as it is.
+
+```
+@returns {{ action: 'write', bytes: Buffer, language: string }
+| { action: 'remove', why: string } | { action: 'skip', why: string }}
+```
+
+### `removeNotice`
+
+```js
+function removeNotice(langDir)
+```
+
+Take the pak out of a language folder, if it is ours.
+
+### `applyNotice`
+
+```js
+function applyNotice({ gamePath, langDir })
+```
+
+Bring the language folder in line with the plan. Writes only when the bytes differ, and
+through a temporary name, so the game never meets half a file. A pak the running game holds
+open cannot be replaced: that is an error the caller logs, and the next refresh tries again.
+
+```
+@returns {string} what happened, for the log
+```
+
+### `createNoticeText`
+
+```js
+function createNoticeText({ gamePath, langDir, diag, retryMs = 60_000 })
+```
+
+The notice kept current from a place that runs often. Rebuilding reads the game's 23 MB index,
+so it only happens when something it depends on changed: the game's settings, its main pak,
+or any pak in the language folder.
+
+```
+@param {{ gamePath: () => string|null, langDir: () => string, diag: (msg: string) => void, retryMs?: number }} ctx
+```
+
+## src/notice-texts.js
+
+The game's anti-cheat notice, rewritten in every language Dota ships (src/notice-text.js puts
+them in). Keyed by the name Dota gives a language in its own files: dota_<name>.txt.
+
+Four strings. `header` titles both windows ("Valve Anti-Cheat (VAC)" in Valve's words),
+`warning` is the notice that matchmaking may stop working, `solo` and `party` say it has, for
+you or for somebody in your party. Each says what happened without the word VAC, and what to
+do: verify the game files, restart Steam, and turn mods off with the app's "Mods" switch. The
+switch is named as the app shows it, «Моды» in Russian and "Mods" everywhere else, because the
+app is in those two languages only.
+
+No ASCII double quote may appear in a string: they are written into a quoted KeyValues value.
+
+### `NOTICE_TEXTS`
+
+```js
+const NOTICE_TEXTS =
+```
+
+The game's anti-cheat notice, rewritten in every language Dota ships (src/notice-text.js puts
+them in). Keyed by the name Dota gives a language in its own files: dota_<name>.txt.
+
+Four strings. `header` titles both windows ("Valve Anti-Cheat (VAC)" in Valve's words),
+`warning` is the notice that matchmaking may stop working, `solo` and `party` say it has, for
+you or for somebody in your party. Each says what happened without the word VAC, and what to
+do: verify the game files, restart Steam, and turn mods off with the app's "Mods" switch. The
+switch is named as the app shows it, «Моды» in Russian and "Mods" everywhere else, because the
+app is in those two languages only.
+
+No ASCII double quote may appear in a string: they are written into a quoted KeyValues value.
+
+### `NOTICE_KEYS`
+
+```js
+const NOTICE_KEYS =
+```
+
+The game's own keys for the four strings: its localization files name them this way.
+
 ## src/overlays.js
 
 Fonts and cursors: loose files written over the game's own.
@@ -3054,6 +3213,26 @@ const NORMAL_FIRST = 30
 
 Where every other mod starts.
 
+### `APP_PAK`
+
+```js
+const APP_PAK = 64
+```
+
+The app's own pak, not a mod: the clearer text for the game's anti-cheat notice
+(src/notice-text.js). One below Minify's 65-67, so that it wins over a Minify "English fix"
+carrying the same localization file, and never handed to a mod, counted as a slot, listed as
+somebody else's file or renamed by the master switch. A mod that had it before is moved off
+by vacateAppPak.
+
+### `isAppPak`
+
+```js
+const isAppPak = (baseLower) => baseLower === `pak${APP_PAK}_dir.vpk`
+```
+
+Whether a lowercased file name in the language folder is the app's own pak.
+
 ### `isPriorityCategory`
 
 ```js
@@ -3122,6 +3301,21 @@ renamed and throws; the caller tries again on the next start.
 
 ```
 @returns {{ moved: number }|null} null when there is nothing to lay out, or it would not fit
+```
+
+### `vacateAppPak`
+
+```js
+function vacateAppPak(installer, library)
+```
+
+Move a mod off the app's own slot. Until the notice claimed 64, a library of 34 mods or more
+could have one there. It goes to the first free slot after 64, so it stays behind the mods it
+was behind, or to the first free one of its part when those are full. A rename the running
+game refuses puts back what already moved and throws; the next call tries again.
+
+```
+@returns {boolean} whether a mod moved
 ```
 
 ## src/steam.js
