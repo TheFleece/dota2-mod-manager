@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1400,
+  "mods": 1406,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -405,6 +405,7 @@
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Dragon Knight Burning Scale","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","shield","shoulder","legs","weapon"]},
         {"name":"Dragon Knight Dragon Hold","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","shield","shoulder","legs","weapon"]},
+        {"name":"Dragon Knight Fire","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","shield","shoulder","legs","weapon"]},
         {"name":"Dragon Knight Silverwurm Sacrifice","categoryId":"heroes","styleLabel":null,"slots":["arms","misc","head","shield","shoulder","legs","weapon"]},
         {"name":"Emerald Dragon Knight","categoryId":"heroes","styleLabel":null,"slots":["arms","head","shield","shoulder","legs","weapon"]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
@@ -706,6 +707,7 @@
         {"name":"Juggernaut Ice and Fire","categoryId":"heroes","styleLabel":null,"slots":["misc","back","arms","head","weapon"]},
         {"name":"Juggernaut Jagged Honor","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon","legs"]},
         {"name":"Juggernaut Okita Souji","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon","legs"]},
+        {"name":"Juggernaut Provocation Arcana","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]},
         {"name":"Juggernaut Samurai of Wind","categoryId":"heroes","styleLabel":null,"slots":["misc","head","back","weapon","arms"]},
         {"name":"Lollipop Juggernaut","categoryId":"heroes","styleLabel":null,"slots":["misc","arms","back","head","weapon"]}
       ]
@@ -1053,6 +1055,7 @@
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Morphling Abyss Revenge","categoryId":"heroes","styleLabel":null,"slots":["misc"]},
         {"name":"Morphling Automaton","categoryId":"heroes","styleLabel":null,"slots":["misc","arms"]},
+        {"name":"Morphling Blade Of Tears","categoryId":"heroes","styleLabel":null,"slots":["weapon"]},
         {"name":"Morphling Darktrench Purple","categoryId":"heroes","styleLabel":null,"slots":[]},
         {"name":"Morphling Darktrench Tears","categoryId":"heroes","styleLabel":null,"slots":["weapon"]},
         {"name":"Morphling Fluid Frenzy","categoryId":"heroes","styleLabel":null,"slots":["misc"]},
@@ -1166,6 +1169,7 @@
       "name": "Ogre Magi",
       "mods": [
         {"name":"Ogre Magi Amakusa Shiro","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","back","head","weapon","misc","legs","tail"]},
+        {"name":"Ogre Magi Arcana","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","back","head","weapon"]},
         {"name":"Ogre Magi Custom Arcana","categoryId":"heroes","styleLabel":null,"slots":["head","weapon","belt","back"]},
         {"name":"Ogre Magi Freeboot Fortunes","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","back","head","weapon"]},
         {"name":"Ogre Magi Pyrexae Polymorph","categoryId":"heroes","styleLabel":null,"slots":["belt","arms","back","head","weapon"]}
@@ -1291,6 +1295,7 @@
       "name": "Pudge",
       "mods": [
         {"name":"Gopo Pudge","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head"]},
+        {"name":"Pudge Abscession Immortal","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc","shoulder"]},
         {"name":"Pudge Arcana Elephant","categoryId":"heroes","styleLabel":null,"slots":["weapon","belt","misc","head","back","arms"]},
         {"name":"Pudge Candy Cat","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon","misc"]},
         {"name":"Pudge CM","categoryId":"heroes","styleLabel":null,"slots":["back","belt","arms","head","weapon"]},
@@ -1793,6 +1798,7 @@
         {"name":"Aghanim Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Blue Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Green Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
+        {"name":"Immortal Troll Warlord","categoryId":"heroes","styleLabel":null,"slots":["weapon","head","shoulder"]},
         {"name":"Nemestice Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"Red Diretide Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
         {"name":"TI10 Ranged Attack","categoryId":"ranged-attack","styleLabel":null,"slots":[]},
