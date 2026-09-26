@@ -28,6 +28,7 @@
   <img src="https://img.shields.io/github/last-commit/dota2modmanager/dota2-mod-manager?style=flat-square&label=last%20commit&labelColor=211f26&color=8b6ff0" alt="Last commit">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-c4b5fd?style=flat-square&labelColor=211f26" alt="License"></a>
   <a href="https://dota2modmanager.com"><img src="https://img.shields.io/badge/site-dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Website"></a>
+  <a href="mailto:hello@dota2modmanager.com"><img src="https://img.shields.io/badge/email-hello%40dota2modmanager.com-c4b5fd?style=flat-square&labelColor=211f26" alt="Email: hello@dota2modmanager.com"></a>
 </p>
 
 <p>
