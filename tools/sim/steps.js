@@ -11,6 +11,7 @@ const path = require('path');
 const { lit } = require('./driver');
 const dota = require('./dota');
 const { listVpkPathCrcsFile } = require('../../src/vpk.js');
+const { isAppPak } = require('../../src/slot-zones.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const MANIFEST = require('../sandbox-mods.json').mods;
@@ -264,9 +265,10 @@ function gameLoads(sim, game, when) {
   return r;
 }
 
-/** Our packs the game mounts in the language folder right now. */
+/** Our mods' packs the game mounts in the language folder right now. The app's own pak64 (the
+ *  anti-cheat notice, src/notice-text.js) is not a mod: the master switch leaves it on by design. */
 function mountedOurs(game, folder) {
-  return dota.load(game).paks.filter((p) => p.folder === folder && !p.valve).map((p) => p.name);
+  return dota.load(game).paks.filter((p) => p.folder === folder && !p.valve && !isAppPak(String(p.name).toLowerCase())).map((p) => p.name);
 }
 
 /** A pack's own files, and for each where the game would read it from. */

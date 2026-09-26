@@ -363,22 +363,30 @@ function countAdoptableSelected() {
 }
 
 // adopt every recognised mod at once — installed records and foreign files alike
+// One run at a time: a second press while the first works would link the same files twice.
+let adopting = false;
 async function adoptAll() {
+  if (adopting) return;
   const recs = libRecords.filter((r) => r.match);
   // a foreign file that is a copy of an installed mod would land as a second row for the
   // same thing — it wants deleting, not adopting
   const exts = libExternal.filter((f) => f.match && !f.duplicateOf);
   if (!recs.length && !exts.length) return;
-  for (const r of recs) await window.api.mods.adoptMod(r.id, catalogPreviewFor(r.match));
-  for (const f of exts) {
-    const prev = catalogPreviewFor(f.match);
-    if (f.kind === 'cursor') await window.api.mods.adoptCursor(prev);
-    else if (f.kind === 'font') await window.api.mods.adoptFont(f.name, prev);
-    else await window.api.mods.adoptExternal(f.key, prev);
+  adopting = true;
+  try {
+    for (const r of recs) await window.api.mods.adoptMod(r.id, catalogPreviewFor(r.match));
+    for (const f of exts) {
+      const prev = catalogPreviewFor(f.match);
+      if (f.kind === 'cursor') await window.api.mods.adoptCursor(prev);
+      else if (f.kind === 'font') await window.api.mods.adoptFont(f.name, prev);
+      else await window.api.mods.adoptExternal(f.key, prev);
+    }
+    toast(L`Привязано: ${recs.length + exts.length}`, 'ok');
+    await refreshInstalledIndex();
+    renderLibrary();
+  } finally {
+    adopting = false;
   }
-  toast(L`Привязано: ${recs.length + exts.length}`, 'ok');
-  await refreshInstalledIndex();
-  renderLibrary();
 }
 
 // The two lists have a "select all" each, so ticking every mod never drags a dozen

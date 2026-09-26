@@ -75,14 +75,25 @@ module.exports = async function importMods(sim) {
     await sim.shot('imported');
 
     // ---- linked to the catalog: their catalog names ----
-    await sim.click('#adoptAllBtn');
-    const linked = await sim.until(`/Привязано: 2|Linked: 2/.test([...document.querySelectorAll('#toasts .toast')].map((t) => t.textContent).join(' '))`, 15000);
-    await sim.until(`!document.getElementById('adoptAllBtn')`, 8000);
+    // A press that lands while My mods is drawn again (a banner arriving, the list re-listing) goes
+    // to a button that is gone by the time the mouse comes up, and nothing happens: on Windows CI
+    // on 2026-09-26 the banner and the button were still there afterwards. A person presses again,
+    // and so does this, while the button is there and nothing said it linked. The app runs one
+    // link at a time, so a second press on a slow one changes nothing.
+    let linked = null;
+    for (let i = 0; i < 3 && !linked; i++) {
+      if (!(await sim.js(`!!document.getElementById('adoptAllBtn')`))) break;
+      await sim.click('#adoptAllBtn');
+      linked = await sim.until(`/Привязано: 2|Linked: 2/.test([...document.querySelectorAll('#toasts .toast')].map((t) => t.textContent).join(' '))`, 8000);
+    }
+    // the offer to link goes once there is nothing left to link: a recognised file already shows
+    // its catalog name as a chip, so the names alone passed while nothing had been linked
+    const offerGone = await sim.until(`!document.getElementById('adoptAllBtn')`, 8000);
     await sim.settle(600);
     rows = await steps.libraryRows(sim);
     const named = FILES.filter((n) => steps.rowOf(rows, n));
-    sim.check('"Link all" gives both their catalog names', linked && named.length === FILES.length,
-      `named: ${named.join(', ') || 'none'}; rows: ${rows.map((r) => r.text.slice(0, 40)).join(' | ')}; toasts: ${await toastsText(sim)}`);
+    sim.check('"Link all" gives both their catalog names', linked && offerGone && named.length === FILES.length,
+      `named: ${named.join(', ') || 'none'}; offer gone: ${!!offerGone}; last press: ${JSON.stringify(sim.lastClick)}; rows: ${rows.map((r) => r.text.slice(0, 40)).join(' | ')}; toasts: ${await toastsText(sim)}`);
     for (const n of named) {
       const r = steps.rowOf(rows, n);
       sim.check(`${n}, linked: the game still reads it`, steps.whoServes(game, folder, r.pak).served > 0);

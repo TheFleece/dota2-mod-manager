@@ -243,11 +243,15 @@ function registerModsIpc({
      * the library against the folder and the renderer re-lists after every install, toggle,
      * preset and bulk action, so it is the one place that keeps the note honest without
      * hooking a dozen handlers - the same reason refreshPresence() sits here. */
-    try { installer.writeOwnership([...library.knownLangRelPaths(), ...notice.ownedFiles()]); } catch (err) { diag(`ownership note skipped: ${err.message}`); }
+    const noteOwnership = () => {
+      try { installer.writeOwnership([...library.knownLangRelPaths(), ...notice.ownedFiles()]); } catch (err) { diag(`ownership note skipped: ${err.message}`); }
+    };
+    noteOwnership();
     // The anti-cheat notice in plain words (src/notice-text.js), kept current from here for the
     // same reason. After the reply: a rebuild reads the game's own index, and the list is what
-    // the screen is waiting for.
-    setImmediate(() => notice.refresh());
+    // the screen is waiting for. A rebuild that wrote or removed the pak writes the note again,
+    // or the note would miss it until the next listing.
+    setImmediate(() => { if (notice.refresh()) noteOwnership(); });
     // the renderer re-lists after every install, toggle, preset and bulk action, so this is
     // the one place that keeps the Discord status honest without hooking a dozen handlers
     refreshPresence();
