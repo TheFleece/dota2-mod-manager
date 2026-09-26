@@ -460,6 +460,19 @@ function yamlShapeProblems(text) {
   return bad;
 }
 
+test('actionlint reads every workflow in the required job, from a download checked against its hash', () => {
+  /* The shape check below is this suite's own and knows one kind of break. actionlint parses the
+     files as GitHub does, checks expressions and needs, and runs shellcheck on each run block. It
+     sits in the `test` job, which every pull request and the merge queue have to pass. */
+  const job = read('test.yml').split(/\n {2}windows:\n/)[0];
+  assert.match(job, /- name: Check the workflows with actionlint/, 'nothing runs actionlint');
+  assert.match(job, /ACTIONLINT_SHA256: [0-9a-f]{64}\n/, 'the binary is not pinned by its hash');
+  assert.match(job, /sha256sum -c -/, 'the download runs without being checked against the hash');
+  assert.match(job, /\.\/actionlint\b/, 'the binary is downloaded and never run');
+  assert.doesNotMatch(job, /-shellcheck=(\s|$)/, 'the run blocks are not handed to shellcheck');
+  assert.match(read('test.yml'), /\n {2}merge_group:/, 'the merge queue would not run it');
+});
+
 test('every workflow is YAML GitHub can read', () => {
   /* On 2026-09-26 an edit put a printf with real line breaks into release.yml: two lines at column
      zero in the middle of a run block. Every test above reads the file as text and passed; OpenSSF
