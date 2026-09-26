@@ -2,6 +2,31 @@
 
 What changed in each release. The app updates itself, so you get all of this without reinstalling.
 
+## 2.8.0-beta.2
+
+A second beta for the testers on the list. Everything in it, and in 2.8.0-beta.1, reaches
+everybody with 2.8.0.
+
+### The anti-cheat notice says what to do
+
+When Dota cannot check the game before matchmaking, it shows a Valve Anti-Cheat window saying your
+machine could not be verified, and with mods installed that reads like a ban on the way. Usually
+the cause is a damaged install or a Steam that needs a restart. The app now replaces the text of
+that window with the steps that fix it: verify the game files in Steam, restart Steam, and turn
+mods off with the Mods switch. The text follows the language the game shows, in all 28 of them.
+
+It lives in one file of the app's own, pak64 in the language folder. It is not a mod: My mods does
+not list it, the Mods switch leaves it on, and uninstalling the app removes it. If one of your mods
+sat in slot 64, it moves to the next free slot.
+
+### Whole-map terrains built for an older map
+
+Some catalog terrains, the TI and Dota+ ones among them, replace the whole map, so each carries
+Valve's map as it was on the day it was built. After Valve updates the map, such a terrain can
+remove trees, cost frames and get matchmaking refused. The catalog and My mods now mark these
+terrains "old map". When the game's map changes, the app switches an old one off once and tells
+you. If you turn it back on, it stays on until the next map update.
+
 ## 2.8.0-beta.1
 
 A beta for the testers on the list. Everything in it reaches everybody with 2.8.0.
