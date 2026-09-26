@@ -4,6 +4,14 @@
       "id": "hero-items",
       "mods": [
         {
+          "name": "Phantom Lancer Immortal Frost",
+          "styleLabel": null,
+          "image": {"src":"/mods/phantom-lancer-immortal-frost.webp","width":854,"height":480},
+          "author": "Harlord",
+          "authorUrl": "https://discord.com/users/436420477511139329",
+          "date": 1790424886
+        },
+        {
           "name": "Techies Arcana Shanachnetsya",
           "styleLabel": null,
           "image": {"src":"/mods/techies-arcana-shanachnetsya.webp","width":854,"height":480},
@@ -845,61 +853,16 @@
       ]
     },
     {
-      "id": "cursors",
-      "mods": [
-        {"name":"Purple Bts3 Cursor","styleLabel":null,"image":{"src":"/mods/purple-bts3-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1784360373},
-        {"name":"Purple Demon Cursor","styleLabel":null,"image":{"src":"/mods/purple-demon-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1784360373},
-        {"name":"Purple TI8 Cursor","styleLabel":null,"image":{"src":"/mods/purple-ti8-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1784360373},
-        {
-          "name": "Demon Cursor",
-          "styleLabel": null,
-          "image": {"src":"/mods/demon-cursor.webp","width":854,"height":480},
-          "author": "yoshimura",
-          "authorUrl": "https://sites.google.com/view/yosh1mur2",
-          "date": 1778939730
-        },
-        {"name":"Pepepains Cursor","styleLabel":null,"image":{"src":"/mods/pepepains-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1777733026},
-        {"name":"Old Cursor","styleLabel":null,"image":{"src":"/mods/old-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1777663732},
-        {"name":"Human Cursor","styleLabel":null,"image":{"src":"/mods/human-cursor.webp","width":854,"height":480},"author":"YMOM77","authorUrl":"https://t.me/mod_dota","date":1777641425},
-        {"name":"Night Elf Cursor","styleLabel":null,"image":{"src":"/mods/night-elf-cursor.webp","width":854,"height":480},"author":"YMOM77","authorUrl":"https://t.me/mod_dota","date":1777641425},
-        {"name":"Undead Cursor","styleLabel":null,"image":{"src":"/mods/undead-cursor.webp","width":854,"height":480},"author":"YMOM77","authorUrl":"https://t.me/mod_dota","date":1777641425},
-        {"name":"SpearMa Cursor","styleLabel":null,"image":{"src":"/mods/spearma-cursor.webp","width":854,"height":480},"author":"ya_lyosha","authorUrl":"https://www.twitch.tv/ya_lyosha","date":1775906972},
-        {
-          "name": "White Necronub Cursor",
-          "styleLabel": null,
-          "image": {"src":"/mods/white-necronub-cursor.webp","width":854,"height":480},
-          "author": "NahuiToSay",
-          "authorUrl": "https://t.me/NahuiToSay",
-          "date": 1775906972
-        },
-        {"name":"Azur Lane Cursor","styleLabel":null,"image":{"src":"/mods/azur-lane-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1768005424},
-        {"name":"Simple Cursor","styleLabel":null,"image":{"src":"/mods/simple-cursor.webp","width":854,"height":480},"author":"Slipersone","authorUrl":"https://t.me/slipersone","date":1765283745},
-        {"name":"Bts3 Cursor","styleLabel":null,"image":{"src":"/mods/bts3-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Centaur Cursor","styleLabel":null,"image":{"src":"/mods/centaur-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Chaos Knight Cursor","styleLabel":null,"image":{"src":"/mods/chaos-knight-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Clockwerk Cursor","styleLabel":null,"image":{"src":"/mods/clockwerk-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Crystal Maiden Cursor","styleLabel":null,"image":{"src":"/mods/crystal-maiden-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Dcveno Cursor","styleLabel":null,"image":{"src":"/mods/dcveno-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Default Cursor","styleLabel":null,"image":{"src":"/mods/default-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Diretide Cursor","styleLabel":null,"image":{"src":"/mods/diretide-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Earthshaker Cursor","styleLabel":null,"image":{"src":"/mods/earthshaker-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Emerald Cursor","styleLabel":null,"image":{"src":"/mods/emerald-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Holy Flame Cursor","styleLabel":null,"image":{"src":"/mods/holy-flame-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Mirana Cursor","styleLabel":null,"image":{"src":"/mods/mirana-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Necronub Cursor","styleLabel":null,"image":{"src":"/mods/necronub-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Skywrath Mage Cursor","styleLabel":null,"image":{"src":"/mods/skywrath-mage-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"TI5 Cursor","styleLabel":null,"image":{"src":"/mods/ti5-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"TI6 Cursor","styleLabel":null,"image":{"src":"/mods/ti6-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"TI7 Cursor","styleLabel":null,"image":{"src":"/mods/ti7-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"TI8 Cursor","styleLabel":null,"image":{"src":"/mods/ti8-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"TI9 Cursor","styleLabel":null,"image":{"src":"/mods/ti9-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Timbersaw Cursor","styleLabel":null,"image":{"src":"/mods/timbersaw-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
-        {"name":"Vengeful Spirit Cursor","styleLabel":null,"image":{"src":"/mods/vengeful-spirit-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943}
-      ]
-    },
-    {
       "id": "hero-sounds",
       "mods": [
+        {
+          "name": "Shadow Fiend Desire Requiem",
+          "styleLabel": null,
+          "image": {"src":"/mods/shadow-fiend-desire-requiem.webp","width":854,"height":480},
+          "author": "драг",
+          "authorUrl": "https://t.me/dragvpk",
+          "date": 1790424886
+        },
         {
           "name": "Dili Tili Bom Pudge",
           "styleLabel": null,
@@ -1088,6 +1051,59 @@
           "authorUrl": "https://steamcommunity.com/profiles/76561199220865017",
           "date": 1782990543
         }
+      ]
+    },
+    {
+      "id": "cursors",
+      "mods": [
+        {"name":"Purple Bts3 Cursor","styleLabel":null,"image":{"src":"/mods/purple-bts3-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1784360373},
+        {"name":"Purple Demon Cursor","styleLabel":null,"image":{"src":"/mods/purple-demon-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1784360373},
+        {"name":"Purple TI8 Cursor","styleLabel":null,"image":{"src":"/mods/purple-ti8-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1784360373},
+        {
+          "name": "Demon Cursor",
+          "styleLabel": null,
+          "image": {"src":"/mods/demon-cursor.webp","width":854,"height":480},
+          "author": "yoshimura",
+          "authorUrl": "https://sites.google.com/view/yosh1mur2",
+          "date": 1778939730
+        },
+        {"name":"Pepepains Cursor","styleLabel":null,"image":{"src":"/mods/pepepains-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1777733026},
+        {"name":"Old Cursor","styleLabel":null,"image":{"src":"/mods/old-cursor.webp","width":854,"height":480},"author":"Timmyone","authorUrl":"https://t.me/timmyone","date":1777663732},
+        {"name":"Human Cursor","styleLabel":null,"image":{"src":"/mods/human-cursor.webp","width":854,"height":480},"author":"YMOM77","authorUrl":"https://t.me/mod_dota","date":1777641425},
+        {"name":"Night Elf Cursor","styleLabel":null,"image":{"src":"/mods/night-elf-cursor.webp","width":854,"height":480},"author":"YMOM77","authorUrl":"https://t.me/mod_dota","date":1777641425},
+        {"name":"Undead Cursor","styleLabel":null,"image":{"src":"/mods/undead-cursor.webp","width":854,"height":480},"author":"YMOM77","authorUrl":"https://t.me/mod_dota","date":1777641425},
+        {"name":"SpearMa Cursor","styleLabel":null,"image":{"src":"/mods/spearma-cursor.webp","width":854,"height":480},"author":"ya_lyosha","authorUrl":"https://www.twitch.tv/ya_lyosha","date":1775906972},
+        {
+          "name": "White Necronub Cursor",
+          "styleLabel": null,
+          "image": {"src":"/mods/white-necronub-cursor.webp","width":854,"height":480},
+          "author": "NahuiToSay",
+          "authorUrl": "https://t.me/NahuiToSay",
+          "date": 1775906972
+        },
+        {"name":"Azur Lane Cursor","styleLabel":null,"image":{"src":"/mods/azur-lane-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1768005424},
+        {"name":"Simple Cursor","styleLabel":null,"image":{"src":"/mods/simple-cursor.webp","width":854,"height":480},"author":"Slipersone","authorUrl":"https://t.me/slipersone","date":1765283745},
+        {"name":"Bts3 Cursor","styleLabel":null,"image":{"src":"/mods/bts3-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Centaur Cursor","styleLabel":null,"image":{"src":"/mods/centaur-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Chaos Knight Cursor","styleLabel":null,"image":{"src":"/mods/chaos-knight-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Clockwerk Cursor","styleLabel":null,"image":{"src":"/mods/clockwerk-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Crystal Maiden Cursor","styleLabel":null,"image":{"src":"/mods/crystal-maiden-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Dcveno Cursor","styleLabel":null,"image":{"src":"/mods/dcveno-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Default Cursor","styleLabel":null,"image":{"src":"/mods/default-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Diretide Cursor","styleLabel":null,"image":{"src":"/mods/diretide-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Earthshaker Cursor","styleLabel":null,"image":{"src":"/mods/earthshaker-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Emerald Cursor","styleLabel":null,"image":{"src":"/mods/emerald-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Holy Flame Cursor","styleLabel":null,"image":{"src":"/mods/holy-flame-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Mirana Cursor","styleLabel":null,"image":{"src":"/mods/mirana-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Necronub Cursor","styleLabel":null,"image":{"src":"/mods/necronub-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Skywrath Mage Cursor","styleLabel":null,"image":{"src":"/mods/skywrath-mage-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"TI5 Cursor","styleLabel":null,"image":{"src":"/mods/ti5-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"TI6 Cursor","styleLabel":null,"image":{"src":"/mods/ti6-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"TI7 Cursor","styleLabel":null,"image":{"src":"/mods/ti7-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"TI8 Cursor","styleLabel":null,"image":{"src":"/mods/ti8-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"TI9 Cursor","styleLabel":null,"image":{"src":"/mods/ti9-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Timbersaw Cursor","styleLabel":null,"image":{"src":"/mods/timbersaw-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943},
+        {"name":"Vengeful Spirit Cursor","styleLabel":null,"image":{"src":"/mods/vengeful-spirit-cursor.webp","width":854,"height":480},"author":null,"authorUrl":null,"date":1765183943}
       ]
     },
     {

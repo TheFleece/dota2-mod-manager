@@ -1,6 +1,6 @@
 {
   "heroes": 147,
-  "mods": 1409,
+  "mods": 1413,
   "byHero": {
     "abaddon": {
       "name": "Abaddon",
@@ -764,6 +764,7 @@
         {"name":"Immortal Kunkka","categoryId":"heroes","styleLabel":null,"slots":["legs","head","arms","shoulder","misc","weapon"]},
         {"name":"Kunkka Saltworn Mariner","categoryId":"hero-items","styleLabel":"I","slots":["misc","shoulder"]},
         {"name":"Kunkka Saltworn Mariner","categoryId":"hero-items","styleLabel":"II","slots":["misc","shoulder"]},
+        {"name":"Kunkka Sea Spirit","categoryId":"heroes","styleLabel":null,"slots":["legs","head","arms","shoulder","misc","weapon","back","belt"]},
         {"name":"Kunkka Shadow Blade","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Kunkka Whale Blade","categoryId":"hero-items","styleLabel":"Eminent Revival","slots":["weapon"]},
         {"name":"Kunkka Whale Blade","categoryId":"hero-items","styleLabel":"Eminent Revival Exceptional","slots":["weapon"]},
@@ -1214,6 +1215,7 @@
       "name": "Phantom Assassin",
       "mods": [
         {"name":"Phantom Assassin Arcana","categoryId":"heroes","styleLabel":null,"slots":["weapon","back","misc","head","shoulder","belt"]},
+        {"name":"Phantom Assassin Athena","categoryId":"heroes","styleLabel":null,"slots":["back","misc","head","shoulder","weapon"]},
         {"name":"Phantom Assassin Avowance","categoryId":"hero-items","styleLabel":"Crimson","slots":["shoulder"]},
         {"name":"Phantom Assassin Avowance","categoryId":"hero-items","styleLabel":null,"slots":["shoulder"]},
         {"name":"Phantom Assassin Codicil","categoryId":"hero-items","styleLabel":null,"slots":["head"]},
@@ -1231,6 +1233,7 @@
         {"name":"Anubis Phantom Lancer","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon"]},
         {"name":"Crimson Phantom Lancer","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon"]},
         {"name":"Immortal Phantom Lancer","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon"]},
+        {"name":"Phantom Lancer Ame","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon","arms"]},
         {"name":"Phantom Lancer Concord Dominion","categoryId":"hero-items","styleLabel":null,"slots":["shoulder"]},
         {"name":"Phantom Lancer Concord Revers","categoryId":"hero-items","styleLabel":null,"slots":["head"]},
         {"name":"Phantom Lancer Crimson v2","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon"]},
@@ -1240,6 +1243,7 @@
         {"name":"Phantom Lancer Immortal Avilliva","categoryId":"heroes","styleLabel":null,"slots":["head","shoulder","weapon"]},
         {"name":"Phantom Lancer Immortal Felidae","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon"]},
         {"name":"Phantom Lancer Immortal Fire","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon"]},
+        {"name":"Phantom Lancer Immortal Frost","categoryId":"hero-items","styleLabel":null,"slots":["weapon"]},
         {"name":"Phantom Lancer Pose","categoryId":"hero-items","styleLabel":null,"slots":[]},
         {"name":"Phantom Lancer Purple Avilliva","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","head","shoulder","weapon"]},
         {"name":"Phantom Lancer Sun Warrior","categoryId":"heroes","styleLabel":null,"slots":["belt","misc","shoulder","weapon"]}
